@@ -15,13 +15,10 @@ public class TestJDataHelper {
 	@Autowired
 	DataSetHelper dataSetHelper;
 
-	String[] csvFiles = {"YAHOO-datasets-codes-manual.csv","WIKI-datasets-codes-manual.csv"};
 	
 	@Test
 	public final void run() {
 
-//		dataSetHelper.loadCvsSeries(csvFiles);
-		
 		dataSetHelper.insertSecurityFromCvsFile();
 		
 	}

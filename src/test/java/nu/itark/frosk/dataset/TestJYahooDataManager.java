@@ -38,8 +38,9 @@ public class TestJYahooDataManager {
 	
 	@Test
 	public void test() throws IOException {
-	
-		Stock stock = YahooFinance.get("VOLV-B.ST");
+
+//		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
+		Stock stock = YahooFinance.get("VOLV-B.ST",true);
 
 		BigDecimal price = stock.getQuote().getPrice();
 		BigDecimal change = stock.getQuote().getChangeInPercent();
@@ -50,13 +51,34 @@ public class TestJYahooDataManager {
 	
 	
 	}
+	
+	@Test
+	public void test2() throws IOException {
+		Stock google = YahooFinance.get("GOOG");
+		List<HistoricalQuote> googleHistQuotes = google.getHistory();
+
+	
+	}	
+	
+	@Test
+	public void test3() throws IOException {
+
+//		Calendar from = Calendar.getInstance();
+//		Calendar to = Calendar.getInstance();
+//		from.add(Calendar.YEAR, -5); // from 5 years ago		
+//		
+//		Stock google = YahooFinance.get("GOOG", from, to, Interval.WEEKLY);
+
+		 Stock google = YahooFinance.get("GOOG");
+		List<HistoricalQuote> googleHistQuotes = google.getHistory();
+	}
 
 	@Test
 	public void testTestMultiples() throws IOException {	
 		String[] symbols = new String[] { "INTC", "BABA", "TSLA", "AIR.PA", "YHOO" };
 		// Can also be done with explicit from, to and Interval parameters
-		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL)); //https://github.com/sstrickx/yahoofinance-api/issues/126
-
+//		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL)); //https://github.com/sstrickx/yahoofinance-api/issues/126
+		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER)); //https://github.com/sstrickx/yahoofinance-api/issues/126
 		Map<String, Stock> stocks = YahooFinance.get(symbols, true);
 		Stock intel = stocks.get("INTC");
 		Stock airbus = stocks.get("AIR.PA");

@@ -12,73 +12,82 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.threeten.bp.LocalDate;
 
 import com.jimmoores.quandl.TabularResult;
 
 import nu.itark.frosk.controller.WelcomeController;
+import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
+import nu.itark.frosk.repo.SecurityRepository;
 
-@Deprecated  //WIKI databas is invalid, see mail
+//@Deprecated  //WIKI databas is invalid, see mail
 @Service("wikiTimeSeriesManager")
 public class WIKIDataManager {
 	Logger logger = Logger.getLogger(WelcomeController.class.getName());
-	private final String datasetCodes = "WIKI-datasets-codes-manual.csv";  
+
+	@Value("${frosk.download.years}")
+	public int years;	
 
 	@Autowired
-	SecurityPriceRepository securityRepository;			
+	SecurityPriceRepository securityPriceRepository;		
+
+	@Autowired
+	SecurityRepository securityRepository;
+	
+	@Autowired
+	DataSetHelper dataSetHelper;		
 	
 	public void syncronize() {
-		List<SecurityCode> codes = SecurityCode.loadCvsSeries(datasetCodes);
-		logger.info("codes=" + codes);
+		logger.info("sync="+Database.WIKI.toString());
+		Iterable<Security> securities = securityRepository.findByDatabase(Database.WIKI.toString()); 
+		
+		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
 		List<SecurityPrice> spList;
 		try {
-			spList = getDataSet(codes);
+			spList = getDataSet(securities);
 		} catch (IOException e) {
-			logger.severe("Could not retrieve dataset from cvs-file:"+datasetCodes);
+			logger.severe("Could not retrieve dataset");
 			throw new RuntimeException(e);
 		}
 
 		spList.forEach((sp) -> {
-			securityRepository.save(sp);
+			securityPriceRepository.save(sp);
 		});
-		
-		logger.info("Saved securities in "+datasetCodes+" into database.");
 
 	}	
 	
-	private List<SecurityPrice> getDataSet(List<SecurityCode> codes) throws IOException  {
+	private List<SecurityPrice> getDataSet(Iterable<Security> securities) throws IOException  {
 		List<SecurityPrice> sp = new ArrayList<>();
-	
-		codes.forEach((code) -> {
-			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(code);
-	
+
+		securities.forEach((security) -> {
+			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(security);
+
 			tabularResult.forEach(row -> {
-				SecurityPrice security = null;
-				LocalDate date = row.getLocalDate("Date");
-				String dateString = date + " 00:00:00.0";  //move from threeten to pure java
+				SecurityPrice securityPrice = null;
+				LocalDate date310 = row.getLocalDate("Date");
+				String dateString310 = date310 + " 00:00:00.0";
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
-				ZonedDateTime dateTime = ZonedDateTime.parse(dateString, formatter.withZone(ZoneId.systemDefault()));
-				
-//				LocalDate date = LocalDate.from(Instant.ofEpochMilli(row.getLocalDate("Date").toEpochDay()));				
-//				Date date2 = Date.from(date.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+				ZonedDateTime dateTime = ZonedDateTime.parse(dateString310, formatter.withZone(ZoneId.systemDefault()));
+				Date date = Date.from(Instant.from(dateTime));
+
 				BigDecimal open = new BigDecimal(row.getDouble("Open"));
 				BigDecimal high = new BigDecimal(row.getDouble("High"));
 				BigDecimal low = new BigDecimal(row.getDouble("Low"));
 				BigDecimal close = new BigDecimal(row.getDouble("Close"));
 				Long volume = Double.valueOf(row.getDouble("Volume")).longValue();
 
-				if (date != null && open != null && high != null && low != null
-						&& close != null && volume != null) {
-//	TODO fix				security = new SecurityPrice(code.getCode(), dateTime, open, high, low, close, volume);
-					sp.add(security);
+				if (date != null && open != null && high != null && low != null && close != null && volume != null) {
+					securityPrice = new SecurityPrice(security.getName(), date, open, high, low, close, volume);
+					sp.add(securityPrice);
 				}
 			});
-			
+
 		});
-		
+
 		return sp;
 		
 	}

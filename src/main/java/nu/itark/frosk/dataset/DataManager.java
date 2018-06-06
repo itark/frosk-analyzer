@@ -21,6 +21,9 @@ public class DataManager {
 	
 	@Autowired
 	YAHOODataManager yahooDataManager;
+
+	@Autowired
+	WIKIDataManager wikiDataManager;	
 	
 	@Value("${frosk.download.years}")
 	String yearsToDownload;	
@@ -32,11 +35,16 @@ public class DataManager {
 		dataSetHelper.insertSecurityFromCvsFile();
 	}
 	
-	public void insertSecurityPricesIntoDatabase(Database database) {
+	public void insertSecurityPricesIntoDatabase(Database database, boolean hasSecurities) {
 		logger.info("yearsToDownload="+yearsToDownload);
 		
-		if (database.equals(Database.YAHOO)) {
+
+		if (hasSecurities && database.equals(Database.YAHOO)) {
 			yahooDataManager.syncronize();
+		}
+		
+		if (hasSecurities && database.equals(Database.WIKI)) {
+			wikiDataManager.syncronize();
 		}
 		
 	}

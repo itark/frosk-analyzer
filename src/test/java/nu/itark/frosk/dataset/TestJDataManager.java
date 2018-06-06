@@ -14,10 +14,18 @@ public class TestJDataManager {
 	DataManager dataManager;
 	
 	@Test
-	public final void run() {
+	public final void runYahoo() {
 
-		dataManager.insertSecurityPricesIntoDatabase(Database.YAHOO);
+		dataManager.insertSecurityPricesIntoDatabase(Database.YAHOO, true);  //true if securities in place.ß
 		
 	}
+	
+	@Test
+	public final void runWiki() {
+
+		dataManager.insertSecurityPricesIntoDatabase(Database.WIKI, true);  //true if securities in place.ß
+		
+	}	
+	
 	
 }

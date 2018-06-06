@@ -19,10 +19,10 @@ public class TimeSeriesManager {
 	Logger logger = Logger.getLogger(TimeSeriesManager.class.getName());
 	final static DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d-MMM-yy", Locale.ENGLISH);
 	final private static int startYear = 2017;
-	final static String API_KEY = "CdaVrPkU7HH3Axd5pfNi";
+//	final static String API_KEY = "CdaVrPkU7HH3Axd5pfNi";
 
-	@Value("${frosk.download.years}")
-	public static int yearsToDownload;
+//	@Value("${frosk.download.years}")
+//	public static int yearsToDownload;
 	
 	@Autowired
 	SecurityPriceRepository securityRepository;	
@@ -85,6 +85,8 @@ public class TimeSeriesManager {
 	public static LocalDate getStartDate() {
 //		return LocalDate.of(yearsToDownload, 1, 1);
 		return LocalDate.of(startYear, 1, 1);
+		
+		
 	}
 
 	public static LocalDate getEndDate() {

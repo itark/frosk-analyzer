@@ -1,6 +1,5 @@
 package nu.itark.frosk.dataset;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -9,7 +8,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
-import javax.persistence.PostRemove;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,7 +33,7 @@ public class DataSetHelper {
 	@PostConstruct
 	public void post_construct() {
 		datasets.put("YAHOO", "YAHOO-datasets-codes-manual.csv");
-		datasets.put("WIKI", "WIKI-datasets-codes-manual.csv");
+		datasets.put("WIKI", "WIKI-datasets-codes-manual.csv"); 
 	}
 	/**
 	 * Insert all securities from cvsFiles.
@@ -53,7 +51,7 @@ public class DataSetHelper {
 	
 	@SneakyThrows
 	private void saveToRepo(String database, String csvFile) {
-		InputStream stream = SecurityCode.class.getClassLoader().getResourceAsStream(csvFile);
+		InputStream stream = Database.class.getClassLoader().getResourceAsStream(csvFile);
 		InputStreamReader isr = new InputStreamReader(stream, Charset.forName("UTF-8"));
 		CSVReader csvReader = new CSVReader(isr, ',', '"', 1);
 		String[] line;

@@ -22,6 +22,13 @@ order by timestamp;
 SELECT count(*) FROM SECURITY_PRICE
 where name = 'GOOG';
 
+SELECT DISTINCT name FROM SECURITY_PRICE;
+
+
+SELECT MAX(timestamp) FROM SECURITY_PRICE
+where name = 'GOOG';
+
+
 
 truncate SECURITY_PRICE;
 

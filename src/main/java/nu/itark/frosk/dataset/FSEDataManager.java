@@ -11,58 +11,60 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.ta4j.core.Bar;
-import org.ta4j.core.BaseBar;
-import org.ta4j.core.BaseTimeSeries;
-import org.ta4j.core.TimeSeries;
 
-import com.jimmoores.quandl.Row;
-import com.jimmoores.quandl.SessionOptions;
 import com.jimmoores.quandl.TabularResult;
-import com.jimmoores.quandl.classic.ClassicQuandlSession;
 
 import nu.itark.frosk.controller.WelcomeController;
+import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
+import nu.itark.frosk.repo.SecurityRepository;
 
 @Service("fseTimeSeriesManager")
 public class FSEDataManager extends TimeSeriesManager {
 	Logger logger = Logger.getLogger(WelcomeController.class.getName());
-	private final String datasetCodes = "FSE-datasets-codes-manual.csv";  
-//	private final String datasetCodes = "FSE-datasets-codes.csv";  
-	
+
+	@Value("${frosk.download.years}")
+	public int years;	
 
 	@Autowired
-	SecurityPriceRepository securityRepository;			
+	SecurityPriceRepository securityPriceRepository;		
+
+	@Autowired
+	SecurityRepository securityRepository;
+	
+	@Autowired
+	DataSetHelper dataSetHelper;		
 	
 	public void syncronize() {
-		List<SecurityCode> codes = SecurityCode.loadCvsSeries(datasetCodes);
-		logger.info("codes=" + codes);
+		logger.info("sync="+Database.WIKI.toString());
+		Iterable<Security> securities = securityRepository.findByDatabase(Database.FSE.toString()); 
+		
+		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
 		List<SecurityPrice> spList;
 		try {
-			spList = getDataSet(codes);
+			spList = getDataSet(securities);
 		} catch (IOException e) {
-			logger.severe("Could not retrieve dataset from cvs-file:"+datasetCodes);
+			logger.severe("Could not retrieve dataset");
 			throw new RuntimeException(e);
 		}
 
 		spList.forEach((sp) -> {
-			securityRepository.save(sp);
+			securityPriceRepository.save(sp);
 		});
-		
-		logger.info("Saved securities in "+datasetCodes+" into database.");
 
 	}
 
-	private List<SecurityPrice> getDataSet(List<SecurityCode> codes) throws IOException  {
+	private List<SecurityPrice> getDataSet(Iterable<Security> securities) throws IOException  {
 		List<SecurityPrice> sp = new ArrayList<>();
 	
-		codes.forEach((code) -> {
-			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(code);
+		securities.forEach((security) -> {
+			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(security);
 	
 			tabularResult.forEach(row -> {
-				SecurityPrice security = null;
+				SecurityPrice securityPrice = null;
 				LocalDate date = LocalDate.from(Instant.ofEpochMilli(row.getLocalDate("Date").toEpochDay()));				
 				Date date2 = Date.from(date.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
 				BigDecimal open = new BigDecimal(row.getDouble("Open"));
@@ -73,8 +75,8 @@ public class FSEDataManager extends TimeSeriesManager {
 
 				if (date != null && open != null && high != null && low != null
 						&& close != null && volume != null) {
-					security = new SecurityPrice(code.getCode(), date2, open, high, low, close, volume);
-					sp.add(security);
+					securityPrice = new SecurityPrice(security.getName(), date2, open, high, low, close, volume);
+					sp.add(securityPrice);
 				}
 			});
 			

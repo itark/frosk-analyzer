@@ -10,7 +10,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -68,7 +67,7 @@ public class YAHOODataManager  {
 		try {
 			spList = getDataSet(securities);
 		} catch (IOException e) {
-			logger.log(Level.ALL, "Could not retrieve dataset", e);
+			logger.info("Could not retrieve dataset");
 			throw new RuntimeException(e);
 		}
 
@@ -83,6 +82,7 @@ public class YAHOODataManager  {
 		logger.info("getDataSet(Iterable<Security> names)");
 		List<SecurityPrice> sp = new ArrayList<>();
 		Map<String, Stock> stocks = getStocks(securities);
+
 		securities.forEach((security) -> {
 			Stock stock = stocks.get(security.getName());
 			List<HistoricalQuote> quotes;
@@ -99,8 +99,6 @@ public class YAHOODataManager  {
 					} 
 				});
 				
-				logger.info("FRMO6...");
-
 			} catch (Throwable e) {
 				logger.info("Could not get data from Yahoo.");
 				e.printStackTrace();
