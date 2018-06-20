@@ -19,11 +19,15 @@ public class DataManager {
 	@Autowired
 	DataSetHelper dataSetHelper;
 	
-	@Autowired
-	YAHOODataManager yahooDataManager;
+//	@Autowired
+//	YAHOODataManager yahooDataManager;
 
 	@Autowired
 	WIKIDataManager wikiDataManager;	
+	
+	@Autowired
+	GDAXDataManager gdaxDataManager;		
+	
 	
 	@Value("${frosk.download.years}")
 	String yearsToDownload;	
@@ -39,13 +43,20 @@ public class DataManager {
 		logger.info("yearsToDownload="+yearsToDownload);
 		
 
-		if (hasSecurities && database.equals(Database.YAHOO)) {
-			yahooDataManager.syncronize();
-		}
+//		if (hasSecurities && database.equals(Database.YAHOO)) {
+//			yahooDataManager.syncronize();
+//		}
 		
 		if (hasSecurities && database.equals(Database.WIKI)) {
 			wikiDataManager.syncronize();
 		}
+
+		if (hasSecurities && database.equals(Database.GDAX)) {
+			logger.info("About to run gdaxDataManager.syncronize()...");
+			gdaxDataManager.syncronize();
+		}		
+		
+		
 		
 	}
 	

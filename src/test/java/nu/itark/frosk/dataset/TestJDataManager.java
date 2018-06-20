@@ -26,6 +26,23 @@ public class TestJDataManager {
 		dataManager.insertSecurityPricesIntoDatabase(Database.WIKI, true);  //true if securities in place.ß
 		
 	}	
+
+	@Test
+	public final void runGdax() {
+
+		dataManager.insertSecurityPricesIntoDatabase(Database.GDAX, true);  //true if securities in place.ß
+		
+	}		
+	
+	@Test
+	public final void runSecuritiesIntoDatabase() {
+
+		dataManager.insertSecuritiesIntoDatabase();
+		
+	}
+	
+	
+	
 	
 	
 }

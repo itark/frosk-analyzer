@@ -34,6 +34,8 @@ public class DataSetHelper {
 	public void post_construct() {
 		datasets.put("YAHOO", "YAHOO-datasets-codes-manual.csv");
 		datasets.put("WIKI", "WIKI-datasets-codes-manual.csv"); 
+		datasets.put("GDAX", "GDAX-datasets-codes-manual.csv"); 
+		
 	}
 	/**
 	 * Insert all securities from cvsFiles.

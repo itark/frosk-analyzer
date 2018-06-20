@@ -3,8 +3,9 @@ package nu.itark.frosk.dataset;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -13,18 +14,18 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.threeten.bp.LocalDate;
 
 import com.jimmoores.quandl.TabularResult;
 
-import nu.itark.frosk.controller.WelcomeController;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 
-@Service("fseTimeSeriesManager")
-public class FSEDataManager extends TimeSeriesManager {
-	Logger logger = Logger.getLogger(WelcomeController.class.getName());
+@Service
+public class GDAXDataManager extends TimeSeriesManager {
+	Logger logger = Logger.getLogger(GDAXDataManager.class.getName());
 
 	@Value("${frosk.download.years}")
 	public int years;	
@@ -39,8 +40,8 @@ public class FSEDataManager extends TimeSeriesManager {
 	DataSetHelper dataSetHelper;		
 	
 	public void syncronize() {
-		logger.info("sync="+Database.FSE.toString());
-		Iterable<Security> securities = securityRepository.findByDatabase(Database.FSE.toString()); 
+		logger.info("syncronize database="+Database.GDAX.toString());
+		Iterable<Security> securities = securityRepository.findByDatabase(Database.GDAX.toString()); 
 		
 		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
 		List<SecurityPrice> spList;
@@ -63,19 +64,26 @@ public class FSEDataManager extends TimeSeriesManager {
 		securities.forEach((security) -> {
 			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(security);
 	
+			
+			logger.info("tabularResult="+tabularResult.toPrettyPrintedString());
+			
+			
 			tabularResult.forEach(row -> {
 				SecurityPrice securityPrice = null;
-				LocalDate date = LocalDate.from(Instant.ofEpochMilli(row.getLocalDate("Date").toEpochDay()));				
-				Date date2 = Date.from(date.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+				LocalDate date310 = row.getLocalDate("Date");
+				String dateString310 = date310 + " 00:00:00.0";
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+				ZonedDateTime dateTime = ZonedDateTime.parse(dateString310, formatter.withZone(ZoneId.systemDefault()));
+				Date date = Date.from(Instant.from(dateTime));
+
 				BigDecimal open = new BigDecimal(row.getDouble("Open"));
 				BigDecimal high = new BigDecimal(row.getDouble("High"));
 				BigDecimal low = new BigDecimal(row.getDouble("Low"));
-				BigDecimal close = new BigDecimal(row.getDouble("Close"));
-				Long volume = Double.valueOf(row.getDouble("Traded Volume")).longValue();
+				BigDecimal close = new BigDecimal(row.getDouble("Open"));  //TODO valid to use open
+				Long volume = Double.valueOf(row.getDouble("Volume")).longValue();
 
-				if (date != null && open != null && high != null && low != null
-						&& close != null && volume != null) {
-					securityPrice = new SecurityPrice(security.getName(), date2, open, high, low, close, volume);
+				if (date != null && !open.equals(BigDecimal.ZERO) && !high.equals(BigDecimal.ZERO) && !low.equals(BigDecimal.ZERO) && !close.equals(BigDecimal.ZERO) && !volume.equals(BigDecimal.ZERO)) {
+					securityPrice = new SecurityPrice(security.getName(), date, open, high, low, close, volume);
 					sp.add(securityPrice);
 				}
 			});

@@ -121,6 +121,11 @@ public class TestJYahooDataManager {
 	
 	@Test
 	public void testHistory() throws IOException {
+//		https://free-proxy-list.net/anonymous-proxy.html
+		System.setProperty("http.proxyHost", "89.236.17.106");
+		System.setProperty("http.proxyPort", "3128");
+		
+		
 		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
 		Stock tesla = YahooFinance.get("TSLA", true);
 		System.out.println(tesla.getHistory());

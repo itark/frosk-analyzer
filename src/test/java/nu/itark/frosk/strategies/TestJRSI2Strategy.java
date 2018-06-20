@@ -72,7 +72,7 @@ public class TestJRSI2Strategy {
     @Test
     public final void run() throws Exception {
 
-    	TimeSeries timeSeries = timeSeriesService.getDataSet("GOOG");      
+    	TimeSeries timeSeries = timeSeriesService.getDataSet("GDAX/EUR");      
         
         Strategy strategy = RSI2Strategy.buildStrategy(timeSeries);
 
@@ -82,8 +82,8 @@ public class TestJRSI2Strategy {
         List<Trade> trades = tradingRecord.getTrades();     
      
         for (Trade trade : trades) {
-//        	logger.info("trade.getEntry().getIndex()="+trade.getEntry().getIndex()+", bar="+timeSeries.getBar(trade.getEntry().getIndex()));
-//        	logger.info("trade.getExit().getIndex())="+trade.getExit().getIndex()+", bar="+timeSeries.getBar(trade.getExit().getIndex()));
+        	logger.info("trade.getEntry().getIndex()="+trade.getEntry().getIndex()+", bar="+timeSeries.getBar(trade.getEntry().getIndex()));
+        	logger.info("trade.getExit().getIndex())="+trade.getExit().getIndex()+", bar="+timeSeries.getBar(trade.getExit().getIndex()));
             Decimal closePriceBuy = timeSeries.getBar(trade.getEntry().getIndex()).getClosePrice();
 //            LocalDate buyDate = timeSeries.getBar(trade.getEntry().getIndex()).getEndTime().toLocalDate();
  
