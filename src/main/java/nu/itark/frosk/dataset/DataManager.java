@@ -28,6 +28,9 @@ public class DataManager {
 	@Autowired
 	GDAXDataManager gdaxDataManager;		
 	
+	@Autowired
+	BITFINEXDataManager bitfinexDataManager;		
+	
 	
 	@Value("${frosk.download.years}")
 	String yearsToDownload;	
@@ -55,6 +58,12 @@ public class DataManager {
 			logger.info("About to run gdaxDataManager.syncronize()...");
 			gdaxDataManager.syncronize();
 		}		
+
+		if (hasSecurities && database.equals(Database.BITFINEX)) {
+			logger.info("About to run bitfinexDataManager.syncronize()...");
+			bitfinexDataManager.syncronize();
+		}			
+		
 		
 		
 		

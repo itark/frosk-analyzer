@@ -110,6 +110,10 @@ public class WebController {
 	@RequestMapping(path="/trades", method=RequestMethod.GET)
 	public List<TradeView> getTrades(@RequestParam("security") String securityName, @RequestParam("strategy") String strategyName){
 		logger.info("/trades...securityName="+securityName+"strategyName="+strategyName);	
+		
+		featuredStrategyService.getFeaturedStrategy(strategyName);
+		
+		
 		return featuredStrategyService.getTrades(strategyName, securityName);
 	}	
 	

@@ -72,7 +72,7 @@ public class TestJRSI2Strategy {
     @Test
     public final void run() throws Exception {
 
-    	TimeSeries timeSeries = timeSeriesService.getDataSet("GDAX/EUR");      
+    	TimeSeries timeSeries = timeSeriesService.getDataSet("BITFINEX/BTCEUR");      
         
         Strategy strategy = RSI2Strategy.buildStrategy(timeSeries);
 

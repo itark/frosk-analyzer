@@ -4,6 +4,7 @@ public enum Database{
 	WIKI,
 	FSE,
 	YAHOO,
-	GDAX;
+	GDAX,
+	BITFINEX;
 
 }

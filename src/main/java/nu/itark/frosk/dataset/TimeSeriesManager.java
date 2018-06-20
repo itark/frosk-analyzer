@@ -8,7 +8,6 @@ import java.util.Locale;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.threeten.bp.DayOfWeek;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.temporal.ChronoUnit;
@@ -19,47 +18,10 @@ public class TimeSeriesManager {
 	Logger logger = Logger.getLogger(TimeSeriesManager.class.getName());
 	final static DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d-MMM-yy", Locale.ENGLISH);
 	final private static int startYear = 2017;
-//	final static String API_KEY = "CdaVrPkU7HH3Axd5pfNi";
-
-//	@Value("${frosk.download.years}")
-//	public static int yearsToDownload;
 	
 	@Autowired
 	SecurityPriceRepository securityRepository;	
 	
-
-
-//	public List<TimeSeries> getDataSet() {
-//		Iterable<SecurityPrice> spList = securityRepository.findAll();
-//		List<TimeSeries> timeSeries = new ArrayList<TimeSeries>();
-//		
-//		spList.forEach(sp -> {
-//			timeSeries.add(getDataSet(sp.getName()));
-//		});
-//		
-//		return timeSeries;
-//		
-//	}	
-	
-	
-//	public TimeSeries getDataSet(String name) {
-//		List<Bar> bars = new ArrayList<>();
-//		List<SecurityPrice> securityPrices =securityRepository.findByName(name);
-//		
-//		securityPrices.forEach(row -> {
-//			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());		
-//			
-//			Bar bar = new BaseBar(dateTime, row.getOpen().toString(), row.getHigh().toString(), row.getLow().toString(), row.getClose().toString(), row.getVolume().toString());
-//			
-//			bars.add(bar);
-//			
-//		});
-//		
-//		return new BaseTimeSeries(name, bars);
-//		
-//		
-//	}
-
 
 	
 	/**

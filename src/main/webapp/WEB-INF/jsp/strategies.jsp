@@ -205,7 +205,7 @@
     	console.log('about to render chart on strategyName='+strategyName+ ' and security='+security);
 
      	var dailyPricesUrl = "dailyPrices?security="+security+"&database=FSE";
-     	var tradesUrl = "trades?security="+security+"&strategy="+strategyName+"&database=FSE";
+     //	var tradesUrl = "trades?security="+security+"&strategy="+strategyName+"&database=FSE";
     			
 	    var chart = AmCharts.makeChart( "chart-div", {
 	    	  "type": "stock",
@@ -247,10 +247,12 @@
 	    	    	      }
 	    	    	      return newData;
 	    	    	  }
-	    	    },		    	    
+	    	    }
+	    	  //,		    	    
     	       /**
     	        * data loader for events data
     	        */
+    	        /**
     	        "eventDataLoader": {
 	    	          "url": tradesUrl,
 	    	          "format": "json",
@@ -290,7 +292,7 @@
 		    	            return data;
 		    	          }
     	       }
-	    	    
+	    	    */
 
 	    	  }], //dataset
   
