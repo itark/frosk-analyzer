@@ -35,6 +35,14 @@ public class TestJDataManager {
 	}		
 	
 	@Test
+	public final void runBitfinex() {
+
+		dataManager.insertSecurityPricesIntoDatabase(Database.BITFINEX, true);  //true if securities in place.ß
+		
+	}	
+	
+	
+	@Test
 	public final void runSecuritiesIntoDatabase() {
 
 		dataManager.insertSecuritiesIntoDatabase();

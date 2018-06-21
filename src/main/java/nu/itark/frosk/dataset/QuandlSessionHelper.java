@@ -1,5 +1,10 @@
 package nu.itark.frosk.dataset;
 
+import java.util.Calendar;
+import java.util.Date;
+
+import org.threeten.bp.LocalDate;
+
 import com.jimmoores.quandl.DataSetRequest;
 import com.jimmoores.quandl.SessionOptions;
 import com.jimmoores.quandl.SortOrder;
@@ -34,13 +39,22 @@ public class QuandlSessionHelper {
 	 * Prepare a TabularResult WITHOUT API-KEY on provided SecurityCode
 	 * 
 	 * @param security
+	 * @param fromDate 
 	 * @return TabularResult
 	 */
-	public static TabularResult getTabularResultWithoutApiKey(Security security) {
-		ClassicQuandlSession session = ClassicQuandlSession.create();	return session.getDataSet(DataSetRequest.Builder
+	public static TabularResult getTabularResultWithoutApiKey(Security security, Date fromDate) {
+		LocalDate startDate;
+		if (fromDate == null) {
+			startDate = TimeSeriesManager.getStartDate();
+		} else {
+			startDate = DateManager.getThreetenLocalDate(fromDate);
+		}
+
+		ClassicQuandlSession session = ClassicQuandlSession.create();	
+		return session.getDataSet(DataSetRequest.Builder
 			.of(security.getName())
-			.withStartDate(TimeSeriesManager.getStartDate())
-			.withEndDate(TimeSeriesManager.getEndDate())
+			.withStartDate(startDate.plusDays(1))
+			.withEndDate(LocalDate.now())
 			.withSortOrder(SortOrder.ASCENDING)
 			.build());
 	

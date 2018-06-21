@@ -62,11 +62,11 @@ public class GDAXDataManager extends TimeSeriesManager {
 		List<SecurityPrice> sp = new ArrayList<>();
 	
 		securities.forEach((security) -> {
-			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(security);
-	
-			
+			SecurityPrice topSp = securityPriceRepository.findTopByNameOrderByTimestampDesc(security.getName());		
+			Date fromDate = topSp.getTimestamp();	
+
+			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(security, fromDate);
 			logger.info("tabularResult="+tabularResult.toPrettyPrintedString());
-			
 			
 			tabularResult.forEach(row -> {
 				SecurityPrice securityPrice = null;

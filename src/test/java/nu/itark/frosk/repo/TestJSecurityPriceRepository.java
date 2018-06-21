@@ -50,14 +50,27 @@ public class TestJSecurityPriceRepository {
 	
 
 	@Test
-	public void testGetDataSet() {
+	public void testFindByName() {
 		logger.info("count="+secRepo.count());	
 		
-		List<SecurityPrice> spList = secRepo.findByName("GOOG");
+		List<SecurityPrice> spList = secRepo.findByName("BITFINEX/BTCEUR");
 		
 		logger.info("spList="+spList.size());
 
 	}
+	
+	@Test
+	public void testfindTopByNameOrderByTimestampDesc() {
+		logger.info("count="+secRepo.count());	
+		
+		SecurityPrice sp = secRepo.findTopByNameOrderByTimestampDesc("BITFINEX/BTCEUR");
+		
+		
+		logger.info("sp="+sp);
+
+	}	
+	
+	
 	
 	@Test
 	public void testHistory() throws IOException {

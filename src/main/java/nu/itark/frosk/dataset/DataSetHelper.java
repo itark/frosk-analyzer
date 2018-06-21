@@ -16,7 +16,6 @@ import com.opencsv.CSVReader;
 
 import lombok.SneakyThrows;
 import nu.itark.frosk.model.Security;
-import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 
 @Service
@@ -27,14 +26,11 @@ public class DataSetHelper {
 	@Autowired
 	SecurityRepository securityRepository;
 
-	@Autowired
-	SecurityPriceRepository securityPriceRepository;
-	
 	@PostConstruct
 	public void post_construct() {
-//		datasets.put("YAHOO", "YAHOO-datasets-codes-manual.csv");
-//		datasets.put("WIKI", "WIKI-datasets-codes-manual.csv"); 
-//		datasets.put("GDAX", "GDAX-datasets-codes-manual.csv"); 
+		datasets.put("YAHOO", "YAHOO-datasets-codes-manual.csv");
+		datasets.put("WIKI", "WIKI-datasets-codes-manual.csv"); 
+		datasets.put("GDAX", "GDAX-datasets-codes-manual.csv"); 
 		datasets.put("BITFINEX", "BITFINEX-datasets-codes-manual.csv"); 
 		
 	}
@@ -63,9 +59,12 @@ public class DataSetHelper {
 			String description = line[1];
 			Security security = new Security(name, description, database);
 
-			securityRepository.save(security);
-			
-			logger.info("Saved security="+security.getName()+ " to database.");
+			if (securityRepository.existsByName(security.getName())) {
+				logger.info("security="+security.getName()+ " exist in database.");
+			} else {
+				securityRepository.save(security);
+				logger.info("Saved security="+security.getName()+ " to database.");
+			}
 
 		}
 		csvReader.close();

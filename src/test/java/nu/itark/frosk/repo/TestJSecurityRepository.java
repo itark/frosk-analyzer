@@ -1,12 +1,5 @@
 package nu.itark.frosk.repo;
 
-import java.io.IOException;
-import java.net.CookieHandler;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import org.junit.Test;
@@ -15,11 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import nu.itark.frosk.model.SecurityPrice;
-import yahoofinance.Stock;
-import yahoofinance.YahooFinance;
-import yahoofinance.histquotes.HistoricalQuote;
-import yahoofinance.histquotes.Interval;
+import nu.itark.frosk.model.Security;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -31,8 +20,17 @@ public class TestJSecurityRepository {
 	SecurityRepository securityRepo;
 	
 
-	
-	//TODO
+	@Test
+	public final void testExist() {
+		
+		Security security = new Security("BITFINEX/BTCEUR","name", "BITFINEX");
+		
+		
+		boolean exist = securityRepo.existsByName(security.getName());
+		
+		
+		logger.info("exist="+exist);
+	}
 	
 	
 }

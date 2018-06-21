@@ -8,4 +8,5 @@ import nu.itark.frosk.model.SecurityPrice;
 
 public interface SecurityPriceRepository extends CrudRepository<SecurityPrice, Long>{
 	List<SecurityPrice> findByName(String name);
+	SecurityPrice findTopByNameOrderByTimestampDesc(String name);
 }

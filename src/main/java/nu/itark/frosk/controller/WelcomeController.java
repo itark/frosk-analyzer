@@ -4,14 +4,28 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import nu.itark.frosk.dataset.BITFINEXDataManager;
+import nu.itark.frosk.dataset.DataManager;
+import nu.itark.frosk.dataset.Database;
 
 @Controller
 public class WelcomeController {
 	Logger logger = Logger.getLogger(WelcomeController.class.getName());
 
+	@Autowired
+	BITFINEXDataManager bitfinexManager;	
+	
+	@Autowired
+	DataManager dataManager;		
+	
 	@Value("${welcome.message:test}")
 	private String message;
 
@@ -37,6 +51,43 @@ public class WelcomeController {
 		logger.log(Level.INFO, "/rnn");
 		model.put("message", this.message);
 		return "rnn";	
-	}		
+	}	
+	
+	/**
+	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/fill?database=BITFINEX
+	 */
+	@RequestMapping(value="fill", method={RequestMethod.GET, RequestMethod.POST})
+	@ResponseBody
+	public String fill(@RequestParam("database") String database, Map<String, Object> model) {
+		Logger logger = Logger.getLogger(WelcomeController.class.getName());
+		logger.log(Level.INFO, "/fill?database="+database);
+		model.put("message", this.message);
+		long count = 0;
+		if (database.equals(Database.BITFINEX.toString())) {
+			logger.log(Level.INFO, "Syncronizing BITFINEX...");
+			count = bitfinexManager.syncronize();
+			
+		}
+		
+		return "Updated: "+count+" rows";	
+	}	
+	
+	/**
+	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/initDatabases
+	 */
+	@RequestMapping(value="initDatabases", method={RequestMethod.GET, RequestMethod.POST})
+	@ResponseBody
+	public String load(Map<String, Object> model) {
+		Logger logger = Logger.getLogger(WelcomeController.class.getName());
+		logger.log(Level.INFO, "initDatabases");
+		model.put("message", this.message);
+		dataManager.insertSecuritiesIntoDatabase();
+			
+		
+		return "Securities inserted";	
+	}
+	
+	
+	
 	
 }

@@ -32,8 +32,8 @@ public class DataManager {
 	BITFINEXDataManager bitfinexDataManager;		
 	
 	
-	@Value("${frosk.download.years}")
-	String yearsToDownload;	
+//	@Value("${frosk.download.years}")
+//	String yearsToDownload;	
 	
 	/**
 	 * Insert securities from all cvs-files.
@@ -43,8 +43,6 @@ public class DataManager {
 	}
 	
 	public void insertSecurityPricesIntoDatabase(Database database, boolean hasSecurities) {
-		logger.info("yearsToDownload="+yearsToDownload);
-		
 
 //		if (hasSecurities && database.equals(Database.YAHOO)) {
 //			yahooDataManager.syncronize();

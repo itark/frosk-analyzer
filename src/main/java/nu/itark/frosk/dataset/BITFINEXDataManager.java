@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.threeten.bp.LocalDate;
 
@@ -41,11 +40,18 @@ public class BITFINEXDataManager extends TimeSeriesManager {
 	@Autowired
 	DataSetHelper dataSetHelper;		
 	
-	public void syncronize() {
+	/**
+	 * Retrieving prices from BITFINEX on registered securities
+	 * 
+	 * @return number of records added.
+	 */
+	public long syncronize() {
 		logger.info("sync="+Database.BITFINEX.toString());
+		long initCount = securityPriceRepository.count();
+		long count;
 		Iterable<Security> securities = securityRepository.findByDatabase(Database.BITFINEX.toString()); 
-		
 		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
+
 		List<SecurityPrice> spList;
 		try {
 			spList = getDataSet(securities);
@@ -57,6 +63,11 @@ public class BITFINEXDataManager extends TimeSeriesManager {
 		spList.forEach((sp) -> {
 			securityPriceRepository.save(sp);
 		});
+		
+		
+		count = securityPriceRepository.count();
+		
+		return count - initCount;
 
 	}
 
@@ -64,10 +75,11 @@ public class BITFINEXDataManager extends TimeSeriesManager {
 		List<SecurityPrice> sp = new ArrayList<>();
 	
 		securities.forEach((security) -> {
-			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(security);
-	
+			SecurityPrice topSp = securityPriceRepository.findTopByNameOrderByTimestampDesc(security.getName());		
+			Date fromDate = topSp.getTimestamp();
+			logger.info("security="+security+ ", fromDate="+fromDate);
+			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(security, fromDate);
 			logger.info("tabularResult="+tabularResult.toPrettyPrintedString());
-			
 			
 			tabularResult.forEach(row -> {
 				SecurityPrice securityPrice = null;
@@ -77,8 +89,7 @@ public class BITFINEXDataManager extends TimeSeriesManager {
 				ZonedDateTime dateTime = ZonedDateTime.parse(dateString310, formatter.withZone(ZoneId.systemDefault()));
 				Date date = Date.from(Instant.from(dateTime));
 
-//				BigDecimal open = new BigDecimal(row.getDouble("Open"));
-				BigDecimal open = new BigDecimal(0);
+				BigDecimal open = new BigDecimal(0);  //Note: special treatment
 				BigDecimal high = new BigDecimal(row.getDouble("High"));
 				BigDecimal low = new BigDecimal(row.getDouble("Low"));
 				BigDecimal close = new BigDecimal(row.getDouble("Last"));
