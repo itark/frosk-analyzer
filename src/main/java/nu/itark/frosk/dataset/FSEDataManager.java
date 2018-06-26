@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 
 import com.jimmoores.quandl.TabularResult;
 
-import nu.itark.frosk.controller.WelcomeController;
+import nu.itark.frosk.controller.WebController;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
@@ -24,7 +24,7 @@ import nu.itark.frosk.repo.SecurityRepository;
 
 @Service("fseTimeSeriesManager")
 public class FSEDataManager extends TimeSeriesManager {
-	Logger logger = Logger.getLogger(WelcomeController.class.getName());
+	Logger logger = Logger.getLogger(WebController.class.getName());
 
 	@Value("${frosk.download.years}")
 	public int years;	

@@ -53,3 +53,9 @@ SELECT * FROM SECURITY;
 
 truncate SECURITY;
 _____________________________________________________
+
+
+
+
+
+select * from pg_sequence

@@ -1,175 +1,93 @@
 package nu.itark.frosk.controller;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.ta4j.core.Bar;
-import org.ta4j.core.TimeSeries;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import nu.itark.frosk.analysis.FeaturedStrategyDTO;
-import nu.itark.frosk.dataset.DailyPrices;
+import nu.itark.frosk.dataset.BITFINEXDataManager;
+import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
-import nu.itark.frosk.dataset.TradeView;
-import nu.itark.frosk.model.Customer;
-import nu.itark.frosk.repo.CustomerRepository;
-import nu.itark.frosk.repo.SecurityPriceRepository;
-import nu.itark.frosk.service.FeaturedStrategyService;
-import nu.itark.frosk.service.TimeSeriesService;
 
-@RestController
+@Controller
 public class WebController {
-	Logger logger = Logger.getLogger(WelcomeController.class.getName());
-	
-	@Autowired
-	CustomerRepository custRepository;
+	Logger logger = Logger.getLogger(WebController.class.getName());
 
 	@Autowired
-	SecurityPriceRepository securityRepository;	
-	
+	BITFINEXDataManager bitfinexManager;	
 	
 	@Autowired
-	TimeSeriesService timeSeriesService;	
-
-	@Autowired
-	FeaturedStrategyService featuredStrategyService;	
+	DataManager dataManager;		
 	
-	// inject via application.properties
 	@Value("${welcome.message:test}")
-	String message = "Hello World";	
+	private String message;
+
+	@RequestMapping("/")
+	public String welcome2(Map<String, Object> model) {
+		logger.log(Level.INFO, "index.jsp!, message="+this.message);
+		model.put("message", this.message);
+		return "index";	
 	
-
-	/**
-	 * @Example  http://localhost:8080/featuredStrategies?strategy=ALL
-	 * 
-	 * @param securityName
-	 * @param database
-	 * @return
-	 */			
-	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
-	public List<FeaturedStrategyDTO> getAllFeaturedStrategies(@RequestParam("strategy") String strategy){
-		logger.info("strategy="+strategy);
-		//Sanity check
-		if (StringUtils.isEmpty(strategy) ) {
-			throw new RuntimeException("strategy not correct set!");
-		}
-
-		return featuredStrategyService.getFeaturedStrategy(strategy);
-
 	}	
 	
-	/**
-	 * @Example  http://localhost:8080/dailyPrices?security=WIKI/AAPL
-	 * 
-	 * @param securityName
-	 * @param database
-	 * @return
-	 */
-	@RequestMapping(path="/dailyPrices", method=RequestMethod.GET)
-	public List<DailyPrices> getDailyPrices(@RequestParam("security") String securityName){
-		logger.info("/dailyPrices...securityName="+securityName);
-		try {
-
-			TimeSeries timeSeries = timeSeriesService.getDataSet(securityName);
-
-			DailyPrices dailyPrices = null;
-			List<DailyPrices> dpList = new ArrayList<DailyPrices>();
-
-			for (int i = 0; i < timeSeries.getBarCount(); i++) {
-				Bar bar = timeSeries.getBar(i);
-				dailyPrices = new DailyPrices(bar);
-				dpList.add(dailyPrices);
-
-			}
-
-			return dpList;
-			
-			
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		return null;
+	@RequestMapping("/strategies")
+	public String strategies(Map<String, Object> model) {
+		Logger logger = Logger.getLogger(WebController.class.getName());
+		logger.log(Level.INFO, "/strategies");
+		model.put("message", this.message);
+		return "strategies";	
 	}		
 	
+	@RequestMapping("/rnn")
+	public String rnn(Map<String, Object> model) {
+		Logger logger = Logger.getLogger(WebController.class.getName());
+		logger.log(Level.INFO, "/rnn");
+		model.put("message", this.message);
+		return "rnn";	
+	}	
+	
 	/**
-	 * @Example  http://localhost:8080/trades?security=WIKI/AAPL&strategy=RSI2Strategy
-	 * @param securityName
-	 * @param strategyName
-	 * @return
+	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/fill?database=BITFINEX
 	 */
-	@RequestMapping(path="/trades", method=RequestMethod.GET)
-	public List<TradeView> getTrades(@RequestParam("security") String securityName, @RequestParam("strategy") String strategyName){
-		logger.info("/trades...securityName="+securityName+"strategyName="+strategyName);	
-		
-		featuredStrategyService.getFeaturedStrategy(strategyName);
-		
-		
-		return featuredStrategyService.getTrades(strategyName, securityName);
-	}	
-	
-	@RequestMapping("/save")
-	public String process(){
-		// save a single Customer
-		custRepository.save(new Customer("Jack", "Smith"));
-		
-		// save a list of Customers
-		custRepository.save(Arrays.asList(new Customer("Adam", "Johnson"), new Customer("Kim", "Smith"),
-										new Customer("David", "Williams"), new Customer("Peter", "Davis")));
-		
-		return "Done";
-	}
-	
-	
-	@RequestMapping("/findall")
-	public String findAll(){
-		String result = "";
-		
-		for(Customer cust : custRepository.findAll()){
-			result += cust.toString() + "<br>";
+	@RequestMapping(value="fill", method={RequestMethod.GET, RequestMethod.POST})
+	@ResponseBody
+	public String fill(@RequestParam("database") String database, Map<String, Object> model) {
+		Logger logger = Logger.getLogger(WebController.class.getName());
+		logger.log(Level.INFO, "/fill?database="+database);
+		model.put("message", this.message);
+		long count = 0;
+		if (database.equals(Database.BITFINEX.toString())) {
+			logger.log(Level.INFO, "Syncronizing BITFINEX...");
+			count = bitfinexManager.syncronize();
+			
 		}
 		
-		return result;
-	}
-	
-	@RequestMapping("/findall2")
-	public List<Customer> findAll2(){
-		List<Customer> list = new ArrayList<Customer>();
-		
-		for(Customer cust : custRepository.findAll()){
-			list.add(cust);
-		}		
-		
-		
-		return list;
-
+		return "Updated: "+count+" rows";	
 	}	
 	
-	@RequestMapping("/findbyid")
-	public String findById(@RequestParam("id") long id){
-		String result = "";
-		result = custRepository.findOne(id).toString();
-		return result;
+	/**
+	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/initDatabases
+	 */
+	@RequestMapping(value="initDatabases", method={RequestMethod.GET, RequestMethod.POST})
+	@ResponseBody
+	public String initDatabases(Map<String, Object> model) {
+		Logger logger = Logger.getLogger(WebController.class.getName());
+		logger.log(Level.INFO, "initDatabases");
+		model.put("message", this.message);
+		dataManager.insertSecuritiesIntoDatabase();
+			
+		
+		return "Securities inserted";	
 	}
 	
-	@RequestMapping("/findbylastname")
-	public String fetchDataByLastName(@RequestParam("lastname") String lastName){
-		String result = "";
-		
-		for(Customer cust: custRepository.findByLastName(lastName)){
-			result += cust.toString() + "<br>"; 
-		}
-		
-		return result;
-	}
+	
+	
+	
 }
-

@@ -18,7 +18,7 @@ import org.threeten.bp.LocalDate;
 
 import com.jimmoores.quandl.TabularResult;
 
-import nu.itark.frosk.controller.WelcomeController;
+import nu.itark.frosk.controller.WebController;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
@@ -27,7 +27,7 @@ import nu.itark.frosk.repo.SecurityRepository;
 //@Deprecated  //WIKI databas is invalid, see mail
 @Service("wikiTimeSeriesManager")
 public class WIKIDataManager {
-	Logger logger = Logger.getLogger(WelcomeController.class.getName());
+	Logger logger = Logger.getLogger(WebController.class.getName());
 
 	@Value("${frosk.download.years}")
 	public int years;	
