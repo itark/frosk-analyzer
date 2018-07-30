@@ -20,6 +20,7 @@ public class Security implements Serializable {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
+//	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private long id;
 
 	@Column(name = "name", unique=true)

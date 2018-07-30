@@ -73,11 +73,11 @@ public class WebController {
 	}	
 	
 	/**
-	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/initDatabases
+	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/initDatabase
 	 */
-	@RequestMapping(value="initDatabases", method={RequestMethod.GET, RequestMethod.POST})
+	@RequestMapping(value="initDatabase", method={RequestMethod.GET, RequestMethod.POST})
 	@ResponseBody
-	public String initDatabases(Map<String, Object> model) {
+	public String initDatabase(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
 		logger.log(Level.INFO, "initDatabases");
 		model.put("message", this.message);

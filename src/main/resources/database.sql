@@ -1,3 +1,9 @@
+select version();
+
+--em2
+https://www.postgresql.org/docs/9.6/static/index.html
+
+
 
 --Prices
 drop table security_price;
@@ -13,6 +19,8 @@ CREATE TABLE security_price(
 	volume BIGINT NOT NULL,
 	 PRIMARY KEY (id, name, timestamp )
 );
+
+CREATE SEQUENCE security_price_seq;
 
 
 SELECT * FROM SECURITY_PRICE
@@ -46,7 +54,7 @@ CREATE TABLE security(
 );
 
 
-
+CREATE SEQUENCE security_seq;
 
 SELECT * FROM SECURITY;
 
@@ -59,3 +67,8 @@ _____________________________________________________
 
 
 select * from pg_sequence
+
+select * from pg_database
+
+
+select * from hibernate_sequence

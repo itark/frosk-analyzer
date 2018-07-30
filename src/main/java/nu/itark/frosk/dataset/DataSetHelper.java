@@ -1,8 +1,9 @@
 package nu.itark.frosk.dataset;
 
-import java.io.InputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -10,6 +11,8 @@ import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.opencsv.CSVReader;
@@ -50,9 +53,20 @@ public class DataSetHelper {
 	
 	@SneakyThrows
 	private void saveToRepo(String database, String csvFile) {
-		InputStream stream = Database.class.getClassLoader().getResourceAsStream(csvFile);
-		InputStreamReader isr = new InputStreamReader(stream, Charset.forName("UTF-8"));
-		CSVReader csvReader = new CSVReader(isr, ',', '"', 1);
+//		InputStream stream = Database.class.getClassLoader().getResourceAsStream(csvFile);
+//		InputStreamReader isr = new InputStreamReader(stream, Charset.forName("UTF-8"));
+
+		Resource file = new ClassPathResource(csvFile);
+		Reader in = null;
+		try {
+			in = new BufferedReader(new InputStreamReader(file.getInputStream()));
+		} catch (IOException e) {
+			logger.severe("Could not read file, file="+file);
+		}		
+		
+		
+//		CSVReader csvReader = new CSVReader(isr, ',', '"', 1);
+		CSVReader csvReader = new CSVReader(in, ',', '"', 1);
 		String[] line;
 		while ((line = csvReader.readNext()) != null) {
 			String name = line[0];
