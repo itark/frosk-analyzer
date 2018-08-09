@@ -30,10 +30,6 @@ public class DataManager {
 	@Autowired
 	BITFINEXDataManager bitfinexDataManager;		
 	
-	
-//	@Value("${frosk.download.years}")
-//	String yearsToDownload;	
-	
 	/**
 	 * Insert securities from all cvs-files.
 	 */

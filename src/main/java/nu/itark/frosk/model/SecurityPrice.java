@@ -22,7 +22,6 @@ public class SecurityPrice implements Serializable {
 	private static final long serialVersionUID = -3009157732242241606L;
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
-//	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private long id;
 
 	@Column(name = "name")

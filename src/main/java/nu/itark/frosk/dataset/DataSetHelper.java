@@ -32,9 +32,9 @@ public class DataSetHelper {
 	@PostConstruct
 	public void post_construct() {
 		datasets.put("YAHOO", "YAHOO-datasets-codes-manual.csv");
-		datasets.put("WIKI", "WIKI-datasets-codes-manual.csv"); 
-		datasets.put("GDAX", "GDAX-datasets-codes-manual.csv"); 
-		datasets.put("BITFINEX", "BITFINEX-datasets-codes-manual.csv"); 
+//		datasets.put("WIKI", "WIKI-datasets-codes-manual.csv"); 
+//		datasets.put("GDAX", "GDAX-datasets-codes-manual.csv"); 
+//		datasets.put("BITFINEX", "BITFINEX-datasets-codes-manual.csv"); 
 		
 	}
 	/**
@@ -53,9 +53,6 @@ public class DataSetHelper {
 	
 	@SneakyThrows
 	private void saveToRepo(String database, String csvFile) {
-//		InputStream stream = Database.class.getClassLoader().getResourceAsStream(csvFile);
-//		InputStreamReader isr = new InputStreamReader(stream, Charset.forName("UTF-8"));
-
 		Resource file = new ClassPathResource(csvFile);
 		Reader in = null;
 		try {
@@ -64,8 +61,6 @@ public class DataSetHelper {
 			logger.severe("Could not read file, file="+file);
 		}		
 		
-		
-//		CSVReader csvReader = new CSVReader(isr, ',', '"', 1);
 		CSVReader csvReader = new CSVReader(in, ',', '"', 1);
 		String[] line;
 		while ((line = csvReader.readNext()) != null) {

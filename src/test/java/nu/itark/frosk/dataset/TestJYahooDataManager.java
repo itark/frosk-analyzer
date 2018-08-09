@@ -62,14 +62,27 @@ public class TestJYahooDataManager {
 	@Test
 	public void test3() throws IOException {
 
-//		Calendar from = Calendar.getInstance();
-//		Calendar to = Calendar.getInstance();
-//		from.add(Calendar.YEAR, -5); // from 5 years ago		
-//		
-//		Stock google = YahooFinance.get("GOOG", from, to, Interval.WEEKLY);
+		Calendar from = Calendar.getInstance();
+		Calendar to = Calendar.getInstance();
+		from.add(Calendar.DAY_OF_MONTH, -1); 
+		
+		System.out.println("from="+from.getTime());
+	
+		String theX = String.valueOf(from.getTimeInMillis() / 1000);
+		logger.info("theX="+theX);		
+		
+		
+		Stock google = YahooFinance.get("GOOG", from, to, Interval.DAILY);
 
-		 Stock google = YahooFinance.get("GOOG");
+		System.out.println("google="+google);
+		
+//		 Stock google = YahooFinance.get("GOOG");
 		List<HistoricalQuote> googleHistQuotes = google.getHistory();
+		
+		System.out.println("googleHistQuotes="+googleHistQuotes);
+		
+	
+		
 	}
 
 	@Test
@@ -77,7 +90,7 @@ public class TestJYahooDataManager {
 		String[] symbols = new String[] { "INTC", "BABA", "TSLA", "AIR.PA", "YHOO" };
 		// Can also be done with explicit from, to and Interval parameters
 //		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL)); //https://github.com/sstrickx/yahoofinance-api/issues/126
-		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER)); //https://github.com/sstrickx/yahoofinance-api/issues/126
+//		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER)); //https://github.com/sstrickx/yahoofinance-api/issues/126
 		Map<String, Stock> stocks = YahooFinance.get(symbols, true);
 		Stock intel = stocks.get("INTC");
 		Stock airbus = stocks.get("AIR.PA");
@@ -101,7 +114,7 @@ public class TestJYahooDataManager {
 		Calendar from = Calendar.getInstance();
 		Calendar to = Calendar.getInstance();
 //		from.add(Calendar.YEAR, -1); // from 1 year ago
-		from.add(Calendar.DATE, -1); // from 1 year ago
+		from.add(Calendar.DATE, -1); 
 
 		Stock volvo = YahooFinance.get("VOLV-B.ST");
 		List<HistoricalQuote> quotes = volvo.getHistory(from, to, Interval.DAILY);	
@@ -149,6 +162,16 @@ public class TestJYahooDataManager {
 		logger.info("from="+from.getTime());
 		
 	}
+	
+	@Test
+	public void testOfOneYear(){
+		Calendar from = Calendar.getInstance();
+		logger.info("from="+from.getTime());
+		from.add(Calendar.YEAR, -1); 		
+		logger.info("from="+from.getTime());
+		
+	}
+	
 	
 	
 	
