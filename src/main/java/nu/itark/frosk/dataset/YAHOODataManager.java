@@ -1,13 +1,11 @@
 package nu.itark.frosk.dataset;
 
 import java.io.IOException;
-import java.net.CookieHandler;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -122,20 +120,86 @@ public class YAHOODataManager  {
 	 */
 	private Map<String, Stock> getStocks(Iterable<Security> securities) throws IOException {
 		logger.info("getStocks(Iterable<Security> securities");
+		Map<String, Stock> stocks = new HashMap<String, Stock>();
+		
+        Calendar from = Calendar.getInstance();
+        Calendar to = Calendar.getInstance();
+        
+        securities.forEach((security) -> {
+            SecurityPrice topSp = securityPriceRepository.findTopByNameOrderByTimestampDesc(security.getName());		
+            if (topSp != null) {
+            	Date fromDate = topSp.getTimestamp();
+            	logger.info("security="+security.getName()+ ", found fromDate="+fromDate);
+            	from.setTime(fromDate);
+            	from.add(Calendar.DATE, 2);  //Bugg in api , increase with 2
+            } else {
+                from.add(Calendar.YEAR, - years);
+            }
+            if (from.after(new Date())){
+            	logger.info("Today, no action.");
+            	return;
+            }
+            
+    		try {
+    			logger.info("Retrieving history for "+security.getName()+" from "+from.getTime());
+    			Stock stock = YahooFinance.get(security.getName(), from, to, Interval.DAILY);
+				stocks.put(security.getName(), stock);
+			} catch (IOException e) {
+				logger.severe("Could not extract data for security="+security);
+				e.printStackTrace();
+			} 
+        	
+        });
+        
+        return stocks;
+        
+	}
+
+	/**
+	 * Get DAILY Stocks on provided Securities.
+	 * 
+	 * @param securities
+	 * @return Map<String, Stock>
+	 * @throws IOException
+	 * @Deprecated
+	 */
+	private Map<String, Stock> getStocks_OBSOLETE(Iterable<Security> securities) throws IOException {
+		logger.info("getStocks(Iterable<Security> securities");
 		List<String> names = StreamSupport.stream(securities.spliterator(), false)
 					.map(Security::getName)
 					.collect(Collectors.toList());
         
         String[] symbols = names.stream().toArray(String[]::new);
+        String firstSymbolInList = symbols[0];
         
         Calendar from = Calendar.getInstance();
         Calendar to = Calendar.getInstance();
-        from.add(Calendar.YEAR, - years);
+ 
+        SecurityPrice topSp = securityPriceRepository.findTopByNameOrderByTimestampDesc(firstSymbolInList);		
+        if (topSp != null) {
+        	Date fromDate = topSp.getTimestamp();
+        	logger.info("security="+firstSymbolInList+ ", fromDate="+fromDate);
+        	from.setTime(fromDate);
+        	from.add(Calendar.DATE, 1);
+        } else {
+            from.add(Calendar.YEAR, - years);
+        }
+        logger.info("from="+from);
         
-        
-	    CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL)); //https://github.com/sstrickx/yahoofinance-api/issues/126
+        if (from.after(new Date())){
+        	logger.info("Today, no action.");
+        	return null;
+        }
+		
+//	    CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL)); //https://github.com/sstrickx/yahoofinance-api/issues/126
+//		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER));
 		return YahooFinance.get(symbols, from, to, Interval.DAILY); // single request
 		
 	}
+	
+	
+	
+	
+	
 	
 }

@@ -5,19 +5,18 @@ import java.math.BigDecimal;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
@@ -98,13 +97,15 @@ public class TestJYahooDataManager {
 	
 	@Test
 	public void testHistory2() throws IOException {
-		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
+//		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
 		Calendar from = Calendar.getInstance();
 		Calendar to = Calendar.getInstance();
-		from.add(Calendar.YEAR, -1); // from 1 year ago
+//		from.add(Calendar.YEAR, -1); // from 1 year ago
+		from.add(Calendar.DATE, -1); // from 1 year ago
 
-		Stock google = YahooFinance.get("VOLV-B.ST");
-		List<HistoricalQuote> googleHistQuotes = google.getHistory(from, to, Interval.DAILY);	
+		Stock volvo = YahooFinance.get("VOLV-B.ST");
+		List<HistoricalQuote> quotes = volvo.getHistory(from, to, Interval.DAILY);	
+		Assert.assertNotNull(quotes);
 	
 	}	
 	
@@ -118,21 +119,6 @@ public class TestJYahooDataManager {
 //	}	
 		
 	
-	
-	@Test
-	public void testHistory() throws IOException {
-//		https://free-proxy-list.net/anonymous-proxy.html
-		System.setProperty("http.proxyHost", "89.236.17.106");
-		System.setProperty("http.proxyPort", "3128");
-		
-		
-		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
-		Stock tesla = YahooFinance.get("TSLA", true);
-		System.out.println(tesla.getHistory());
-	
-	
-	}
-
 	@Test
 	public void testMultistock() throws IOException {
 
@@ -154,5 +140,21 @@ public class TestJYahooDataManager {
 	
 	Stock airbus = stocks.get("BABA");
 	}
+	
+	@Test
+	public void testOfOneDay(){
+		Calendar from = Calendar.getInstance();
+		logger.info("from="+from.getTime());
+		from.add(Calendar.DATE, 1); 		
+		logger.info("from="+from.getTime());
+		
+	}
+	
+	
+	
+	
+	
+	
+	
 	
 }

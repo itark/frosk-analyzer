@@ -18,8 +18,8 @@ public class DataManager {
 	@Autowired
 	DataSetHelper dataSetHelper;
 	
-//	@Autowired
-//	YAHOODataManager yahooDataManager;
+	@Autowired
+	YAHOODataManager yahooDataManager;
 
 	@Autowired
 	WIKIDataManager wikiDataManager;	
@@ -43,9 +43,9 @@ public class DataManager {
 	
 	public void insertSecurityPricesIntoDatabase(Database database, boolean hasSecurities) {
 
-//		if (hasSecurities && database.equals(Database.YAHOO)) {
-//			yahooDataManager.syncronize();
-//		}
+		if (hasSecurities && database.equals(Database.YAHOO)) {
+			yahooDataManager.syncronize();
+		}
 		
 		if (hasSecurities && database.equals(Database.WIKI)) {
 			wikiDataManager.syncronize();

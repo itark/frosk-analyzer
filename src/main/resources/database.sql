@@ -5,6 +5,25 @@ https://www.postgresql.org/docs/9.6/static/index.html
 
 
 
+
+
+--Security
+drop table security;
+
+CREATE TABLE security(
+    id BIGINT PRIMARY KEY  NOT NULL,
+    name VARCHAR(20) UNIQUE NOT NULL,
+	description VARCHAR(50),
+	database VARCHAR(10) NOT NULL
+);
+
+SELECT * FROM SECURITY;
+
+truncate SECURITY;
+_____________________________________________________
+
+
+
 --Prices
 drop table security_price;
 
@@ -20,7 +39,8 @@ CREATE TABLE security_price(
 	 PRIMARY KEY (id, name, timestamp )
 );
 
-CREATE SEQUENCE security_price_seq;
+
+truncate SECURITY_PRICE;
 
 
 SELECT * FROM SECURITY_PRICE
@@ -30,45 +50,25 @@ order by timestamp;
 SELECT count(*) FROM SECURITY_PRICE
 where name = 'GOOG';
 
+SELECT count(*) FROM SECURITY_PRICE
+where name = '^OMXS30';
+
+
+SELECT max(timestamp) FROM SECURITY_PRICE
+where name = 'GOOG';
+
+delete from security_price
+where name = 'GOOG'
+and timestamp > '2018-08-03'
+
+
+
 SELECT DISTINCT name FROM SECURITY_PRICE;
 
 
 SELECT MAX(timestamp) FROM SECURITY_PRICE
 where name = 'GOOG';
 
-
-
-truncate SECURITY_PRICE;
-
 _____________________________________________________
 
 
---Security
-drop table security;
-
-CREATE TABLE security(
-    id BIGINT PRIMARY KEY  NOT NULL,
-    name VARCHAR(20) UNIQUE NOT NULL,
-	description VARCHAR(50),
-	database VARCHAR(10) NOT NULL
-);
-
-
-CREATE SEQUENCE security_seq;
-
-SELECT * FROM SECURITY;
-
-
-truncate SECURITY;
-_____________________________________________________
-
-
-
-
-
-select * from pg_sequence
-
-select * from pg_database
-
-
-select * from hibernate_sequence
