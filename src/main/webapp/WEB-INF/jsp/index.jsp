@@ -204,8 +204,8 @@
     function renderChart(strategyName, security) {
     	console.log('about to render chart on strategyName='+strategyName+ ' and security='+security);
     	
-     	var dailyPricesUrl = "dailyPrices?security="+security+"&database=WIKI";
-     	var tradesUrl = "trades?security="+security+"&strategy="+strategyName+"&database=WIKI";
+     	var dailyPricesUrl = "dailyPrices?security="+security+"&database=YAHOO";
+     	var tradesUrl = "trades?security="+security+"&strategy="+strategyName+"&database=YAHOO";
      	
      	console.log("tradesUrl",tradesUrl);
 	   		
@@ -249,11 +249,14 @@
 	    	    	      }
 	    	    	      return newData;
 	    	    	  }
-	    	    },		    	    
-    	       /**
+	    	    }
+	    	  //,		    	    
+
+	    	    /**
     	        * data loader for events data
     	        */
-	   	        "eventDataLoader": {
+/*
+    	        "eventDataLoader": {
 	    	          "url": tradesUrl,
 	    	          "format": "json",
 	    	          "showErrors": true,
@@ -292,7 +295,7 @@
 		    	            return data;
 		    	          }
     	       }  //eventDataLoader
-	    	    
+	*/    	    
 
 	    	  }], //dataset
   
