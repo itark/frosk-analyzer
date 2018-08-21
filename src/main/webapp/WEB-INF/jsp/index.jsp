@@ -28,129 +28,103 @@
 </head>
 
 <style>
-
-
 #chart-div {
 	width		: 100%;
 	height		: 500px;
 	font-size	: 11px;
 }
+
+
+
 </style>
-
-
 
 <body>
 
-    <div id="wrapper">
-
-        <!-- Navigation -->
-        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="/" title="by Har-em Foundations">Frosk by em2</a>
-            </div>
-            <!-- /.navbar-header -->
-
-            <ul class="nav navbar-top-links navbar-right">
-                <li class="dropdown">
-            </ul>
-
-
-               <div class="navbar-default sidebar" role="navigation">
-                <div class="sidebar-nav navbar-collapse">
-                    <ul class="nav" id="side-menu">
-                        <li>
-                            <a href="/"><i class="fa fa-dashboard fa-fw"></i> Översikt</a>
-                        </li>
-                        <li>
-                            <a href="/"><i class="fa fa-bar-chart-o fa-fw"></i> Strategier<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li>
-                                    <a href="strategies">RSI for FSE</a>
-                                </li>
-                            </ul>
-                             <ul class="nav nav-second-level">
-                                <li>
-                                    <a href="rnn">RNN Prediction</a>
-                                </li>
-                            </ul>
-                            <!-- /.nav-second-level -->
-                        </li>
-                    </ul>
-                </div>
-                <!-- /.sidebar-collapse -->
-            </div>
-         <!-- /.navbar-static-side -->
-        </nav>
-
-        <div id="page-wrapper">
-            <div class="row">
-                <div class="col-lg-12">
-                    <h1 class="page-header">Strategier</h1>
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>
-            <!-- /.row -->
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            Strategier på enskilda tidserier
-                        </div>
-                        <!-- /.panel-heading -->
-                        
-                        <div class="panel-body">
-	                         <table width="100%" class="table table-striped table-bordered table-hover" id="featuredStrategies">
-							  <thead>
-						            <tr>
-						                <th>Name</th>
-						                <th>Security</th>
-						                <th>PeriodDescription</th>
-						                <th>TotalProfit %</th>
-										<th>NumberOfTicks</th>
-						                <th>AverageTickProfit</th>
-						                <th>NumberofTrades</th>
-						                <th>ProfitableTradesRatio</th>
-						                <th>MaxDD</th>
-						            </tr>
-						        </thead>
-						        <!-- Footer Table -->
-						        <tfoot>
-						            <tr>
-						                <th>Name</th>
-						                <th>Security</th>
-						                <th>PeriodDescription</th>
-						                <th>TotalProfit %</th>
-										<th>NumberOfTicks</th>
-						                <th>AverageTickProfit</th>
-						                <th>NumberofTrades</th>
-						                <th>ProfitableTradesRatio</th>
-						                <th>MaxDD</th>
-						            </tr>
-						        </tfoot>
+	<nav class="navbar navbar-default">
+	  <div class="container-fluid">
+	    <!-- Brand and toggle get grouped for better mobile display -->
+	    <div class="navbar-header">
+	      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+	        <span class="sr-only">Toggle navigation</span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	      </button>
+	      <a class="navbar-brand" href="#" title="powered by Har-em Foundations">Evening Star</a>
+	    </div>
 	
-	                         </table>
-                        </div>
-                    </div>
-                    <!-- /.panel -->
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>
-            
-             <div class="row">
-				<div class="col-lg-12 dc-chart" id="chart-div"></div>
- 			</div>    
-   
-            <!-- /.row -->
-        </div>
-        <!-- /#page-wrapper -->
-    </div>
-    <!-- /#wrapper -->
+	    <!-- Collect the nav links, forms, and other content for toggling -->
+	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+	      <ul class="nav navbar-nav">
+	        <li class="active"><a href="#">Översikt <span class="sr-only">(current)</span></a></li>
+	        <li class="dropdown">
+	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Strategies <span class="caret"></span></a>
+	          <ul class="dropdown-menu">
+	            <li><a href="rnn">RNN</a></li>
+	            <li role="separator" class="divider"></li>
+	            <li><a href="strategies">RSI</a></li>
+	          </ul>
+	        </li>
+	      </ul>
+	    </div><!-- /.navbar-collapse -->
+	  </div><!-- /.container-fluid -->
+	</nav>
+
+  
+      <div id="page-wrapper">
+          <div class="row">
+              <div class="col-12">
+                  <h1 class="page-header">Strategier</h1>
+              </div>
+          </div>
+          <div class="row">
+              <div class="col-12">
+                  <div class="panel panel-default">
+                      <div class="panel-heading">
+                          Strategier på enskilda tidserier
+                      </div>
+                      
+                      <div class="panel-body">
+                        <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
+					  <thead>
+				            <tr>
+				                <th>Name</th>
+				                <th>Security</th>
+				                <th>PeriodDescription</th>
+				                <th>TotalProfit %</th>
+								<th>NumberOfTicks</th>
+				                <th>AverageTickProfit</th>
+				                <th>NumberofTrades</th>
+				                <th>ProfitableTradesRatio</th>
+				                <th>MaxDD</th>
+				            </tr>
+				        </thead>
+				        <tfoot>
+				            <tr>
+				                <th>Name</th>
+				                <th>Security</th>
+				                <th>PeriodDescription</th>
+				                <th>TotalProfit %</th>
+								<th>NumberOfTicks</th>
+				                <th>AverageTickProfit</th>
+				                <th>NumberofTrades</th>
+				                <th>ProfitableTradesRatio</th>
+				                <th>MaxDD</th>
+				            </tr>
+				        </tfoot>
+
+                        </table>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          
+	      <div class="row">
+			<div class="col-12 dc-chart" id="chart-div"></div>
+		  </div>    
+
+      </div>
+
 
     <!-- DataTables JavaScript -->
     <script src="webjars/datatables/js/jquery.dataTables.min.js"></script>
