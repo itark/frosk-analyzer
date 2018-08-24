@@ -22,31 +22,22 @@
  */
 package nu.itark.frosk.strategies;
 
-import java.time.LocalDate;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.ta4j.core.BaseStrategy;
+import org.ta4j.core.Bar;
 import org.ta4j.core.Decimal;
-import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
 import org.ta4j.core.TimeSeriesManager;
 import org.ta4j.core.Trade;
 import org.ta4j.core.TradingRecord;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
-import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.indicators.SMAIndicator;
-import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.trading.rules.CrossedDownIndicatorRule;
-import org.ta4j.core.trading.rules.CrossedUpIndicatorRule;
-import org.ta4j.core.trading.rules.OverIndicatorRule;
-import org.ta4j.core.trading.rules.UnderIndicatorRule;
 
 import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.TimeSeriesService;
@@ -72,7 +63,7 @@ public class TestJRSI2Strategy {
     @Test
     public final void run() throws Exception {
 
-    	TimeSeries timeSeries = timeSeriesService.getDataSet("BITFINEX/BTCEUR");      
+    	TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");      
         
         Strategy strategy = RSI2Strategy.buildStrategy(timeSeries);
 
@@ -82,8 +73,14 @@ public class TestJRSI2Strategy {
         List<Trade> trades = tradingRecord.getTrades();     
      
         for (Trade trade : trades) {
-        	logger.info("trade.getEntry().getIndex()="+trade.getEntry().getIndex()+", bar="+timeSeries.getBar(trade.getEntry().getIndex()));
-        	logger.info("trade.getExit().getIndex())="+trade.getExit().getIndex()+", bar="+timeSeries.getBar(trade.getExit().getIndex()));
+        	Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
+        	logger.info("barEntry="+barEntry);
+        	Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
+        	
+        	logger.info("barExit="+barExit);
+
+        	//        	logger.info("trade.getEntry().getIndex()="+trade.getEntry().getIndex()+", bar="+timeSeries.getBar(trade.getEntry().getIndex()));
+//        	logger.info("trade.getExit().getIndex())="+trade.getExit().getIndex()+", bar="+timeSeries.getBar(trade.getExit().getIndex()));
             Decimal closePriceBuy = timeSeries.getBar(trade.getEntry().getIndex()).getClosePrice();
 //            LocalDate buyDate = timeSeries.getBar(trade.getEntry().getIndex()).getEndTime().toLocalDate();
  
@@ -93,7 +90,32 @@ public class TestJRSI2Strategy {
 //            logger.info("sellDate="+sellDate+", closePrice="+closePriceSell);
             
             Decimal profit = closePriceSell.minus(closePriceBuy);
-  
+            
+            if (trade.isOpened()) {
+            	
+            	logger.info("isOpened():barEntry.getDateName()"+barEntry.getDateName());
+            	
+            }
+            
+            if (trade.isNew()) {
+            	
+            	logger.info("isNew():barEntry.getDateName()"+barEntry.getDateName());
+            	
+            }
+            
+            if (trade.isClosed()) {
+            	
+            	logger.info("isClose():barExit.getDateName()"+barExit.getDateName());
+            	
+            } else {
+
+            	logger.info("isNOTCLOSED():barEntry.getDateName()"+barEntry.getDateName());
+           	
+            	
+            }
+            
+            
+            
             logger.info("profit="+profit);
             
         }

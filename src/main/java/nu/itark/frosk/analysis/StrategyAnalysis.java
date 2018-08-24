@@ -2,6 +2,7 @@ package nu.itark.frosk.analysis;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -136,6 +137,7 @@ public class StrategyAnalysis {
 		
         double totalProfit ;
         double totalProfitPercentage;
+        ZonedDateTime latestTradeDate= null;
 
 		for (TimeSeries series : timeSeriesList) {
 			Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(series);  //Hardcode it for now
@@ -152,7 +154,8 @@ public class StrategyAnalysis {
 
 		        for (Trade trade : trades) {
 		            // Buy signal
-		            Decimal closePriceBuy = series.getBar(trade.getEntry().getIndex()).getClosePrice();
+		            Bar barEntry = series.getBar(trade.getEntry().getIndex());
+		        	Decimal closePriceBuy = series.getBar(trade.getEntry().getIndex()).getClosePrice();
 		            LocalDate buyDate = series.getBar(trade.getEntry().getIndex()).getEndTime().toLocalDate();
 		            tr = new TradeView();
 		            tr.setDate(buyDate);
@@ -169,6 +172,9 @@ public class StrategyAnalysis {
 
 		            Decimal profit = closePriceSell.minus(closePriceBuy);
 		            
+		            
+		            latestTradeDate = barEntry.getEndTime();
+		            
 		        }		        
 		        
 		        
@@ -176,6 +182,7 @@ public class StrategyAnalysis {
 				fs.setName(name);
 				fs.setSecurity(series.getName());
 				fs.setPeriodDescription(getDate(series));
+				fs.setLatesTradeDate(latestTradeDate);
 
 				totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord);
 				totalProfitPercentage = (totalProfit - 1 ) *100;

@@ -29,6 +29,11 @@ public class TimeSeriesService  {
 	@Autowired
 	SecurityRepository securityRepository;	
 	
+	/**
+	 * Retrive from {@linkplain SecurityPriceRepository}
+	 * 
+	 * @return
+	 */
 	public List<TimeSeries> getDataSet() {
 		Iterable<Security> spList = securityRepository.findAll();  
 		List<TimeSeries> timeSeries = new ArrayList<TimeSeries>();
@@ -41,6 +46,12 @@ public class TimeSeriesService  {
 		
 	}	
 	
+	/**
+	 * Return TimesSeries bases on name in Security.
+	 * 
+	 * @param name in {@linkplain Security}
+	 * @return
+	 */
 	public TimeSeries getDataSet(String name) {
 		List<Bar> bars = new ArrayList<>();
 		List<SecurityPrice> securityPrices =securityPriceRepository.findByName(name); 

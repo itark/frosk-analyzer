@@ -38,7 +38,6 @@ import org.ta4j.core.Trade;
 import org.ta4j.core.TradingRecord;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 
-import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.TimeSeriesService;
 
 

@@ -1,8 +1,10 @@
 package nu.itark.frosk.analysis;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.List;
 
+import lombok.Data;
 import nu.itark.frosk.dataset.TradeView;
 
 /**
@@ -11,6 +13,7 @@ import nu.itark.frosk.dataset.TradeView;
  * @author fredrikmoller
  *
  */
+@Data
 public class FeaturedStrategyDTO {
 
 	/**
@@ -33,9 +36,10 @@ public class FeaturedStrategyDTO {
 												// buy-and-hold strategy profit
 
 	private String periodDescription;
+	private ZonedDateTime latesTradeDate;
 	private List<TradeView> trades;
 
-	
+/*	
 	public String getSecurity() {
 		return security;
 	}
@@ -147,5 +151,5 @@ public class FeaturedStrategyDTO {
 	public void setTotalProfitVsButAndHold(BigDecimal totalProfitVsButAndHold) {
 		this.totalProfitVsButAndHold = totalProfitVsButAndHold;
 	}
-
+*/
 }

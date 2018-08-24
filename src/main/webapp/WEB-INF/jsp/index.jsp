@@ -146,7 +146,7 @@
         var featStratTable = $('#featuredStrategies').DataTable({
         	responsive: true,
         	select: true,
-        	"sAjaxSource": "featuredStrategies?strategy=ALL&database=WIKI",
+        	"sAjaxSource": "featuredStrategies?strategy=ALL",
 			"sAjaxDataProp": "",
 			"order": [[ 3, "desc" ]],
 			"aoColumns": [
@@ -180,7 +180,9 @@
     	
      	var dailyPricesUrl = "dailyPrices?security="+security+"&database=YAHOO";
      	var tradesUrl = "trades?security="+security+"&strategy="+strategyName+"&database=YAHOO";
-     	
+
+     	console.log("dailyPricesUrl",dailyPricesUrl);
+
      	console.log("tradesUrl",tradesUrl);
 	   		
 	    var chart = AmCharts.makeChart( "chart-div", {
@@ -223,13 +225,12 @@
 	    	    	      }
 	    	    	      return newData;
 	    	    	  }
-	    	    }
-	    	  //,		    	    
+	    	    },		    	    
 
 	    	    /**
     	        * data loader for events data
     	        */
-/*
+
     	        "eventDataLoader": {
 	    	          "url": tradesUrl,
 	    	          "format": "json",
@@ -254,7 +255,7 @@
 		    	                  break;
 		    	              }
 		    	             // data[x].Description = data[x].Description.replace( "Upgrade", "<strong style=\"color: #0c0\">Upgrade</strong>" ).replace( "Downgrade", "<strong style=\"color: #c00\">Downgrade</strong>" );
-		    	              console.log("data[x].date",data[x].date);
+		    	             // console.log("data[x].date",data[x].date);
 
 		    	              data[x] = {
 		    	                type: type,
@@ -269,7 +270,7 @@
 		    	            return data;
 		    	          }
     	       }  //eventDataLoader
-	*/    	    
+   	    
 
 	    	  }], //dataset
   
