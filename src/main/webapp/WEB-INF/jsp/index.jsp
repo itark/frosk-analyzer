@@ -40,6 +40,8 @@
 
 <body>
 
+ <div id="wrapper">
+
 	<nav class="navbar navbar-default">
 	  <div class="container-fluid">
 	    <!-- Brand and toggle get grouped for better mobile display -->
@@ -71,59 +73,60 @@
 	</nav>
 
   
-      <div id="page-wrapper">
-          <div class="row">
-              <div class="col-12">
-                  <h1 class="page-header">Strategier</h1>
-              </div>
-          </div>
-          <div class="row">
-              <div class="col-12">
-                  <div class="panel panel-default">
-                      <div class="panel-heading">
-                          Strategier på enskilda tidserier
-                      </div>
-                      
-                      <div class="panel-body">
-                        <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
-					  <thead>
-				            <tr>
-				                <th>Name</th>
-				                <th>Security</th>
-				                <th>PeriodDescription</th>
-				                <th>TotalProfit %</th>
-								<th>NumberOfTicks</th>
-				                <th>AverageTickProfit</th>
-				                <th>NumberofTrades</th>
-				                <th>ProfitableTradesRatio</th>
-				                <th>MaxDD</th>
-				            </tr>
-				        </thead>
-				        <tfoot>
-				            <tr>
-				                <th>Name</th>
-				                <th>Security</th>
-				                <th>PeriodDescription</th>
-				                <th>TotalProfit %</th>
-								<th>NumberOfTicks</th>
-				                <th>AverageTickProfit</th>
-				                <th>NumberofTrades</th>
-				                <th>ProfitableTradesRatio</th>
-				                <th>MaxDD</th>
-				            </tr>
-				        </tfoot>
+         <div class="row">
+             <div class="col-12">
+                 <h1 class="page-header">Strategier</h1>
+             </div>
+         </div>
+         <div class="row">
+             <div class="col-12">
+                 <div class="panel panel-default">
+                     <div class="panel-heading">
+                         Strategier på enskilda tidserier
+                     </div>
+                     
+                     <div class="panel-body">
+                       <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
+				  <thead>
+			            <tr>
+			                <th>Name</th>
+			                <th>Security</th>
+			                <th>PeriodDescription</th>
+			                <th>TotalProfit %</th>
+							<th>NumberOfTicks</th>
+			                <th>AverageTickProfit</th>
+			                <th>NumberofTrades</th>
+			                <th>ProfitableTradesRatio</th>
+			                <th>MaxDD</th>
+			                <th>LatestTradeDate</th>				                
+			            </tr>
+			        </thead>
+			        <tfoot>
+			            <tr>
+			                <th>Name</th>
+			                <th>Security</th>
+			                <th>PeriodDescription</th>
+			                <th>TotalProfit %</th>
+							<th>NumberOfTicks</th>
+			                <th>AverageTickProfit</th>
+			                <th>NumberofTrades</th>
+			                <th>ProfitableTradesRatio</th>
+			                <th>MaxDD</th>
+			                <th>LatestTradeDate</th>
+			            </tr>
+			        </tfoot>
 
-                        </table>
-                      </div>
-                  </div>
-              </div>
-          </div>
-          
-	      <div class="row">
-			<div class="col-12 dc-chart" id="chart-div"></div>
-		  </div>    
+                       </table>
+                     </div>
+                 </div>
+             </div>
+         </div>
+         
+      <div class="row">
+		<div class="col-12 dc-chart" id="chart-div"></div>
+	  </div>    
 
-      </div>
+</div>
 
 
     <!-- DataTables JavaScript -->
@@ -158,11 +161,12 @@
 				  { "mData": "averageTickProfit" },
 				  { "mData": "numberofTrades" },
 				  { "mData": "profitableTradesRatio" },
-				  { "mData": "maxDD" }
+				  { "mData": "maxDD" },
+				  { "mData": "latestTradeDate" }
 			]       
         
         });
-        
+   
         featStratTable
     		.on( 'select', function ( e, dt, type, indexes ) {
             	var rowData = featStratTable.rows( indexes ).data().toArray();

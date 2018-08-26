@@ -182,7 +182,9 @@ public class StrategyAnalysis {
 				fs.setName(name);
 				fs.setSecurity(series.getName());
 				fs.setPeriodDescription(getDate(series));
-				fs.setLatesTradeDate(latestTradeDate);
+				
+				
+				fs.setLatestTradeDate(latestTradeDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
 
 				totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord);
 				totalProfitPercentage = (totalProfit - 1 ) *100;
