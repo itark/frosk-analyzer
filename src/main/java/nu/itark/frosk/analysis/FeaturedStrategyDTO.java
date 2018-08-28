@@ -1,10 +1,10 @@
 package nu.itark.frosk.analysis;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 import lombok.Data;
+import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.dataset.TradeView;
 
 /**
@@ -38,6 +38,7 @@ public class FeaturedStrategyDTO {
 	private String periodDescription;
 	private String latestTradeDate;
 	private List<TradeView> trades;
+	private List<IndicatorValues> indicatorValues;
 
 
 }

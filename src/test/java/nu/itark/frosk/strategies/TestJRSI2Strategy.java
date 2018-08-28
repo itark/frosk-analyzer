@@ -32,6 +32,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.ta4j.core.Bar;
 import org.ta4j.core.Decimal;
+import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
 import org.ta4j.core.TimeSeriesManager;
@@ -63,58 +64,36 @@ public class TestJRSI2Strategy {
     @Test
     public final void run() throws Exception {
 
-    	TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");      
+		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");      
+		RSI2Strategy strat = new RSI2Strategy(timeSeries);
         
-        Strategy strategy = RSI2Strategy.buildStrategy(timeSeries);
-
+        Strategy strategy = strat.buildStrategy();
         TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
- 
         List<Trade> trades = tradingRecord.getTrades();     
      
         for (Trade trade : trades) {
         	Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
         	logger.info("barEntry="+barEntry);
         	Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
-        	
         	logger.info("barExit="+barExit);
-
-        	//        	logger.info("trade.getEntry().getIndex()="+trade.getEntry().getIndex()+", bar="+timeSeries.getBar(trade.getEntry().getIndex()));
-//        	logger.info("trade.getExit().getIndex())="+trade.getExit().getIndex()+", bar="+timeSeries.getBar(trade.getExit().getIndex()));
-            Decimal closePriceBuy = timeSeries.getBar(trade.getEntry().getIndex()).getClosePrice();
-//            LocalDate buyDate = timeSeries.getBar(trade.getEntry().getIndex()).getEndTime().toLocalDate();
- 
-//            logger.info("buyDate="+buyDate+", closePrice="+closePriceBuy);
-            Decimal closePriceSell = timeSeries.getBar(trade.getExit().getIndex()).getClosePrice();
-//            LocalDate sellDate = timeSeries.getBar(trade.getExit().getIndex()).getEndTime().toLocalDate();
-//            logger.info("sellDate="+sellDate+", closePrice="+closePriceSell);
-            
+            Decimal closePriceBuy = barEntry.getClosePrice();
+            Decimal closePriceSell = barExit.getClosePrice();
             Decimal profit = closePriceSell.minus(closePriceBuy);
             
             if (trade.isOpened()) {
-            	
             	logger.info("isOpened():barEntry.getDateName()"+barEntry.getDateName());
-            	
             }
             
             if (trade.isNew()) {
-            	
             	logger.info("isNew():barEntry.getDateName()"+barEntry.getDateName());
-            	
             }
             
             if (trade.isClosed()) {
-            	
             	logger.info("isClose():barExit.getDateName()"+barExit.getDateName());
-            	
             } else {
-
             	logger.info("isNOTCLOSED():barEntry.getDateName()"+barEntry.getDateName());
-           	
-            	
             }
-            
-            
             
             logger.info("profit="+profit);
             

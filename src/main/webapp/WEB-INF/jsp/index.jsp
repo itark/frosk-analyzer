@@ -23,6 +23,8 @@
 
  	<link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css" media="all" />
  	
+   <link href="scrolling-nav.css" rel="stylesheet">
+ 
     
 
 </head>
@@ -95,15 +97,6 @@
       </div>
     </nav>
 
-
-
-
-
-
-
-
-
-
     <header class="bg-primary text-white">
       <div class="container text-center">
         <h1>Welcome to Scrolling Nav</h1>
@@ -162,59 +155,47 @@
                    
                    <div class="panel-body">
                      <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
-		  <thead>
-	            <tr>
-	                <th>Name</th>
-	                <th>Security</th>
-	                <th>PeriodDescription</th>
-	                <th>TotalProfit %</th>
-					<th>NumberOfTicks</th>
-	                <th>AverageTickProfit</th>
-	                <th>NumberofTrades</th>
-	                <th>ProfitableTradesRatio</th>
-	                <th>MaxDD</th>
-	                <th>LatestTradeDate</th>				                
-	            </tr>
-	        </thead>
-	        <tfoot>
-	            <tr>
-	                <th>Name</th>
-	                <th>Security</th>
-	                <th>PeriodDescription</th>
-	                <th>TotalProfit %</th>
-					<th>NumberOfTicks</th>
-	                <th>AverageTickProfit</th>
-	                <th>NumberofTrades</th>
-	                <th>ProfitableTradesRatio</th>
-	                <th>MaxDD</th>
-	                <th>LatestTradeDate</th>
-	            </tr>
-	        </tfoot>
-
+					  <thead>
+				            <tr>
+				                <th>Name</th>
+				                <th>Security</th>
+				                <th>Period</th>
+				                <th>Profit %</th>
+								<th>Ticks</th>
+				                <th>AverageProfit</th>
+				                <th>Trades</th>
+				                <th>Ratio</th>
+				                <th>MaxDD</th>
+				                <th>LatestTrade</th>				                
+				            </tr>
+				        </thead>
+				        <tfoot>
+				            <tr>
+				                <th>Name</th>
+				                <th>Security</th>
+				                <th>Period</th>
+				                <th>Profit %</th>
+								<th>Ticks</th>
+				                <th>AverageProfit</th>
+				                <th>Trades</th>
+				                <th>Ratio</th>
+				                <th>MaxDD</th>
+				                <th>LatestTrade</th>
+				            </tr>
+				        </tfoot>
                      </table>
                    </div>
                </div>
            </div>
        </div>
+       <div class="row">
+		 <div class="col-12 dc-chart" id="chart-div"></div>
+	   </div>  
  
+     </div>
+   </section>
  
- 
- 
-      </div>
-    </section>
- 
- 
-  
-  
-         <div class="row">
-             <div class="col-12">
-                 <h1 class="page-header">Strategier</h1>
-             </div>
-         </div>
-         
-      <div class="row">
-		<div class="col-12 dc-chart" id="chart-div"></div>
-	  </div>    
+   
 
 </div>
 
@@ -231,6 +212,8 @@
 	<script src="https://www.amcharts.com/lib/3/plugins/dataloader/dataloader.min.js"></script>
 	<script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
 	<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
+	
+	<script src="scrolling-nav.js"></script>
 
     <!-- Page-Level Demo Scripts - Tables - Use for reference -->
     <script>

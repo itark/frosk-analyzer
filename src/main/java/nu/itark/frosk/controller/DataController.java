@@ -18,6 +18,7 @@ import org.ta4j.core.TimeSeries;
 
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.dataset.DailyPrices;
+import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.dataset.TradeView;
 import nu.itark.frosk.model.Customer;
 import nu.itark.frosk.model.Security;
@@ -49,6 +50,8 @@ public class DataController {
 	//TODO refactor
 	Map<String, List<TradeView>> tradesList = new HashMap<String, List<TradeView>>();
 	
+	//TODO refactor
+	Map<String, List<IndicatorValues>> rsiValuesList = new HashMap<String,  List<IndicatorValues>>();
 	
 	/**
 	 * @Example  http://localhost:8080/featuredStrategies?strategy=ALL
@@ -66,10 +69,12 @@ public class DataController {
 		}
 
 		//TODO cache trades
-		List<FeaturedStrategyDTO> strategyList = featuredStrategyService.getFeaturedStrategy(strategy);
-		
+		//TODO cache indicatorvalue
+		//List<FeaturedStrategyDTO> strategyList = featuredStrategyService.getFeaturedStrategy(strategy);
+		List<FeaturedStrategyDTO> strategyList = featuredStrategyService.getFeaturedStrategy("RSI2Strategy");
 		strategyList.forEach(dto -> {
 			tradesList.put(dto.getSecurity(), dto.getTrades());
+			rsiValuesList.put(dto.getSecurity(), dto.getIndicatorValues());
 		});
 		
 		return strategyList;
@@ -77,31 +82,47 @@ public class DataController {
 	}	
 	
 	/**
-	 * @Example  http://localhost:8080/dailyPrices?security=WIKI/AAPL
+	 * @Example  http://localhost:8080/dailyPrices?security=BOL.ST
 	 * 
 	 * @param securityName
 	 * @param database
 	 * @return
 	 */
 	@RequestMapping(path="/dailyPrices", method=RequestMethod.GET)
-	public List<DailyPrices> getDailyPrices(@RequestParam("security") String securityName){
-		logger.info("/dailyPrices...securityName="+securityName);
+	public List<DailyPrices> getDailyPrices(@RequestParam("security") String securityName) {
+		logger.info("/dailyPrices...securityName=" + securityName);
 
-			TimeSeries timeSeries = timeSeriesService.getDataSet(securityName);
+		TimeSeries timeSeries = timeSeriesService.getDataSet(securityName);
 
-			DailyPrices dailyPrices = null;
-			List<DailyPrices> dpList = new ArrayList<DailyPrices>();
+		DailyPrices dailyPrices = null;
+		List<DailyPrices> dpList = new ArrayList<DailyPrices>();
 
-			for (int i = 0; i < timeSeries.getBarCount(); i++) {
-				Bar bar = timeSeries.getBar(i);
-				dailyPrices = new DailyPrices(bar);
-				dpList.add(dailyPrices);
+		for (int i = 0; i < timeSeries.getBarCount(); i++) {
+			Bar bar = timeSeries.getBar(i);
+			dailyPrices = new DailyPrices(bar);
+			dpList.add(dailyPrices);
 
-			}
+		}
 
-			return dpList;
-			
-	}		
+		return dpList;
+
+	}
+
+	/**
+	 * @Example  http://localhost:8080/rsiValues?security=BOL.ST
+	 * 
+	 * @param securityName
+	 * @param database
+	 * @return
+	 */
+	@RequestMapping(path="/rsiValues", method=RequestMethod.GET)
+	public List<IndicatorValues> getRSIValues(@RequestParam("security") String securityName){
+		logger.info("/rsiValues...securityName="+securityName);
+
+		return rsiValuesList.get(securityName);
+		
+	}	
+	
 	
 	/**
 	 * @Example  http://localhost:8080/trades?security=WIKI/AAPL&strategy=RSI2Strategy
@@ -114,14 +135,17 @@ public class DataController {
 		logger.info("/trades...securityName="+securityName+"strategyName="+strategyName);	
 		
 		return tradesList.get(securityName);
-		
-		//		featuredStrategyService.getFeaturedStrategy(strategyName);
-//		
-//		
-//		return featuredStrategyService.getTrades(strategyName, securityName);
+
 	}	
 	
 
+
+	
+	
+	
+	
+	
+	
 	
 	
 	

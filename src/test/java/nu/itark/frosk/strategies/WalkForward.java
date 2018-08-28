@@ -166,7 +166,8 @@ public class WalkForward {
         strategies.put(CCICorrectionStrategy.buildStrategy(series), "CCI Correction");
         strategies.put(GlobalExtremaStrategy.buildStrategy(series), "Global Extrema");
         strategies.put(MovingMomentumStrategy.buildStrategy(series), "Moving Momentum");
-        strategies.put(RSI2Strategy.buildStrategy(series), "RSI-2");
+        RSI2Strategy strat = new RSI2Strategy(series);
+        strategies.put(strat.buildStrategy(), "RSI-2");
         return strategies;
     }
 
@@ -174,7 +175,7 @@ public class WalkForward {
     @Test
     public final void run() throws Exception {
         // Splitting the series into slices
-    	TimeSeries timeSeries = timeSeriesService.getDataSet("GOOG");      
+    	TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");      
         
         List<TimeSeries> subseries = splitSeries(timeSeries, Duration.ofHours(6), Duration.ofDays(7));
 
