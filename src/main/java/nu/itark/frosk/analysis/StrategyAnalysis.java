@@ -78,7 +78,6 @@ public class StrategyAnalysis {
 			TradeView tr = null;
 
 			for (Trade trade : trades) {
-				// Buy signal
 				Bar barEntry = series.getBar(trade.getEntry().getIndex());
 				LocalDate buyDate = barEntry.getEndTime().toLocalDate();
 				tr = new TradeView();
@@ -86,7 +85,6 @@ public class StrategyAnalysis {
 				tr.setType("B");
 				tradeViewList.add(tr);
 
-				// Sell signal
 				Bar barExit = series.getBar(trade.getExit().getIndex());
 				LocalDate sellDate = barExit.getEndTime().toLocalDate();
 				tr = new TradeView();
@@ -99,7 +97,7 @@ public class StrategyAnalysis {
 			}
 
 			fs = new FeaturedStrategyDTO();
-			fs.setName(strat.getName());
+			fs.setName(strategy);
 			fs.setSecurity(series.getName());
 			fs.setPeriodDescription(getDate(series));
 			fs.setLatestTradeDate(latestTradeDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
