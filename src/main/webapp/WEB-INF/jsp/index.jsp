@@ -80,46 +80,6 @@ header {
       <div class="container-fluid">
  
         <div class="row">
-          <div class="col-lg-12 col-md-12 text-center">
-            <h2>The trend is your friend</h2>
-            <p class="lead">Frosk Analyzer is your contemporary companion on the road of stock picking.</p>
-          </div>
-        </div>
- 
-        <div class="row">
-            <div class="col-lg-3 col-md-3">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-comments fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge">26</div>
-                                <div>New Possibilites!</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-9 col-md-9">
-                <div class="panel panel-green">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-tasks fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge">12</div>
-                                <div>Scan it!</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
             <div class="col-lg-3 col-md-3">
                 <div class="panel panel-default">
                     <div class="panel-heading">
