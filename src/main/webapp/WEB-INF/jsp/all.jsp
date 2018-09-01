@@ -47,12 +47,20 @@ header {
  
 	<nav class="navbar navbar-default">
 	  <div class="container-fluid">
+	    
 	    <div class="navbar-header">
+	      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+	        <span class="sr-only">Toggle navigation</span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	      </button>
 	      <a class="navbar-brand" href="/frosk-analyzer" title="powered by Har-em Foundations">Evening Star</a>
 	    </div>
 	   
 	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 	      <ul class="nav navbar-nav">
+	        <!--  li class="active"><a href="#">Översikt <span class="sr-only">(current)</span></a></li-->
 	        <li class="dropdown">
 	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Strategies <span class="caret"></span></a>
 	          <ul class="dropdown-menu">
@@ -67,49 +75,59 @@ header {
 	  </div>
 	</nav>
 
-	<header>
+	<section>
       <div class="container-fluid">
  
         <div class="row">
           <div class="col-lg-12 col-md-12 text-center">
-            <h2>The Relative Strength Index - 2</h2>
-            <p>Connors suggests looking for buying opportunities when 2-period RSI moves below 10, which is considered deeply oversold. Conversely, traders can look for short-selling opportunities when 2-period RSI moves above 90..</p>
+            <h2>The trend is your friend</h2>
+            <p class="lead">Frosk Analyzer is your contemporary companion on the road of stock picking.</p>
           </div>
         </div>
-        
-        <div class="row">
-          <div class="col-lg-6 col-md-6">
-          	<p>Buy e.g.</p>
-			<pre class="code">
-[type = stock]
-and [today's sma(20,volume) &gt; 40000]
-and [today's sma(60,close) &gt; 20]
-and [today's close &gt; today's sma(200,close)]
-and [5 x today's rsi(2)]
-			</pre>
-          </div>
  
-          <div class="col-lg-6 col-md-6">
-          	 <p>Sell e.g.</p>
-			 <pre class="code">
-[type = stock]
-and [today's sma(20,volume) &gt; 40000]
-and [today's sma(60,close) &gt; 20]
-and [today's close &lt; today's sma(200,close)]
-and [today's rsi(2) x 95]
-			 </pre>
-          </div>      
+        <div class="row">
+            <div class="col-lg-3 col-md-3">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <i class="fa fa-comments fa-5x"></i>
+                            </div>
+                            <div class="col-xs-9 text-right">
+                                <div class="huge">26</div>
+                                <div>New Possibilites!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-9 col-md-9">
+                <div class="panel panel-green">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <i class="fa fa-tasks fa-5x"></i>
+                            </div>
+                            <div class="col-xs-9 text-right">
+                                <div class="huge">12</div>
+                                <div>Scan it!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="row">
             <div class="col-lg-3 col-md-3">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                     	OMX30
+                     	Strategies on OMX30
 	                   <div class="panel-body">
 	                     <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
 						  <thead>
 					            <tr>
+					                <th>Name</th>
 					                <th>Security</th>
 					                <th>Profit %</th>
 					                <th>LatestTrade</th>				                
@@ -123,6 +141,7 @@ and [today's rsi(2) x 95]
 					        </thead>
 					        <tfoot>
 					            <tr>
+					                <th>Name</th>
 					                <th>Security</th>
 					                <th>Profit %</th>
 					                <th>LatestTrade</th>
@@ -144,14 +163,16 @@ and [today's rsi(2) x 95]
            	 <div class="col-12 dc-chart" id="chart-div"></div>
            </div>
 
+
         </div>
 
      </div>
-     </header>
+     </section>
+
    
      <footer class="bg-primary text-white">
       <div class="container text-center">
-        <p>Copyright &copy; Evening Star 2018</p>
+        <p class="lead">Copyright &copy; Frosk Analyzer 2018</p>
       </div>
     </footer>   
 
@@ -179,10 +200,11 @@ and [today's rsi(2) x 95]
         var featStratTable = $('#featuredStrategies').DataTable({
         	responsive: true,
         	select: true,
-        	"sAjaxSource": "featuredStrategies?strategy=RSI2Strategy",
+        	"sAjaxSource": "featuredStrategies?strategy=ALL",
 			"sAjaxDataProp": "",
-			"order": [[ 1, "desc" ]],
+			"order": [[ 2, "desc" ]],
 			"aoColumns": [
+				  { "mData": "name"},
 				  { "mData": "security"},
 			      { "mData": "totalProfit"},
 				  { "mData": "latestTradeDate" },

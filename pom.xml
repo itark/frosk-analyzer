@@ -175,7 +175,7 @@
 			    <configuration>
 			        <url>http://localhost:8080/manager/text</url>
 			        <server>TomcatServer</server>
-			        <path>/frosk-analyzer-0.0.2</path>
+			        <path>/frosk-analyzer</path>
 					<update>true</update>
 			    </configuration>
 			</plugin>
