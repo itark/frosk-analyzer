@@ -66,7 +66,7 @@ header {
 	          <ul class="dropdown-menu">
 	            <li><a href="#">RNN(todo)</a></li>
 	            <li role="separator" class="divider"></li>
-	            <li><a href="rsi">RSI2</a></li>
+	            <li><a href="#">RSI(todo)</a></li>
 	            <li role="separator" class="divider"></li>
 	            <li><a href="#">Cool indicator(todo)</a></li>
 	          </ul>

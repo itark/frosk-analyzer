@@ -52,6 +52,15 @@ public class WebController {
 		model.put("message", this.message);
 		return "rnn";	
 	}	
+
+	@RequestMapping("/rsi")
+	public String rsi(Map<String, Object> model) {
+		Logger logger = Logger.getLogger(WebController.class.getName());
+		logger.log(Level.INFO, "/rsi");
+		model.put("message", this.message);
+		return "rsi";	
+	}	
+	
 	
 	/**
 	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/fill?database=BITFINEX

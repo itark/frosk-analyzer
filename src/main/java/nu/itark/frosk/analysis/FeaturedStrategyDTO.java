@@ -26,9 +26,9 @@ public class FeaturedStrategyDTO {
 	private BigDecimal numberOfTicks; // Number of ticks
 	private BigDecimal averageTickProfit; // Average profit (per tick)
 	private BigDecimal numberofTrades; // Number of trades
-	private String profitableTradesRatio; // "Profitable trades ratio
+	private BigDecimal profitableTradesRatio; // "Profitable trades ratio
 	private BigDecimal maxDD; // "Maximum drawdown
-	private String rewardRiskRatio; // Reward-risk ratio
+	private BigDecimal rewardRiskRatio; // Reward-risk ratio
 	private BigDecimal totalTranactionCost; // Total transaction cost (from
 											// $1000)
 	private BigDecimal buyAndHold; // Buy-and-hold:

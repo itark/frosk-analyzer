@@ -74,9 +74,9 @@ public class TestJRSI2Strategy {
      
         for (Trade trade : trades) {
         	Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
-        	logger.info("barEntry="+barEntry);
+        	logger.info(timeSeries.getName()+"::barEntry="+barEntry.getDateName());
         	Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
-        	logger.info("barExit="+barExit);
+        	logger.info(timeSeries.getName()+"::barExit="+barExit.getDateName());
             Decimal closePriceBuy = barEntry.getClosePrice();
             Decimal closePriceSell = barExit.getClosePrice();
             Decimal profit = closePriceSell.minus(closePriceBuy);

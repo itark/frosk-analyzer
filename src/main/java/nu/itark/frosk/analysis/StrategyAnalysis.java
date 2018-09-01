@@ -107,13 +107,13 @@ public class StrategyAnalysis {
 			fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord)));
 			double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord);
 			fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
-
 			fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord)));
-			fs.setProfitableTradesRatio(
-					String.valueOf(new AverageProfitableTradesCriterion().calculate(series, tradingRecord)));
+//			double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord);
+//			fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, BigDecimal.ROUND_DOWN));
 			double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord);
 			fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, BigDecimal.ROUND_DOWN));
-			fs.setRewardRiskRatio(String.valueOf((new RewardRiskRatioCriterion().calculate(series, tradingRecord))));
+//			double rewardRiskRatio = new RewardRiskRatioCriterion().calculate(series, tradingRecord);
+//			fs.setRewardRiskRatio(new BigDecimal(rewardRiskRatio).setScale(2, BigDecimal.ROUND_DOWN));
 			fs.setTotalTranactionCost(
 					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord)));
 			fs.setTrades(tradeViewList);
@@ -192,14 +192,13 @@ public class StrategyAnalysis {
 				fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord)));
 				double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord);
 				fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
-	
 				fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord)));
-				fs.setProfitableTradesRatio(
-						String.valueOf(new AverageProfitableTradesCriterion().calculate(series, tradingRecord)));
+				double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord);
+				fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, BigDecimal.ROUND_DOWN));
 				double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord);
 				fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, BigDecimal.ROUND_DOWN));
-				fs.setRewardRiskRatio(
-						String.valueOf((new RewardRiskRatioCriterion().calculate(series, tradingRecord))));
+				double rewardRiskRatio = new RewardRiskRatioCriterion().calculate(series, tradingRecord);
+				fs.setRewardRiskRatio(new BigDecimal(rewardRiskRatio).setScale(2, BigDecimal.ROUND_DOWN));
 				fs.setTotalTranactionCost(new BigDecimal(
 						new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord)));
 				fs.setTrades(tradeViewList);

@@ -63,7 +63,6 @@ public class RSI2Strategy {
 	TimeSeries series = null;
 	
 	public RSI2Strategy(TimeSeries series) {
-		// TODO Auto-generated constructor stub
 		this.series = series;
 	}
 	
@@ -78,7 +77,7 @@ public class RSI2Strategy {
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
-        SMAIndicator longSma = new SMAIndicator(closePrice, 25); //200
+        SMAIndicator longSma = new SMAIndicator(closePrice, 200);
 
         // We use a 2-period RSI indicator to identify buying
         // or selling opportunities within the bigger trend.
