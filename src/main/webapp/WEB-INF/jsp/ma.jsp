@@ -212,21 +212,22 @@ header {
         featStratTable
     		.on( 'select', function ( e, dt, type, indexes ) {
             	var rowData = featStratTable.rows( indexes ).data().toArray();
-            	var name = featStratTable.rows( indexes ).data().pluck( 'name' );
+            	//var name = featStratTable.rows( indexes ).data().pluck( 'name' );
+//             	var name = "MovingMomentumStrategy";
             	var security = featStratTable.rows( indexes ).data().pluck( 'security' );
-            	renderChart(name[0], security[0]);
+            	renderChart(security[0]);
             	
         }) ; 
         
     });
     
 
-    function renderChart(strategyName, security) {
-    	console.log('about to render chart on strategyName='+strategyName+ ' and security='+security);
+    function renderChart(security) {
+    	console.log('about to render chart on strategyName=MovingMomentumStrategy and security='+security);
     	
      	var dailyPricesUrl = "dailyPrices?security="+security;
-     	var tradesUrl = "trades?security="+security+"&strategy="+strategyName;
-     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategyName;
+     	var tradesUrl = "trades?security="+security+"&strategy=MovingMomentumStrategy";
+     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy=MovingMomentumStrategy";
 
      	console.log("dailyPricesUrl",dailyPricesUrl);
      	console.log("tradesUrl",tradesUrl);
