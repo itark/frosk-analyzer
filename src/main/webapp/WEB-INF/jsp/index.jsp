@@ -54,7 +54,7 @@ header {
 	  <div class="container-fluid">
 	    
 	    <div class="navbar-header">
-	      <a class="navbar-brand" href="#" title="powered by Har-em Foundations">Evening Star</a>
+	      <a class="navbar-brand" href="/frosk-analyzer" title="powered by Har-em Foundations">Evening Star</a>
 	    </div>
 	   
 	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -63,7 +63,7 @@ header {
 	        <li class="dropdown">
 	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Strategies <span class="caret"></span></a>
 	          <ul class="dropdown-menu">
-	            <li><a href="ma">Moving Average</a></li>
+	            <li><a href="ma">Moving Momentum</a></li>
 	            <li><a href="rsi">Relative Strenght Index-2</a></li>
 	            <li role="separator" class="divider"></li>
 	            <li><a href="all">All</a></li>
