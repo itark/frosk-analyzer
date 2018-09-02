@@ -22,13 +22,11 @@
  */
 package nu.itark.frosk.strategies;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
 import org.ta4j.core.Bar;
-import org.ta4j.core.BaseBar;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Decimal;
 import org.ta4j.core.Rule;
@@ -53,10 +51,8 @@ import nu.itark.frosk.dataset.IndicatorValues;
 public class RSI2Strategy {
 
 	Logger logger = Logger.getLogger(RSI2Strategy.class.getName());
-	
-	//https://github.com/ta4j/ta4j/blob/master/ta4j-examples/src/main/java/ta4jexamples/indicators/IndicatorsToChart.java
-	// visa värden i RSI....
- 
+
+	//TODO
 	List<Bar>  rsiValues = null;
 	
 	RSIIndicator rsi = null;

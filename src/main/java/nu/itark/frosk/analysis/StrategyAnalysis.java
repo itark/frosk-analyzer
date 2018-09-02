@@ -28,6 +28,7 @@ import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 
 import nu.itark.frosk.dataset.TradeView;
 import nu.itark.frosk.service.TimeSeriesService;
+import nu.itark.frosk.strategies.MovingMomentumStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
 /**
  * This class diplays analysis criterion values after running a trading strategy
@@ -56,22 +57,24 @@ public class StrategyAnalysis {
         double totalProfit ;
         double totalProfitPercentage;
         ZonedDateTime latestTradeDate= null;
-        Strategy strat = null;
-        RSI2Strategy rsiStrat = null;
+        Strategy strategyToRun = null;
+//        RSI2Strategy strategyReguested = null;
         
 		for (TimeSeries series : timeSeriesList) {
-			logger.info("RSI2Strategy.class.getSimpleName()="+RSI2Strategy.class.getSimpleName());
+//			logger.info("RSI2Strategy.class.getSimpleName()="+RSI2Strategy.class.getSimpleName());
 			if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
-				rsiStrat = new RSI2Strategy(series);
-				strat = rsiStrat.buildStrategy();
-				
+				RSI2Strategy strategyReguested = new RSI2Strategy(series);
+				strategyToRun = strategyReguested.buildStrategy();
+			} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
+				MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
+				strategyToRun = strategyReguested.buildStrategy();				
 			}
-			if (strat == null) {
+			if (strategyToRun == null) {
 				throw new RuntimeException("strat is null");
 			}
 			
 			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
-			TradingRecord tradingRecord = seriesManager.run(strat);
+			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			trades = tradingRecord.getTrades();
 
 			List<TradeView> tradeViewList = new ArrayList<TradeView>();
@@ -117,7 +120,8 @@ public class StrategyAnalysis {
 			fs.setTotalTranactionCost(
 					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord)));
 			fs.setTrades(tradeViewList);
-			fs.setIndicatorValues(rsiStrat.getValues());
+			//TODO
+			//			fs.setIndicatorValues(strategyReguested.getValues());
 
 			fsList.add(fs);
 

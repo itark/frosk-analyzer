@@ -15,7 +15,8 @@ public class StrategiesMap {
 	public static Map<Strategy, String> buildStrategiesMap(TimeSeries series) {
 		HashMap<Strategy, String> strategies = new HashMap<>();
 		strategies.put(GlobalExtremaStrategy.buildStrategy(series), GlobalExtremaStrategy.class.getSimpleName());
-		strategies.put(MovingMomentumStrategy.buildStrategy(series), MovingMomentumStrategy.class.getSimpleName());
+		MovingMomentumStrategy mmStrat = new MovingMomentumStrategy(series);
+		strategies.put(mmStrat.buildStrategy(), MovingMomentumStrategy.class.getSimpleName());
 		RSI2Strategy rsiStrat = new RSI2Strategy(series);
 		strategies.put(rsiStrat.buildStrategy(), RSI2Strategy.class.getSimpleName());
 		return strategies;

@@ -31,7 +31,7 @@
 
 #chart-div {
 	width		: 100%;
-	height		: 700px;
+	height		: 750px;
 	font-size	: 11px;
 }
 
@@ -75,59 +75,26 @@ header {
 	  </div>
 	</nav>
 
-	<section>
+	<header>
       <div class="container-fluid">
  
         <div class="row">
           <div class="col-lg-12 col-md-12 text-center">
-            <h2>The trend is your friend</h2>
-            <p class="lead">Frosk Analyzer is your contemporary companion on the road of stock picking.</p>
+            <h2>Moving Momentum</h2>
+            <p class="lead">Moving averages are trend-following indicators that lag price. This strategy employs two moving averages to define the trading bias. 
+            The bias is bullish when the shorter-moving average moves above the longer moving average. The bias is bearish when the shorter-moving average moves below the longer moving average.</p>
           </div>
         </div>
  
         <div class="row">
             <div class="col-lg-3 col-md-3">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-comments fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge">26</div>
-                                <div>New Possibilites!</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-9 col-md-9">
-                <div class="panel panel-green">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-tasks fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge">12</div>
-                                <div>Scan it!</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-3 col-md-3">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                     	Strategies on OMX30
+                     	OMX30
 	                   <div class="panel-body">
 	                     <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
 						  <thead>
 					            <tr>
-					                <th>Name</th>
 					                <th>Security</th>
 					                <th>Profit %</th>
 					                <th>LatestTrade</th>				                
@@ -141,7 +108,6 @@ header {
 					        </thead>
 					        <tfoot>
 					            <tr>
-					                <th>Name</th>
 					                <th>Security</th>
 					                <th>Profit %</th>
 					                <th>LatestTrade</th>
@@ -160,19 +126,45 @@ header {
             </div>
  
            <div class="col-lg-9 col-md-9">
-           	 <div class="col-12 dc-chart" id="chart-div"></div>
+                 <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <i class="fa fa-bar-chart-o fa-fw"></i>
+                            <div class="pull-right">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                        Actions
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu pull-right" role="menu">
+                                        <li><a href="#">Action</a>
+                                        </li>
+                                        <li><a href="#">Another action</a>
+                                        </li>
+                                        <li><a href="#">Something else here</a>
+                                        </li>
+                                        <li class="divider"></li>
+                                        <li><a href="#">Separated link</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /.panel-heading -->
+	   					<div class="panel-body">
+			           		<div class="col-12 dc-chart" id="chart-div"></div>
+	  					</div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
            </div>
-
-
-        </div>
-
-     </div>
-     </section>
+         </div>
+ 		</div>
+     </header>
 
    
      <footer class="bg-primary text-white">
       <div class="container text-center">
-        <p class="lead">Copyright &copy; Frosk Analyzer 2018</p>
+        <p>Copyright &copy; Evening Star 2018</p>
       </div>
     </footer>   
 
@@ -200,11 +192,10 @@ header {
         var featStratTable = $('#featuredStrategies').DataTable({
         	responsive: true,
         	select: true,
-        	"sAjaxSource": "featuredStrategies?strategy=ALL",
+        	"sAjaxSource": "featuredStrategies?strategy=MovingMomentumStrategy",
 			"sAjaxDataProp": "",
-			"order": [[ 2, "desc" ]],
+			"order": [[ 1, "desc" ]],
 			"aoColumns": [
-				  { "mData": "name"},
 				  { "mData": "security"},
 			      { "mData": "totalProfit"},
 				  { "mData": "latestTradeDate" },

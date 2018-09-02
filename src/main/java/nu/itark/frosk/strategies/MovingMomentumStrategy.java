@@ -44,12 +44,18 @@ import org.ta4j.core.trading.rules.UnderIndicatorRule;
  */
 public class MovingMomentumStrategy {
 
-    /**
+  
+	TimeSeries series = null;
+	
+	public MovingMomentumStrategy(TimeSeries series) {
+		this.series = series;
+	}	
+	/**
      * @param series a time series
      * @return a moving momentum strategy
      */
-    public static Strategy buildStrategy(TimeSeries series) {
-        if (series == null) {
+    public Strategy buildStrategy() {
+        if (this.series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
 

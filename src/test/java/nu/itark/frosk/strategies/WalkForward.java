@@ -165,9 +165,10 @@ public class WalkForward {
         HashMap<Strategy, String> strategies = new HashMap<>();
         strategies.put(CCICorrectionStrategy.buildStrategy(series), "CCI Correction");
         strategies.put(GlobalExtremaStrategy.buildStrategy(series), "Global Extrema");
-        strategies.put(MovingMomentumStrategy.buildStrategy(series), "Moving Momentum");
-        RSI2Strategy strat = new RSI2Strategy(series);
-        strategies.put(strat.buildStrategy(), "RSI-2");
+        MovingMomentumStrategy mmStrat = new MovingMomentumStrategy(series);
+        strategies.put(mmStrat.buildStrategy(), "RSI-2"); 
+        RSI2Strategy rsiStrat = new RSI2Strategy(series);
+        strategies.put(rsiStrat.buildStrategy(), "RSI-2");
         return strategies;
     }
 
