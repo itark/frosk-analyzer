@@ -1,5 +1,7 @@
 package nu.itark.frosk.dataset;
 
+import java.math.BigDecimal;
+
 import org.ta4j.core.Bar;
 
 import lombok.Data;
@@ -16,11 +18,12 @@ public class DailyPrices {
 
 	public DailyPrices(Bar bar) {
 		this.setDate(bar.getEndTime().toLocalDate().toString());
-		this.setOpen(bar.getOpenPrice().toString());
-		this.setHigh(bar.getMaxPrice().toString());
-		this.setLow(bar.getMinPrice().toString());
-		this.setClose(bar.getClosePrice().toString());
-		this.setVolume(bar.getVolume().toString());
+		this.setOpen(bar.getOpenPrice().getDelegate().setScale(2,BigDecimal.ROUND_UP).toString());
+		this.setOpen(bar.getOpenPrice().getDelegate().setScale(2,BigDecimal.ROUND_UP).toString());
+		this.setHigh(bar.getMaxPrice().getDelegate().setScale(2,BigDecimal.ROUND_UP).toString());
+		this.setLow(bar.getMinPrice().getDelegate().setScale(2,BigDecimal.ROUND_UP).toString());
+		this.setClose(bar.getClosePrice().getDelegate().setScale(2,BigDecimal.ROUND_UP).toString());
+		this.setVolume(bar.getVolume().getDelegate().setScale(2,BigDecimal.ROUND_UP).toString());
 
 	}
 

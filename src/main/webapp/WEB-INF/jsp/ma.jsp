@@ -138,7 +138,7 @@ header {
                                     <ul class="dropdown-menu pull-right" role="menu">
                                         <li><a href="#">Action</a>
                                         </li>
-                                        <li><a href="#">Another action</a>
+                                        <li><a href="#" onclick="renderChart2('BOL.ST');">Line</a>
                                         </li>
                                         <li><a href="#">Something else here</a>
                                         </li>
@@ -184,9 +184,16 @@ header {
 	<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/js/scrolling-nav.js"></script>
     
+	<script src="https://www.amcharts.com/lib/4/core.js"></script>
+	<script src="https://www.amcharts.com/lib/4/charts.js"></script>
+	<script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>  
+    
 
     <!-- Page-Level Demo Scripts - Tables - Use for reference -->
-    <script>
+ <script>
+ 	var selectedSecurity;
+ 
+ 
     $(document).ready(function() {
     	var events = $('#events');
         var featStratTable = $('#featuredStrategies').DataTable({
@@ -215,6 +222,7 @@ header {
             	//var name = featStratTable.rows( indexes ).data().pluck( 'name' );
 //             	var name = "MovingMomentumStrategy";
             	var security = featStratTable.rows( indexes ).data().pluck( 'security' );
+            	selectedSecurity = security[0];
             	renderChart(security[0]);
             	
         }) ; 
@@ -224,6 +232,74 @@ header {
 
     function renderChart(security) {
     	console.log('about to render chart on strategyName=MovingMomentumStrategy and security='+security);
+    	
+     	var dailyPricesUrl = "dailyPrices?security="+security;
+     	var tradesUrl = "trades?security="+security+"&strategy=MovingMomentumStrategy";
+     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy=MovingMomentumStrategy";
+
+     	console.log("dailyPricesUrl",dailyPricesUrl);
+     	console.log("tradesUrl",tradesUrl);
+    	console.log("indicatorValueUrl",indicatorValueUrl);
+	 
+    	am4core.useTheme(am4themes_animated);
+
+    	var chart = am4core.create("chart-div", am4charts.XYChart);
+    	chart.dataSource.url = dailyPricesUrl;
+
+    	chart.paddingRight = 20;
+
+    	chart.dateFormatter.inputDateFormat = "YYYY-MM-dd";
+
+    	var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+    	dateAxis.renderer.grid.template.location = 0;
+
+    	var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    	valueAxis.tooltip.disabled = true;
+
+    	var series = chart.series.push(new am4charts.CandlestickSeries());
+    	series.dataFields.dateX = "date";
+    	series.dataFields.valueY = "close";
+    	series.dataFields.openValueY = "open";
+    	series.dataFields.lowValueY = "low";
+    	series.dataFields.highValueY = "high";
+    	series.simplifiedProcessing = true;
+    	series.tooltipText = "Open:{openValueY.value}\nLow:{lowValueY.value}\nHigh:{highValueY.value}\nClose:{valueY.value}";
+
+    	// important!
+    	// candlestick series colors are set in states. 
+    	// series.riseFromOpenState.properties.fill = am4core.color("#00ff00");
+    	// series.dropFromOpenState.properties.fill = am4core.color("#FF0000");
+    	// series.riseFromOpenState.properties.stroke = am4core.color("#00ff00");
+    	// series.dropFromOpenState.properties.stroke = am4core.color("#FF0000");
+
+    	series.riseFromPreviousState.properties.fillOpacity = 1;
+    	series.dropFromPreviousState.properties.fillOpacity = 0;
+
+    	chart.cursor = new am4charts.XYCursor();
+
+    	// a separate series for scrollbar
+    	var lineSeries = chart.series.push(new am4charts.LineSeries());
+    	lineSeries.dataFields.dateX = "date";
+    	lineSeries.dataFields.valueY = "close";
+    	// need to set on default state, as initially series is "show"
+    	lineSeries.defaultState.properties.visible = false;
+
+    	// hide from legend too (in case there is one)
+    	lineSeries.hiddenInLegend = true;
+    	lineSeries.fillOpacity = 0.5;
+    	lineSeries.strokeOpacity = 0.5;
+
+    	var scrollbarX = new am4charts.XYChartScrollbar();
+    	scrollbarX.series.push(lineSeries);
+    	chart.scrollbarX = scrollbarX;
+
+    	
+    }  
+ 
+    
+    function renderChart2(security) {
+    	security = selectedSecurity;
+    	console.log('about to render chart2 on strategyName=MovingMomentumStrategy and security='+security);
     	
      	var dailyPricesUrl = "dailyPrices?security="+security;
      	var tradesUrl = "trades?security="+security+"&strategy=MovingMomentumStrategy";
@@ -404,7 +480,9 @@ header {
 	    		  
 	    }); //chart
     	
-    }  //renderChart
+    }  //renderChart   
+        
+    
     
     </script>
 
