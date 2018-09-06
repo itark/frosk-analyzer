@@ -104,6 +104,9 @@ public class TestJMovingMomentumStrategy {
         double totalProfit = new TotalProfitCriterion().calculate(timeSeries, tradingRecord);
         double totalProfitPercentage = (totalProfit - 1 ) *100;  //TODO minus
         logger.info("Total profit for the strategy (%): "+ totalProfitPercentage);
+        
+        logger.info("strat indicatorvalues="+strat.getIndicatorValues().size());
+        
     }
 
 }

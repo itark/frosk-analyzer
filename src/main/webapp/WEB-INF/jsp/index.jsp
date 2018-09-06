@@ -14,16 +14,6 @@
 
     <title>Evening Star</title>
 
-    <!-- DataTables CSS -->
-    <link href="webjars/datatables/css/dataTables.bootstrap.css" rel="stylesheet">
- 
-    <!-- DataTables Responsive CSS -->
-    <link href="https://cdn.datatables.net/responsive/1.0.6/css/dataTables.responsive.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/select/1.2.3/css/select.dataTables.min.css" rel="stylesheet">
-
- 	<link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css" media="all" />
- 	<link href="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/css/scrolling-nav.css" rel="stylesheet">
-    
 
 </head>
 
@@ -67,6 +57,8 @@ header {
 	            <li><a href="rsi">Relative Strenght Index-2</a></li>
 	            <li role="separator" class="divider"></li>
 	            <li><a href="all">All</a></li>
+	            <li role="separator" class="divider"></li>
+	            <li><a href="rsi_lab">RSI lab</a></li>
 	          </ul>
 	        </li>
 	      </ul>

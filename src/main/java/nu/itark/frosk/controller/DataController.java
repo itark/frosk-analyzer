@@ -2,10 +2,12 @@ package nu.itark.frosk.controller;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import org.ta4j.core.Bar;
 import org.ta4j.core.TimeSeries;
 
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
+import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DailyPrices;
 import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.dataset.TradeView;
@@ -25,7 +28,6 @@ import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.CustomerRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
-import nu.itark.frosk.service.FeaturedStrategyService;
 import nu.itark.frosk.service.TimeSeriesService;
 
 @RestController
@@ -45,13 +47,13 @@ public class DataController {
 	TimeSeriesService timeSeriesService;	
 
 	@Autowired
-	FeaturedStrategyService featuredStrategyService;	
+	StrategyAnalysis strategyAnalysis;	
 	
 	//TODO refactor
 	Map<String, List<TradeView>> tradesList = new HashMap<String, List<TradeView>>();
 	
 	//TODO refactor
-	Map<String, List<IndicatorValues>> rsiValuesList = new HashMap<String,  List<IndicatorValues>>();
+	Map<String, List<IndicatorValues>> indicatorValuesList = new HashMap<String,  List<IndicatorValues>>();
 	
 	/**
 	 * @Example  http://localhost:8080/featuredStrategies?strategy=ALL
@@ -61,23 +63,29 @@ public class DataController {
 	 * @return
 	 */			
 	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
-	public List<FeaturedStrategyDTO> getAllFeaturedStrategies(@RequestParam("strategy") String strategy){
+	public List<FeaturedStrategyDTO> getFeaturedStrategies(@RequestParam("strategy") String strategy){
 		logger.info("strategy="+strategy);
-		//Sanity check
 		if (StringUtils.isEmpty(strategy) ) {
 			throw new RuntimeException("strategy not correct set!");
 		}
+		if ("ALL".equals(strategy)) {
+			strategy = null;
+		}
 
-		//TODO cache trades
-		//TODO cache indicatorvalue
-		//List<FeaturedStrategyDTO> strategyList = featuredStrategyService.getFeaturedStrategy(strategy);
-		List<FeaturedStrategyDTO> strategyList = featuredStrategyService.getFeaturedStrategy("RSI2Strategy");
+		List<FeaturedStrategyDTO> strategyList = strategyAnalysis.run(strategy, null);
 		strategyList.forEach(dto -> {
 			tradesList.put(dto.getSecurity(), dto.getTrades());
-			rsiValuesList.put(dto.getSecurity(), dto.getIndicatorValues());
+			logger.info("Security:"+dto.getSecurity()+" has "+dto.getIndicatorValues()+" values");
+			indicatorValuesList.put(dto.getSecurity(), dto.getIndicatorValues());
 		});
 		
-		return strategyList;
+		List<FeaturedStrategyDTO> strategyOrderedByProfitList = 
+			strategyList
+				.stream()
+				.sorted(Comparator.reverseOrder())
+				.collect(Collectors.toList());
+		
+		return strategyOrderedByProfitList;
 
 	}	
 	
@@ -109,17 +117,18 @@ public class DataController {
 	}
 
 	/**
-	 * @Example  http://localhost:8080/rsiValues?security=BOL.ST
+	 * @Example  http://localhost:8080/frosk-analyzer/indicatorValues?security=SAND.ST
 	 * 
 	 * @param securityName
 	 * @param database
 	 * @return
 	 */
-	@RequestMapping(path="/rsiValues", method=RequestMethod.GET)
-	public List<IndicatorValues> getRSIValues(@RequestParam("security") String securityName){
-		logger.info("/rsiValues...securityName="+securityName);
+	@RequestMapping(path="/indicatorValues", method=RequestMethod.GET)
+	public List<IndicatorValues> getIndicatorValues(@RequestParam("security") String securityName){
+		logger.info("/indicatorValues...securityName="+securityName);
+		logger.info("/indicatorValuesList.size=="+indicatorValuesList.size());
 
-		return rsiValuesList.get(securityName);
+		return indicatorValuesList.get(securityName);
 		
 	}	
 	
@@ -139,11 +148,6 @@ public class DataController {
 	}	
 	
 
-
-	
-	
-	
-	
 	
 	
 	

@@ -14,17 +14,6 @@
 
     <title>Evening Star</title>
 
-    <!-- DataTables CSS -->
-    <link href="webjars/datatables/css/dataTables.bootstrap.css" rel="stylesheet">
- 
-    <!-- DataTables Responsive CSS -->
-    <link href="https://cdn.datatables.net/responsive/1.0.6/css/dataTables.responsive.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/select/1.2.3/css/select.dataTables.min.css" rel="stylesheet">
-
- 	<link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css" media="all" />
- 	<link href="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/css/scrolling-nav.css" rel="stylesheet">
-    
-
 </head>
 
 <style>
@@ -87,21 +76,21 @@ header {
         </div>
  
         <div class="row">
-            <div class="col-lg-3 col-md-3">
+            <div class="col-lg-4 col-md-4">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                     	OMX30
+                     	Dataset:OMX30
 	                   <div class="panel-body">
 	                     <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
 						  <thead>
 					            <tr>
 					                <th>Security</th>
-					                <th>Profit %</th>
+					                <th>Profit%</th>
+					                <th>Trades</th>
 					                <th>LatestTrade</th>				                
 					                <th>Period</th>
 									<th>Ticks</th>
 					                <th>AverageProfit</th>
-					                <th>Trades</th>
 					                <th>Ratio</th>
 					                <th>MaxDD</th>
 					            </tr>
@@ -109,12 +98,12 @@ header {
 					        <tfoot>
 					            <tr>
 					                <th>Security</th>
-					                <th>Profit %</th>
+					                <th>Profit%</th>
+					                <th>Trades</th>
 					                <th>LatestTrade</th>
 					                <th>Period</th>
 									<th>Ticks</th>
 					                <th>AverageProfit</th>
-					                <th>Trades</th>
 					                <th>Ratio</th>
 					                <th>MaxDD</th>
 					            </tr>
@@ -125,26 +114,20 @@ header {
                 </div>
             </div>
  
-           <div class="col-lg-9 col-md-9">
+           <div class="col-lg-8 col-md-8">
                  <div class="panel panel-default">
                         <div class="panel-heading">
                             <i class="fa fa-bar-chart-o fa-fw"></i>
                             <div class="pull-right">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
-                                        Actions
+                                        Chart type
                                         <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu pull-right" role="menu">
-                                        <li><a href="#">Action</a>
+                                        <li><a href="#" onclick="renderChartOHLC();">Candle</a>
                                         </li>
-                                        <li><a href="#" onclick="renderChart2('BOL.ST');">Line</a>
-                                        </li>
-                                        <li><a href="#">Something else here</a>
-                                        </li>
-                                        <li class="divider"></li>
-                                        <li><a href="#">Separated link</a>
-                                        </li>
+                                        <li><a href="#" onclick="renderChartLine();">Line</a>
                                     </ul>
                                 </div>
                             </div>
@@ -170,46 +153,26 @@ header {
 
 </div>
 
-
-    <!-- DataTables JavaScript -->
-    <script src="webjars/datatables/js/jquery.dataTables.min.js"></script>
-    <script src="webjars/datatables/js/dataTables.bootstrap.min.js"></script> 
-    <script src="https://cdn.jsdelivr.net/webjars/org.webjars.bower/datatables.net-responsive/2.1.1/js/dataTables.responsive.js"></script>
-    <script src="https://cdn.datatables.net/select/1.2.3/js/dataTables.select.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
-	<script src="https://www.amcharts.com/lib/3/serial.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amstock.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/dataloader/dataloader.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/js/scrolling-nav.js"></script>
-    
-	<script src="https://www.amcharts.com/lib/4/core.js"></script>
-	<script src="https://www.amcharts.com/lib/4/charts.js"></script>
-	<script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>  
-    
-
-    <!-- Page-Level Demo Scripts - Tables - Use for reference -->
  <script>
  	var selectedSecurity;
- 
+ 	var strategy="MovingMomentumStrategy";
  
     $(document).ready(function() {
     	var events = $('#events');
         var featStratTable = $('#featuredStrategies').DataTable({
         	responsive: true,
         	select: true,
-        	"sAjaxSource": "featuredStrategies?strategy=MovingMomentumStrategy",
+        	"sAjaxSource": "featuredStrategies?strategy="+strategy,
 			"sAjaxDataProp": "",
 			"order": [[ 1, "desc" ]],
 			"aoColumns": [
 				  { "mData": "security"},
 			      { "mData": "totalProfit"},
-				  { "mData": "latestTradeDate" },
+				  { "mData": "numberofTrades" },
+			      { "mData": "latestTradeDate" },
 				  { "mData": "periodDescription"},
 			      { "mData": "numberOfTicks" },
 				  { "mData": "averageTickProfit" },
-				  { "mData": "numberofTrades" },
 				  { "mData": "profitableTradesRatio" },
 				  { "mData": "maxDD" }
 			]       
@@ -219,23 +182,34 @@ header {
         featStratTable
     		.on( 'select', function ( e, dt, type, indexes ) {
             	var rowData = featStratTable.rows( indexes ).data().toArray();
-            	//var name = featStratTable.rows( indexes ).data().pluck( 'name' );
-//             	var name = "MovingMomentumStrategy";
             	var security = featStratTable.rows( indexes ).data().pluck( 'security' );
-            	selectedSecurity = security[0];
-            	renderChart(security[0]);
+             	selectedSecurity = security[0];
+
+             	renderChartOHLC();
             	
         }) ; 
+    
+        featStratTable
+    		.on( 'draw.dt', function () {
+		      	let name = featStratTable.rows( 0 ).data().pluck( 'name' );
+		    	let security = featStratTable.rows( 0 ).data().pluck( 'security' );
+		    	selectedSecurity = security[0];
+		        
+		        renderChartOHLC();
+	        
+    		} );            
+        
         
     });
     
 
-    function renderChart(security) {
-    	console.log('about to render chart on strategyName=MovingMomentumStrategy and security='+security);
+    function renderChartOHLC() {
+    	security = selectedSecurity;
+    	console.log('about to render chart on strategyName='+strategy+' and security='+security);
     	
      	var dailyPricesUrl = "dailyPrices?security="+security;
-     	var tradesUrl = "trades?security="+security+"&strategy=MovingMomentumStrategy";
-     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy=MovingMomentumStrategy";
+     	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
+     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategy;
 
      	console.log("dailyPricesUrl",dailyPricesUrl);
      	console.log("tradesUrl",tradesUrl);
@@ -252,11 +226,17 @@ header {
 
     	var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
     	dateAxis.renderer.grid.template.location = 0;
-
     	var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
     	valueAxis.tooltip.disabled = true;
 
+    	var dateAxis2 = chart.xAxes.push(new am4charts.DateAxis());
+    	dateAxis2.renderer.grid.template.location = 0;
+    	var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
+    	valueAxis2.tooltip.disabled = true;
+    	
+    	
     	var series = chart.series.push(new am4charts.CandlestickSeries());
+    	series.name = "Kalle Anka";
     	series.dataFields.dateX = "date";
     	series.dataFields.valueY = "close";
     	series.dataFields.openValueY = "open";
@@ -279,6 +259,7 @@ header {
 
     	// a separate series for scrollbar
     	var lineSeries = chart.series.push(new am4charts.LineSeries());
+    	lineSeries.name = "Donald Duck"
     	lineSeries.dataFields.dateX = "date";
     	lineSeries.dataFields.valueY = "close";
     	// need to set on default state, as initially series is "show"
@@ -296,14 +277,13 @@ header {
     	
     }  
  
-    
-    function renderChart2(security) {
+    function renderChartLine() {
     	security = selectedSecurity;
-    	console.log('about to render chart2 on strategyName=MovingMomentumStrategy and security='+security);
+    	console.log('about to render chart2 on strategyName='+strategy+' and security='+security);
     	
      	var dailyPricesUrl = "dailyPrices?security="+security;
-     	var tradesUrl = "trades?security="+security+"&strategy=MovingMomentumStrategy";
-     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy=MovingMomentumStrategy";
+     	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
+     	var indicatorValueUrl = "indicatorValues?security="+security+"&strategy="+strategy;
 
      	console.log("dailyPricesUrl",dailyPricesUrl);
      	console.log("tradesUrl",tradesUrl);
@@ -482,7 +462,6 @@ header {
     	
     }  //renderChart   
         
-    
     
     </script>
 

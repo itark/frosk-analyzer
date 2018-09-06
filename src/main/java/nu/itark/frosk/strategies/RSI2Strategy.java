@@ -32,6 +32,7 @@ import org.ta4j.core.Decimal;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
+import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
@@ -48,7 +49,7 @@ import nu.itark.frosk.dataset.IndicatorValues;
  * <p>
  * @see http://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:rsi2
  */
-public class RSI2Strategy {
+public class RSI2Strategy implements IndicatorValue{
 
 	Logger logger = Logger.getLogger(RSI2Strategy.class.getName());
 
@@ -57,6 +58,8 @@ public class RSI2Strategy {
 	
 	RSIIndicator rsi = null;
 	TimeSeries series = null;
+	
+	List<IndicatorValues> indicatorValues = new ArrayList<IndicatorValues>();
 	
 	public RSI2Strategy(TimeSeries series) {
 		this.series = series;
@@ -91,21 +94,30 @@ public class RSI2Strategy {
                 .and(new CrossedUpIndicatorRule(rsi, Decimal.valueOf(95))) // Signal 1
                 .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
         
+        setIndicatorValues(rsi, series);
+        
+        
         return new BaseStrategy(entryRule, exitRule);
     }
 
-	public List<IndicatorValues> getValues() {
-		List<IndicatorValues> indicatorValues = new ArrayList<>();
+    private void setIndicatorValues(RSIIndicator indicator, TimeSeries series) {
 		IndicatorValues iv = null;
 		for (int i = 0; i < series.getBarCount(); i++) {
 			iv = new IndicatorValues();
 			iv.setDate(series.getBar(i).getEndTime().toLocalDate().toString());
-			iv.setValue(rsi.getValue(i).toString());
+			iv.setValue(indicator.getValue(i).getDelegate());
 			indicatorValues.add(iv);
 		}
+
+    	logger.info("indicatorValues size="+indicatorValues.size());
 		
+	}
+    
+    
+    
+    @Override
+	public List<IndicatorValues> getIndicatorValues() {
 		return indicatorValues;
-		
 	}	    
     
 }

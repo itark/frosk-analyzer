@@ -72,36 +72,16 @@ header {
  
         <div class="row">
           <div class="col-lg-12 col-md-12 text-center">
-            <h2>The Relative Strength Index - 2</h2>
-            <p>Connors suggests looking for buying opportunities when 2-period RSI moves below 10, which is considered deeply oversold. Conversely, traders can look for short-selling opportunities when 2-period RSI moves above 90..</p>
+            <h2>The Relative Strength Index - LAB</h2>
           </div>
-        </div>
-        
-        <div class="row">
-          <div class="col-lg-6 col-md-6">
-          	<p>Buy e.g.</p>
-			<pre class="code">
-[type = stock]
-and [today's sma(20,volume) &gt; 40000]
-and [today's sma(60,close) &gt; 20]
-and [today's close &gt; today's sma(200,close)]
-and [5 x today's rsi(2)]
-			</pre>
-          </div>
- 
-          <div class="col-lg-6 col-md-6">
-          	 <p>Sell e.g.</p>
-			 <pre class="code">
-[type = stock]
-and [today's sma(20,volume) &gt; 40000]
-and [today's sma(60,close) &gt; 20]
-and [today's close &lt; today's sma(200,close)]
-and [today's rsi(2) x 95]
-			 </pre>
-          </div>      
         </div>
 
         <div class="row">
+
+			<div class="col-lg-9 col-md-9">
+				 <div class="col-12 dc-chart" id="chart-div"></div>
+			</div>
+  
             <div class="col-lg-3 col-md-3">
                 <div class="panel panel-default">
                     <div class="panel-heading">
@@ -139,10 +119,6 @@ and [today's rsi(2) x 95]
                     </div>
                 </div>
             </div>
- 
-           <div class="col-lg-9 col-md-9">
-           	 <div class="col-12 dc-chart" id="chart-div"></div>
-           </div>
 
         </div>
 
@@ -157,23 +133,7 @@ and [today's rsi(2) x 95]
 
 </div>
 
-
-    <!-- DataTables JavaScript -->
-    <script src="webjars/datatables/js/jquery.dataTables.min.js"></script>
-    <script src="webjars/datatables/js/dataTables.bootstrap.min.js"></script> 
-    <script src="https://cdn.jsdelivr.net/webjars/org.webjars.bower/datatables.net-responsive/2.1.1/js/dataTables.responsive.js"></script>
-    <script src="https://cdn.datatables.net/select/1.2.3/js/dataTables.select.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
-	<script src="https://www.amcharts.com/lib/3/serial.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amstock.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/dataloader/dataloader.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/js/scrolling-nav.js"></script>
-    
-
-    <!-- Page-Level Demo Scripts - Tables - Use for reference -->
-    <script>
+<script>
     $(document).ready(function() {
     	var events = $('#events');
         var featStratTable = $('#featuredStrategies').DataTable({
@@ -192,18 +152,33 @@ and [today's rsi(2) x 95]
 				  { "mData": "averageTickProfit" },
 				  { "mData": "profitableTradesRatio" },
 				  { "mData": "maxDD" }
-			]       
-        
+			]
         });
    
         featStratTable
     		.on( 'select', function ( e, dt, type, indexes ) {
-            	var rowData = featStratTable.rows( indexes ).data().toArray();
-            	var name = featStratTable.rows( indexes ).data().pluck( 'name' );
-            	var security = featStratTable.rows( indexes ).data().pluck( 'security' );
+            	let rowData = featStratTable.rows( indexes ).data().toArray();
+            	let name = featStratTable.rows( indexes ).data().pluck( 'name' );
+            	let security = featStratTable.rows( indexes ).data().pluck( 'security' );
             	renderChart(name[0], security[0]);
             	
         }) ; 
+        
+        
+        featStratTable
+        	.on( 'draw.dt', function () {
+		      	let name = featStratTable.rows( 0 ).data().pluck( 'name' );
+		    	let security = featStratTable.rows( 0 ).data().pluck( 'security' );
+		        console.log("name",name);
+		        console.log("security",security);
+		
+		    	console.log("name[0]",name[0]);
+		        console.log("security[0]",security[0]);
+		        
+		        renderChart(name[0], security[0]);
+		        
+        } );        
+        
         
     });
     
@@ -213,7 +188,7 @@ and [today's rsi(2) x 95]
     	
      	var dailyPricesUrl = "dailyPrices?security="+security;
      	var tradesUrl = "trades?security="+security+"&strategy="+strategyName;
-     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategyName;
+     	var indicatorValueUrl = "indicatorValues?security="+security+"&strategy="+strategyName;
 
      	console.log("dailyPricesUrl",dailyPricesUrl);
      	console.log("tradesUrl",tradesUrl);
@@ -392,7 +367,7 @@ and [today's rsi(2) x 95]
     	
     }  //renderChart
     
-    </script>
+</script>
 
 </body>
 

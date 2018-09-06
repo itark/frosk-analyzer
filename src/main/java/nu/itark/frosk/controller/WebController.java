@@ -46,6 +46,11 @@ public class WebController {
 		return "rsi";	
 	}	
 	
+	@RequestMapping("/rsi_lab")
+	public String rsi_lab(Map<String, Object> model) {
+		return "rsi_lab";	
+	}		
+	
 	@RequestMapping("/ma")
 	public String ma(Map<String, Object> model) {
 		return "ma";	

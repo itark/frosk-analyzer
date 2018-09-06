@@ -26,6 +26,7 @@ import org.ta4j.core.analysis.criteria.NumberOfTradesCriterion;
 import org.ta4j.core.analysis.criteria.RewardRiskRatioCriterion;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 
+import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.dataset.TradeView;
 import nu.itark.frosk.service.TimeSeriesService;
 import nu.itark.frosk.strategies.MovingMomentumStrategy;
@@ -34,7 +35,7 @@ import nu.itark.frosk.strategies.RSI2Strategy;
  * This class diplays analysis criterion values after running a trading strategy
  * over a time series.
  */
-@Service("strategyAnalysis")
+@Service
 public class StrategyAnalysis {
 	Logger logger = Logger.getLogger(StrategyAnalysis.class.getName());
 	
@@ -42,41 +43,49 @@ public class StrategyAnalysis {
 	TimeSeriesService timeSeriesService;
 	
 	/**
-	 * Load all TimeSeries defined by and run all available strategies.
+	 * This is the thing
+	 * <li>Analyse on all strategies and all securities</li>
+	 * <li>Analyse on strategy and all securities, or</li>
+	 * <li>Analyse on strategy and selected security, or</li>
+	 * <li>Analyse on all strategies and selected security, or</li>
 	 * 
-	 * @return List of FeaturedStrategyDTO
+	 * @param strategy can be null
+	 * @param security can be null
+	 * @return result in List<FeaturedStrategyDTO>
 	 */
-	public List<FeaturedStrategyDTO> runStrategy(String strategy) {
-		logger.info("runStrategyMatrix("+strategy+")");
-
-		List<TimeSeries> timeSeriesList = timeSeriesService.getDataSet();
+	public List<FeaturedStrategyDTO> run(String strategy, String security) {
+		logger.info("run("+strategy+", "+security+")");
+	
+		if (strategy == null && security == null) {
+			return runStrategyMatrix();
+		} else if (strategy != null && security == null) {
+			return runStrategy(strategy, timeSeriesService.getDataSet());
+		} else if (strategy != null && security != null) {
+			List<TimeSeries> timeSeriesList = new ArrayList<TimeSeries>();
+			timeSeriesList.add(timeSeriesService.getDataSet(strategy));
+			return runStrategy(strategy, timeSeriesList);
+		} 
+		else {
+			throw new UnsupportedOperationException("kalle anka");
+		}
+		
+	}
+	
+	private List<FeaturedStrategyDTO> runStrategy(String strategy, List<TimeSeries> timeSeriesList) {
 		List<FeaturedStrategyDTO> fsList = new ArrayList<FeaturedStrategyDTO>();
 		FeaturedStrategyDTO fs = null;
 		List<Trade> trades = null;
-		
         double totalProfit ;
         double totalProfitPercentage;
         ZonedDateTime latestTradeDate= null;
         Strategy strategyToRun = null;
-//        RSI2Strategy strategyReguested = null;
+        List<IndicatorValues> indicatorValues = new ArrayList<IndicatorValues>();
         
 		for (TimeSeries series : timeSeriesList) {
-//			logger.info("RSI2Strategy.class.getSimpleName()="+RSI2Strategy.class.getSimpleName());
-			if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
-				RSI2Strategy strategyReguested = new RSI2Strategy(series);
-				strategyToRun = strategyReguested.buildStrategy();
-			} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
-				MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
-				strategyToRun = strategyReguested.buildStrategy();				
-			}
-			if (strategyToRun == null) {
-				throw new RuntimeException("strat is null");
-			}
-			
+			strategyToRun = getStrategyToRun(strategy, series, indicatorValues);
 			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			trades = tradingRecord.getTrades();
-
 			List<TradeView> tradeViewList = new ArrayList<TradeView>();
 			TradeView tr = null;
 
@@ -102,8 +111,10 @@ public class StrategyAnalysis {
 			fs = new FeaturedStrategyDTO();
 			fs.setName(strategy);
 			fs.setSecurity(series.getName());
-			fs.setPeriodDescription(getDate(series));
-			fs.setLatestTradeDate(latestTradeDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+			fs.setPeriodDescription(getPeriod(series));
+			if(latestTradeDate != null) {
+				fs.setLatestTradeDate(latestTradeDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+			}
 			totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord);
 			totalProfitPercentage = (totalProfit - 1) * 100;
 			fs.setTotalProfit(new BigDecimal(totalProfitPercentage).setScale(2, BigDecimal.ROUND_DOWN));
@@ -120,8 +131,8 @@ public class StrategyAnalysis {
 			fs.setTotalTranactionCost(
 					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord)));
 			fs.setTrades(tradeViewList);
-			//TODO
-			//			fs.setIndicatorValues(strategyReguested.getValues());
+			logger.info("FRMO="+indicatorValues);
+			fs.setIndicatorValues(indicatorValues);
 
 			fsList.add(fs);
 
@@ -129,6 +140,28 @@ public class StrategyAnalysis {
 
 		return fsList;
 	}
+
+	private Strategy getStrategyToRun(String strategy,  TimeSeries series, List<IndicatorValues> indVals) {
+		logger.info("getStrategyToRun()");
+		Strategy strategyToRun = null;
+		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
+			RSI2Strategy strategyReguested = new RSI2Strategy(series);
+			strategyToRun = strategyReguested.buildStrategy();
+			indVals.addAll(strategyReguested.getIndicatorValues());
+		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
+			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
+			indVals.addAll(strategyReguested.getIndicatorValues());
+		}
+		if (strategyToRun == null) {
+			throw new RuntimeException("strategyToRun is null");
+		}
+
+		logger.info("indVals set to="+indVals.size());
+		
+		return strategyToRun;
+	}
+	
 	
 	/**
 	 * Load all TimeSeries defined by and run all available strategies.
@@ -161,25 +194,18 @@ public class StrategyAnalysis {
 		        TradeView tr = null;
 
 		        for (Trade trade : trades) {
-		            // Buy signal
 		            Bar barEntry = series.getBar(trade.getEntry().getIndex());
-//		        	Decimal closePriceBuy = series.getBar(trade.getEntry().getIndex()).getClosePrice();
 		            LocalDate buyDate = series.getBar(trade.getEntry().getIndex()).getEndTime().toLocalDate();
 		            tr = new TradeView();
 		            tr.setDate(buyDate);
 		            tr.setType("B");
 		            tradeViewList.add(tr);
 	            
-		            // Sell signal
-//		            Decimal closePriceSell = series.getBar(trade.getExit().getIndex()).getClosePrice();
 		            LocalDate sellDate = series.getBar(trade.getExit().getIndex()).getEndTime().toLocalDate();
 		            tr = new TradeView();
 		            tr.setDate(sellDate);
 		            tr.setType("S");
 		            tradeViewList.add(tr);
-
-//		            Decimal profit = closePriceSell.minus(closePriceBuy);
-		            
 		            
 		            latestTradeDate = barEntry.getEndTime();
 		            
@@ -188,7 +214,7 @@ public class StrategyAnalysis {
 		        fs = new FeaturedStrategyDTO();
 				fs.setName(name);
 				fs.setSecurity(series.getName());
-				fs.setPeriodDescription(getDate(series));
+				fs.setPeriodDescription(getPeriod(series));
 				fs.setLatestTradeDate(latestTradeDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
 				totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord);
 				totalProfitPercentage = (totalProfit - 1 ) *100;
@@ -206,7 +232,8 @@ public class StrategyAnalysis {
 				fs.setTotalTranactionCost(new BigDecimal(
 						new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord)));
 				fs.setTrades(tradeViewList);
-//				fs.setIndicatorValues(rsiStrat.);
+				logger.info("WARN: no indicatorvalues set.");
+//				fs.setIndicatorValues(indi.);
 				
 				fsList.add(fs);
 
@@ -226,7 +253,7 @@ public class StrategyAnalysis {
 		return null;
 	}
 
-	private String getDate(TimeSeries series) {
+	private String getPeriod(TimeSeries series) {
 	StringBuilder sb = new StringBuilder();
     if (!series.getBarData().isEmpty()) {
         Bar firstBar = series.getFirstBar();

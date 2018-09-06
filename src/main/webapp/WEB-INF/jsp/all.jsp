@@ -14,24 +14,13 @@
 
     <title>Evening Star</title>
 
-    <!-- DataTables CSS -->
-    <link href="webjars/datatables/css/dataTables.bootstrap.css" rel="stylesheet">
- 
-    <!-- DataTables Responsive CSS -->
-    <link href="https://cdn.datatables.net/responsive/1.0.6/css/dataTables.responsive.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/select/1.2.3/css/select.dataTables.min.css" rel="stylesheet">
-
- 	<link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css" media="all" />
- 	<link href="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/css/scrolling-nav.css" rel="stylesheet">
-    
-
 </head>
 
 <style>
 
 #chart-div {
 	width		: 100%;
-	height		: 700px;
+	height		: 750px;
 	font-size	: 11px;
 }
 
@@ -64,7 +53,7 @@ header {
 	        <li class="dropdown">
 	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Strategies <span class="caret"></span></a>
 	          <ul class="dropdown-menu">
-	            <li><a href="ma">Moving Average</a></li>
+	            <li><a href="ma">Moving Momentum</a></li>
 	            <li><a href="rsi">Relative Strenght Index-2</a></li>
 	            <li role="separator" class="divider"></li>
 	            <li><a href="all">All</a></li>
@@ -75,66 +64,36 @@ header {
 	  </div>
 	</nav>
 
-	<section>
+	<header>
       <div class="container-fluid">
  
         <div class="row">
           <div class="col-lg-12 col-md-12 text-center">
-            <h2>The trend is your friend</h2>
-            <p class="lead">Frosk Analyzer is your contemporary companion on the road of stock picking.</p>
+            <h2>All</h2>
+			<pre class="code">
+[RSI-2]
+[Moving Average]
+			</pre>
           </div>
         </div>
  
         <div class="row">
-            <div class="col-lg-3 col-md-3">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-comments fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge">26</div>
-                                <div>New Possibilites!</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-9 col-md-9">
-                <div class="panel panel-green">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-tasks fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge">12</div>
-                                <div>Scan it!</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-3 col-md-3">
+            <div class="col-lg-4 col-md-4">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                     	Strategies on OMX30
+                     	Dataset:OMX30
 	                   <div class="panel-body">
 	                     <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
 						  <thead>
 					            <tr>
 					                <th>Name</th>
 					                <th>Security</th>
-					                <th>Profit %</th>
+					                <th>Profit%</th>
+					                <th>Trades</th>
 					                <th>LatestTrade</th>				                
 					                <th>Period</th>
 									<th>Ticks</th>
 					                <th>AverageProfit</th>
-					                <th>Trades</th>
 					                <th>Ratio</th>
 					                <th>MaxDD</th>
 					            </tr>
@@ -143,12 +102,12 @@ header {
 					            <tr>
 					                <th>Name</th>
 					                <th>Security</th>
-					                <th>Profit %</th>
+					                <th>Profit%</th>
+					                <th>Trades</th>
 					                <th>LatestTrade</th>
 					                <th>Period</th>
 									<th>Ticks</th>
 					                <th>AverageProfit</th>
-					                <th>Trades</th>
 					                <th>Ratio</th>
 					                <th>MaxDD</th>
 					            </tr>
@@ -159,59 +118,66 @@ header {
                 </div>
             </div>
  
-           <div class="col-lg-9 col-md-9">
-           	 <div class="col-12 dc-chart" id="chart-div"></div>
+           <div class="col-lg-8 col-md-8">
+                 <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <i class="fa fa-bar-chart-o fa-fw"></i>
+                            <div class="pull-right">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                        Chart type
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu pull-right" role="menu">
+                                        <li><a href="#" onclick="renderChartOHLC();">Candle</a>
+                                        </li>
+                                        <li><a href="#" onclick="renderChartLine();">Line</a>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /.panel-heading -->
+	   					<div class="panel-body">
+			           		<div class="col-12 dc-chart" id="chart-div"></div>
+	  					</div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
            </div>
-
-
-        </div>
-
-     </div>
-     </section>
+         </div>
+ 		</div>
+     </header>
 
    
      <footer class="bg-primary text-white">
       <div class="container text-center">
-        <p class="lead">Copyright &copy; Frosk Analyzer 2018</p>
+        <p>Copyright &copy; Evening Star 2018</p>
       </div>
     </footer>   
 
 </div>
 
-
-    <!-- DataTables JavaScript -->
-    <script src="webjars/datatables/js/jquery.dataTables.min.js"></script>
-    <script src="webjars/datatables/js/dataTables.bootstrap.min.js"></script> 
-    <script src="https://cdn.jsdelivr.net/webjars/org.webjars.bower/datatables.net-responsive/2.1.1/js/dataTables.responsive.js"></script>
-    <script src="https://cdn.datatables.net/select/1.2.3/js/dataTables.select.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
-	<script src="https://www.amcharts.com/lib/3/serial.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amstock.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/dataloader/dataloader.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/js/scrolling-nav.js"></script>
-    
-
-    <!-- Page-Level Demo Scripts - Tables - Use for reference -->
-    <script>
+ <script>
+ 	var selectedSecurity;
+ 	var strategy="ALL";
+ 
     $(document).ready(function() {
     	var events = $('#events');
         var featStratTable = $('#featuredStrategies').DataTable({
         	responsive: true,
         	select: true,
-        	"sAjaxSource": "featuredStrategies?strategy=ALL",
+        	"sAjaxSource": "featuredStrategies?strategy="+strategy,
 			"sAjaxDataProp": "",
 			"order": [[ 2, "desc" ]],
 			"aoColumns": [
 				  { "mData": "name"},
 				  { "mData": "security"},
 			      { "mData": "totalProfit"},
-				  { "mData": "latestTradeDate" },
+				  { "mData": "numberofTrades" },
+			      { "mData": "latestTradeDate" },
 				  { "mData": "periodDescription"},
 			      { "mData": "numberOfTicks" },
 				  { "mData": "averageTickProfit" },
-				  { "mData": "numberofTrades" },
 				  { "mData": "profitableTradesRatio" },
 				  { "mData": "maxDD" }
 			]       
@@ -221,21 +187,108 @@ header {
         featStratTable
     		.on( 'select', function ( e, dt, type, indexes ) {
             	var rowData = featStratTable.rows( indexes ).data().toArray();
-            	var name = featStratTable.rows( indexes ).data().pluck( 'name' );
             	var security = featStratTable.rows( indexes ).data().pluck( 'security' );
-            	renderChart(name[0], security[0]);
+             	selectedSecurity = security[0];
+
+             	renderChartOHLC();
             	
         }) ; 
+    
+        featStratTable
+    		.on( 'draw.dt', function () {
+		      	let name = featStratTable.rows( 0 ).data().pluck( 'name' );
+		    	let security = featStratTable.rows( 0 ).data().pluck( 'security' );
+		    	selectedSecurity = security[0];
+		        
+		        renderChartOHLC();
+	        
+    		} );            
+        
         
     });
     
 
-    function renderChart(strategyName, security) {
-    	console.log('about to render chart on strategyName='+strategyName+ ' and security='+security);
+    function renderChartOHLC() {
+    	security = selectedSecurity;
+    	console.log('about to render chart on strategyName='+strategy+' and security='+security);
     	
      	var dailyPricesUrl = "dailyPrices?security="+security;
-     	var tradesUrl = "trades?security="+security+"&strategy="+strategyName;
-     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategyName;
+     	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
+     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategy;
+
+     	console.log("dailyPricesUrl",dailyPricesUrl);
+     	console.log("tradesUrl",tradesUrl);
+    	console.log("indicatorValueUrl",indicatorValueUrl);
+	 
+    	am4core.useTheme(am4themes_animated);
+
+    	var chart = am4core.create("chart-div", am4charts.XYChart);
+    	chart.dataSource.url = dailyPricesUrl;
+
+    	chart.paddingRight = 20;
+
+    	chart.dateFormatter.inputDateFormat = "YYYY-MM-dd";
+
+    	var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+    	dateAxis.renderer.grid.template.location = 0;
+    	var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    	valueAxis.tooltip.disabled = true;
+
+    	var dateAxis2 = chart.xAxes.push(new am4charts.DateAxis());
+    	dateAxis2.renderer.grid.template.location = 0;
+    	var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
+    	valueAxis2.tooltip.disabled = true;
+    	
+    	
+    	var series = chart.series.push(new am4charts.CandlestickSeries());
+    	series.name = "Kalle Anka";
+    	series.dataFields.dateX = "date";
+    	series.dataFields.valueY = "close";
+    	series.dataFields.openValueY = "open";
+    	series.dataFields.lowValueY = "low";
+    	series.dataFields.highValueY = "high";
+    	series.simplifiedProcessing = true;
+    	series.tooltipText = "Open:{openValueY.value}\nLow:{lowValueY.value}\nHigh:{highValueY.value}\nClose:{valueY.value}";
+
+    	// important!
+    	// candlestick series colors are set in states. 
+    	// series.riseFromOpenState.properties.fill = am4core.color("#00ff00");
+    	// series.dropFromOpenState.properties.fill = am4core.color("#FF0000");
+    	// series.riseFromOpenState.properties.stroke = am4core.color("#00ff00");
+    	// series.dropFromOpenState.properties.stroke = am4core.color("#FF0000");
+
+    	series.riseFromPreviousState.properties.fillOpacity = 1;
+    	series.dropFromPreviousState.properties.fillOpacity = 0;
+
+    	chart.cursor = new am4charts.XYCursor();
+
+    	// a separate series for scrollbar
+    	var lineSeries = chart.series.push(new am4charts.LineSeries());
+    	lineSeries.name = "Donald Duck"
+    	lineSeries.dataFields.dateX = "date";
+    	lineSeries.dataFields.valueY = "close";
+    	// need to set on default state, as initially series is "show"
+    	lineSeries.defaultState.properties.visible = false;
+
+    	// hide from legend too (in case there is one)
+    	lineSeries.hiddenInLegend = true;
+    	lineSeries.fillOpacity = 0.5;
+    	lineSeries.strokeOpacity = 0.5;
+
+    	var scrollbarX = new am4charts.XYChartScrollbar();
+    	scrollbarX.series.push(lineSeries);
+    	chart.scrollbarX = scrollbarX;
+
+    	
+    }  
+ 
+    function renderChartLine() {
+    	security = selectedSecurity;
+    	console.log('about to render chart2 on strategyName='+strategy+' and security='+security);
+    	
+     	var dailyPricesUrl = "dailyPrices?security="+security;
+     	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
+     	var indicatorValueUrl = "indicatorValues?security="+security+"&strategy="+strategy;
 
      	console.log("dailyPricesUrl",dailyPricesUrl);
      	console.log("tradesUrl",tradesUrl);
@@ -412,7 +465,8 @@ header {
 	    		  
 	    }); //chart
     	
-    }  //renderChart
+    }  //renderChart   
+        
     
     </script>
 

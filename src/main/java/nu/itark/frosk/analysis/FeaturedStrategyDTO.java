@@ -14,11 +14,7 @@ import nu.itark.frosk.dataset.TradeView;
  *
  */
 @Data
-public class FeaturedStrategyDTO {
-
-	/**
-	 * Potensials: Win trades in % Annul return in % Profit factor ...
-	 */
+public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
 
 	private String name;
 	private String security;
@@ -39,6 +35,11 @@ public class FeaturedStrategyDTO {
 	private String latestTradeDate;
 	private List<TradeView> trades;
 	private List<IndicatorValues> indicatorValues;
+
+	@Override
+	public int compareTo(FeaturedStrategyDTO o) {
+		return totalProfit.compareTo(o.getTotalProfit());
+	}
 
 
 }

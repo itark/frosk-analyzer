@@ -58,19 +58,13 @@ public class TimeSeriesService  {
 		
 		securityPrices.forEach(row -> {
 			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());		
-			
 			Bar bar = new BaseBar(dateTime, row.getOpen().toString(), row.getHigh().toString(), row.getLow().toString(), row.getClose().toString(), row.getVolume().toString());
-			
 			bars.add(bar);
 			
 		});
 		
 		return new BaseTimeSeries(name, bars);
 		
-		
 	}	
-	
-	
-	
 	
 }

@@ -18,34 +18,25 @@ import nu.itark.frosk.strategies.RSI2Strategy;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class TestJFeaturedStrategyService {
-	Logger logger = Logger.getLogger(TestJFeaturedStrategyService.class.getName());
-	
-	@Autowired
-	private FeaturedStrategyService fs;
-	
+//	Logger logger = Logger.getLogger(TestJFeaturedStrategyService.class.getName());
+//	
+//	@Autowired
+//	private FeaturedStrategyService fs;
+//	
+//
+//
+//	@Test
+//	public void testWIKI() {
+//		List<FeaturedStrategyDTO> fsList = fs.getAllFeaturedStrategies();
+//		assertNotNull(fsList);
+//	}
+//
+//	@Test
+//	public void testFSE() {
+//		List<FeaturedStrategyDTO> fsList = fs.getAllFeaturedStrategies();
+//		assertNotNull(fsList);
+//	}
 
-
-	@Test
-	public void testWIKI() {
-		List<FeaturedStrategyDTO> fsList = fs.getAllFeaturedStrategies();
-		assertNotNull(fsList);
-	}
-
-	@Test
-	public void testFSE() {
-		List<FeaturedStrategyDTO> fsList = fs.getAllFeaturedStrategies();
-		assertNotNull(fsList);
-	}
-
-	@Test
-	public void testFeaturedStrategyRSI_WIKI() {
-		List<FeaturedStrategyDTO> fsList = fs.getFeaturedStrategy(RSI2Strategy.class.getSimpleName());
-		assertNotNull(fsList);
-		
-		fsList.forEach(dto -> logger.info("dto="+ReflectionToStringBuilder.toString(dto)));
-		
-	}	
-	
 	
 	
 }
