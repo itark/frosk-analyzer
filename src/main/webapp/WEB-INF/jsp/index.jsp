@@ -34,6 +34,22 @@ header {
   height: 98vh;
 }
 
+canvas {
+  display: block;
+  vertical-align: bottom;
+}
+
+#particles-js {
+  position: absolute;
+  width: 100%;
+  height: 10%;
+  background-color: #f2dede;
+  background-image: url("");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 50%; 
+} 
+
 </style>
 
 <body>
@@ -49,7 +65,6 @@ header {
 	   
 	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 	      <ul class="nav navbar-nav">
-	        <!--  li class="active"><a href="#">Översikt <span class="sr-only">(current)</span></a></li-->
 	        <li class="dropdown">
 	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Strategies <span class="caret"></span></a>
 	          <ul class="dropdown-menu">
@@ -57,8 +72,6 @@ header {
 	            <li><a href="rsi">Relative Strenght Index-2</a></li>
 	            <li role="separator" class="divider"></li>
 	            <li><a href="all">All</a></li>
-	            <li role="separator" class="divider"></li>
-	            <li><a href="rsi_lab">RSI lab</a></li>
 	          </ul>
 	        </li>
 	      </ul>
@@ -67,22 +80,28 @@ header {
 	</nav>
 
 
-
 	<header>
+		 <div class="container-fluid">
+			<div id="particles-js"></div>
+		   		<div class="row">
+		          <div class="col-lg-12 col-md-12 text-center">
+		            <h2>The trend is your friend</h2>
+		            <p class="lead">Evening Star is your contemporary companion on the road of stock picking.</p>
+		          </div>
+		        </div>
+		 </div>
+	</header>
+
+	<section>
       <div class="container-fluid">
-        <div class="row">
-          <div class="col-lg-12 col-md-12 text-center">
-            <h2>The trend is your friend</h2>
-            <p class="lead">Evening Star is your contemporary companion on the road of stock picking.</p>
-          </div>
-        </div>
+
         <div class="row">
            <div class="col-lg-12 col-md-12">
            	 <div class="col-12 dc-chart" id="clock-div"></div>
            </div>
         </div>
       </div>
-     </header>
+   </section>
    
      <footer class="bg-primary text-white">
       <div class="container text-center">
@@ -92,26 +111,21 @@ header {
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+<script type="text/javascript">
 
-    <!-- DataTables JavaScript -->
-    <script src="webjars/datatables/js/jquery.dataTables.min.js"></script>
-    <script src="webjars/datatables/js/dataTables.bootstrap.min.js"></script> 
-    <script src="https://cdn.jsdelivr.net/webjars/org.webjars.bower/datatables.net-responsive/2.1.1/js/dataTables.responsive.js"></script>
-    <script src="https://cdn.datatables.net/select/1.2.3/js/dataTables.select.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
-	<script src="https://www.amcharts.com/lib/3/serial.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amstock.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/dataloader/dataloader.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/js/scrolling-nav.js"></script>
 
-	<script src="//www.amcharts.com/lib/4/core.js"></script>
-	<script src="//www.amcharts.com/lib/4/charts.js"></script>
-	<script src="//www.amcharts.com/lib/4/themes/animated.js"></script>    
+particlesJS.load('particles-js', 'js/vg_particles.json', function() {
+	  //console.log('callback - vg_particles.js config loaded');
+});
 
-    <!-- Page-Level Demo Scripts - Tables - Use for reference -->
-    <script>
+
+</script>
+
+
+
+
+<script>
  
     am4core.useTheme(am4themes_animated);
 
@@ -195,7 +209,7 @@ header {
       secondsHand.showValue(12 * date.getSeconds() / 60, 300);
     }    
     
-    </script>
+</script>
 
 </body>
 
