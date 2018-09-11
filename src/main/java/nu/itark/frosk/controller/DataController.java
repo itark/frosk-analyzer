@@ -18,16 +18,20 @@ import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.Bar;
 import org.ta4j.core.TimeSeries;
 
+import nu.itark.frosk.analysis.ChartValueDTO;
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DailyPrices;
 import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.dataset.TradeView;
 import nu.itark.frosk.model.Customer;
+import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.CustomerRepository;
+import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
+import nu.itark.frosk.service.ChartValuesService;
 import nu.itark.frosk.service.TimeSeriesService;
 
 @RestController
@@ -38,7 +42,10 @@ public class DataController {
 	CustomerRepository custRepository;
 
 	@Autowired
-	SecurityPriceRepository securityPriceRepository;	
+	SecurityPriceRepository securityPriceRepository;
+	
+	@Autowired
+	FeaturedStrategyRepository featuredStrategyRepository;	
 	
 	@Autowired
 	SecurityRepository securityRepository;	
@@ -46,6 +53,9 @@ public class DataController {
 	@Autowired
 	TimeSeriesService timeSeriesService;	
 
+	@Autowired
+	ChartValuesService chartValuesService;		
+	
 	@Autowired
 	StrategyAnalysis strategyAnalysis;	
 	
@@ -56,14 +66,15 @@ public class DataController {
 	Map<String, List<IndicatorValues>> indicatorValuesList = new HashMap<String,  List<IndicatorValues>>();
 	
 	/**
-	 * @Example  http://localhost:8080/featuredStrategies?strategy=ALL
+	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy
 	 * 
 	 * @param securityName
 	 * @param database
 	 * @return
 	 */			
-	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
-	public List<FeaturedStrategyDTO> getFeaturedStrategies(@RequestParam("strategy") String strategy){
+	@Deprecated
+	@RequestMapping(path="/featuredStrategiesOBS", method=RequestMethod.GET)
+	public List<FeaturedStrategyDTO> getFeaturedStrategiesOBS(@RequestParam("strategy") String strategy){
 		logger.info("strategy="+strategy);
 		if (StringUtils.isEmpty(strategy) ) {
 			throw new RuntimeException("strategy not correct set!");
@@ -88,6 +99,32 @@ public class DataController {
 		return strategyOrderedByProfitList;
 
 	}	
+
+	/**
+	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy
+	 * 
+	 * @param securityName
+	 * @param database
+	 * @return
+	 */			
+	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
+	public Iterable<FeaturedStrategy> getFeaturedStrategies(@RequestParam("strategy") String strategy){
+		logger.info("strategy="+strategy);
+		Iterable<FeaturedStrategy> list;
+		if (StringUtils.isEmpty(strategy) ) {
+			throw new RuntimeException("strategy not correct set!");
+		}
+		if ("ALL".equals(strategy)) {
+			list = featuredStrategyRepository.findAll();
+		} else {
+			list= featuredStrategyRepository.findByNameOrderByTotalProfitDesc(strategy);				
+		}
+		
+		return list;
+
+	}	
+	
+	
 	
 	/**
 	 * @Example  http://localhost:8080/dailyPrices?security=BOL.ST
@@ -116,6 +153,26 @@ public class DataController {
 
 	}
 
+
+	/**
+	 * @Example  http://localhost:8080/dailyPrices?security=BOL.ST&strategy=RSI2Strategy
+	 * 
+	 * @param securityName
+	 * @param database
+	 * @return List<ChartValueDTO> to present in UI.
+	 */
+	@RequestMapping(path="/chartValues", method=RequestMethod.GET)
+	public List<ChartValueDTO> getChartValues(@RequestParam("security") String security,  @RequestParam("strategy") String strategy) {
+		logger.info("/chartValues...security=" + security);
+		
+		List<ChartValueDTO> chartValues = chartValuesService.getChartValues(strategy, security);
+		
+		return chartValues;
+
+	}
+	
+	
+	
 	/**
 	 * @Example  http://localhost:8080/frosk-analyzer/indicatorValues?security=SAND.ST
 	 * 

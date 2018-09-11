@@ -109,7 +109,7 @@ public class RSI2Strategy implements IndicatorValue{
 			indicatorValues.add(iv);
 		}
 
-    	logger.info("indicatorValues size="+indicatorValues.size());
+//    	logger.info("indicatorValues size="+indicatorValues.size());
 		
 	}
     

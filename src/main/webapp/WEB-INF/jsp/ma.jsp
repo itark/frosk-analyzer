@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <!--  %@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%-->
 <%@ include file="/WEB-INF/jsp/include.jsp" %>
@@ -169,8 +169,8 @@ header {
 				  { "mData": "security"},
 			      { "mData": "totalProfit"},
 				  { "mData": "numberofTrades" },
-			      { "mData": "latestTradeDate" },
-				  { "mData": "periodDescription"},
+			      { "mData": "latestTrade" },
+				  { "mData": "period"},
 			      { "mData": "numberOfTicks" },
 				  { "mData": "averageTickProfit" },
 				  { "mData": "profitableTradesRatio" },
@@ -206,22 +206,17 @@ header {
     function renderChartOHLC() {
     	security = selectedSecurity;
     	console.log('about to render chart on strategyName='+strategy+' and security='+security);
-    	
      	var dailyPricesUrl = "dailyPrices?security="+security;
      	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
      	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategy;
-
      	console.log("dailyPricesUrl",dailyPricesUrl);
      	console.log("tradesUrl",tradesUrl);
     	console.log("indicatorValueUrl",indicatorValueUrl);
 	 
     	am4core.useTheme(am4themes_animated);
-
     	var chart = am4core.create("chart-div", am4charts.XYChart);
     	chart.dataSource.url = dailyPricesUrl;
-
     	chart.paddingRight = 20;
-
     	chart.dateFormatter.inputDateFormat = "YYYY-MM-dd";
 
     	var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
@@ -234,7 +229,6 @@ header {
     	var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
     	valueAxis2.tooltip.disabled = true;
     	
-    	
     	var series = chart.series.push(new am4charts.CandlestickSeries());
     	series.name = "Kalle Anka";
     	series.dataFields.dateX = "date";
@@ -244,13 +238,6 @@ header {
     	series.dataFields.highValueY = "high";
     	series.simplifiedProcessing = true;
     	series.tooltipText = "Open:{openValueY.value}\nLow:{lowValueY.value}\nHigh:{highValueY.value}\nClose:{valueY.value}";
-
-    	// important!
-    	// candlestick series colors are set in states. 
-    	// series.riseFromOpenState.properties.fill = am4core.color("#00ff00");
-    	// series.dropFromOpenState.properties.fill = am4core.color("#FF0000");
-    	// series.riseFromOpenState.properties.stroke = am4core.color("#00ff00");
-    	// series.dropFromOpenState.properties.stroke = am4core.color("#FF0000");
 
     	series.riseFromPreviousState.properties.fillOpacity = 1;
     	series.dropFromPreviousState.properties.fillOpacity = 0;
@@ -276,8 +263,65 @@ header {
 
     	
     }  
- 
+
+    
     function renderChartLine() {
+    	security = selectedSecurity;
+    	console.log('about to render chart on strategyName='+strategy+' and security='+security);
+     	var dailyPricesUrl = "dailyPrices?security="+security;
+     	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
+     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategy;
+     	console.log("dailyPricesUrl",dailyPricesUrl);
+     	console.log("tradesUrl",tradesUrl);
+    	console.log("indicatorValueUrl",indicatorValueUrl);
+	 
+    	am4core.useTheme(am4themes_animated);
+    	
+    	var chart = am4core.create("chart-div", am4charts.XYChart); 	
+    	chart.dataSource.url = dailyPricesUrl;
+    	chart.paddingRight = 20;
+    	chart.dateFormatter.inputDateFormat = "YYYY-MM-dd";
+    	
+    	var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+    	dateAxis.renderer.grid.template.location = 0;
+    	dateAxis.renderer.labels.template.fill = am4core.color("#e59165");
+
+    	var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    	valueAxis.tooltip.disabled = true;
+    	valueAxis.renderer.labels.template.fill = am4core.color("#e59165");
+
+    	valueAxis.renderer.minWidth = 60;
+
+    	var series = chart.series.push(new am4charts.LineSeries());
+    	series.name = security;
+    	series.dataFields.dateX = "date";
+    	series.dataFields.valueY = "close";
+    	series.tooltipText = "{valueY.value}";
+    	series.fill = am4core.color("#e59165");
+    	series.stroke = am4core.color("#e59165");
+    	//series.strokeWidth = 3;
+
+
+    	chart.cursor = new am4charts.XYCursor();
+    	chart.cursor.xAxis = dateAxis;
+
+    	var scrollbarX = new am4charts.XYChartScrollbar();
+    	scrollbarX.series.push(series);
+    	chart.scrollbarX = scrollbarX;
+
+    	chart.legend = new am4charts.Legend();
+    	chart.legend.parent = chart.plotContainer;
+    	chart.legend.zIndex = 100;
+
+    	dateAxis.renderer.grid.template.strokeOpacity = 0.07;
+    	valueAxis.renderer.grid.template.strokeOpacity = 0.07;    	
+    	
+    	
+    }
+    
+    
+    
+    function renderChartLineOBS() {
     	security = selectedSecurity;
     	console.log('about to render chart2 on strategyName='+strategy+' and security='+security);
     	
@@ -329,49 +373,49 @@ header {
 	    	    	      }
 	    	    	      return newData;
 	    	    	  }
-	    	    },		    	    
+	    	    }		    	    
 	    	    /**
     	        * data loader for events data
     	        */
-    	        "eventDataLoader": {
-	    	          "url": tradesUrl,
-	    	          "format": "json",
-	    	          "showErrors": true,
-	    	          "showCurtain": true,
-	    	          "async": true,
-	    	          "reverse": true,
-	    	          "delimiter": ",",
-	    	          "useColumnNames": true,	    	          
-	    	          "postProcess": function ( data, config, chart) {
-		    	            for ( var x in data ) {
-		    	              switch( data[x].type ) {
-		    	                case 'B':
-		    	                  var color = "#00CC00";
-		    	                  var type =  "arrowUp";
-		    	                  var buysell = "Köp";
-		    	                  break;
-		    	                default:
-		    	                  var color = "#CC0000";
-		    	                  var type =  "arrowDown";
-		    	                  var buysell = "Sälj";
-		    	                  break;
-		    	              }
-		    	             // data[x].Description = data[x].Description.replace( "Upgrade", "<strong style=\"color: #0c0\">Upgrade</strong>" ).replace( "Downgrade", "<strong style=\"color: #c00\">Downgrade</strong>" );
-		    	             // console.log("data[x].date",data[x].date);
+//     	        "eventDataLoader": {
+// 	    	          "url": tradesUrl,
+// 	    	          "format": "json",
+// 	    	          "showErrors": true,
+// 	    	          "showCurtain": true,
+// 	    	          "async": true,
+// 	    	          "reverse": true,
+// 	    	          "delimiter": ",",
+// 	    	          "useColumnNames": true,	    	          
+// 	    	          "postProcess": function ( data, config, chart) {
+// 		    	            for ( var x in data ) {
+// 		    	              switch( data[x].type ) {
+// 		    	                case 'B':
+// 		    	                  var color = "#00CC00";
+// 		    	                  var type =  "arrowUp";
+// 		    	                  var buysell = "Köp";
+// 		    	                  break;
+// 		    	                default:
+// 		    	                  var color = "#CC0000";
+// 		    	                  var type =  "arrowDown";
+// 		    	                  var buysell = "Sälj";
+// 		    	                  break;
+// 		    	              }
+// 		    	             // data[x].Description = data[x].Description.replace( "Upgrade", "<strong style=\"color: #0c0\">Upgrade</strong>" ).replace( "Downgrade", "<strong style=\"color: #c00\">Downgrade</strong>" );
+// 		    	             // console.log("data[x].date",data[x].date);
 
-		    	              data[x] = {
-		    	                type: type,
-		    	                graph: "g1",
-		    	                backgroundColor: color,
-		    	                date: data[x].date,
-		    	                text: buysell,
-		    	                //description: "<strong>" + data[x].Title + "</strong><br />" + data[x].Description
-		    	                description: "Beskrivning"
-		    	              };
-		    	            }
-		    	            return data;
-		    	          }
-    	       }  //eventDataLoader
+// 		    	              data[x] = {
+// 		    	                type: type,
+// 		    	                graph: "g1",
+// 		    	                backgroundColor: color,
+// 		    	                date: data[x].date,
+// 		    	                text: buysell,
+// 		    	                //description: "<strong>" + data[x].Title + "</strong><br />" + data[x].Description
+// 		    	                description: "Beskrivning"
+// 		    	              };
+// 		    	            }
+// 		    	            return data;
+// 		    	          }
+//     	       }  //eventDataLoader
 	    	  }], //dataset
 	    	  "dataDateFormat": "YYYY-MM-DD",	    	  
 	    	  "panels": [ {

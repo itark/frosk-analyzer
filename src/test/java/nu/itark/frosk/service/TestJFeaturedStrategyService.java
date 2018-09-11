@@ -27,13 +27,13 @@ public class TestJFeaturedStrategyService {
 //
 //	@Test
 //	public void testWIKI() {
-//		List<FeaturedStrategyDTO> fsList = fs.getAllFeaturedStrategies();
+//		List<FeaturedStrategy> fsList = fs.getAllFeaturedStrategies();
 //		assertNotNull(fsList);
 //	}
 //
 //	@Test
 //	public void testFSE() {
-//		List<FeaturedStrategyDTO> fsList = fs.getAllFeaturedStrategies();
+//		List<FeaturedStrategy> fsList = fs.getAllFeaturedStrategies();
 //		assertNotNull(fsList);
 //	}
 

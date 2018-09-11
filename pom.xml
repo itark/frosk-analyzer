@@ -18,6 +18,12 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
+	 <properties>
+	    <maven.compiler.source>1.8</maven.compiler.source>
+	    <maven.compiler.target>1.8</maven.compiler.target>
+	  </properties>
+
+
 	<dependencies>
 
 		<dependency>
@@ -161,9 +167,10 @@
 
 	</dependencies>
 <!-- https://www.baeldung.com/tomcat-deploy-war -->
-
+ 
 	<build>
 		<finalName>frosk-analyzer</finalName>
+ 
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -179,19 +186,19 @@
 			        <path>/frosk-analyzer</path>
 					<update>true</update>
 			    </configuration>
-<!--
+			</plugin>
+		</plugins>
+
+	</build>
+
+<!--  
 			    <configuration>
 			        <url>http://http://172.104.238.118:8080/manager/text</url>
 			        <server>TomcatLinode</server>
 			        <path>/frosk-analyzer</path>
 					<update>true</update>
-			    </configuration>
--->
-			</plugin>
-		</plugins>
-	</build>
-
-
+		    </configuration>
+-->	
 
 
 </project>

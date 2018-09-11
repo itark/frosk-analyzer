@@ -31,7 +31,6 @@ import org.ta4j.core.Decimal;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
-import org.ta4j.core.indicators.AbstractIndicator;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.MACDIndicator;
 import org.ta4j.core.indicators.StochasticOscillatorKIndicator;
@@ -104,7 +103,7 @@ public class MovingMomentumStrategy implements IndicatorValue {
 			indicatorValues.add(iv);
 		}
 
-    	logger.info("indicatorValues size="+indicatorValues.size());
+//    	logger.info("indicatorValues size="+indicatorValues.size());
 		
 	}
 

@@ -75,13 +75,13 @@ public class WebController {
 	}
 	
 	/**
-	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/getPrice
+	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/fill
 	 */
-	@RequestMapping(value="getPrices", method={RequestMethod.GET, RequestMethod.POST})
+	@RequestMapping(value="fill", method={RequestMethod.GET, RequestMethod.POST})
 	@ResponseBody
-	public String getPrices(Map<String, Object> model) {
+	public String fill(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
-		logger.log(Level.INFO, "getPrices");
+		logger.log(Level.INFO, "fill , now YAHOO only");
 		dataManager.insertSecurityPricesIntoDatabase(Database.YAHOO, true);
 		
 		return "Security prices inserted";	

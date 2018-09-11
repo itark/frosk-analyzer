@@ -1,6 +1,7 @@
 package nu.itark.frosk.analysis;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 import lombok.Data;
@@ -19,9 +20,9 @@ public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
 	private String name;
 	private String security;
 	private BigDecimal totalProfit; // Total profit
-	private BigDecimal numberOfTicks; // Number of ticks
+	private Integer numberOfTicks; // Number of ticks
 	private BigDecimal averageTickProfit; // Average profit (per tick)
-	private BigDecimal numberofTrades; // Number of trades
+	private Integer numberofTrades; // Number of trades
 	private BigDecimal profitableTradesRatio; // "Profitable trades ratio
 	private BigDecimal maxDD; // "Maximum drawdown
 	private BigDecimal rewardRiskRatio; // Reward-risk ratio
@@ -32,7 +33,7 @@ public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
 												// buy-and-hold strategy profit
 
 	private String periodDescription;
-	private String latestTradeDate;
+	private Date latestTradeDate;
 	private List<TradeView> trades;
 	private List<IndicatorValues> indicatorValues;
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <!--  %@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%-->
 <%@ include file="/WEB-INF/jsp/include.jsp" %>
@@ -14,24 +14,13 @@
 
     <title>Evening Star</title>
 
-    <!-- DataTables CSS -->
-    <link href="webjars/datatables/css/dataTables.bootstrap.css" rel="stylesheet">
- 
-    <!-- DataTables Responsive CSS -->
-    <link href="https://cdn.datatables.net/responsive/1.0.6/css/dataTables.responsive.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/select/1.2.3/css/select.dataTables.min.css" rel="stylesheet">
-
- 	<link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css" media="all" />
- 	<link href="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/css/scrolling-nav.css" rel="stylesheet">
-    
-
 </head>
 
 <style>
 
 #chart-div {
 	width		: 100%;
-	height		: 700px;
+	height		: 750px;
 	font-size	: 11px;
 }
 
@@ -47,12 +36,20 @@ header {
  
 	<nav class="navbar navbar-default">
 	  <div class="container-fluid">
+	    
 	    <div class="navbar-header">
+	      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+	        <span class="sr-only">Toggle navigation</span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	      </button>
 	      <a class="navbar-brand" href="/frosk-analyzer" title="powered by Har-em Foundations">Evening Star</a>
 	    </div>
 	   
 	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 	      <ul class="nav navbar-nav">
+	        <!--  li class="active"><a href="#">Översikt <span class="sr-only">(current)</span></a></li-->
 	        <li class="dropdown">
 	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Strategies <span class="caret"></span></a>
 	          <ul class="dropdown-menu">
@@ -75,43 +72,19 @@ header {
             <h2>The Relative Strength Index - 2</h2>
             <p>Connors suggests looking for buying opportunities when 2-period RSI moves below 10, which is considered deeply oversold. Conversely, traders can look for short-selling opportunities when 2-period RSI moves above 90..</p>
           </div>
-        </div>
-        
-        <div class="row">
-          <div class="col-lg-6 col-md-6">
-          	<p>Buy e.g.</p>
-			<pre class="code">
-[type = stock]
-and [today's sma(20,volume) &gt; 40000]
-and [today's sma(60,close) &gt; 20]
-and [today's close &gt; today's sma(200,close)]
-and [5 x today's rsi(2)]
-			</pre>
-          </div>
+        </div>       
  
-          <div class="col-lg-6 col-md-6">
-          	 <p>Sell e.g.</p>
-			 <pre class="code">
-[type = stock]
-and [today's sma(20,volume) &gt; 40000]
-and [today's sma(60,close) &gt; 20]
-and [today's close &lt; today's sma(200,close)]
-and [today's rsi(2) x 95]
-			 </pre>
-          </div>      
-        </div>
-
         <div class="row">
-            <div class="col-lg-3 col-md-3">
+            <div class="col-lg-4 col-md-4">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                     	OMX30
+                     	Dataset:OMX30
 	                   <div class="panel-body">
 	                     <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
 						  <thead>
 					            <tr>
 					                <th>Security</th>
-					                <th>Profit %</th>
+					                <th>Profit%</th>
 					                <th>Trades</th>
 					                <th>LatestTrade</th>				                
 					                <th>Period</th>
@@ -124,7 +97,7 @@ and [today's rsi(2) x 95]
 					        <tfoot>
 					            <tr>
 					                <th>Security</th>
-					                <th>Profit %</th>
+					                <th>Profit%</th>
 					                <th>Trades</th>
 					                <th>LatestTrade</th>
 					                <th>Period</th>
@@ -140,14 +113,36 @@ and [today's rsi(2) x 95]
                 </div>
             </div>
  
-           <div class="col-lg-9 col-md-9">
-           	 <div class="col-12 dc-chart" id="chart-div"></div>
+           <div class="col-lg-8 col-md-8">
+                 <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <i class="fa fa-bar-chart-o fa-fw"></i>
+                            <div class="pull-right">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                        Chart type
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu pull-right" role="menu">
+                                        <li><a href="#" onclick="renderChartOHLC();">Candle</a>
+                                        </li>
+                                        <li><a href="#" onclick="renderChartLine();">Line</a>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /.panel-heading -->
+	   					<div class="panel-body">
+			           		<div class="col-12 dc-chart" id="chart-div"></div>
+	  					</div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
            </div>
-
-        </div>
-
-     </div>
+         </div>
+ 		</div>
      </header>
+
    
      <footer class="bg-primary text-white">
       <div class="container text-center">
@@ -157,37 +152,24 @@ and [today's rsi(2) x 95]
 
 </div>
 
-
-    <!-- DataTables JavaScript -->
-    <script src="webjars/datatables/js/jquery.dataTables.min.js"></script>
-    <script src="webjars/datatables/js/dataTables.bootstrap.min.js"></script> 
-    <script src="https://cdn.jsdelivr.net/webjars/org.webjars.bower/datatables.net-responsive/2.1.1/js/dataTables.responsive.js"></script>
-    <script src="https://cdn.datatables.net/select/1.2.3/js/dataTables.select.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
-	<script src="https://www.amcharts.com/lib/3/serial.js"></script>
-	<script src="https://www.amcharts.com/lib/3/amstock.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/dataloader/dataloader.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
-	<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/startbootstrap-scrolling-nav@4.1.1/js/scrolling-nav.js"></script>
-    
-
-    <!-- Page-Level Demo Scripts - Tables - Use for reference -->
-    <script>
+ <script>
+ 	var selectedSecurity;
+ 	var strategy="RSI2Strategy";
+ 
     $(document).ready(function() {
     	var events = $('#events');
         var featStratTable = $('#featuredStrategies').DataTable({
         	responsive: true,
         	select: true,
-        	"sAjaxSource": "featuredStrategies?strategy=RSI2Strategy",
+        	"sAjaxSource": "featuredStrategies?strategy="+strategy,
 			"sAjaxDataProp": "",
 			"order": [[ 1, "desc" ]],
 			"aoColumns": [
 				  { "mData": "security"},
 			      { "mData": "totalProfit"},
 				  { "mData": "numberofTrades" },
-			      { "mData": "latestTradeDate" },
-				  { "mData": "periodDescription"},
+			      { "mData": "latestTrade" },
+				  { "mData": "period"},
 			      { "mData": "numberOfTicks" },
 				  { "mData": "averageTickProfit" },
 				  { "mData": "profitableTradesRatio" },
@@ -199,21 +181,152 @@ and [today's rsi(2) x 95]
         featStratTable
     		.on( 'select', function ( e, dt, type, indexes ) {
             	var rowData = featStratTable.rows( indexes ).data().toArray();
-            	var name = featStratTable.rows( indexes ).data().pluck( 'name' );
             	var security = featStratTable.rows( indexes ).data().pluck( 'security' );
-            	renderChart(name[0], security[0]);
+             	selectedSecurity = security[0];
+
+             	renderChartOHLC();
             	
         }) ; 
+    
+        featStratTable
+    		.on( 'draw.dt', function () {
+		      	let name = featStratTable.rows( 0 ).data().pluck( 'name' );
+		    	let security = featStratTable.rows( 0 ).data().pluck( 'security' );
+		    	selectedSecurity = security[0];
+		        
+		        renderChartOHLC();
+	        
+    		} );            
+        
         
     });
     
 
-    function renderChart(strategyName, security) {
-    	console.log('about to render chart on strategyName='+strategyName+ ' and security='+security);
+    function renderChartOHLC() {
+    	security = selectedSecurity;
+    	console.log('about to render chart on strategyName='+strategy+' and security='+security);
+     	var dailyPricesUrl = "dailyPrices?security="+security;
+     	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
+     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategy;
+     	console.log("dailyPricesUrl",dailyPricesUrl);
+     	console.log("tradesUrl",tradesUrl);
+    	console.log("indicatorValueUrl",indicatorValueUrl);
+	 
+    	am4core.useTheme(am4themes_animated);
+    	var chart = am4core.create("chart-div", am4charts.XYChart);
+    	chart.dataSource.url = dailyPricesUrl;
+    	chart.paddingRight = 20;
+    	chart.dateFormatter.inputDateFormat = "YYYY-MM-dd";
+
+    	var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+    	dateAxis.renderer.grid.template.location = 0;
+    	var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    	valueAxis.tooltip.disabled = true;
+
+    	var dateAxis2 = chart.xAxes.push(new am4charts.DateAxis());
+    	dateAxis2.renderer.grid.template.location = 0;
+    	var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
+    	valueAxis2.tooltip.disabled = true;
+    	
+    	var series = chart.series.push(new am4charts.CandlestickSeries());
+    	series.name = "Kalle Anka";
+    	series.dataFields.dateX = "date";
+    	series.dataFields.valueY = "close";
+    	series.dataFields.openValueY = "open";
+    	series.dataFields.lowValueY = "low";
+    	series.dataFields.highValueY = "high";
+    	series.simplifiedProcessing = true;
+    	series.tooltipText = "Open:{openValueY.value}\nLow:{lowValueY.value}\nHigh:{highValueY.value}\nClose:{valueY.value}";
+
+    	series.riseFromPreviousState.properties.fillOpacity = 1;
+    	series.dropFromPreviousState.properties.fillOpacity = 0;
+
+    	chart.cursor = new am4charts.XYCursor();
+
+    	// a separate series for scrollbar
+    	var lineSeries = chart.series.push(new am4charts.LineSeries());
+    	lineSeries.name = "Donald Duck"
+    	lineSeries.dataFields.dateX = "date";
+    	lineSeries.dataFields.valueY = "close";
+    	// need to set on default state, as initially series is "show"
+    	lineSeries.defaultState.properties.visible = false;
+
+    	// hide from legend too (in case there is one)
+    	lineSeries.hiddenInLegend = true;
+    	lineSeries.fillOpacity = 0.5;
+    	lineSeries.strokeOpacity = 0.5;
+
+    	var scrollbarX = new am4charts.XYChartScrollbar();
+    	scrollbarX.series.push(lineSeries);
+    	chart.scrollbarX = scrollbarX;
+
+    	
+    }  
+
+    
+    function renderChartLine() {
+    	security = selectedSecurity;
+    	console.log('about to render chart on strategyName='+strategy+' and security='+security);
+     	var dailyPricesUrl = "dailyPrices?security="+security;
+     	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
+     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategy;
+     	console.log("dailyPricesUrl",dailyPricesUrl);
+     	console.log("tradesUrl",tradesUrl);
+    	console.log("indicatorValueUrl",indicatorValueUrl);
+	 
+    	am4core.useTheme(am4themes_animated);
+    	
+    	var chart = am4core.create("chart-div", am4charts.XYChart); 	
+    	chart.dataSource.url = dailyPricesUrl;
+    	chart.paddingRight = 20;
+    	chart.dateFormatter.inputDateFormat = "YYYY-MM-dd";
+    	
+    	var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+    	dateAxis.renderer.grid.template.location = 0;
+    	dateAxis.renderer.labels.template.fill = am4core.color("#e59165");
+
+    	var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    	valueAxis.tooltip.disabled = true;
+    	valueAxis.renderer.labels.template.fill = am4core.color("#e59165");
+
+    	valueAxis.renderer.minWidth = 60;
+
+    	var series = chart.series.push(new am4charts.LineSeries());
+    	series.name = security;
+    	series.dataFields.dateX = "date";
+    	series.dataFields.valueY = "close";
+    	series.tooltipText = "{valueY.value}";
+    	series.fill = am4core.color("#e59165");
+    	series.stroke = am4core.color("#e59165");
+    	//series.strokeWidth = 3;
+
+
+    	chart.cursor = new am4charts.XYCursor();
+    	chart.cursor.xAxis = dateAxis;
+
+    	var scrollbarX = new am4charts.XYChartScrollbar();
+    	scrollbarX.series.push(series);
+    	chart.scrollbarX = scrollbarX;
+
+    	chart.legend = new am4charts.Legend();
+    	chart.legend.parent = chart.plotContainer;
+    	chart.legend.zIndex = 100;
+
+    	dateAxis.renderer.grid.template.strokeOpacity = 0.07;
+    	valueAxis.renderer.grid.template.strokeOpacity = 0.07;    	
+    	
+    	
+    }
+    
+    
+    
+    function renderChartLineOBS() {
+    	security = selectedSecurity;
+    	console.log('about to render chart2 on strategyName='+strategy+' and security='+security);
     	
      	var dailyPricesUrl = "dailyPrices?security="+security;
-     	var tradesUrl = "trades?security="+security+"&strategy="+strategyName;
-     	var indicatorValueUrl = "rsiValues?security="+security+"&strategy="+strategyName;
+     	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
+     	var indicatorValueUrl = "indicatorValues?security="+security+"&strategy="+strategy;
 
      	console.log("dailyPricesUrl",dailyPricesUrl);
      	console.log("tradesUrl",tradesUrl);
@@ -259,49 +372,49 @@ and [today's rsi(2) x 95]
 	    	    	      }
 	    	    	      return newData;
 	    	    	  }
-	    	    },		    	    
+	    	    }		    	    
 	    	    /**
     	        * data loader for events data
     	        */
-    	        "eventDataLoader": {
-	    	          "url": tradesUrl,
-	    	          "format": "json",
-	    	          "showErrors": true,
-	    	          "showCurtain": true,
-	    	          "async": true,
-	    	          "reverse": true,
-	    	          "delimiter": ",",
-	    	          "useColumnNames": true,	    	          
-	    	          "postProcess": function ( data, config, chart) {
-		    	            for ( var x in data ) {
-		    	              switch( data[x].type ) {
-		    	                case 'B':
-		    	                  var color = "#00CC00";
-		    	                  var type =  "arrowUp";
-		    	                  var buysell = "Köp";
-		    	                  break;
-		    	                default:
-		    	                  var color = "#CC0000";
-		    	                  var type =  "arrowDown";
-		    	                  var buysell = "Sälj";
-		    	                  break;
-		    	              }
-		    	             // data[x].Description = data[x].Description.replace( "Upgrade", "<strong style=\"color: #0c0\">Upgrade</strong>" ).replace( "Downgrade", "<strong style=\"color: #c00\">Downgrade</strong>" );
-		    	             // console.log("data[x].date",data[x].date);
+//     	        "eventDataLoader": {
+// 	    	          "url": tradesUrl,
+// 	    	          "format": "json",
+// 	    	          "showErrors": true,
+// 	    	          "showCurtain": true,
+// 	    	          "async": true,
+// 	    	          "reverse": true,
+// 	    	          "delimiter": ",",
+// 	    	          "useColumnNames": true,	    	          
+// 	    	          "postProcess": function ( data, config, chart) {
+// 		    	            for ( var x in data ) {
+// 		    	              switch( data[x].type ) {
+// 		    	                case 'B':
+// 		    	                  var color = "#00CC00";
+// 		    	                  var type =  "arrowUp";
+// 		    	                  var buysell = "Köp";
+// 		    	                  break;
+// 		    	                default:
+// 		    	                  var color = "#CC0000";
+// 		    	                  var type =  "arrowDown";
+// 		    	                  var buysell = "Sälj";
+// 		    	                  break;
+// 		    	              }
+// 		    	             // data[x].Description = data[x].Description.replace( "Upgrade", "<strong style=\"color: #0c0\">Upgrade</strong>" ).replace( "Downgrade", "<strong style=\"color: #c00\">Downgrade</strong>" );
+// 		    	             // console.log("data[x].date",data[x].date);
 
-		    	              data[x] = {
-		    	                type: type,
-		    	                graph: "g1",
-		    	                backgroundColor: color,
-		    	                date: data[x].date,
-		    	                text: buysell,
-		    	                //description: "<strong>" + data[x].Title + "</strong><br />" + data[x].Description
-		    	                description: "Beskrivning"
-		    	              };
-		    	            }
-		    	            return data;
-		    	          }
-    	       }  //eventDataLoader
+// 		    	              data[x] = {
+// 		    	                type: type,
+// 		    	                graph: "g1",
+// 		    	                backgroundColor: color,
+// 		    	                date: data[x].date,
+// 		    	                text: buysell,
+// 		    	                //description: "<strong>" + data[x].Title + "</strong><br />" + data[x].Description
+// 		    	                description: "Beskrivning"
+// 		    	              };
+// 		    	            }
+// 		    	            return data;
+// 		    	          }
+//     	       }  //eventDataLoader
 	    	  }], //dataset
 	    	  "dataDateFormat": "YYYY-MM-DD",	    	  
 	    	  "panels": [ {
@@ -390,7 +503,8 @@ and [today's rsi(2) x 95]
 	    		  
 	    }); //chart
     	
-    }  //renderChart
+    }  //renderChart   
+        
     
     </script>
 
