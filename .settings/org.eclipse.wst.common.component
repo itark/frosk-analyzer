@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
     <wb-module deploy-name="frosk-analyzer">
         <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
+        <dependent-module archiveName="ta4j-core-0.12.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/ta4j-core/ta4j-core">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="context-root" value="frosk-analyzer"/>
         <property name="java-output-path" value="/frosk-analyzer/build/classes"/>
     </wb-module>

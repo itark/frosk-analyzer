@@ -28,11 +28,9 @@ import java.util.logging.Logger;
 
 import org.ta4j.core.Bar;
 import org.ta4j.core.BaseStrategy;
-import org.ta4j.core.Decimal;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
-import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
@@ -85,19 +83,19 @@ public class RSI2Strategy implements IndicatorValue{
         // Entry rule
         // The long-term trend is up when a security is above its 200-period SMA.
         Rule entryRule = new OverIndicatorRule(shortSma, longSma) // Trend
-                .and(new CrossedDownIndicatorRule(rsi, Decimal.valueOf(5))) // Signal 1
+                .and(new CrossedDownIndicatorRule(rsi, 5)) // Signal 1
                 .and(new OverIndicatorRule(shortSma, closePrice)); // Signal 2
         
         // Exit rule
         // The long-term trend is down when a security is below its 200-period SMA.
         Rule exitRule = new UnderIndicatorRule(shortSma, longSma) // Trend
-                .and(new CrossedUpIndicatorRule(rsi, Decimal.valueOf(95))) // Signal 1
+                .and(new CrossedUpIndicatorRule(rsi, 95)) // Signal 1
                 .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
         
         setIndicatorValues(rsi, series);
         
         
-        return new BaseStrategy(entryRule, exitRule);
+        return new BaseStrategy("RSI2Strategy", entryRule, exitRule);
     }
 
     private void setIndicatorValues(RSIIndicator indicator, TimeSeries series) {
@@ -105,7 +103,7 @@ public class RSI2Strategy implements IndicatorValue{
 		for (int i = 0; i < series.getBarCount(); i++) {
 			iv = new IndicatorValues();
 			iv.setDate(series.getBar(i).getEndTime().toLocalDate().toString());
-			iv.setValue(indicator.getValue(i).getDelegate());
+			iv.setValue(indicator.getValue(i).doubleValue());
 			indicatorValues.add(iv);
 		}
 

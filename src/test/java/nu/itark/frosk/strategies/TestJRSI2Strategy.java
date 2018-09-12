@@ -31,14 +31,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.ta4j.core.Bar;
-import org.ta4j.core.Decimal;
-import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
 import org.ta4j.core.TimeSeriesManager;
 import org.ta4j.core.Trade;
 import org.ta4j.core.TradingRecord;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
+import org.ta4j.core.num.Num;
 
 import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.TimeSeriesService;
@@ -77,9 +76,9 @@ public class TestJRSI2Strategy {
         	logger.info(timeSeries.getName()+"::barEntry="+barEntry.getDateName());
         	Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
         	logger.info(timeSeries.getName()+"::barExit="+barExit.getDateName());
-            Decimal closePriceBuy = barEntry.getClosePrice();
-            Decimal closePriceSell = barExit.getClosePrice();
-            Decimal profit = closePriceSell.minus(closePriceBuy);
+            Num closePriceBuy = barEntry.getClosePrice();
+            Num closePriceSell = barExit.getClosePrice();
+            Num profit = closePriceSell.minus(closePriceBuy);
             
             if (trade.isOpened()) {
             	logger.info("isOpened():barEntry.getDateName()"+barEntry.getDateName());
@@ -103,7 +102,7 @@ public class TestJRSI2Strategy {
 
         // Analysis
         logger.info("Total profit for the strategy: " + new TotalProfitCriterion().calculate(timeSeries, tradingRecord));
-        double totalProfit = new TotalProfitCriterion().calculate(timeSeries, tradingRecord);
+        double totalProfit = new TotalProfitCriterion().calculate(timeSeries, tradingRecord).doubleValue();
         double totalProfitPercentage = (totalProfit - 1 ) *100;  //TODO minus
         logger.info("Total profit for the strategy (%): "+ totalProfitPercentage);
     }

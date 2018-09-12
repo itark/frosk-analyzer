@@ -2,7 +2,6 @@ package nu.itark.frosk.analysis;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -125,31 +124,31 @@ public class StrategyAnalysis {
 			fs.setPeriodDescription(getPeriod(series));
 			fs.setLatestTradeDate(latestTradeDate);
 
-			totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord);
+			totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord).doubleValue();
 			totalProfitPercentage = (totalProfit - 1) * 100;
 			fs.setTotalProfit(new BigDecimal(totalProfitPercentage).setScale(2, BigDecimal.ROUND_DOWN));
-			fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord)).intValue());
-			double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord);
+			fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
+			double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
-			fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord)).intValue());
-			double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord);
+			fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
+			double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord).doubleValue();
 			
 			if (!Double.isNaN(profitableTradesRatio)) {
 				fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, BigDecimal.ROUND_DOWN));
 			}
-			double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord);
+			double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, BigDecimal.ROUND_DOWN));
-			double rewardRiskRatio = new RewardRiskRatioCriterion().calculate(series, tradingRecord);
+			double rewardRiskRatio = new RewardRiskRatioCriterion().calculate(series, tradingRecord).doubleValue();
 			if (Double.isFinite(rewardRiskRatio)) {
 				fs.setRewardRiskRatio(new BigDecimal(rewardRiskRatio).setScale(2, BigDecimal.ROUND_DOWN));
 			}
-			double buyAndHold = new BuyAndHoldCriterion().calculate(series, tradingRecord);
+			double buyAndHold = new BuyAndHoldCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setBuyAndHold(new BigDecimal(buyAndHold).setScale(2, BigDecimal.ROUND_DOWN ));
 
-			double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new TotalProfitCriterion()).calculate(series, tradingRecord);
+			double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new TotalProfitCriterion()).calculate(series, tradingRecord).doubleValue();
 			fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
 			fs.setTotalTranactionCost(
-					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord)));
+					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
 			fs.setTrades(tradeViewList);
 			//fs.setIndicatorValues(indicatorValues);
 
@@ -269,31 +268,31 @@ public class StrategyAnalysis {
 				fs.setSecurity(series.getName());
 				fs.setPeriodDescription(getPeriod(series));
 				fs.setLatestTradeDate(latestTradeDate);
-				totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord);
+				totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord).doubleValue();
 				totalProfitPercentage = (totalProfit - 1) * 100;
 				fs.setTotalProfit(new BigDecimal(totalProfitPercentage).setScale(2, BigDecimal.ROUND_DOWN));
-				fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord)).intValue());
-				double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord);
+				fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
+				double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord).doubleValue();
 				fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
-				fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord)).intValue());
-				double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord);
+				fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
+				double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord).doubleValue();
 				
 				if (!Double.isNaN(profitableTradesRatio)) {
 					fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, BigDecimal.ROUND_DOWN));
 				}
-				double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord);
+				double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord).doubleValue();
 				fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, BigDecimal.ROUND_DOWN));
-				double rewardRiskRatio = new RewardRiskRatioCriterion().calculate(series, tradingRecord);
+				double rewardRiskRatio = new RewardRiskRatioCriterion().calculate(series, tradingRecord).doubleValue();
 				if (Double.isFinite(rewardRiskRatio)) {
 					fs.setRewardRiskRatio(new BigDecimal(rewardRiskRatio).setScale(2, BigDecimal.ROUND_DOWN));
 				}
-				double buyAndHold = new BuyAndHoldCriterion().calculate(series, tradingRecord);
+				double buyAndHold = new BuyAndHoldCriterion().calculate(series, tradingRecord).doubleValue();
 				fs.setBuyAndHold(new BigDecimal(buyAndHold).setScale(2, BigDecimal.ROUND_DOWN ));
 
-				double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new TotalProfitCriterion()).calculate(series, tradingRecord);
+				double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new TotalProfitCriterion()).calculate(series, tradingRecord).doubleValue();
 				fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
 				fs.setTotalTranactionCost(
-						new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord)));
+						new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
 				fs.setTrades(tradeViewList);
 				//fs.setIndicatorValues(indicatorValues);
 

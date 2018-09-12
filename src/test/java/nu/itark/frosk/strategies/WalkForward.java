@@ -25,7 +25,6 @@ package nu.itark.frosk.strategies;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -43,7 +42,7 @@ import org.ta4j.core.TimeSeriesManager;
 import org.ta4j.core.TradingRecord;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 
-import nu.itark.frosk.dataset.TestJYahooDataManager;
+import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.service.TimeSeriesService;
 
 /**
@@ -118,7 +117,7 @@ public class WalkForward {
         ZonedDateTime endInterval = beginInterval.plus(duration);
 
         // Checking ticks belonging to the sub-series (starting at the provided index)
-        int subseriesNbTicks = 0;
+        int subseriesNbBars = 0;
         int endIndex = series.getEndIndex();
         for (int i = beginIndex; i <= endIndex; i++) {
             // For each tick...
@@ -129,10 +128,10 @@ public class WalkForward {
             }
             // Tick in the interval
             // --> Incrementing the number of ticks in the subseries
-            subseriesNbTicks++;
+            subseriesNbBars++;
         }
 
-        return new BaseTimeSeries(series, beginIndex, beginIndex + subseriesNbTicks - 1);
+        return series.getSubSeries(beginIndex, beginIndex + subseriesNbBars);
     }
 
     /**
@@ -157,31 +156,18 @@ public class WalkForward {
         return subseries;
     }
 
-    /**
-     * @param series the time series
-     * @return a map (key: strategy, value: name) of trading strategies
-     */
-    public static Map<Strategy, String> buildStrategiesMap(TimeSeries series) {
-        HashMap<Strategy, String> strategies = new HashMap<>();
-        strategies.put(CCICorrectionStrategy.buildStrategy(series), "CCI Correction");
-        strategies.put(GlobalExtremaStrategy.buildStrategy(series), "Global Extrema");
-        MovingMomentumStrategy mmStrat = new MovingMomentumStrategy(series);
-        strategies.put(mmStrat.buildStrategy(), "RSI-2"); 
-        RSI2Strategy rsiStrat = new RSI2Strategy(series);
-        strategies.put(rsiStrat.buildStrategy(), "RSI-2");
-        return strategies;
-    }
-
-    
     @Test
     public final void run() throws Exception {
         // Splitting the series into slices
     	TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");      
         
-        List<TimeSeries> subseries = splitSeries(timeSeries, Duration.ofHours(6), Duration.ofDays(7));
+//        List<TimeSeries> subseries = splitSeries(timeSeries, Duration.ofHours(6), Duration.ofDays(7));
+        List<TimeSeries> subseries = splitSeries(timeSeries, Duration.ofDays(12), Duration.ofDays(30));
 
+        
+        
         // Building the map of strategies
-        Map<Strategy, String> strategies = buildStrategiesMap(timeSeries);
+        Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 
         // The analysis criterion
         AnalysisCriterion profitCriterion = new TotalProfitCriterion();
@@ -193,9 +179,9 @@ public class WalkForward {
             for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
                 Strategy strategy = entry.getKey();
                 String name = entry.getValue();
-                // For each strategy...
+                // For each strategy...Œ
                 TradingRecord tradingRecord = sliceManager.run(strategy);
-                double profit = profitCriterion.calculate(slice, tradingRecord);
+                double profit = profitCriterion.calculate(slice, tradingRecord).doubleValue();
                 System.out.println("\tProfit for " + name + ": " + profit);
             }
             Strategy bestStrategy = profitCriterion.chooseBest(sliceManager, new ArrayList<Strategy>(strategies.keySet()));

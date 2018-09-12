@@ -25,7 +25,6 @@ package nu.itark.frosk.strategies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.ta4j.core.BaseStrategy;
-import org.ta4j.core.Decimal;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
@@ -41,38 +40,41 @@ import org.ta4j.core.trading.rules.UnderIndicatorRule;
 public class RNNStrategy {
 
 	 protected final Logger log = LoggerFactory.getLogger(getClass());
+
 	 
+		RSIIndicator rsi = null;
+		TimeSeries series = null;
 	 
-	    /**
+		/**
 	     * @param series a time series
 	     * @return a 2-period RSI strategy
 	     */
-	    public static Strategy buildStrategy(TimeSeries series) {
+	    public Strategy buildStrategy() {
 	        if (series == null) {
 	            throw new IllegalArgumentException("Series cannot be null");
 	        }
 
 	        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
 	        SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
-	        SMAIndicator longSma = new SMAIndicator(closePrice, 25); //200
+	        SMAIndicator longSma = new SMAIndicator(closePrice, 200);
 
 	        // We use a 2-period RSI indicator to identify buying
 	        // or selling opportunities within the bigger trend.
-	        RSIIndicator rsi = new RSIIndicator(closePrice, 2);
+	        rsi = new RSIIndicator(closePrice, 2);
 	        
 	        // Entry rule
 	        // The long-term trend is up when a security is above its 200-period SMA.
 	        Rule entryRule = new OverIndicatorRule(shortSma, longSma) // Trend
-	                .and(new CrossedDownIndicatorRule(rsi, Decimal.valueOf(5))) // Signal 1
+	                .and(new CrossedDownIndicatorRule(rsi, 5)) // Signal 1
 	                .and(new OverIndicatorRule(shortSma, closePrice)); // Signal 2
 	        
 	        // Exit rule
 	        // The long-term trend is down when a security is below its 200-period SMA.
 	        Rule exitRule = new UnderIndicatorRule(shortSma, longSma) // Trend
-	                .and(new CrossedUpIndicatorRule(rsi, Decimal.valueOf(95))) // Signal 1
+	                .and(new CrossedUpIndicatorRule(rsi, 95)) // Signal 1
 	                .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
 	        
-	        // TODO: Finalize the strategy
+	        
 	        
 	        return new BaseStrategy(entryRule, exitRule);
 	    }

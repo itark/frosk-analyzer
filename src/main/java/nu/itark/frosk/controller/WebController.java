@@ -1,5 +1,6 @@
 package nu.itark.frosk.controller;
 
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -10,7 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import nu.itark.frosk.dataset.BITFINEXDataManager;
+import nu.itark.frosk.analysis.FeaturedStrategyDTO;
+import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
 
@@ -18,12 +20,14 @@ import nu.itark.frosk.dataset.Database;
 public class WebController {
 	Logger logger = Logger.getLogger(WebController.class.getName());
 
-	@Autowired
-	BITFINEXDataManager bitfinexManager;	
+//	@Autowired
+//	BITFINEXDataManager bitfinexManager;	
 	
 	@Autowired
 	DataManager dataManager;		
-	
+
+	@Autowired
+	StrategyAnalysis strategyAnalysis;		
 
 	@RequestMapping("/")
 	public String welcome2(Map<String, Object> model) {
@@ -62,7 +66,7 @@ public class WebController {
 	}		
 	
 	/**
-	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/initDatabase
+	* @Example  http://localhost:8080/frosk-analyzer/initDatabase
 	 */
 	@RequestMapping(value="initDatabase", method={RequestMethod.GET, RequestMethod.POST})
 	@ResponseBody
@@ -75,7 +79,7 @@ public class WebController {
 	}
 	
 	/**
-	* @Example  http://localhost:8080/frosk-analyzer-0.0.1/fill
+	* @Example  http://localhost:8080/frosk-analyzer/fill
 	 */
 	@RequestMapping(value="fill", method={RequestMethod.GET, RequestMethod.POST})
 	@ResponseBody
@@ -86,6 +90,26 @@ public class WebController {
 		
 		return "Security prices inserted";	
 	}	
+
+	
+	/**
+	* @Example  http://localhost:8080/frosk-analyzer/run
+	 */
+	@RequestMapping(value="run", method={RequestMethod.GET, RequestMethod.POST})
+	@ResponseBody
+	public String run(Map<String, Object> model) {
+		Logger logger = Logger.getLogger(WebController.class.getName());
+		logger.log(Level.INFO, "run , now YAHOO only");
+	
+		List<FeaturedStrategyDTO> list = strategyAnalysis.run(null, null);		
+
+		return "Strategy Analysis executed, list="+list.size();	
+	}		
+
+	
+
+
+	
 	
 	
 }

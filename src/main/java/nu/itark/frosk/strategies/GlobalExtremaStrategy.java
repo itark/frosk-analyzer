@@ -23,7 +23,6 @@
 package nu.itark.frosk.strategies;
 
 import org.ta4j.core.BaseStrategy;
-import org.ta4j.core.Decimal;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
@@ -44,12 +43,18 @@ public class GlobalExtremaStrategy {
     // We assume that there were at least one trade every 5 minutes during the whole week
     private static final int NB_TICKS_PER_WEEK = 12 * 24 * 7;
 
+	TimeSeries series = null;
+   
+	public GlobalExtremaStrategy(TimeSeries series) {
+		this.series = series;
+	}	
+    
     /**
      * @param series a time series
      * @return a global extrema strategy
      */
-    public static Strategy buildStrategy(TimeSeries series) {
-        if (series == null) {
+    public Strategy buildStrategy() {
+        if (this.series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
 
@@ -63,14 +68,14 @@ public class GlobalExtremaStrategy {
         LowestValueIndicator weekMinPrice = new LowestValueIndicator(minPrices, NB_TICKS_PER_WEEK);
 
         // Going long if the close price goes below the min price
-        MultiplierIndicator downWeek = new MultiplierIndicator(weekMinPrice, Decimal.valueOf("1.004"));
+        MultiplierIndicator downWeek = new MultiplierIndicator(weekMinPrice, 1.004);
         Rule buyingRule = new UnderIndicatorRule(closePrices, downWeek);
 
         // Going short if the close price goes above the max price
-        MultiplierIndicator upWeek = new MultiplierIndicator(weekMaxPrice, Decimal.valueOf("0.996"));
+        MultiplierIndicator upWeek = new MultiplierIndicator(weekMaxPrice, 0.996);
         Rule sellingRule = new OverIndicatorRule(closePrices, upWeek);
 
-        return new BaseStrategy(buyingRule, sellingRule);
+        return new BaseStrategy("GlobalExtremaStrategy", buyingRule, sellingRule);
     }
 
 }

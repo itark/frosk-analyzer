@@ -13,6 +13,7 @@ import org.ta4j.core.Bar;
 import org.ta4j.core.BaseBar;
 import org.ta4j.core.BaseTimeSeries;
 import org.ta4j.core.TimeSeries;
+import org.ta4j.core.num.PrecisionNum;
 
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
@@ -52,19 +53,43 @@ public class TimeSeriesService  {
 	 * @param name in {@linkplain Security}
 	 * @return
 	 */
+//	public TimeSeries getDataSetOBS(String name) {
+//		List<Bar> bars = new ArrayList<>();
+//		List<SecurityPrice> securityPrices =securityPriceRepository.findByName(name); 
+//		
+//		securityPrices.forEach(row -> {
+//			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());		
+//			Bar bar = new BaseBar(dateTime, row.getOpen().toString(), row.getHigh().toString(), row.getLow().toString(), row.getClose().toString(), row.getVolume().toString());
+//			bars.add(bar);
+//			
+//		});
+//		
+//		return new BaseTimeSeries(name, bars);
+//		
+//	}	
+
+	/**
+	 * Return TimesSeries bases on name in Security.
+	 * 
+	 * @param name in {@linkplain Security}
+	 * @return
+	 */
 	public TimeSeries getDataSet(String name) {
-		List<Bar> bars = new ArrayList<>();
+        TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(name).withNumTypeOf(PrecisionNum.class).build();
 		List<SecurityPrice> securityPrices =securityPriceRepository.findByName(name); 
 		
 		securityPrices.forEach(row -> {
 			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());		
-			Bar bar = new BaseBar(dateTime, row.getOpen().toString(), row.getHigh().toString(), row.getLow().toString(), row.getClose().toString(), row.getVolume().toString());
-			bars.add(bar);
-			
+		     series.addBar(dateTime, row.getOpen(), row.getHigh(),  row.getLow(), row.getClose(), row.getVolume());			
 		});
 		
-		return new BaseTimeSeries(name, bars);
+		return series;
 		
 	}	
+	
+	
+	
+	
+	
 	
 }

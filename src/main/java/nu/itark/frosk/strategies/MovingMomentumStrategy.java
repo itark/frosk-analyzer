@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.ta4j.core.BaseStrategy;
-import org.ta4j.core.Decimal;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
@@ -79,18 +78,18 @@ public class MovingMomentumStrategy implements IndicatorValue {
         
         // Entry rule
         Rule entryRule = new OverIndicatorRule(shortEma, longEma) // Trend
-                .and(new CrossedDownIndicatorRule(stochasticOscillK, Decimal.valueOf(20))) // Signal 1
+                .and(new CrossedDownIndicatorRule(stochasticOscillK, 20)) // Signal 1
                 .and(new OverIndicatorRule(macd, emaMacd)); // Signal 2
         
         // Exit rule
         Rule exitRule = new UnderIndicatorRule(shortEma, longEma) // Trend
-                .and(new CrossedUpIndicatorRule(stochasticOscillK, Decimal.valueOf(80))) // Signal 1
+                .and(new CrossedUpIndicatorRule(stochasticOscillK, 80)) // Signal 1
                 .and(new UnderIndicatorRule(macd, emaMacd)); // Signal 2
 
         setIndicatorValues(shortEma, series);
         
         
-        return new BaseStrategy(entryRule, exitRule);
+        return new BaseStrategy("MovingMomentumStrategy", entryRule, exitRule);
     }
 
     
@@ -99,7 +98,7 @@ public class MovingMomentumStrategy implements IndicatorValue {
 		for (int i = 0; i < series.getBarCount(); i++) {
 			iv = new IndicatorValues();
 			iv.setDate(series.getBar(i).getEndTime().toLocalDate().toString());
-			iv.setValue(indicator.getValue(i).getDelegate());
+			iv.setValue(indicator.getValue(i).doubleValue());
 			indicatorValues.add(iv);
 		}
 
