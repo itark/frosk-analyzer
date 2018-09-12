@@ -117,7 +117,9 @@ public class DataController {
 		if ("ALL".equals(strategy)) {
 			list = featuredStrategyRepository.findAll();
 		} else {
-			list= featuredStrategyRepository.findByNameOrderByTotalProfitDesc(strategy);				
+			list= featuredStrategyRepository.findByNameOrderByTotalProfitDesc(strategy);	
+			
+			list.forEach(fs-> logger.info("fs"+fs.getName()+" , "+fs.getLatestTrade()));
 		}
 		
 		return list;

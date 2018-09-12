@@ -9,6 +9,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.persistence.UniqueConstraint;
 
 import lombok.Data;
@@ -57,6 +59,7 @@ public class FeaturedStrategy implements Comparable<FeaturedStrategy> {
 	@Column(name = "period")
 	private String period;
 	@Column(name = "latest_trade")
+	@Temporal(TemporalType.TIMESTAMP)
 	private Date latestTrade;
 
 	protected FeaturedStrategy () {}

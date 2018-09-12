@@ -28,8 +28,12 @@ public class TestJFeaturedStrategyRepository {
 		List<FeaturedStrategy> fsList = fsRepo.findBySecurity("SAND.ST");
 		
 		logger.info("fsList="+fsList.size());
+		
+		fsList.forEach(fs -> logger.info("sec="+fs.getSecurity()+", ld="+fs.getLatestTrade()));
 
 	}
+	
+	
 	
 	
 }

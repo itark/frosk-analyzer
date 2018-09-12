@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.Bar;
@@ -28,6 +29,7 @@ import org.ta4j.core.analysis.criteria.RewardRiskRatioCriterion;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
 
+import nu.itark.frosk.dataset.DateManager;
 import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.dataset.TradeView;
 import nu.itark.frosk.model.FeaturedStrategy;
@@ -122,8 +124,11 @@ public class StrategyAnalysis {
 			fs.setName(strategy);
 			fs.setSecurity(series.getName());
 			fs.setPeriodDescription(getPeriod(series));
+//			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");		
+//			fs.setLatestTradeDate(formatter.format(latestTradeDate.toInstant()));
 			fs.setLatestTradeDate(latestTradeDate);
 
+			
 			totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord).doubleValue();
 			totalProfitPercentage = (totalProfit - 1) * 100;
 			fs.setTotalProfit(new BigDecimal(totalProfitPercentage).setScale(2, BigDecimal.ROUND_DOWN));

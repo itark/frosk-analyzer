@@ -1,5 +1,6 @@
 package nu.itark.frosk.analysis;
 
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -48,7 +49,15 @@ public class TestJStrategyAnalysis {
 		
 	}		
 	
-	
+	@Test
+	public final void testDateOutput(){
+		Date latestTradeDate;
+//		latestTradeDate = Date.from(barEntry.getEndTime().toInstant());
+		latestTradeDate = new Date();
+		
+		logger.info("latestTradeDate="+latestTradeDate);
+		
+	} 
 	
 	
 }

@@ -87,6 +87,8 @@ _____________________________________________________
 SELECT * from FEATURED_STRATEGY;
 SELECT count(*) from FEATURED_STRATEGY;
 
+SELECT latest_trade from FEATURED_STRATEGY;
+
 
 SELECT * FROM CHART_VALUE
 
