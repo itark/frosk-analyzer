@@ -2,6 +2,8 @@ package nu.itark.frosk.service;
 
 import static org.junit.Assert.assertNotNull;
 
+import java.util.List;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +20,23 @@ public class TestJTimeSeriesService {
 	private TimeSeriesService ts;
 	
 	@Test
-	public void testGOOG() throws Exception {
-		TimeSeries sec = ts.getDataSet("GOOG");
+	public void testGetDataSetPerSecurity() throws Exception {
+		TimeSeries sec = ts.getDataSet("SAND.ST");
 		assertNotNull(sec);
 		
 		System.out.println("size="+sec.getBarCount());
 		
 	}	
 	
+	@Test
+	public void testGetDataSet() throws Exception {
+		List<TimeSeries> sec = ts.getDataSet();
+		assertNotNull(sec);
+		
+//		System.out.println("size="+sec.getBarCount());
+		
+	}		
+
 	
 	
 }

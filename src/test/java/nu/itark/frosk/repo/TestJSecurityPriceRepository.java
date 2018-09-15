@@ -50,20 +50,10 @@ public class TestJSecurityPriceRepository {
 	
 
 	@Test
-	public void testFindByName() {
+	public void testfindTopBySecurityIdOrderByTimestampDesc() {
 		logger.info("count="+secRepo.count());	
 		
-		List<SecurityPrice> spList = secRepo.findByName("BITFINEX/BTCEUR");
-		
-		logger.info("spList="+spList.size());
-
-	}
-	
-	@Test
-	public void testfindTopByNameOrderByTimestampDesc() {
-		logger.info("count="+secRepo.count());	
-		
-		SecurityPrice sp = secRepo.findTopByNameOrderByTimestampDesc("BITFINEX/BTCEUR");
+		SecurityPrice sp = secRepo.findTopBySecurityIdOrderByTimestampDesc(122113);
 		
 		
 		logger.info("sp="+sp);

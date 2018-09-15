@@ -9,8 +9,6 @@ import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.ta4j.core.Bar;
-import org.ta4j.core.BaseBar;
 import org.ta4j.core.BaseTimeSeries;
 import org.ta4j.core.TimeSeries;
 import org.ta4j.core.num.PrecisionNum;
@@ -48,35 +46,17 @@ public class TimeSeriesService  {
 	}	
 	
 	/**
-	 * Return TimesSeries bases on name in Security.
+	 * Return TimesSeries bases on id in Security.
 	 * 
-	 * @param name in {@linkplain Security}
+	 * @param security_id in {@linkplain Security}
 	 * @return
 	 */
-//	public TimeSeries getDataSetOBS(String name) {
-//		List<Bar> bars = new ArrayList<>();
-//		List<SecurityPrice> securityPrices =securityPriceRepository.findByName(name); 
-//		
-//		securityPrices.forEach(row -> {
-//			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());		
-//			Bar bar = new BaseBar(dateTime, row.getOpen().toString(), row.getHigh().toString(), row.getLow().toString(), row.getClose().toString(), row.getVolume().toString());
-//			bars.add(bar);
-//			
-//		});
-//		
-//		return new BaseTimeSeries(name, bars);
-//		
-//	}	
+	public TimeSeries getDataSet(String securityName) {
+//		Security security = securityRepository.findOne(security_id);
+		Security security = securityRepository.findByName(securityName);
 
-	/**
-	 * Return TimesSeries bases on name in Security.
-	 * 
-	 * @param name in {@linkplain Security}
-	 * @return
-	 */
-	public TimeSeries getDataSet(String name) {
-        TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(name).withNumTypeOf(PrecisionNum.class).build();
-		List<SecurityPrice> securityPrices =securityPriceRepository.findByName(name); 
+		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(security.getName()).withNumTypeOf(PrecisionNum.class).build();
+		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityId(security.getId()); 
 		
 		securityPrices.forEach(row -> {
 			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());		
@@ -86,10 +66,6 @@ public class TimeSeriesService  {
 		return series;
 		
 	}	
-	
-	
-	
-	
 	
 	
 }

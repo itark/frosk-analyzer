@@ -8,25 +8,34 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "security", uniqueConstraints={@UniqueConstraint(columnNames={"name"})})
+@Table(name = "security")
 public class Security implements Serializable {
+
 	private static final long serialVersionUID = -3009157732242241606L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
-//	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private long id;
 
+	@NotNull
+	@Size(max = 20)
 	@Column(name = "name", unique=true)
 	private String name;
+
+	@NotNull
+	@Size(max = 100)
 	@Column(name = "description")
 	private String description;
+
+	@NotNull
+	@Size(max = 20)
 	@Column(name = "database")
 	private String database;
 	

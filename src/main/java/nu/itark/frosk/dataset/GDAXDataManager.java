@@ -62,7 +62,7 @@ public class GDAXDataManager extends TimeSeriesManager {
 		List<SecurityPrice> sp = new ArrayList<>();
 	
 		securities.forEach((security) -> {
-			SecurityPrice topSp = securityPriceRepository.findTopByNameOrderByTimestampDesc(security.getName());		
+			SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());		
 			Date fromDate = topSp.getTimestamp();	
 
 			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(security, fromDate);
@@ -83,7 +83,7 @@ public class GDAXDataManager extends TimeSeriesManager {
 				Long volume = Double.valueOf(row.getDouble("Volume")).longValue();
 
 				if (date != null && !open.equals(BigDecimal.ZERO) && !high.equals(BigDecimal.ZERO) && !low.equals(BigDecimal.ZERO) && !close.equals(BigDecimal.ZERO) && !volume.equals(BigDecimal.ZERO)) {
-					securityPrice = new SecurityPrice(security.getName(), date, open, high, low, close, volume);
+					securityPrice = new SecurityPrice(security.getId(), date, open, high, low, close, volume);
 					sp.add(securityPrice);
 				}
 			});

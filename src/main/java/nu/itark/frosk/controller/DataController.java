@@ -85,9 +85,9 @@ public class DataController {
 
 		List<FeaturedStrategyDTO> strategyList = strategyAnalysis.run(strategy, null);
 		strategyList.forEach(dto -> {
-			tradesList.put(dto.getSecurity(), dto.getTrades());
-			logger.info("Security:"+dto.getSecurity()+" has "+dto.getIndicatorValues()+" values");
-			indicatorValuesList.put(dto.getSecurity(), dto.getIndicatorValues());
+			tradesList.put(dto.getSecurityName(), dto.getTrades());
+			logger.info("Security:"+dto.getSecurityName()+" has "+dto.getIndicatorValues()+" values");
+			indicatorValuesList.put(dto.getSecurityName(), dto.getIndicatorValues());
 		});
 		
 		List<FeaturedStrategyDTO> strategyOrderedByProfitList = 
@@ -108,8 +108,8 @@ public class DataController {
 	 * @return
 	 */			
 	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
-	public Iterable<FeaturedStrategy> getFeaturedStrategies(@RequestParam("strategy") String strategy){
-		logger.info("strategy="+strategy);
+	public Iterable<FeaturedStrategy> getFeaturedStrategies(@RequestParam("strategy") String strategy, @RequestParam("dataset") String dataset){
+		logger.info("strategy="+strategy+", dataset="+dataset);
 		Iterable<FeaturedStrategy> list;
 		if (StringUtils.isEmpty(strategy) ) {
 			throw new RuntimeException("strategy not correct set!");
@@ -267,9 +267,9 @@ public class DataController {
 	public String doDummyDelete(@RequestParam("name") String name){
 		logger.info("delete name="+name);
 
-		List<Security> list =securityRepository.findByName(name);
+		Security sec =securityRepository.findByName(name);
 		
-		securityRepository.delete(list);
+		securityRepository.delete(sec);
 		
 		return "Deleted";
 

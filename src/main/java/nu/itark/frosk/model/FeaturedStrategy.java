@@ -12,6 +12,8 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import lombok.Data;
 
@@ -23,52 +25,65 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "featured_strategy", uniqueConstraints={@UniqueConstraint(columnNames={"name", "security"})})
+@Table(name = "featured_strategy", uniqueConstraints={@UniqueConstraint(columnNames={"name", "security_name"})})
 public class FeaturedStrategy implements Comparable<FeaturedStrategy> {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 	
-	@Column(name = "name", unique=true)
+	@NotNull
+	@Size(max = 50)
+	@Column(name = "name")
 	private String name;
-	@Column(name = "security", unique=true)
-	private String security;
+
+	@Column(name = "security_name")
+	private String securityName;
+
 	@Column(name = "total_profit")
-	private BigDecimal totalProfit; // Total profit
+	private BigDecimal totalProfit; 
+
 	@Column(name = "ticks")
-	private Integer numberOfTicks; // Number of ticks
+	private Integer numberOfTicks; 
+
 	@Column(name = "avg_tick_profit")
-	private BigDecimal averageTickProfit; // Average profit (per tick)
+	private BigDecimal averageTickProfit;
+
 	@Column(name = "trades")
-	private Integer numberofTrades; // Number of trades
+	private Integer numberofTrades;
+
 	@Column(name = "prof_trade_ratio")
-	private BigDecimal profitableTradesRatio; // "Profitable trades ratio
+	private BigDecimal profitableTradesRatio; 
+
 	@Column(name = "max_dd")
-	private BigDecimal maxDD; // "Maximum drawdown
+	private BigDecimal maxDD; 
+
 	@Column(name = "rew_risk_ratio")
-	private BigDecimal rewardRiskRatio; // Reward-risk ratio
+	private BigDecimal rewardRiskRatio; 
+
 	@Column(name = "transaction_cost")
-	private BigDecimal totalTransactionCost; // Total transaction cost (from
-											// $1000)
+	private BigDecimal totalTransactionCost; 
+											
 	@Column(name = "buy_hold")
-	private BigDecimal buyAndHold; // Buy-and-hold:
+	private BigDecimal buyAndHold; 
+
 	@Column(name = "buy_vs_hold")
-	private BigDecimal totalProfitVsButAndHold; // Custom strategy profit vs
-												// buy-and-hold strategy profit
+	private BigDecimal totalProfitVsButAndHold; 
+												
 	@Column(name = "period")
 	private String period;
-	@Column(name = "latest_trade")
+
 	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name = "latest_trade")
 	private Date latestTrade;
 
 	protected FeaturedStrategy () {}
 
-	public FeaturedStrategy(String name, String security, BigDecimal totalProfit, Integer numberOfTicks,
+	public FeaturedStrategy(String name, String securityName, BigDecimal totalProfit, Integer numberOfTicks,
 			BigDecimal averageTickProfit, Integer numberofTrades, BigDecimal profitableTradesRatio, BigDecimal maxDD,
 			BigDecimal rewardRiskRatio, BigDecimal totalTransactionCost, BigDecimal buyAndHold, BigDecimal totalProfitVsButAndHold, String period, Date latestTrade ) {
 		this.name = name;
-		this.security = security;
+		this.securityName = securityName;
 		this.totalProfit = totalProfit;
 		this.numberOfTicks = numberOfTicks;
 		this.averageTickProfit = averageTickProfit;

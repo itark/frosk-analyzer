@@ -122,7 +122,7 @@ public class StrategyAnalysis {
 
 			fs = new FeaturedStrategyDTO();
 			fs.setName(strategy);
-			fs.setSecurity(series.getName());
+			fs.setSecurityName(series.getName());
 			fs.setPeriodDescription(getPeriod(series));
 //			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");		
 //			fs.setLatestTradeDate(formatter.format(latestTradeDate.toInstant()));
@@ -167,9 +167,11 @@ public class StrategyAnalysis {
 	}
 
 	private void save(FeaturedStrategyDTO dto) {
-		FeaturedStrategy fs = fsRepo.findByNameAndSecurity(dto.getName(), dto.getSecurity());
+		logger.info("name="+dto.getName()+",secName="+dto.getSecurityName());
+		FeaturedStrategy fs = fsRepo.findByNameAndSecurityName(dto.getName(), dto.getSecurityName());		
 
 		if (fs != null) { //Update
+			logger.info("Update");
 			fs.setTotalProfit(dto.getTotalProfit());
 			fs.setAverageTickProfit(dto.getAverageTickProfit());
 			fs.setNumberOfTicks(dto.getNumberOfTicks());
@@ -184,6 +186,7 @@ public class StrategyAnalysis {
 			fs.setPeriod(dto.getPeriodDescription());
 			fs.setLatestTrade(dto.getLatestTradeDate());
 		} else {  //New
+			logger.info("New");
 			fs = get(dto);
 		}
 
@@ -192,7 +195,7 @@ public class StrategyAnalysis {
 	}
 	
 	private FeaturedStrategy get(FeaturedStrategyDTO dto) {
-		return new FeaturedStrategy(dto.getName(), dto.getSecurity(), dto.getTotalProfit(), dto.getNumberOfTicks(), dto.getAverageTickProfit(), 
+		return new FeaturedStrategy(dto.getName(), dto.getSecurityName(), dto.getTotalProfit(), dto.getNumberOfTicks(), dto.getAverageTickProfit(), 
 				dto.getNumberofTrades(), dto.getProfitableTradesRatio(), dto.getMaxDD(), dto.getRewardRiskRatio(), 
 				dto.getTotalTranactionCost(), dto.getBuyAndHold(), dto.getTotalProfitVsButAndHold(), dto.getPeriodDescription(), dto.getLatestTradeDate());
 		
@@ -270,7 +273,7 @@ public class StrategyAnalysis {
 		        
 		        fs = new FeaturedStrategyDTO();
 				fs.setName(name);
-				fs.setSecurity(series.getName());
+				fs.setSecurityName(series.getName());
 				fs.setPeriodDescription(getPeriod(series));
 				fs.setLatestTradeDate(latestTradeDate);
 				totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord).doubleValue();

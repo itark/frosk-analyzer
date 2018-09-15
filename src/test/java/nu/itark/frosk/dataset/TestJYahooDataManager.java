@@ -64,7 +64,7 @@ public class TestJYahooDataManager {
 
 		Calendar from = Calendar.getInstance();
 		Calendar to = Calendar.getInstance();
-		from.add(Calendar.DAY_OF_MONTH, -1); 
+		from.add(Calendar.DAY_OF_MONTH, 1); 
 		
 		System.out.println("from="+from.getTime());
 	
@@ -72,7 +72,7 @@ public class TestJYahooDataManager {
 		logger.info("theX="+theX);		
 		
 		
-		Stock google = YahooFinance.get("GOOG", from, to, Interval.DAILY);
+		Stock google = YahooFinance.get("SAND.ST", from, to, Interval.DAILY);
 
 		System.out.println("google="+google);
 		

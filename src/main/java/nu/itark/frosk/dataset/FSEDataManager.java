@@ -61,7 +61,7 @@ public class FSEDataManager extends TimeSeriesManager {
 		List<SecurityPrice> sp = new ArrayList<>();
 	
 		securities.forEach((security) -> {
-			SecurityPrice topSp = securityPriceRepository.findTopByNameOrderByTimestampDesc(security.getName());		
+			SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());		
 			Date fromDate = topSp.getTimestamp();
 			TabularResult tabularResult = QuandlSessionHelper.getTabularResultWithoutApiKey(security, fromDate);
 	
@@ -77,7 +77,7 @@ public class FSEDataManager extends TimeSeriesManager {
 
 				if (date != null && open != null && high != null && low != null
 						&& close != null && volume != null) {
-					securityPrice = new SecurityPrice(security.getName(), date2, open, high, low, close, volume);
+					securityPrice = new SecurityPrice(security.getId(), date2, open, high, low, close, volume);
 					sp.add(securityPrice);
 				}
 			});

@@ -18,7 +18,7 @@ import nu.itark.frosk.dataset.TradeView;
 public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
 
 	private String name;
-	private String security;
+	private String securityName;
 	private BigDecimal totalProfit; // Total profit
 	private Integer numberOfTicks; // Number of ticks
 	private BigDecimal averageTickProfit; // Average profit (per tick)

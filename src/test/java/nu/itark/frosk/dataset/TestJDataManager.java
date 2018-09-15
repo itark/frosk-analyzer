@@ -21,6 +21,14 @@ public class TestJDataManager {
 	}
 	
 	@Test
+	public final void runYahooOneSecurity() {
+
+		dataManager.insertSecurityPricesIntoDatabase(Database.YAHOO, "SAND.ST", true);  
+		
+	}	
+	
+	
+	@Test
 	public final void runWiki() {
 
 		dataManager.insertSecurityPricesIntoDatabase(Database.WIKI, true);  //true if securities in place.ß

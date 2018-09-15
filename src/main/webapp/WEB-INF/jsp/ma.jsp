@@ -79,40 +79,53 @@ header {
             <div class="col-lg-4 col-md-4">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                     	Dataset:OMX30
-	                   <div class="panel-body">
-	                     <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
-						  <thead>
-					            <tr>
-					                <th>Security</th>
-					                <th>Profit%</th>
-					                <th>Trades</th>
-					                <th>LatestTrade</th>				                
-					                <th>Period</th>
-									<th>Ticks</th>
-					                <th>AverageProfit</th>
-					                <th>Ratio</th>
-					                <th>MaxDD</th>
-					            </tr>
-					        </thead>
-					        <tfoot>
-					            <tr>
-					                <th>Security</th>
-					                <th>Profit%</th>
-					                <th>Trades</th>
-					                <th>LatestTrade</th>
-					                <th>Period</th>
-									<th>Ticks</th>
-					                <th>AverageProfit</th>
-					                <th>Ratio</th>
-					                <th>MaxDD</th>
-					            </tr>
-					        </tfoot>
-	                     </table>
-	                   </div>
-                    </div>
+  						<i class="fa fa-table fa-fw"></i>
+                        <div class="pull-right">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                    Dataset
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu pull-right" role="menu">
+                                    <li><a href="#" onclick="renderTable('OMX30');">OMX30</a>
+                                    </li>
+                                    <li><a href ="#" onclick="renderTable('Teknik');">Teknik</a>
+                                </ul>
+                            </div>
+                        </div>
+					</div>
+                   <div class="panel-body">
+                     <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
+					  <thead>
+				            <tr>
+				                <th>Security</th>
+				                <th>Profit%</th>
+				                <th>Trades</th>
+				                <th>LatestTrade</th>				                
+				                <th>Period</th>
+								<th>Ticks</th>
+				                <th>AverageProfit</th>
+				                <th>Ratio</th>
+				                <th>MaxDD</th>
+				            </tr>
+				        </thead>
+				        <tfoot>
+				            <tr>
+				                <th>Security</th>
+				                <th>Profit%</th>
+				                <th>Trades</th>
+				                <th>LatestTrade</th>
+				                <th>Period</th>
+								<th>Ticks</th>
+				                <th>AverageProfit</th>
+				                <th>Ratio</th>
+				                <th>MaxDD</th>
+				            </tr>
+				        </tfoot>
+                     </table>
+                   </div>
                 </div>
-            </div>
+           </div>
  
            <div class="col-lg-8 col-md-8">
                  <div class="panel panel-default">
@@ -157,52 +170,6 @@ header {
  	var selectedSecurity;
  	var strategy="MovingMomentumStrategy";
  
-    $(document).ready(function() {
-    	var events = $('#events');
-        var featStratTable = $('#featuredStrategies').DataTable({
-        	responsive: true,
-        	select: true,
-        	"sAjaxSource": "featuredStrategies?strategy="+strategy,
-			"sAjaxDataProp": "",
-			"order": [[ 1, "desc" ]],
-			"aoColumns": [
-				  { "mData": "security"},
-			      { "mData": "totalProfit"},
-				  { "mData": "numberofTrades" },
-			      { "mData": "latestTrade" },
-				  { "mData": "period"},
-			      { "mData": "numberOfTicks" },
-				  { "mData": "averageTickProfit" },
-				  { "mData": "profitableTradesRatio" },
-				  { "mData": "maxDD" }
-			]       
-        
-        });
-   
-        featStratTable
-    		.on( 'select', function ( e, dt, type, indexes ) {
-            	var rowData = featStratTable.rows( indexes ).data().toArray();
-            	var security = featStratTable.rows( indexes ).data().pluck( 'security' );
-             	selectedSecurity = security[0];
-
-             	renderChartOHLC();
-            	
-        }) ; 
-    
-        featStratTable
-    		.on( 'draw.dt', function () {
-		      	let name = featStratTable.rows( 0 ).data().pluck( 'name' );
-		    	let security = featStratTable.rows( 0 ).data().pluck( 'security' );
-		    	selectedSecurity = security[0];
-		        
-		        renderChartOHLC();
-	        
-    		} );            
-        
-        
-    });
-    
-
     function renderChartOHLC() {
     	security = selectedSecurity;
     	console.log('about to render chart on strategyName='+strategy+' and security='+security);

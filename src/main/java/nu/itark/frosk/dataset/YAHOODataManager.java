@@ -3,6 +3,7 @@ package nu.itark.frosk.dataset;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,8 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,26 +75,59 @@ public class YAHOODataManager  {
 			try {
 				securityPriceRepository.save(sp);
 			} catch (DataIntegrityViolationException e) {
-				logger.severe("Duplicate, just go on , for now."+e); //TODO fix the date problem
+				logger.severe("Duplicate ."+e);
+				throw e;
 			}
 		});
 
 	}
 	
+	/**
+	 * Download prices and insert into database for one security
+	 */
+	public void syncronize(String sec) {
+		logger.info("sync="+Database.YAHOO.toString());
+		Security security = securityRepository.findByName(sec);
+		List<Security> securities = Arrays.asList(security);
+		
+		securities.forEach(sc -> logger.info("NAME="+ sc.getName()));
+		
+		List<SecurityPrice> spList;
+		try {
+			spList = getDataSet(securities);
+		} catch (IOException e) {
+			logger.severe("Could not retrieve dataset");
+			throw new RuntimeException(e);
+		}
+
+		spList.forEach((sp) -> {
+			try {
+				securityPriceRepository.save(sp);
+			} catch (DataIntegrityViolationException e) {
+				logger.severe("Duplicate ." + e);
+				throw e;
+			}
+		});
+
+	}	
+	
+	
+	
+	
 	private List<SecurityPrice> getDataSet(Iterable<Security> securities) throws IOException  {
 		logger.info("getDataSet(Iterable<Security> names)");
 		List<SecurityPrice> sp = new ArrayList<>();
-		Map<String, List<HistoricalQuote>> stockQuotes = getStocks(securities);
+		Map<Long, List<HistoricalQuote>> stockQuotes = getStocks(securities);
 		
-		stockQuotes.forEach((name,quote) -> {
-			logger.info("name="+name);
+		stockQuotes.forEach((sec_id,quote) -> {
+			logger.info("sec_id="+sec_id);
 			try {
 				quote.forEach(row -> {
 					Date date = Date.from(Instant.ofEpochMilli(row.getDate().getTimeInMillis()));
 					SecurityPrice securityPrice = null;
 					if (date != null && row.getOpen() != null && row.getHigh() != null && row.getLow() != null
 							&& row.getClose() != null && row.getVolume() != null) {
-						securityPrice = new SecurityPrice(name, date, row.getOpen(), row.getHigh(), row.getLow(),
+						securityPrice = new SecurityPrice(sec_id, date, row.getOpen(), row.getHigh(), row.getLow(),
 								row.getClose(), row.getVolume());
 						sp.add(securityPrice);
 					} 
@@ -121,26 +153,29 @@ public class YAHOODataManager  {
 	 * @return Map<String, Stock>
 	 * @throws IOException
 	 */
-	private Map<String, List<HistoricalQuote>> getStocks(Iterable<Security> securities) throws IOException {
+	private Map<Long, List<HistoricalQuote>> getStocks(Iterable<Security> securities) throws IOException {
 		logger.info("getStocks(Iterable<Security> securities");
-		Map<String, List<HistoricalQuote>> stocks = new HashMap<String, List<HistoricalQuote>>();
+		Map<Long, List<HistoricalQuote>> stocks = new HashMap<Long, List<HistoricalQuote>>();
 		
-		Calendar to = Calendar.getInstance();
+		Calendar to = Calendar.getInstance(TimeZone.getDefault());
 		
         securities.forEach((security) -> {
             Calendar from = Calendar.getInstance(TimeZone.getDefault());
         	boolean isToday = false;
             Date toDay = new Date();
-        	SecurityPrice topSp = securityPriceRepository.findTopByNameOrderByTimestampDesc(security.getName());		
+        	SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());		
             if (topSp != null) {
             	Date lastDate = topSp.getTimestamp();
             	logger.info("security="+security.getName()+ ", found lastDate="+lastDate);
             	if (DateUtils.isSameDay(lastDate, toDay)) {
             		logger.info("isToday::lastDate="+lastDate.toString()+", toDay="+toDay.toString());
             		isToday = true;
-            	} else {
-//            		from = new Calendar.Builder().setCalendarType("iso8601")
-//           			     .setDate(lastDate.getYear(), lastDate.getMonth(), lastDate.getDay()).build();
+            	} else if (DateUtils.isSameDay(lastDate, DateUtils.addDays(toDay, -1))) {
+            		logger.info("last is yeasterday");
+            		from.setTime(lastDate);
+            		from.add(Calendar.DATE, 2); 
+            	}
+            	else {
             		from.setTime(lastDate);
             		from.add(Calendar.DATE, 1); 
             		logger.info("Not today, from set to:"+from.getTime().toString());
@@ -152,13 +187,11 @@ public class YAHOODataManager  {
     		try {
     			if (!isToday) {
     				logger.info("Retrieving history for "+security.getName()+" from "+from.getTime());
-//    				String theX = String.valueOf(from.getTimeInMillis() / 1000);
-//    				logger.info("theX="+theX);
-//    				Stock stock = YahooFinance.get(security.getName(), from, to, Interval.DAILY);
        				Stock stock = YahooFinance.get(security.getName());
-       				List<HistoricalQuote> histQuotes = stock.getHistory(from, to, Interval.DAILY);       				
+       				List<HistoricalQuote> histQuotes = stock.getHistory(from, to, Interval.DAILY);  
        				
-    				stocks.put(security.getName(), histQuotes);
+    				stocks.put(security.getId(), histQuotes);
+    
     			} else {
                 	logger.info("Today, no action.");
     			}
@@ -173,51 +206,6 @@ public class YAHOODataManager  {
         
 	}
 
-	/**
-	 * Get DAILY Stocks on provided Securities.
-	 * 
-	 * @param securities
-	 * @return Map<String, Stock>
-	 * @throws IOException
-	 * @Deprecated
-	 */
-	private Map<String, Stock> getStocks_OBSOLETE(Iterable<Security> securities) throws IOException {
-		logger.info("getStocks(Iterable<Security> securities");
-		List<String> names = StreamSupport.stream(securities.spliterator(), false)
-					.map(Security::getName)
-					.collect(Collectors.toList());
-        
-        String[] symbols = names.stream().toArray(String[]::new);
-        String firstSymbolInList = symbols[0];
-        
-        Calendar from = Calendar.getInstance();
-        Calendar to = Calendar.getInstance();
- 
-        SecurityPrice topSp = securityPriceRepository.findTopByNameOrderByTimestampDesc(firstSymbolInList);		
-        if (topSp != null) {
-        	Date fromDate = topSp.getTimestamp();
-        	logger.info("security="+firstSymbolInList+ ", fromDate="+fromDate);
-        	from.setTime(fromDate);
-        	from.add(Calendar.DATE, 1);
-        } else {
-            from.add(Calendar.YEAR, - years);
-        }
-        logger.info("from="+from);
-        
-        if (from.after(new Date())){
-        	logger.info("Today, no action.");
-        	return null;
-        }
-		
-//	    CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL)); //https://github.com/sstrickx/yahoofinance-api/issues/126
-//		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER));
-		return YahooFinance.get(symbols, from, to, Interval.DAILY); // single request
-		
-	}
-	
-	
-	
-	
 	
 	
 }

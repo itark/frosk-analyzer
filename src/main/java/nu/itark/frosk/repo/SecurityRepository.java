@@ -7,7 +7,7 @@ import org.springframework.data.repository.CrudRepository;
 import nu.itark.frosk.model.Security;
 
 public interface SecurityRepository extends CrudRepository<Security, Long>{
-	List<Security> findByName(String name);
+	Security findByName(String name);
 	List<Security> findByDatabase(String database);
 	boolean existsByName(String name);
 	

@@ -72,6 +72,7 @@ public class DataSetHelper {
 			if (securityRepository.existsByName(security.getName())) {
 				logger.info("security="+security.getName()+ " exist in database.");
 			} else {
+				logger.info("security name::"+security.getName()+"::");
 				securityRepository.save(security);
 				logger.info("Saved security="+security.getName()+ " to database.");
 			}

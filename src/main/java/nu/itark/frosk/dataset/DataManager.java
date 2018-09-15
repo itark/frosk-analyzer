@@ -62,4 +62,17 @@ public class DataManager {
 		
 	}
 	
+	public void insertSecurityPricesIntoDatabase(Database database, String security, boolean hasSecurities) {
+
+		if (hasSecurities && database.equals(Database.YAHOO)) {
+			yahooDataManager.syncronize(security);
+		} else {
+			throw new RuntimeException("No database set!");
+		}
+		
+		
+	}	
+	
+	
+	
 }
