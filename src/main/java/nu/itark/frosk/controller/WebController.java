@@ -73,7 +73,7 @@ public class WebController {
 	public String initDatabase(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
 		logger.log(Level.INFO, "initDatabases");
-		dataManager.insertSecuritiesIntoDatabase();
+		dataManager.insertDatasetSecuritiesIntoDatabase();
 		
 		return "Securities inserted";	
 	}

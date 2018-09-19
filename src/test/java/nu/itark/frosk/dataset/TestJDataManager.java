@@ -53,7 +53,7 @@ public class TestJDataManager {
 	@Test
 	public final void runSecuritiesIntoDatabase() {
 
-		dataManager.insertSecuritiesIntoDatabase();
+		dataManager.insertDatasetSecuritiesIntoDatabase();
 		
 	}
 	

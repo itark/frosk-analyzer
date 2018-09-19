@@ -1,12 +1,15 @@
 package nu.itark.frosk.model;
 
-import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -16,12 +19,11 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "security")
-public class Security implements Serializable {
+public class Security {
 
-	private static final long serialVersionUID = -3009157732242241606L;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private long id;
 
 	@NotNull
@@ -38,6 +40,9 @@ public class Security implements Serializable {
 	@Size(max = 20)
 	@Column(name = "database")
 	private String database;
+	
+    @ManyToMany(fetch = FetchType.EAGER,mappedBy = "securities")
+	private Set<DataSet> datasets = new HashSet<>();	
 	
 	protected Security() {
 	}

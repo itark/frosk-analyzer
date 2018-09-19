@@ -96,6 +96,8 @@ CREATE TABLE data_set(
 
 --truncate data_set;
 
+select * from data_set;
+select * from data_set_securities;
 _____________________________________________________
 
 
@@ -137,6 +139,10 @@ CREATE TABLE chart_value(
 _____________________________________________________
 
 
+select * from data_set_securities;
+
+
+select * from data_set;
 
 
 SELECT * from FEATURED_STRATEGY;

@@ -33,8 +33,8 @@ public class DataManager {
 	/**
 	 * Insert securities from all cvs-files.
 	 */
-	public void insertSecuritiesIntoDatabase(){
-		dataSetHelper.insertSecurityFromCvsFile();
+	public void insertDatasetSecuritiesIntoDatabase(){
+		dataSetHelper.insertDatasetSecuritiesFromCvsFile();
 	}
 	
 	public void insertSecurityPricesIntoDatabase(Database database, boolean hasSecurities) {
