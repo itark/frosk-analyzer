@@ -48,6 +48,10 @@ public class TestJRepository {
 		tag2.getPosts().add(post);
 
 		postRepository.save(post);
+		
+		postRepository.findByTitle("Hibernate Many to Many Example with Spring Boot");
+		
+		
 
 	}
 

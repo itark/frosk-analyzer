@@ -1,10 +1,8 @@
 package nu.itark.frosk.model;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -23,9 +21,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "data_set")
-public class DataSet implements Serializable {
-
-	private static final long serialVersionUID = -3009157732242241606L;
+public class DataSet  {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -41,7 +37,7 @@ public class DataSet implements Serializable {
 	@Column(name = "description")
 	private String description;
 
-    @ManyToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "data_set_securities",
             joinColumns = { @JoinColumn(name = "data_set_id") },
             inverseJoinColumns = { @JoinColumn(name = "security_id") })

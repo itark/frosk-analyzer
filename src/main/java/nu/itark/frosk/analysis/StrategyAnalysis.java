@@ -168,7 +168,9 @@ public class StrategyAnalysis {
 
 	private void save(FeaturedStrategyDTO dto) {
 		logger.info("name="+dto.getName()+",secName="+dto.getSecurityName());
-		FeaturedStrategy fs = fsRepo.findByNameAndSecurityName(dto.getName(), dto.getSecurityName());		
+//		FeaturedStrategy fs = fsRepo.findByNameAndSecurityName(dto.getName(), dto.getSecurityName());		
+		//TODO
+		FeaturedStrategy fs = null;
 
 		if (fs != null) { //Update
 			logger.info("Update");
@@ -195,7 +197,7 @@ public class StrategyAnalysis {
 	}
 	
 	private FeaturedStrategy get(FeaturedStrategyDTO dto) {
-		return new FeaturedStrategy(dto.getName(), dto.getSecurityName(), dto.getTotalProfit(), dto.getNumberOfTicks(), dto.getAverageTickProfit(), 
+		return new FeaturedStrategy(dto.getName(), dto.getTotalProfit(), dto.getNumberOfTicks(), dto.getAverageTickProfit(), 
 				dto.getNumberofTrades(), dto.getProfitableTradesRatio(), dto.getMaxDD(), dto.getRewardRiskRatio(), 
 				dto.getTotalTranactionCost(), dto.getBuyAndHold(), dto.getTotalProfitVsButAndHold(), dto.getPeriodDescription(), dto.getLatestTradeDate());
 		

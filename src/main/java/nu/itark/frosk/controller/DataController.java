@@ -101,12 +101,13 @@ public class DataController {
 	}	
 
 	/**
-	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy
+	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy&dataset=OSCAR
 	 * 
 	 * @param securityName
 	 * @param database
 	 * @return
-	 */			
+	 */		
+	//TODO impl. dataset
 	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
 	public Iterable<FeaturedStrategy> getFeaturedStrategies(@RequestParam("strategy") String strategy, @RequestParam("dataset") String dataset){
 		logger.info("strategy="+strategy+", dataset="+dataset);

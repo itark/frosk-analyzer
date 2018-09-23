@@ -31,6 +31,13 @@ public class TestJSecurityRepository {
 		
 		logger.info("exist="+exist);
 	}
+
+	@Test
+	public final void testFindByName() {
+		
+		logger.info("hello="+securityRepo.findByName("ABB.ST"));
+	}	
+	
 	
 	
 }

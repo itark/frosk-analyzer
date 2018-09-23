@@ -89,7 +89,7 @@ header {
                                 <ul class="dropdown-menu pull-right" role="menu">
                                     <li><a href="#" onclick="renderTable('OMX30');">OMX30</a>
                                     </li>
-                                    <li><a href ="#" onclick="renderTable('Teknik');">Teknik</a>
+                                    <li><a href ="#" onclick="renderTable('OSCAR');">OSCAR</a>
                                 </ul>
                             </div>
                         </div>

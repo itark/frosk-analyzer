@@ -1,7 +1,7 @@
 package nu.itark.frosk.model;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -41,8 +41,8 @@ public class Security {
 	@Column(name = "database")
 	private String database;
 	
-    @ManyToMany(fetch = FetchType.EAGER,mappedBy = "securities")
-	private Set<DataSet> datasets = new HashSet<>();	
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "securities")
+	private List<DataSet> datasets = new ArrayList<>();	
 	
 	protected Security() {
 	}
