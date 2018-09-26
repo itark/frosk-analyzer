@@ -16,14 +16,14 @@ public class TestJDataManager {
 	@Test
 	public final void runYahoo() {
 
-		dataManager.insertSecurityPricesIntoDatabase(Database.YAHOO, true);  //true if securities in place.ß
+		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);  
 		
 	}
 	
 	@Test
 	public final void runYahooOneSecurity() {
 
-		dataManager.insertSecurityPricesIntoDatabase(Database.YAHOO, "SAND.ST", true);  
+		dataManager.insertSecurityPricesIntoDatabase(Database.YAHOO, "SAND.ST");  
 		
 	}	
 	
@@ -31,21 +31,21 @@ public class TestJDataManager {
 	@Test
 	public final void runWiki() {
 
-		dataManager.insertSecurityPricesIntoDatabase(Database.WIKI, true);  //true if securities in place.ß
+		dataManager.addSecurityPricesIntoDatabase(Database.WIKI);  
 		
 	}	
 
 	@Test
 	public final void runGdax() {
 
-		dataManager.insertSecurityPricesIntoDatabase(Database.GDAX, true);  //true if securities in place.ß
+		dataManager.addSecurityPricesIntoDatabase(Database.GDAX);  
 		
 	}		
 	
 	@Test
 	public final void runBitfinex() {
 
-		dataManager.insertSecurityPricesIntoDatabase(Database.BITFINEX, true);  //true if securities in place.ß
+		dataManager.addSecurityPricesIntoDatabase(Database.BITFINEX);  
 		
 	}	
 	
@@ -53,12 +53,9 @@ public class TestJDataManager {
 	@Test
 	public final void runSecuritiesIntoDatabase() {
 
-		dataManager.insertDatasetSecuritiesIntoDatabase();
+		dataManager.addDatasetSecuritiesIntoDatabase();
 		
 	}
-	
-	
-	
 	
 	
 }

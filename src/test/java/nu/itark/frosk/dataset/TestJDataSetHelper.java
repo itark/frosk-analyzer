@@ -31,7 +31,7 @@ public class TestJDataSetHelper {
 	@Test
 	public final void run() {
 
-		dataSetHelper.insertDatasetSecuritiesFromCvsFile();
+		dataSetHelper.addDatasetSecuritiesFromCvsFile();
 		
 	}
 

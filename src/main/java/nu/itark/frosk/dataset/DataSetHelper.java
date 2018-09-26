@@ -14,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.opencsv.CSVReader;
@@ -58,8 +57,7 @@ public class DataSetHelper {
 	 * Insert all securities from cvsFiles.
 	 * 
 	 */
-	public void insertDatasetSecuritiesFromCvsFile() {
-//		securityRepository.deleteAllInBatch();
+	public void addDatasetSecuritiesFromCvsFile() {
 	
 		datasets.forEach(csvFile -> {
 			saveToRepo(csvFile);
@@ -86,7 +84,6 @@ public class DataSetHelper {
 		if ( (dataset = datasetRepository.findByName(datasetName)) != null ) {
 			logger.info("Dataset="+dataset.getName()+ " exist in database.");
 		} else {
-//			logger.info("Dataset name::"+datasetName+" to be inserted::");
 			dataset = new DataSet(datasetName, datasetDesc);
 			dataset = datasetRepository.saveAndFlush(dataset);
 			logger.info("Saved dataset="+dataset.getName()+ " to database.");
@@ -102,6 +99,7 @@ public class DataSetHelper {
 	
 			if ( (security = securityRepository.findByName(name)) != null ) {
 				logger.info("Security="+security.getName()+ " exist in database.");
+
 				checkIfAddToDataset(datasetName, dataset, security);
 
 			} else {
@@ -110,11 +108,8 @@ public class DataSetHelper {
 
 				checkIfAddToDataset(datasetName, dataset, security);
 				
-				
 			}
 
-			//dataset.getSecurities().add(security);
-	
 
 		}
 
@@ -138,25 +133,5 @@ public class DataSetHelper {
 		}
 	}
 
-	/**
-	 * Insert all securities from cvsFiles.
-	 * 
-	 */
-	void insertDataset() {
-		DataSet dataSet = new DataSet("OMX30", "All securities included in the OMX30-index.");
-		DataSet dataSet2 = new DataSet("OSCAR", "De La Torres moneymachine.");
-		List<DataSet> datasets = java.util.Arrays.asList(dataSet, dataSet2);
-
-		try {
-			datasetRepository.save(datasets);
-			datasetRepository.flush();
-		} catch (DataIntegrityViolationException e) {
-			logger.warning("This is not so good...but ok");
-			//continue
-		}
-		
-
-	}		
-	
 	
 }

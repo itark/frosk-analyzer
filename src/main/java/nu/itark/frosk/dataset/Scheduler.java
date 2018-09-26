@@ -41,7 +41,7 @@ public class Scheduler {
 		logger.info("::Scheduler::runDownload() about to execute, time=" + now.format(formatter));
 
 //		dataManager.insertSecurityPricesIntoDatabase(Database.BITFINEX, true);
-		dataManager.insertSecurityPricesIntoDatabase(Database.YAHOO, true);
+		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
 
 	}
 	

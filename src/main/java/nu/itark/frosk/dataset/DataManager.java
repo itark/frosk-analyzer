@@ -33,26 +33,32 @@ public class DataManager {
 	/**
 	 * Insert securities from all cvs-files.
 	 */
-	public void insertDatasetSecuritiesIntoDatabase(){
-		dataSetHelper.insertDatasetSecuritiesFromCvsFile();
+	public void addDatasetSecuritiesIntoDatabase(){
+		dataSetHelper.addDatasetSecuritiesFromCvsFile();
 	}
 	
-	public void insertSecurityPricesIntoDatabase(Database database, boolean hasSecurities) {
+	/**
+	 * Gets prices from {@linkplain Database} into internal database.
+	 * 
+	 * @param database
+	 */
+	public void addSecurityPricesIntoDatabase(Database database) {
 
-		if (hasSecurities && database.equals(Database.YAHOO)) {
+		if (database.equals(Database.YAHOO)) {
+			logger.info("About to run yahooDataManager.syncronize()...");
 			yahooDataManager.syncronize();
 		}
 		
-		if (hasSecurities && database.equals(Database.WIKI)) {
+		if (database.equals(Database.WIKI)) {
 			wikiDataManager.syncronize();
 		}
 
-		if (hasSecurities && database.equals(Database.GDAX)) {
+		if (database.equals(Database.GDAX)) {
 			logger.info("About to run gdaxDataManager.syncronize()...");
 			gdaxDataManager.syncronize();
 		}		
 
-		if (hasSecurities && database.equals(Database.BITFINEX)) {
+		if (database.equals(Database.BITFINEX)) {
 			logger.info("About to run bitfinexDataManager.syncronize()...");
 			bitfinexDataManager.syncronize();
 		}			
@@ -62,9 +68,9 @@ public class DataManager {
 		
 	}
 	
-	public void insertSecurityPricesIntoDatabase(Database database, String security, boolean hasSecurities) {
+	public void insertSecurityPricesIntoDatabase(Database database, String security) {
 
-		if (hasSecurities && database.equals(Database.YAHOO)) {
+		if (database.equals(Database.YAHOO)) {
 			yahooDataManager.syncronize(security);
 		} else {
 			throw new RuntimeException("No database set!");

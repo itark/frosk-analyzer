@@ -73,7 +73,7 @@ public class WebController {
 	public String initDatabase(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
 		logger.log(Level.INFO, "initDatabases");
-		dataManager.insertDatasetSecuritiesIntoDatabase();
+		dataManager.addDatasetSecuritiesIntoDatabase();
 		
 		return "Securities inserted";	
 	}
@@ -86,7 +86,7 @@ public class WebController {
 	public String fill(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
 		logger.log(Level.INFO, "fill , now YAHOO only");
-		dataManager.insertSecurityPricesIntoDatabase(Database.YAHOO, true);
+		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
 		
 		return "Security prices inserted";	
 	}	
