@@ -86,7 +86,7 @@ public class DataSetHelper {
 		if ( (dataset = datasetRepository.findByName(datasetName)) != null ) {
 			logger.info("Dataset="+dataset.getName()+ " exist in database.");
 		} else {
-			logger.info("Dataset name::"+datasetName+" to be inserted::");
+//			logger.info("Dataset name::"+datasetName+" to be inserted::");
 			dataset = new DataSet(datasetName, datasetDesc);
 			dataset = datasetRepository.saveAndFlush(dataset);
 			logger.info("Saved dataset="+dataset.getName()+ " to database.");

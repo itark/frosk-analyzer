@@ -4,6 +4,7 @@ function renderTable(dataset) {
 	    var featStratTable = $('#featuredStrategies').DataTable({
 	    	responsive: true,
 	    	select: true,
+	    	destroy: true,
 	    	"sAjaxSource": "featuredStrategies?strategy="+strategy+"&dataset="+dataset,
 			"sAjaxDataProp": "",
 			"order": [[ 1, "desc" ]],

@@ -63,18 +63,23 @@ public class StrategyAnalysis {
 	 * @param security can be null
 	 * @return result in List<FeaturedStrategy>
 	 */
-	public List<FeaturedStrategyDTO> run(String strategy, String security) {
-		logger.info("run("+strategy+", "+security+")");
+	public List<FeaturedStrategyDTO> run(String strategy, Long security_id) {
+		logger.info("run("+strategy+", "+security_id+")");
 	
-		if (strategy == null && security == null) {
+		if (strategy == null && security_id == null) {
 			return runStrategyMatrix();
 		} 
-		else if (strategy != null && security == null) {
+		else if (strategy != null && security_id == null) {
 			return runStrategy(strategy, timeSeriesService.getDataSet());
 		} 
-		else if (strategy != null && security != null) {
+		else if (strategy != null && security_id != null) {
 			List<TimeSeries> timeSeriesList = new ArrayList<TimeSeries>();
-			timeSeriesList.add(timeSeriesService.getDataSet(security));
+			TimeSeries timeSeries = timeSeriesService.getDataSet(security_id);
+			//Sanity check
+			if (timeSeries == null || timeSeries.isEmpty()) {
+				throw new RuntimeException("Timeseries is null or empty. Download security prices.");
+			}
+			timeSeriesList.add(timeSeries);
 			return runStrategy(strategy, timeSeriesList);
 		} 
 		else {
@@ -168,9 +173,7 @@ public class StrategyAnalysis {
 
 	private void save(FeaturedStrategyDTO dto) {
 		logger.info("name="+dto.getName()+",secName="+dto.getSecurityName());
-//		FeaturedStrategy fs = fsRepo.findByNameAndSecurityName(dto.getName(), dto.getSecurityName());		
-		//TODO
-		FeaturedStrategy fs = null;
+		FeaturedStrategy fs = fsRepo.findByNameAndSecurityName(dto.getName(), dto.getSecurityName());		
 
 		if (fs != null) { //Update
 			logger.info("Update");
@@ -189,15 +192,15 @@ public class StrategyAnalysis {
 			fs.setLatestTrade(dto.getLatestTradeDate());
 		} else {  //New
 			logger.info("New");
-			fs = get(dto);
+			fs = getNew(dto);
 		}
 
 		fsRepo.save(fs);
 
 	}
 	
-	private FeaturedStrategy get(FeaturedStrategyDTO dto) {
-		return new FeaturedStrategy(dto.getName(), dto.getTotalProfit(), dto.getNumberOfTicks(), dto.getAverageTickProfit(), 
+	private FeaturedStrategy getNew(FeaturedStrategyDTO dto) {
+		return new FeaturedStrategy(dto.getName(), dto.getSecurityName(),dto.getTotalProfit(), dto.getNumberOfTicks(), dto.getAverageTickProfit(), 
 				dto.getNumberofTrades(), dto.getProfitableTradesRatio(), dto.getMaxDD(), dto.getRewardRiskRatio(), 
 				dto.getTotalTranactionCost(), dto.getBuyAndHold(), dto.getTotalProfitVsButAndHold(), dto.getPeriodDescription(), dto.getLatestTradeDate());
 		

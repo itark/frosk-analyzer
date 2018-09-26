@@ -35,6 +35,7 @@ public class TestJFeaturedStrategyRepository {
 //		fsRepo.deleteAllInBatch();
 
 		String name = "HELOO";
+		String securityName = "TEST";
 		BigDecimal totalProfit = new BigDecimal(12.0);
 		Integer numberOfTicks = 12;
 		BigDecimal averageTickProfit = new BigDecimal(12.0);
@@ -49,7 +50,7 @@ public class TestJFeaturedStrategyRepository {
 		Date latestTrade = new Date();
 		
 		
-		FeaturedStrategy featuredStrategy = new FeaturedStrategy(name, totalProfit, numberOfTicks, averageTickProfit,
+		FeaturedStrategy featuredStrategy = new FeaturedStrategy(name, securityName, totalProfit, numberOfTicks, averageTickProfit,
 				numberofTrades, profitableTradesRatio, maxDD, rewardRiskRatio, totalTransactionCost, buyAndHold,
 				totalProfitVsButAndHold, period, latestTrade);		
 		
@@ -83,36 +84,28 @@ public class TestJFeaturedStrategyRepository {
 	
 
 	@Test
-	public void testFindBySecurity() {
+	public void testFindByNameAndSecurityName() {
 		logger.info("count="+fsRepo.count());	
 		
-		List<FeaturedStrategy> fsList = fsRepo.findBySecurityName("SAND.ST");
+//		List<FeaturedStrategy> fsList = fsRepo.findByNameAndSecurityName("RSI2Strategy", "SAND.ST");
+		FeaturedStrategy fs = fsRepo.findByNameAndSecurityName("RSI2Strategy", "SAND.ST");
 		
-		logger.info("fsList="+fsList.size());
 		
 //		fsList.forEach(fs -> logger.info("sec="+fs.getSecurityName()+", ld="+fs.getLatestTrade()));
 
 	}
 	
 	@Test
-	public void testFindByNameAndSecurity() {
+	public void testFindByName() {
 	
-//	FeaturedStrategy fs = fsRepo.findByNameAndSecurityName("RSI2Strategy", "ABB.ST");
-//	Assert.assertNotNull(fs);
-//	logger.info("fs"+fs);
+	List<FeaturedStrategy> fs = fsRepo.findByName("RSI2Strategy");
+	Assert.assertNotNull(fs);
+	logger.info("fs size"+fs.size());
 	
 	
 	}
 	
-	@Test
-	public void testFindByNameAndDataset() {
-	
-	List<FeaturedStrategy> fs = fsRepo.findByName("RSI2Strategy");
-	Assert.assertNotNull(fs);
-	logger.info("fs"+fs);
-	
-	
-	}	
+
 	
 	
 }

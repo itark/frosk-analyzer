@@ -120,7 +120,7 @@ public class YAHOODataManager  {
 		Map<Long, List<HistoricalQuote>> stockQuotes = getStocks(securities);
 		
 		stockQuotes.forEach((sec_id,quote) -> {
-			logger.info("sec_id="+sec_id);
+//			logger.info("sec_id="+sec_id);
 			try {
 				quote.forEach(row -> {
 					Date date = Date.from(Instant.ofEpochMilli(row.getDate().getTimeInMillis()));

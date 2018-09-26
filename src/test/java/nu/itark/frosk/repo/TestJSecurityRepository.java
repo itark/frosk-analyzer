@@ -39,5 +39,21 @@ public class TestJSecurityRepository {
 	}	
 	
 	
+	@Test
+	public void testFindBySEcurity() {
+	Security security = securityRepo.findById(new Long(2418800));
+	if (security != null) {
+		
+		logger.info("security="+security.getName());
+	}
+//	FeaturedStrategy fs = fsRepo.findBySecurity(security);
+//	Assert.assertNotNull(fs);
+//	logger.info("fs"+fs);
+	
+	
+	}		
+	
+	
+	
 	
 }

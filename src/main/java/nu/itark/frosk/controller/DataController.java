@@ -25,9 +25,11 @@ import nu.itark.frosk.dataset.DailyPrices;
 import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.dataset.TradeView;
 import nu.itark.frosk.model.Customer;
+import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.CustomerRepository;
+import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
@@ -36,7 +38,7 @@ import nu.itark.frosk.service.TimeSeriesService;
 
 @RestController
 public class DataController {
-	Logger logger = Logger.getLogger(WebController.class.getName());
+	Logger logger = Logger.getLogger(DataController.class.getName());
 	
 	@Autowired
 	CustomerRepository custRepository;
@@ -49,6 +51,10 @@ public class DataController {
 	
 	@Autowired
 	SecurityRepository securityRepository;	
+
+	@Autowired
+	DataSetRepository datasetRepository;		
+	
 	
 	@Autowired
 	TimeSeriesService timeSeriesService;	
@@ -112,18 +118,31 @@ public class DataController {
 	public Iterable<FeaturedStrategy> getFeaturedStrategies(@RequestParam("strategy") String strategy, @RequestParam("dataset") String dataset){
 		logger.info("strategy="+strategy+", dataset="+dataset);
 		Iterable<FeaturedStrategy> list;
+		List<FeaturedStrategy> returnList = new ArrayList<>();
+
 		if (StringUtils.isEmpty(strategy) ) {
 			throw new RuntimeException("strategy not correct set!");
 		}
 		if ("ALL".equals(strategy)) {
 			list = featuredStrategyRepository.findAll();
 		} else {
-			list= featuredStrategyRepository.findByNameOrderByTotalProfitDesc(strategy);	
+	
+			Iterable<FeaturedStrategy> fsList = featuredStrategyRepository.findByNameOrderByTotalProfitDesc(strategy);	
 			
-			list.forEach(fs-> logger.info("fs"+fs.getName()+" , "+fs.getLatestTrade()));
+			fsList.forEach(fs -> {
+				Security security = securityRepository.findByName(fs.getSecurityName());
+//				DataSet ds = datasetRepository.findBySecurityId(security.getId());
+				DataSet ds = datasetRepository.findByName(dataset);
+				ds.getSecurities().contains(security);
+
+				if (ds.getSecurities().contains(security)){
+					returnList.add(fs);
+				}
+			});
+		
 		}
 		
-		return list;
+		return returnList;
 
 	}	
 	

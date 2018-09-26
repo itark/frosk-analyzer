@@ -38,22 +38,41 @@ public class TimeSeriesService  {
 		List<TimeSeries> timeSeries = new ArrayList<TimeSeries>();
 		
 		spList.forEach(sp -> {
-			timeSeries.add(getDataSet(sp.getName()));
+			timeSeries.add(getDataSet( getSecurityId(sp.getName())  ));
 		});
 		
 		return timeSeries;
 		
 	}	
+
+	
+	Long getSecurityId(String securityName) {
+		return securityRepository.findByName(securityName).getId();
+	}
+	
+	/**
+	 * Return TimesSeries bases on name in Security.
+	 * 
+	 * @param name in {@linkplain Security}
+	 * @return TimeSeries
+	 */
+	public TimeSeries getDataSet(String securityName) {
+		return  getDataSet( getSecurityId(securityName)  );
+	}
+	
 	
 	/**
 	 * Return TimesSeries bases on id in Security.
 	 * 
 	 * @param security_id in {@linkplain Security}
-	 * @return
+	 * @return TimeSeries
 	 */
-	public TimeSeries getDataSet(String securityName) {
-//		Security security = securityRepository.findOne(security_id);
-		Security security = securityRepository.findByName(securityName);
+	public TimeSeries getDataSet(Long security_id) {
+		Security security = securityRepository.findById(security_id);
+		//Sanity check
+		if (security == null){
+			throw new RuntimeException("Security is null");
+		}
 
 		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(security.getName()).withNumTypeOf(PrecisionNum.class).build();
 		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityId(security.getId()); 

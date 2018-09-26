@@ -19,14 +19,23 @@ public class TestJTimeSeriesService {
 	@Autowired
 	private TimeSeriesService ts;
 	
+//	@Test
+//	public void testGetDataSetPerSecurity() throws Exception {
+//		TimeSeries sec = ts.getDataSet("SAND.ST");
+//		assertNotNull(sec);
+//		
+//		System.out.println("size="+sec.getBarCount());
+//		
+//	}	
+	
 	@Test
-	public void testGetDataSetPerSecurity() throws Exception {
-		TimeSeries sec = ts.getDataSet("SAND.ST");
-		assertNotNull(sec);
-		
-		System.out.println("size="+sec.getBarCount());
+	public void testSecurityId() throws Exception {
+		Long sec_id = ts.getSecurityId("SAND.ST");
+		assertNotNull(sec_id);
 		
 	}	
+	
+	
 	
 	@Test
 	public void testGetDataSet() throws Exception {

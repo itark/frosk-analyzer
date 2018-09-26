@@ -10,11 +10,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -29,7 +29,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "featured_strategy")
-public class FeaturedStrategy implements Comparable<FeaturedStrategy> {
+public class FeaturedStrategy { //implements Comparable<FeaturedStrategy> {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -40,10 +40,15 @@ public class FeaturedStrategy implements Comparable<FeaturedStrategy> {
 	@Column(name = "name")
 	private String name;
 
-	//@Column(name = "security_name")
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "security_id", nullable = false)
-    private Security security;
+	
+	//TODO ? pk, kanske inte
+	@NotNull
+	@Column(name = "security_name")
+	private String securityName;
+//    @OneToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "security_id", nullable = false)
+//    @MapsId
+//    private Security security;
 
 	@Column(name = "total_profit")
 	private BigDecimal totalProfit; 
@@ -84,10 +89,11 @@ public class FeaturedStrategy implements Comparable<FeaturedStrategy> {
 
 	protected FeaturedStrategy () {}
 
-	public FeaturedStrategy(String name, BigDecimal totalProfit, Integer numberOfTicks,
+	public FeaturedStrategy(String name,String securityName, BigDecimal totalProfit, Integer numberOfTicks,
 			BigDecimal averageTickProfit, Integer numberofTrades, BigDecimal profitableTradesRatio, BigDecimal maxDD,
 			BigDecimal rewardRiskRatio, BigDecimal totalTransactionCost, BigDecimal buyAndHold, BigDecimal totalProfitVsButAndHold, String period, Date latestTrade ) {
 		this.name = name;
+		this.securityName = securityName;
 		this.totalProfit = totalProfit;
 		this.numberOfTicks = numberOfTicks;
 		this.averageTickProfit = averageTickProfit;
@@ -105,10 +111,10 @@ public class FeaturedStrategy implements Comparable<FeaturedStrategy> {
 	
 	
 	
-	@Override
-	public int compareTo(FeaturedStrategy o) {
-		return totalProfit.compareTo(o.getTotalProfit());
-	}
+//	@Override
+//	public int compareTo(FeaturedStrategy o) {
+//		return totalProfit.compareTo(o.getTotalProfit());
+//	}
 
 
 }
