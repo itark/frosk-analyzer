@@ -34,7 +34,7 @@ public class TestJStrategyAnalysis {
 	@Test
 	public final void runRSI2() {
 		logger.info("RSI2="+RSI2Strategy.class.getSimpleName());
-		List<FeaturedStrategyDTO> list = strategyAnalysis.run(RSI2Strategy.class.getSimpleName(), Long.valueOf(2418800));
+		List<FeaturedStrategyDTO> list = strategyAnalysis.run(RSI2Strategy.class.getSimpleName(), Long.valueOf(310929));
 
 //		list.forEach(dto -> logger.info("dto="+ReflectionToStringBuilder.toString(dto)));
 		

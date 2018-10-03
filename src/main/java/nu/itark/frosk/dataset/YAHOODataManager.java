@@ -166,8 +166,9 @@ public class YAHOODataManager  {
             if (topSp != null) {
             	Date lastDate = topSp.getTimestamp();
             	logger.info("security="+security.getName()+ ", found lastDate="+lastDate);
-            	if (DateUtils.isSameDay(lastDate, toDay)) {
-            		logger.info("isToday::lastDate="+lastDate.toString()+", toDay="+toDay.toString());
+
+            	if (DateUtils.isSameDay(lastDate, toDay) || isFriday(lastDate)) {
+            		logger.info("isToday or isWeekend::lastDate="+lastDate.toString()+", toDay="+toDay.toString());
             		isToday = true;
             	} else if (DateUtils.isSameDay(lastDate, DateUtils.addDays(toDay, -1))) {
             		logger.info("last is yeasterday");
@@ -205,6 +206,16 @@ public class YAHOODataManager  {
         
 	}
 
+	private boolean isFriday(Date date) {
+		Calendar c1 = Calendar.getInstance();
+		c1.setTime(date);
+		if ((c1.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY) ) { 
+			return true;
+		} else {
+			return false;
+		}
+
+	}
 	
 	
 }

@@ -34,6 +34,13 @@ public class TestJYahooDataManager {
 	@Autowired
 	SecurityPriceRepository secRepo;
 	
+	@Test 
+	public void syncOne(){
+		
+//		tsManager.syncronize("MAV.ST");
+		tsManager.syncronize("VOLV-B.ST");
+	}
+	
 	
 	@Test
 	public void test() throws IOException {

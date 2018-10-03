@@ -26,7 +26,6 @@ public class SecurityPrice implements Serializable {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 
-	//TODO gör PK av id och timestamp
 	@NotNull
 	@Column(name = "security_id")
 	private Long securityId;

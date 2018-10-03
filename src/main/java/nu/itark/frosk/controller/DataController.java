@@ -113,34 +113,36 @@ public class DataController {
 	 * @param database
 	 * @return
 	 */		
-	//TODO impl. dataset
 	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
 	public Iterable<FeaturedStrategy> getFeaturedStrategies(@RequestParam("strategy") String strategy, @RequestParam("dataset") String dataset){
 		logger.info("strategy="+strategy+", dataset="+dataset);
-		Iterable<FeaturedStrategy> list;
+//		Iterable<FeaturedStrategy> list;
+		Iterable<FeaturedStrategy> fsList;
 		List<FeaturedStrategy> returnList = new ArrayList<>();
 
 		if (StringUtils.isEmpty(strategy) ) {
 			throw new RuntimeException("strategy not correct set!");
 		}
 		if ("ALL".equals(strategy)) {
-			list = featuredStrategyRepository.findAll();
+			
+			fsList = featuredStrategyRepository.findAll();
+			
 		} else {
 	
-			Iterable<FeaturedStrategy> fsList = featuredStrategyRepository.findByNameOrderByTotalProfitDesc(strategy);	
-			
-			fsList.forEach(fs -> {
-				Security security = securityRepository.findByName(fs.getSecurityName());
-//				DataSet ds = datasetRepository.findBySecurityId(security.getId());
-				DataSet ds = datasetRepository.findByName(dataset);
-				ds.getSecurities().contains(security);
-
-				if (ds.getSecurities().contains(security)){
-					returnList.add(fs);
-				}
-			});
+			fsList = featuredStrategyRepository.findByNameOrderByTotalProfitDesc(strategy);	
 		
 		}
+
+		fsList.forEach(fs -> {
+			Security security = securityRepository.findByName(fs.getSecurityName());
+			DataSet ds = datasetRepository.findByName(dataset);
+			ds.getSecurities().contains(security);
+
+			if (ds.getSecurities().contains(security)){
+				returnList.add(fs);
+			}
+			
+		});
 		
 		return returnList;
 

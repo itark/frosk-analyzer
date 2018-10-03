@@ -2,16 +2,14 @@ package nu.itark.frosk.model;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.MapsId;
-import javax.persistence.OneToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -29,7 +27,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "featured_strategy")
-public class FeaturedStrategy { //implements Comparable<FeaturedStrategy> {
+public class FeaturedStrategy { 
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -40,15 +38,9 @@ public class FeaturedStrategy { //implements Comparable<FeaturedStrategy> {
 	@Column(name = "name")
 	private String name;
 
-	
-	//TODO ? pk, kanske inte
 	@NotNull
 	@Column(name = "security_name")
 	private String securityName;
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "security_id", nullable = false)
-//    @MapsId
-//    private Security security;
 
 	@Column(name = "total_profit")
 	private BigDecimal totalProfit; 
@@ -59,7 +51,7 @@ public class FeaturedStrategy { //implements Comparable<FeaturedStrategy> {
 	@Column(name = "avg_tick_profit")
 	private BigDecimal averageTickProfit;
 
-	@Column(name = "trades")
+	@Column(name = "number_of_trades")
 	private Integer numberofTrades;
 
 	@Column(name = "prof_trade_ratio")
@@ -86,6 +78,9 @@ public class FeaturedStrategy { //implements Comparable<FeaturedStrategy> {
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "latest_trade")
 	private Date latestTrade;
+	
+	@OneToMany(mappedBy = "featuredStrategy")
+	private Set<Trades> trades;
 
 	protected FeaturedStrategy () {}
 
@@ -109,12 +104,4 @@ public class FeaturedStrategy { //implements Comparable<FeaturedStrategy> {
 
 	}	
 	
-	
-	
-//	@Override
-//	public int compareTo(FeaturedStrategy o) {
-//		return totalProfit.compareTo(o.getTotalProfit());
-//	}
-
-
 }

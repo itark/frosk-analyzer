@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.Bar;
@@ -29,7 +28,6 @@ import org.ta4j.core.analysis.criteria.RewardRiskRatioCriterion;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
 
-import nu.itark.frosk.dataset.DateManager;
 import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.dataset.TradeView;
 import nu.itark.frosk.model.FeaturedStrategy;
@@ -88,6 +86,18 @@ public class StrategyAnalysis {
 		
 	}
 	
+	/**
+	 * run strategies and save result to database.ß
+	 * 
+	 * @param strategy
+	 * @param security_id
+	 */
+	public void runAndSave(String strategy, Long security_id) {
+		List<FeaturedStrategyDTO> dtoList = run(strategy, security_id);
+		save(dtoList);
+		
+	}
+	
 	private List<FeaturedStrategyDTO> runStrategy(String strategy, List<TimeSeries> timeSeriesList) {
 		List<FeaturedStrategyDTO> fsList = new ArrayList<FeaturedStrategyDTO>();
 		FeaturedStrategyDTO fs = null;
@@ -103,9 +113,14 @@ public class StrategyAnalysis {
 			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			trades = tradingRecord.getTrades();
+//	        if (trades.isEmpty()) {
+//	        	logger.info("No trades for strategy="+strategy+ " and security="+ series.getName());
+//	        	continue;        	
+//	        }
+
 			List<TradeView> tradeViewList = new ArrayList<TradeView>();
 			TradeView tr = null;
-
+			
 			for (Trade trade : trades) {
 				Bar barEntry = series.getBar(trade.getEntry().getIndex());
 				LocalDate buyDate = barEntry.getEndTime().toLocalDate();
@@ -129,11 +144,7 @@ public class StrategyAnalysis {
 			fs.setName(strategy);
 			fs.setSecurityName(series.getName());
 			fs.setPeriodDescription(getPeriod(series));
-//			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");		
-//			fs.setLatestTradeDate(formatter.format(latestTradeDate.toInstant()));
 			fs.setLatestTradeDate(latestTradeDate);
-
-			
 			totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord).doubleValue();
 			totalProfitPercentage = (totalProfit - 1) * 100;
 			fs.setTotalProfit(new BigDecimal(totalProfitPercentage).setScale(2, BigDecimal.ROUND_DOWN));
@@ -142,7 +153,6 @@ public class StrategyAnalysis {
 			fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
 			fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
 			double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord).doubleValue();
-			
 			if (!Double.isNaN(profitableTradesRatio)) {
 				fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, BigDecimal.ROUND_DOWN));
 			}
@@ -164,13 +174,18 @@ public class StrategyAnalysis {
 
 			fsList.add(fs);
 	
-			save(fs);
-
 		}
 
 		return fsList;
 	}
 
+	private void save(List<FeaturedStrategyDTO> dtoList) {
+		dtoList.forEach(dto -> {
+			save(dto);
+		});
+	}	
+	
+	
 	private void save(FeaturedStrategyDTO dto) {
 		logger.info("name="+dto.getName()+",secName="+dto.getSecurityName());
 		FeaturedStrategy fs = fsRepo.findByNameAndSecurityName(dto.getName(), dto.getSecurityName());		
@@ -190,6 +205,9 @@ public class StrategyAnalysis {
 			fs.setTotalProfitVsButAndHold(dto.getTotalProfitVsButAndHold());
 			fs.setPeriod(dto.getPeriodDescription());
 			fs.setLatestTrade(dto.getLatestTradeDate());
+			fs.getTrades().clear();
+			//TODO
+			//			fs.getTrades().add(dto.getTrades());
 		} else {  //New
 			logger.info("New");
 			fs = getNew(dto);
@@ -198,12 +216,16 @@ public class StrategyAnalysis {
 		fsRepo.save(fs);
 
 	}
+
+	
+	
 	
 	private FeaturedStrategy getNew(FeaturedStrategyDTO dto) {
 		return new FeaturedStrategy(dto.getName(), dto.getSecurityName(),dto.getTotalProfit(), dto.getNumberOfTicks(), dto.getAverageTickProfit(), 
 				dto.getNumberofTrades(), dto.getProfitableTradesRatio(), dto.getMaxDD(), dto.getRewardRiskRatio(), 
 				dto.getTotalTranactionCost(), dto.getBuyAndHold(), dto.getTotalProfitVsButAndHold(), dto.getPeriodDescription(), dto.getLatestTradeDate());
-		
+//TODO
+		//		fs.getTrades().add(dto.getTrades());
 	}
 	
 	private Strategy getStrategyToRun(String strategy,  TimeSeries series, List<IndicatorValues> indVals) {
@@ -245,15 +267,23 @@ public class StrategyAnalysis {
         Date latestTradeDate= null;
 
 		for (TimeSeries series : timeSeriesList) {
+			logger.info("series.getName()="+series.getName());
+			logger.info("series.getBarCount()="+series.getBarCount());
 			Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(series);  //TODO; Hardcoded it for now
 			for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
 				Strategy strategy = entry.getKey();
 				String name = entry.getValue();
+				logger.info("name="+name);
 		        TimeSeriesManager seriesManager = new TimeSeriesManager(series);
 		        TradingRecord tradingRecord = seriesManager.run(strategy);
-		        
 		        trades = tradingRecord.getTrades();
-		        if (trades.isEmpty()) continue;
+		        if (trades.isEmpty()) {
+		        	logger.info("No trades for strategy="+name+ " and security="+ series.getName());
+		        	continue;        	
+		        } else {
+		        	logger.info(trades.size()+" Trades for strategy="+name+ " and security="+ series.getName());
+		        	
+		        }
 		        
 		        List<TradeView>  tradeViewList = new ArrayList<TradeView>();
 		        TradeView tr = null;
@@ -289,7 +319,6 @@ public class StrategyAnalysis {
 				fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
 				fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
 				double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord).doubleValue();
-				
 				if (!Double.isNaN(profitableTradesRatio)) {
 					fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, BigDecimal.ROUND_DOWN));
 				}
@@ -301,7 +330,6 @@ public class StrategyAnalysis {
 				}
 				double buyAndHold = new BuyAndHoldCriterion().calculate(series, tradingRecord).doubleValue();
 				fs.setBuyAndHold(new BigDecimal(buyAndHold).setScale(2, BigDecimal.ROUND_DOWN ));
-
 				double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new TotalProfitCriterion()).calculate(series, tradingRecord).doubleValue();
 				fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
 				fs.setTotalTranactionCost(
@@ -311,8 +339,6 @@ public class StrategyAnalysis {
 
 				fsList.add(fs);
 		
-				save(fs);
-
 			}
 		}
 

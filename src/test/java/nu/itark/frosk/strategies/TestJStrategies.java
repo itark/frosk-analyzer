@@ -36,8 +36,8 @@ public class TestJStrategies {
 	
 	
 	@Test
-	public void runAll() {
-		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
+	public void runAllSingle() {
+		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
 		//RSI2
 		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
 		run(rsi.buildStrategy(),timeSeries);
@@ -47,15 +47,31 @@ public class TestJStrategies {
 		run(mm.buildStrategy(),timeSeries);
 		
 		//Global Extrema
-		GlobalExtremaStrategy ge = new GlobalExtremaStrategy(timeSeries);
-		run(ge.buildStrategy(),timeSeries);
+//		GlobalExtremaStrategy ge = new GlobalExtremaStrategy(timeSeries);
+//		run(ge.buildStrategy(),timeSeries);
 		
 		//CCI Corrections
-		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
-		run(cci.buildStrategy(),timeSeries);
+//		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
+//		run(cci.buildStrategy(),timeSeries);
 		
 	}
 
+	
+	@Test
+	public void runAllList() {
+		List<TimeSeries> timeSeriesList=   timeSeriesService.getDataSet();
+		timeSeriesList.forEach(ts -> {
+			RSI2Strategy rsi = new RSI2Strategy(ts);
+			run(rsi.buildStrategy(),ts);
+			
+		});
+		//RSI2
+//		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
+//		run(rsi.buildStrategy(),timeSeries);
+		
+	}	
+	
+	
 	public final void run(Strategy strategy, TimeSeries timeSeries) {
 		logger.info("::"+strategy.getName()+"::");
 		TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);

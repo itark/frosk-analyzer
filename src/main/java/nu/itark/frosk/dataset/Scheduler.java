@@ -16,7 +16,7 @@ public class Scheduler {
 	@Autowired
 	private DataManager dataManager;
 
-	@Scheduled(cron="${download.schedule}")
+//	@Scheduled(cron="${download.schedule}")
 //	@Scheduled(cron="*/20 * * * * * ")
 
 //	The pattern is a list of six single space-separated fields: representing second, minute, hour, day, month, weekday. Month and weekday names can be given as the first three letters of the English names.

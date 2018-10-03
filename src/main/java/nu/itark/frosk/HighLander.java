@@ -3,9 +3,11 @@ package nu.itark.frosk;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.repo.DataSetRepository;
+import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 
@@ -28,6 +30,12 @@ public class HighLander {
 	@Autowired
 	SecurityPriceRepository securityPriceRepo;
 	
+	@Autowired
+	FeaturedStrategyRepository strategyRepo;
+	
+	@Autowired
+	StrategyAnalysis strategyAnalysis;
+	
 	/**
 	 * Full setup, addition
 	 * 
@@ -35,6 +43,7 @@ public class HighLander {
 	public void runInstall() {
 		addDataSetAndSecurities();
 		addDataSetAndSecuritiesFromYahoo();
+		runAllStrategies();
 		
 	}
 
@@ -49,11 +58,22 @@ public class HighLander {
 		securityRepo.deleteAllInBatch();
 		securityPriceRepo.deleteAllInBatch();
 		
-		addDataSetAndSecurities();
-		addDataSetAndSecuritiesFromYahoo();
-		
+		runInstall();
 		
 	}	
+	
+	/**
+	 * Be aware this will kill them all...
+	 * 
+	 */
+	public void runClean() {
+		dataSetRepo.deleteAllInBatch();
+		securityRepo.deleteAllInBatch();
+		securityPriceRepo.deleteAllInBatch();
+		strategyRepo.deleteAllInBatch();
+		
+	}		
+	
 	
 	/**
 	 * Insert or add DataSet and its securities defined in csv-file.
@@ -74,5 +94,18 @@ public class HighLander {
 		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
 		
 	}	
+	
+	/**
+	 * Run all stratregies on all securities.
+	 * This will insert result into {@linkplain FeaturedStrategyRepository}
+	 * 
+	 */
+	private void runAllStrategies() {
+		strategyAnalysis.runAndSave(null, null);
+		
+		
+	}
+	
+	
 	
 }

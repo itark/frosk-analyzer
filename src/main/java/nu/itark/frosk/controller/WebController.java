@@ -1,6 +1,5 @@
 package nu.itark.frosk.controller;
 
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -11,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import nu.itark.frosk.analysis.FeaturedStrategyDTO;
+import nu.itark.frosk.HighLander;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
@@ -28,6 +27,9 @@ public class WebController {
 
 	@Autowired
 	StrategyAnalysis strategyAnalysis;		
+	
+	@Autowired
+	HighLander highLander;
 
 	@RequestMapping("/")
 	public String welcome2(Map<String, Object> model) {
@@ -66,6 +68,22 @@ public class WebController {
 	}		
 	
 	/**
+	* @Example  http://localhost:8080/frosk-analyzer/highlander
+	 */
+	@RequestMapping(value="highlander", method={RequestMethod.GET, RequestMethod.POST})
+	@ResponseBody
+	public String runHighlander(Map<String, Object> model) {
+		Logger logger = Logger.getLogger(WebController.class.getName());
+		logger.log(Level.INFO, "highlander");
+		
+		highLander.runInstall();
+		
+		return "Highlander executed";	
+	}
+	
+	
+	
+	/**
 	* @Example  http://localhost:8080/frosk-analyzer/initDatabase
 	 */
 	@RequestMapping(value="initDatabase", method={RequestMethod.GET, RequestMethod.POST})
@@ -101,9 +119,9 @@ public class WebController {
 		Logger logger = Logger.getLogger(WebController.class.getName());
 		logger.log(Level.INFO, "run , now YAHOO only");
 	
-		List<FeaturedStrategyDTO> list = strategyAnalysis.run(null, null);		
+		strategyAnalysis.runAndSave(null, null);		
 
-		return "Strategy Analysis executed, list="+list.size();	
+		return "Strategy Analysis executed, list";	
 	}		
 
 	
