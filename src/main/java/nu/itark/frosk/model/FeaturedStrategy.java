@@ -82,7 +82,7 @@ public class FeaturedStrategy {
 	@OneToMany(mappedBy = "featuredStrategy")
 	private Set<Trades> trades;
 
-	protected FeaturedStrategy () {}
+	public FeaturedStrategy () {}
 
 	public FeaturedStrategy(String name,String securityName, BigDecimal totalProfit, Integer numberOfTicks,
 			BigDecimal averageTickProfit, Integer numberofTrades, BigDecimal profitableTradesRatio, BigDecimal maxDD,

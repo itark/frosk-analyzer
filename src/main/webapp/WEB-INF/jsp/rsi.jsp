@@ -97,6 +97,7 @@ header {
                      <table class="table table-striped table-bordered table-hover" id="featuredStrategies">
 					  <thead>
 				            <tr>
+				                <th>Name</th>
 				                <th>Security</th>
 				                <th>Profit%</th>
 				                <th>Trades</th>
@@ -110,6 +111,7 @@ header {
 				        </thead>
 				        <tfoot>
 				            <tr>
+				                <th>Name</th>
 				                <th>Security</th>
 				                <th>Profit%</th>
 				                <th>Trades</th>

@@ -46,7 +46,7 @@ public class TimeSeriesService  {
 	}	
 
 	
-	Long getSecurityId(String securityName) {
+	public Long getSecurityId(String securityName) {
 		return securityRepository.findByName(securityName).getId();
 	}
 	
@@ -75,7 +75,7 @@ public class TimeSeriesService  {
 		}
 
 		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(security.getName()).withNumTypeOf(PrecisionNum.class).build();
-		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityId(security.getId()); 
+		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityIdOrderByTimestamp(security.getId()); 
 		
 		securityPrices.forEach(row -> {
 			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());		

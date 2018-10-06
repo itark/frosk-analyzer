@@ -101,7 +101,7 @@ public class HighLander {
 	 * 
 	 */
 	private void runAllStrategies() {
-		strategyAnalysis.runAndSave(null, null);
+		strategyAnalysis.run(null, null);
 		
 		
 	}

@@ -71,40 +71,40 @@ public class DataController {
 	//TODO refactor
 	Map<String, List<IndicatorValues>> indicatorValuesList = new HashMap<String,  List<IndicatorValues>>();
 	
-	/**
-	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy
-	 * 
-	 * @param securityName
-	 * @param database
-	 * @return
-	 */			
-	@Deprecated
-	@RequestMapping(path="/featuredStrategiesOBS", method=RequestMethod.GET)
-	public List<FeaturedStrategyDTO> getFeaturedStrategiesOBS(@RequestParam("strategy") String strategy){
-		logger.info("strategy="+strategy);
-		if (StringUtils.isEmpty(strategy) ) {
-			throw new RuntimeException("strategy not correct set!");
-		}
-		if ("ALL".equals(strategy)) {
-			strategy = null;
-		}
-
-		List<FeaturedStrategyDTO> strategyList = strategyAnalysis.run(strategy, null);
-		strategyList.forEach(dto -> {
-			tradesList.put(dto.getSecurityName(), dto.getTrades());
-			logger.info("Security:"+dto.getSecurityName()+" has "+dto.getIndicatorValues()+" values");
-			indicatorValuesList.put(dto.getSecurityName(), dto.getIndicatorValues());
-		});
-		
-		List<FeaturedStrategyDTO> strategyOrderedByProfitList = 
-			strategyList
-				.stream()
-				.sorted(Comparator.reverseOrder())
-				.collect(Collectors.toList());
-		
-		return strategyOrderedByProfitList;
-
-	}	
+//	/**
+//	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy
+//	 * 
+//	 * @param securityName
+//	 * @param database
+//	 * @return
+//	 */			
+//	@Deprecated
+//	@RequestMapping(path="/featuredStrategiesOBS", method=RequestMethod.GET)
+//	public List<FeaturedStrategyDTO> getFeaturedStrategiesOBS(@RequestParam("strategy") String strategy){
+//		logger.info("strategy="+strategy);
+//		if (StringUtils.isEmpty(strategy) ) {
+//			throw new RuntimeException("strategy not correct set!");
+//		}
+//		if ("ALL".equals(strategy)) {
+//			strategy = null;
+//		}
+//
+//		List<FeaturedStrategyDTO> strategyList = strategyAnalysis.run(strategy, null);
+//		strategyList.forEach(dto -> {
+//			tradesList.put(dto.getSecurityName(), dto.getTrades());
+//			logger.info("Security:"+dto.getSecurityName()+" has "+dto.getIndicatorValues()+" values");
+//			indicatorValuesList.put(dto.getSecurityName(), dto.getIndicatorValues());
+//		});
+//		
+//		List<FeaturedStrategyDTO> strategyOrderedByProfitList = 
+//			strategyList
+//				.stream()
+//				.sorted(Comparator.reverseOrder())
+//				.collect(Collectors.toList());
+//		
+//		return strategyOrderedByProfitList;
+//
+//	}	
 
 	/**
 	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy&dataset=OSCAR
@@ -116,7 +116,6 @@ public class DataController {
 	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
 	public Iterable<FeaturedStrategy> getFeaturedStrategies(@RequestParam("strategy") String strategy, @RequestParam("dataset") String dataset){
 		logger.info("strategy="+strategy+", dataset="+dataset);
-//		Iterable<FeaturedStrategy> list;
 		Iterable<FeaturedStrategy> fsList;
 		List<FeaturedStrategy> returnList = new ArrayList<>();
 

@@ -31,7 +31,9 @@ import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
 import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.dataset.TradeView;
 import nu.itark.frosk.model.FeaturedStrategy;
+import nu.itark.frosk.model.Trades;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.TimeSeriesService;
 import nu.itark.frosk.strategies.MovingMomentumStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
@@ -49,6 +51,9 @@ public class StrategyAnalysis {
 	@Autowired
 	FeaturedStrategyRepository fsRepo;
 	
+	@Autowired
+	TradesRepository tradesRepo;
+	
 	/**
 	 * This is the thing !!
 	 * 
@@ -59,16 +64,15 @@ public class StrategyAnalysis {
 	 * 
 	 * @param strategy can be null
 	 * @param security can be null
-	 * @return result in List<FeaturedStrategy>
 	 */
-	public List<FeaturedStrategyDTO> run(String strategy, Long security_id) {
+	public void run(String strategy, Long security_id) {
 		logger.info("run("+strategy+", "+security_id+")");
 	
 		if (strategy == null && security_id == null) {
-			return runStrategyMatrix();
+			runStrategyMatrix();
 		} 
 		else if (strategy != null && security_id == null) {
-			return runStrategy(strategy, timeSeriesService.getDataSet());
+			runStrategy(strategy, timeSeriesService.getDataSet());
 		} 
 		else if (strategy != null && security_id != null) {
 			List<TimeSeries> timeSeriesList = new ArrayList<TimeSeries>();
@@ -78,7 +82,7 @@ public class StrategyAnalysis {
 				throw new RuntimeException("Timeseries is null or empty. Download security prices.");
 			}
 			timeSeriesList.add(timeSeries);
-			return runStrategy(strategy, timeSeriesList);
+			runStrategy(strategy, timeSeriesList);
 		} 
 		else {
 			throw new UnsupportedOperationException("kalle anka");
@@ -86,21 +90,11 @@ public class StrategyAnalysis {
 		
 	}
 	
-	/**
-	 * run strategies and save result to database.ß
-	 * 
-	 * @param strategy
-	 * @param security_id
-	 */
-	public void runAndSave(String strategy, Long security_id) {
-		List<FeaturedStrategyDTO> dtoList = run(strategy, security_id);
-		save(dtoList);
-		
-	}
-	
-	private List<FeaturedStrategyDTO> runStrategy(String strategy, List<TimeSeries> timeSeriesList) {
-		List<FeaturedStrategyDTO> fsList = new ArrayList<FeaturedStrategyDTO>();
-		FeaturedStrategyDTO fs = null;
+	private void runStrategy(String strategy, List<TimeSeries> timeSeriesList) {
+//		List<FeaturedStrategyDTO> fsList = new ArrayList<FeaturedStrategyDTO>();
+//		FeaturedStrategyDTO fs = null;
+		FeaturedStrategy fs = null;
+
 		List<Trade> trades = null;
         double totalProfit ;
         double totalProfitPercentage;
@@ -113,38 +107,35 @@ public class StrategyAnalysis {
 			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			trades = tradingRecord.getTrades();
-//	        if (trades.isEmpty()) {
-//	        	logger.info("No trades for strategy="+strategy+ " and security="+ series.getName());
-//	        	continue;        	
-//	        }
 
-			List<TradeView> tradeViewList = new ArrayList<TradeView>();
-			TradeView tr = null;
+			List<Trades> tradesList = new ArrayList<Trades>();
+			Trades trde = null;
 			
 			for (Trade trade : trades) {
 				Bar barEntry = series.getBar(trade.getEntry().getIndex());
-				LocalDate buyDate = barEntry.getEndTime().toLocalDate();
-				tr = new TradeView();
-				tr.setDate(buyDate);
-				tr.setType("B");
-				tradeViewList.add(tr);
+				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
+				trde = new Trades(buyDate,"Buy");
+				tradesList.add(trde);
 
 				Bar barExit = series.getBar(trade.getExit().getIndex());
-				LocalDate sellDate = barExit.getEndTime().toLocalDate();
-				tr = new TradeView();
-				tr.setDate(sellDate);
-				tr.setType("S");
-				tradeViewList.add(tr);
+				Date sellDate = Date.from(barExit.getEndTime().toInstant());
+				trde = new Trades(sellDate,"Sell");
+				tradesList.add(trde);
 
-				latestTradeDate = Date.from(barEntry.getEndTime().toInstant());
+				latestTradeDate = Date.from(barExit.getEndTime().toInstant());
 
 			}
 
-			fs = new FeaturedStrategyDTO();
-			fs.setName(strategy);
-			fs.setSecurityName(series.getName());
-			fs.setPeriodDescription(getPeriod(series));
-			fs.setLatestTradeDate(latestTradeDate);
+//			fs = new FeaturedStrategyDTO();
+			fs = fsRepo.findByNameAndSecurityName(strategy, series.getName());			
+			if (fs == null) {
+				fs = new FeaturedStrategy();
+				fs.setName(strategy);
+				fs.setSecurityName(series.getName());
+			}
+			
+			fs.setPeriod(getPeriod(series));
+			fs.setLatestTrade(latestTradeDate);
 			totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord).doubleValue();
 			totalProfitPercentage = (totalProfit - 1) * 100;
 			fs.setTotalProfit(new BigDecimal(totalProfitPercentage).setScale(2, BigDecimal.ROUND_DOWN));
@@ -167,28 +158,29 @@ public class StrategyAnalysis {
 
 			double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new TotalProfitCriterion()).calculate(series, tradingRecord).doubleValue();
 			fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
-			fs.setTotalTranactionCost(
+			fs.setTotalTransactionCost(
 					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
-			fs.setTrades(tradeViewList);
+//			fs.setTrades(tradesList);
 			//fs.setIndicatorValues(indicatorValues);
 
-			fsList.add(fs);
-	
+//			fsList.add(fs);
+			
+			//TODO save fs and then save trades
+			//1. Save fs
+			FeaturedStrategy fsRes =fsRepo.saveAndFlush(fs);
+			//2. Save trades 
+			tradesList.forEach(tr -> {
+				tr.setFeaturedStrategy(fsRes);
+				tradesRepo.save(tr);
+			});
+			
 		}
 
-		return fsList;
 	}
 
-	private void save(List<FeaturedStrategyDTO> dtoList) {
-		dtoList.forEach(dto -> {
-			save(dto);
-		});
-	}	
-	
-	
 	private void save(FeaturedStrategyDTO dto) {
 		logger.info("name="+dto.getName()+",secName="+dto.getSecurityName());
-		FeaturedStrategy fs = fsRepo.findByNameAndSecurityName(dto.getName(), dto.getSecurityName());		
+		final FeaturedStrategy fs = fsRepo.findByNameAndSecurityName(dto.getName(), dto.getSecurityName());		
 
 		if (fs != null) { //Update
 			logger.info("Update");
@@ -206,26 +198,35 @@ public class StrategyAnalysis {
 			fs.setPeriod(dto.getPeriodDescription());
 			fs.setLatestTrade(dto.getLatestTradeDate());
 			fs.getTrades().clear();
-			//TODO
-			//			fs.getTrades().add(dto.getTrades());
+			//TODO add trades, Se TestJFeaturedStrategy.testManyToOne hur
+		
+			dto.getTrades().forEach(trade -> {
+				trade.setFeaturedStrategy(fs);
+			});
+			
+			tradesRepo.save(dto.getTrades());
+			
+//			fs.getTrades().addAll(dto.getTrades());
+	
+//			fsRepo.save(fs);
+			
 		} else {  //New
 			logger.info("New");
-			fs = getNew(dto);
+			FeaturedStrategy fsnew = getNew(dto);
+			fsRepo.save(fsnew);
 		}
-
-		fsRepo.save(fs);
 
 	}
 
-	
-	
-	
 	private FeaturedStrategy getNew(FeaturedStrategyDTO dto) {
-		return new FeaturedStrategy(dto.getName(), dto.getSecurityName(),dto.getTotalProfit(), dto.getNumberOfTicks(), dto.getAverageTickProfit(), 
+		FeaturedStrategy fs =  new FeaturedStrategy(dto.getName(), dto.getSecurityName(),dto.getTotalProfit(), dto.getNumberOfTicks(), dto.getAverageTickProfit(), 
 				dto.getNumberofTrades(), dto.getProfitableTradesRatio(), dto.getMaxDD(), dto.getRewardRiskRatio(), 
 				dto.getTotalTranactionCost(), dto.getBuyAndHold(), dto.getTotalProfitVsButAndHold(), dto.getPeriodDescription(), dto.getLatestTradeDate());
-//TODO
-		//		fs.getTrades().add(dto.getTrades());
+		//TODO
+		fs.getTrades().addAll(dto.getTrades());
+		
+		return fs;
+		
 	}
 	
 	private Strategy getStrategyToRun(String strategy,  TimeSeries series, List<IndicatorValues> indVals) {
@@ -334,7 +335,7 @@ public class StrategyAnalysis {
 				fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
 				fs.setTotalTranactionCost(
 						new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
-				fs.setTrades(tradeViewList);
+//				fs.setTrades(tradeViewList);
 				//fs.setIndicatorValues(indicatorValues);
 
 				fsList.add(fs);

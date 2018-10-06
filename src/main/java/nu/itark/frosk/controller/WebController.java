@@ -119,7 +119,7 @@ public class WebController {
 		Logger logger = Logger.getLogger(WebController.class.getName());
 		logger.log(Level.INFO, "run , now YAHOO only");
 	
-		strategyAnalysis.runAndSave(null, null);		
+		strategyAnalysis.run(null, null);		
 
 		return "Strategy Analysis executed, list";	
 	}		

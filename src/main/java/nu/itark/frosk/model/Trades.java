@@ -38,6 +38,13 @@ public class Trades {
     @ManyToOne
     @JoinColumn(name="featured_strategy_id", nullable=false)
     private FeaturedStrategy featuredStrategy;
-	
+
+    protected Trades(){}
+    
+    public Trades(Date date, String type){
+    	this.date = date;
+    	this.type = type;
+    }
+    
 
 }

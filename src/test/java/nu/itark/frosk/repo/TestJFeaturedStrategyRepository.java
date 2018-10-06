@@ -12,9 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.Trades;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -24,6 +24,10 @@ public class TestJFeaturedStrategyRepository {
 	
 	@Autowired
 	FeaturedStrategyRepository fsRepo;
+
+	@Autowired
+	TradesRepository trRepo;	
+	
 	
 	@Autowired
 	SecurityRepository secRepo;
@@ -98,14 +102,64 @@ public class TestJFeaturedStrategyRepository {
 	@Test
 	public void testFindByName() {
 	
-	List<FeaturedStrategy> fs = fsRepo.findByName("RSI2Strategy");
-	Assert.assertNotNull(fs);
-	logger.info("fs size"+fs.size());
+	List<FeaturedStrategy> fsList = fsRepo.findByName("RSI2Strategy");
+	Assert.assertNotNull(fsList);
+
+	fsList.forEach(fs -> logger.info("sec="+fs.getSecurityName()+", tr size="+fs.getTrades().size()));
+	
+	
+//	logger.info("fs size"+fs.size());
 	
 	
 	}
 	
+	@Test
+	public void testManyToOne() {
+	
+		trRepo.deleteAllInBatch();
+		fsRepo.deleteAllInBatch();
+		
+		
+		
+		String name = "HELOO";
+		String securityName = "TEST";
+		BigDecimal totalProfit = new BigDecimal(12.0);
+		Integer numberOfTicks = 12;
+		BigDecimal averageTickProfit = new BigDecimal(12.0);
+		Integer numberofTrades = 12;
+		BigDecimal profitableTradesRatio = new BigDecimal(12.0);
+		BigDecimal maxDD = new BigDecimal(12.0);
+		BigDecimal rewardRiskRatio = new BigDecimal(12.0);
+		BigDecimal totalTransactionCost = new BigDecimal(12.0);
+		BigDecimal buyAndHold = new BigDecimal(12.0);
+		BigDecimal totalProfitVsButAndHold = new BigDecimal(25.0);
+		String period = "PER";
+		Date latestTrade = new Date();
+		
+		
+		FeaturedStrategy featuredStrategy = new FeaturedStrategy(name, securityName, totalProfit, numberOfTicks, averageTickProfit,
+				numberofTrades, profitableTradesRatio, maxDD, rewardRiskRatio, totalTransactionCost, buyAndHold,
+				totalProfitVsButAndHold, period, latestTrade);		
+		
+		
+		FeaturedStrategy featuredStrategyREs =	fsRepo.saveAndFlush(featuredStrategy);
 
+		logger.info("featuredStrategyREs id="+featuredStrategyREs.getId());
+		
+		//1. save trade
+		Trades trades = new Trades(new Date(), "X");
+		trades.setFeaturedStrategy(featuredStrategyREs);
+
+		Trades trades2 = new Trades(new Date(), "Y");
+		trades2.setFeaturedStrategy(featuredStrategyREs);
+
+		trRepo.saveAndFlush(trades);
+		trRepo.saveAndFlush(trades2);
+
+		
+		
+		
+	}
 	
 	
 }

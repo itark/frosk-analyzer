@@ -36,11 +36,15 @@ function renderTable(dataset) {
 	
 	    featStratTable
 			.on( 'draw.dt', function () {
-		      	let name = featStratTable.rows( 0 ).data().pluck( 'name' );
+				if(strategy = 'ALL') {
+					featStratTable.columns( [0] ).visible( true );
+				} else {
+					featStratTable.columns( [0] ).visible( false );
+				}
 		    	let security = featStratTable.rows( 0 ).data().pluck( 'securityName' );
 		    	selectedSecurity = security[0];
 		        if(selectedSecurity != "") {
-		        	renderChartOHLC();
+//		        	renderChartOHLC();
 		        }
 	        
 			} );     
@@ -48,58 +52,6 @@ function renderTable(dataset) {
 		$("#dataset").text(dataset);
   
 }
-
-function renderTable2(dataset) {
-	var events = $('#events');
-    var featStratTable = $('#featuredStrategies').DataTable({
-    	responsive: true,
-    	select: true,
-    	destroy: true,
-    	"sAjaxSource": "featuredStrategies?strategy="+strategy+"&dataset="+dataset,
-		"sAjaxDataProp": "",
-		"order": [[ 1, "desc" ]],
-		"aoColumns": [
-			  { "mData": "name"},
-			  { "mData": "securityName"},
-		      { "mData": "totalProfit"},
-			  { "mData": "numberofTrades" },
-		      { "mData": "latestTrade" },
-			  { "mData": "period"},
-		      { "mData": "numberOfTicks" },
-			  { "mData": "averageTickProfit" },
-			  { "mData": "profitableTradesRatio" },
-			  { "mData": "maxDD" }
-		]       
-    
-    });
-
-    featStratTable
-		.on( 'select', function ( e, dt, type, indexes ) {
-        	var rowData = featStratTable.rows( indexes ).data().toArray();
-        	var security = featStratTable.rows( indexes ).data().pluck( 'securityName' );
-         	selectedSecurity = security[0];
-
-         	renderChartOHLC();
-        	
-    }) ; 
-
-    featStratTable
-		.on( 'draw.dt', function () {
-	      	let name = featStratTable.rows( 0 ).data().pluck( 'name' );
-	    	let security = featStratTable.rows( 0 ).data().pluck( 'securityName' );
-	    	selectedSecurity = security[0];
-	        if(selectedSecurity != "") {
-	        	renderChartOHLC();
-	        }
-        
-		} );     
-    
-	$("#dataset").text(dataset);
-
-}
-
-
-
 
 function renderChartOHLC() {
 	security = selectedSecurity;
@@ -203,6 +155,13 @@ function renderChartLine() {
 	series.stroke = am4core.color("#e59165");
 	//series.strokeWidth = 3;
 
+	// Add simple bullet//////
+//	var bullet = series.bullets.push(new am4charts.Bullet());
+//	var square = bullet.createChild(am4core.Rectangle);
+//	square.width = 10;
+//	square.height = 10;	
+	////////////
+	
 	chart.cursor = new am4charts.XYCursor();
 	chart.cursor.xAxis = dateAxis;
 
@@ -216,6 +175,7 @@ function renderChartLine() {
 
 	dateAxis.renderer.grid.template.strokeOpacity = 0.07;
 	valueAxis.renderer.grid.template.strokeOpacity = 0.07;
+	
 
 }
 

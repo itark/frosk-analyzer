@@ -47,5 +47,17 @@ public class TestJTimeSeriesService {
 	}		
 
 	
+	@Test
+	public void testGetDataSetSecurity() throws Exception {
+		Long sec_id = ts.getSecurityId("ERIC-B.ST");
+		System.out.println("sec_id="+sec_id);
+		TimeSeries sec = ts.getDataSet(sec_id );
+//		assertNotNull(sec);
+		
+//		System.out.println("size="+sec.getBarCount());
+		
+	}	
+	
+	
 	
 }

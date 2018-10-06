@@ -170,6 +170,7 @@
  
 	<build>
 		<finalName>frosk-analyzer</finalName>
+ 
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -187,16 +188,10 @@
 			    </configuration>
 			</plugin>
 		</plugins>
+
 	</build>
 
-<!--  
-			    <configuration>
-			        <url>http://http://172.104.238.118:8080/manager/text</url>
-			        <server>TomcatLinode</server>
-			        <path>/frosk-analyzer</path>
-					<update>true</update>
-		    </configuration>
--->	
+
 
 
 </project>
