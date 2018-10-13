@@ -6,7 +6,7 @@ import java.util.List;
 
 import lombok.Data;
 import nu.itark.frosk.dataset.IndicatorValues;
-import nu.itark.frosk.model.Trades;
+import nu.itark.frosk.model.StrategyTrade;
 
 /**
  * This class holds all significant strategies and it values.
@@ -32,9 +32,9 @@ public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
 	private BigDecimal totalProfitVsButAndHold; // Custom strategy profit vs
 												// buy-and-hold strategy profit
 
-	private String periodDescription;
-	private Date latestTradeDate;
-	private List<Trades> trades;
+	private String period;
+	private Date latestTrade;
+	private List<StrategyTrade> trades;
 	private List<IndicatorValues> indicatorValues;
 
 	@Override

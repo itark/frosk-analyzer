@@ -1,6 +1,8 @@
 package nu.itark.frosk.analysis;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.ta4j.core.Strategy;
@@ -30,5 +32,17 @@ public class StrategiesMap {
 
 		return strategies;
 	}
+	
+	public static List<String> buildStrategiesMap() {
+		List<String> strategies = new ArrayList<String>();
+		strategies.add(RSI2Strategy.class.getSimpleName());
+		strategies.add(MovingMomentumStrategy.class.getSimpleName());
+		strategies.add(GlobalExtremaStrategy.class.getSimpleName());
+		strategies.add(CCICorrectionStrategy.class.getSimpleName());
+	
+		return strategies;
+	}	
+	
+	
 	
 }

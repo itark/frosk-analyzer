@@ -2,14 +2,11 @@ package nu.itark.frosk.controller;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -20,6 +17,7 @@ import org.ta4j.core.TimeSeries;
 
 import nu.itark.frosk.analysis.ChartValueDTO;
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
+import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DailyPrices;
 import nu.itark.frosk.dataset.IndicatorValues;
@@ -28,11 +26,13 @@ import nu.itark.frosk.model.Customer;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.CustomerRepository;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
+import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.ChartValuesService;
 import nu.itark.frosk.service.TimeSeriesService;
 
@@ -48,6 +48,10 @@ public class DataController {
 	
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;	
+
+	@Autowired
+	TradesRepository tradesRepository;		
+	
 	
 	@Autowired
 	SecurityRepository securityRepository;	
@@ -114,40 +118,63 @@ public class DataController {
 	 * @return
 	 */		
 	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
-	public Iterable<FeaturedStrategy> getFeaturedStrategies(@RequestParam("strategy") String strategy, @RequestParam("dataset") String dataset){
-		logger.info("strategy="+strategy+", dataset="+dataset);
-		Iterable<FeaturedStrategy> fsList;
-		List<FeaturedStrategy> returnList = new ArrayList<>();
+	public List<FeaturedStrategyDTO> getFeaturedStrategies(@RequestParam("strategy") String strategy, @RequestParam("dataset") String datasetName){
+		logger.info("strategy="+strategy+", dataset="+datasetName);
+		List<FeaturedStrategyDTO> returnList = new ArrayList<>();
 
-		if (StringUtils.isEmpty(strategy) ) {
-			throw new RuntimeException("strategy not correct set!");
-		}
+		DataSet dataset = datasetRepository.findByName(datasetName);
+
 		if ("ALL".equals(strategy)) {
-			
-			fsList = featuredStrategyRepository.findAll();
+			List<String> strategies = StrategiesMap.buildStrategiesMap();
+			strategies.forEach(strategyName -> {
+				dataset.getSecurities().forEach(security -> {
+					FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, security.getName() );
+		
+					FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
+					dto.setName(fs.getName());
+					dto.setSecurityName(fs.getSecurityName());
+					dto.setTotalProfit(fs.getTotalProfit());
+					dto.setNumberOfTicks(fs.getNumberOfTicks());
+					dto.setProfitableTradesRatio(fs.getProfitableTradesRatio());
+					dto.setMaxDD(fs.getMaxDD());
+					dto.setRewardRiskRatio(fs.getRewardRiskRatio());
+					dto.setTotalTranactionCost(fs.getTotalTransactionCost());
+					dto.setBuyAndHold(fs.getBuyAndHold());
+					dto.setTotalProfitVsButAndHold(fs.getTotalProfitVsButAndHold());
+					dto.setPeriod(fs.getPeriod());
+					dto.setLatestTrade(fs.getLatestTrade());
+					
+					returnList.add(dto);
+				});					
+			});			
 			
 		} else {
+			dataset.getSecurities().forEach(security -> {
+				FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security.getName() );
 	
-			fsList = featuredStrategyRepository.findByNameOrderByTotalProfitDesc(strategy);	
+				FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
+				dto.setName(fs.getName());
+				dto.setSecurityName(fs.getSecurityName());
+				dto.setTotalProfit(fs.getTotalProfit());
+				dto.setNumberOfTicks(fs.getNumberOfTicks());
+				dto.setProfitableTradesRatio(fs.getProfitableTradesRatio());
+				dto.setMaxDD(fs.getMaxDD());
+				dto.setRewardRiskRatio(fs.getRewardRiskRatio());
+				dto.setTotalTranactionCost(fs.getTotalTransactionCost());
+				dto.setBuyAndHold(fs.getBuyAndHold());
+				dto.setTotalProfitVsButAndHold(fs.getTotalProfitVsButAndHold());
+				dto.setPeriod(fs.getPeriod());
+				dto.setLatestTrade(fs.getLatestTrade());
+				dto.setNumberofTrades(fs.getNumberofTrades());
+				
+				returnList.add(dto);
+			});			
 		
 		}
 
-		fsList.forEach(fs -> {
-			Security security = securityRepository.findByName(fs.getSecurityName());
-			DataSet ds = datasetRepository.findByName(dataset);
-			ds.getSecurities().contains(security);
-
-			if (ds.getSecurities().contains(security)){
-				returnList.add(fs);
-			}
-			
-		});
-		
 		return returnList;
-
+		
 	}	
-	
-	
 	
 	/**
 	 * @Example  http://localhost:8080/dailyPrices?security=BOL.ST
@@ -214,24 +241,38 @@ public class DataController {
 	
 	
 	/**
-	 * @Example  http://localhost:8080/trades?security=WIKI/AAPL&strategy=RSI2Strategy
-	 * @param securityName
-	 * @param strategyName
+	 * @Example  http://localhost:8080/frosk-analyzer/trades?security=SAND.ST&strategy=RSI2Strategy
+	 * @param security
+	 * @param strategy
 	 * @return
 	 */
 	@RequestMapping(path="/trades", method=RequestMethod.GET)
-	public List<TradeView> getTrades(@RequestParam("security") String securityName, @RequestParam("strategy") String strategyName){
-		logger.info("/trades...securityName="+securityName+"strategyName="+strategyName);	
+	public List<StrategyTrade> getTrades(@RequestParam("security") String security, @RequestParam("strategy") String strategy){
+		logger.info("/trades...security="+security+"strategy="+strategy);	
+	
+		List<StrategyTrade> trades = new ArrayList<StrategyTrade>();
 		
-		return tradesList.get(securityName);
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security );
+
+		logger.info("fs name="+fs.getName());
+	
+		tradesRepository.findAll();
+		
+		
+		logger.info("trades="+tradesRepository.findAll().size());
+		
+		tradesRepository.findByFeaturedStrategy(fs).forEach(trade -> {
+			logger.info("HEJSVEJ");
+			trade.setFeaturedStrategy(null); //to be able ti use entity
+			trades.add(trade);
+		});
+		
+		
+		return trades;
 
 	}	
 	
 
-	
-	
-	
-	
 	
 	//Below demo stuff on JPA
 

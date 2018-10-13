@@ -39,7 +39,10 @@ public class TestJStrategyAnalysis {
 	@Test
 	public final void runRSI2() {
 		logger.info("RSI2="+RSI2Strategy.class.getSimpleName());
-		Long sec_id = ts.getSecurityId("ERIC-B.ST");
+//		Long sec_id = ts.getSecurityId("ERIC-B.ST");
+//		Long sec_id = ts.getSecurityId("SSAB-B.ST");
+//		Long sec_id = ts.getSecurityId("ATCO-B.ST");
+		Long sec_id = ts.getSecurityId("VOLV-B.ST");
 		System.out.println("sec_id="+sec_id);
 		strategyAnalysis.run(RSI2Strategy.class.getSimpleName(), sec_id);
 

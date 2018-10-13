@@ -142,6 +142,9 @@ header {
                                         <li><a href="#" onclick="renderChartOHLC();">Candle</a>
                                         </li>
                                         <li><a href="#" onclick="renderChartLine();">Line</a>
+                                         </li>
+                                        <li><a href="#" onclick="renderChartLineWithAddons();">Line addons</a>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
@@ -169,7 +172,7 @@ header {
 
  <script>
 
- 	var strategy="RSI2Strategy";
+ 	strategy="RSI2Strategy";
 
 </script>
 

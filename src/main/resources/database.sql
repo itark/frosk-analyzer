@@ -10,7 +10,7 @@ drop table data_set_securities;
 drop table data_set;
 drop table security_price;
 drop table security;
-drop table trades;
+drop table strategy_trade;
 drop table featured_strategy;
 
 
@@ -33,10 +33,13 @@ order by timestamp;
 
 SELECT count(*) FROM SECURITY_PRICE;
 
-SELECT * FROM featured_strategy;
+SELECT * FROM featured_strategy
+where id = 431266;
 
 
-select * from trades;
+select * from strategy_trade
+--delete from strategy_trade
+where featured_strategy_id = 431183;
 
 select * from data_set;
 select * from data_set_securities;

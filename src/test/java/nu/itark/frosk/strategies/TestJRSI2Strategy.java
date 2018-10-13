@@ -63,7 +63,7 @@ public class TestJRSI2Strategy {
     @Test
     public final void run() throws Exception {
 
-		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");      
+		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");      
 		RSI2Strategy strat = new RSI2Strategy(timeSeries);
         
         Strategy strategy = strat.buildStrategy();

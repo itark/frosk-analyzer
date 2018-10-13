@@ -6,6 +6,7 @@ import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -79,8 +80,8 @@ public class FeaturedStrategy {
 	@Column(name = "latest_trade")
 	private Date latestTrade;
 	
-	@OneToMany(mappedBy = "featuredStrategy")
-	private Set<Trades> trades;
+	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
+	private Set<StrategyTrade> trades;
 
 	public FeaturedStrategy () {}
 

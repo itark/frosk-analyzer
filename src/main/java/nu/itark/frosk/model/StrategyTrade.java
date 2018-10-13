@@ -1,9 +1,11 @@
 package nu.itark.frosk.model;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -12,6 +14,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -19,8 +22,8 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "trades")
-public class Trades {
+@Table(name = "strategy_trade", uniqueConstraints={@UniqueConstraint(columnNames={"date", "type", "featured_strategy_id"})})
+public class StrategyTrade {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -31,18 +34,23 @@ public class Trades {
 	private Date date;
 	
 	@NotNull
+	@Column(name = "price")
+	private BigDecimal price;	
+	
+	@NotNull
 	@Size(max = 100)
 	@Column(name = "type")
 	private String type;
 	
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name="featured_strategy_id", nullable=false)
     private FeaturedStrategy featuredStrategy;
 
-    protected Trades(){}
+    protected StrategyTrade(){}
     
-    public Trades(Date date, String type){
+    public StrategyTrade(Date date, String type, BigDecimal price){
     	this.date = date;
+    	this.price = price;
     	this.type = type;
     }
     

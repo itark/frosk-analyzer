@@ -1,6 +1,7 @@
 package nu.itark.frosk.repo;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
@@ -12,9 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.Security;
-import nu.itark.frosk.model.Trades;
+import nu.itark.frosk.model.StrategyTrade;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -31,6 +33,9 @@ public class TestJFeaturedStrategyRepository {
 	
 	@Autowired
 	SecurityRepository secRepo;
+	
+	@Autowired
+	DataSetRepository dsRepo;
 
 	
 	@Test
@@ -79,10 +84,6 @@ public class TestJFeaturedStrategyRepository {
 //		FeaturedStrategy featuredStrategyREs =	fsRepo.save(featuredStrategy);
 		
 		
-		
-		
-		
-		
 	}	
 	
 	
@@ -98,6 +99,35 @@ public class TestJFeaturedStrategyRepository {
 //		fsList.forEach(fs -> logger.info("sec="+fs.getSecurityName()+", ld="+fs.getLatestTrade()));
 
 	}
+	
+	@Test
+	public void testFindByNameAndMore() {
+	List<FeaturedStrategy> fsList = fsRepo.findByNameOrderByTotalProfitDesc("RSI2Strategy");	
+	}
+//	
+	@Test
+	public void testFindByNameAndDataset() {
+		List<FeaturedStrategy> returnList = new ArrayList<>();
+		DataSet dataset = dsRepo.findByName("OSCAR");
+		dataset.getSecurities().forEach(sec -> {
+			FeaturedStrategy fs = fsRepo.findByNameAndSecurityName("RSI2Strategy", secRepo.findByName("SAND.ST").getName());
+			logger.info("fs="+fs);
+			returnList.add(fs);
+		});
+
+//		Security security = secRepo.findByName("SAND.ST");
+//		DataSet ds = dsRepo.findByName("OMX30");
+//
+//		logger.info("datasetRepository.findByName");
+		
+//		if (ds.getSecurities().contains(security)){
+//			returnList.add(fs);
+//		}
+		
+		
+		
+	}
+	
 	
 	@Test
 	public void testFindByName() {
@@ -147,10 +177,10 @@ public class TestJFeaturedStrategyRepository {
 		logger.info("featuredStrategyREs id="+featuredStrategyREs.getId());
 		
 		//1. save trade
-		Trades trades = new Trades(new Date(), "X");
+		StrategyTrade trades = new StrategyTrade(new Date(), "X", new BigDecimal(23));
 		trades.setFeaturedStrategy(featuredStrategyREs);
 
-		Trades trades2 = new Trades(new Date(), "Y");
+		StrategyTrade trades2 = new StrategyTrade(new Date(), "Y", new BigDecimal(23));
 		trades2.setFeaturedStrategy(featuredStrategyREs);
 
 		trRepo.saveAndFlush(trades);
