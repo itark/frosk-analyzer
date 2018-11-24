@@ -87,9 +87,9 @@ header {
                                     <span class="caret"></span>
                                 </button>
                                 <ul class="dropdown-menu pull-right" role="menu">
-                                    <li><a href="#" onclick="renderTable('OMX30');">OMX30</a>
-                                    </li>
-                                    <li><a href ="#" onclick="renderTable('OSCAR');">OSCAR</a>
+                                    <li><a href ="#" onclick="renderTable('INDEX');">INDEX</a></li>
+                                    <li><a href="#" onclick="renderTable('OMX30');">OMX30</a></li>
+                                    <li><a href ="#" onclick="renderTable('OSCAR');">OSCAR</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -135,17 +135,19 @@ header {
                             <i class="fa fa-bar-chart-o fa-fw"></i>
                             <div class="pull-right">
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                    <button id="charttype" type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
                                         Chart type
                                         <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu pull-right" role="menu">
-                                        <li><a href="#" onclick="renderChartOHLC();">Candle</a>
+                                        <li><a href="#" onclick="renderChartOHLC();">Candle(v4)</a>
                                         </li>
-                                        <li><a href="#" onclick="renderChartLine();">Line</a>
+                                        <li><a href="#" onclick="renderChartLine();">Line(v4)</a>
                                          </li>
                                         <li><a href="#" onclick="renderChartLineWithAddons();">Line addons</a>
                                          </li>
+               					          <li><a href="#" onclick="renderChartLineWithAddons3();">Line addons3</a>
+                                         </li>                              
                                     </ul>
                                 </div>
                             </div>

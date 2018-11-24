@@ -7,9 +7,11 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.Bar;
 import org.ta4j.core.Strategy;
@@ -28,10 +30,11 @@ import org.ta4j.core.analysis.criteria.RewardRiskRatioCriterion;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
 
-import nu.itark.frosk.dataset.IndicatorValues;
 import nu.itark.frosk.model.FeaturedStrategy;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.TimeSeriesService;
 import nu.itark.frosk.strategies.CCICorrectionStrategy;
@@ -55,6 +58,9 @@ public class StrategyAnalysis {
 	@Autowired
 	TradesRepository tradesRepo;
 	
+	@Autowired
+	StrategyIndicatorValueRepository indicatorValueRepo;
+	
 	/**
 	 * This is the thing !!
 	 * 
@@ -66,19 +72,28 @@ public class StrategyAnalysis {
 	 * @param strategy can be null
 	 * @param security can be null
 	 */
-	public void run(String strategy, Long security_id) {
+	public void run(String strategy, Long security_id) throws DataIntegrityViolationException {
 		logger.info("run("+strategy+", "+security_id+")");
 	
 		if (strategy == null && security_id == null) {
-//			runStrategyMatrix();
 			List<String> strategies = StrategiesMap.buildStrategiesMap();
 			strategies.forEach(strategyName -> {
-				runStrategy(strategyName, timeSeriesService.getDataSet());
+				try {
+					runStrategy(strategyName, timeSeriesService.getDataSet());
+				} catch (DataIntegrityViolationException e) {
+					logger.severe("Error runStrategy on strategyName="+ strategyName);
+					throw e;
+				}
 			});
 			
 		} 
 		else if (strategy != null && security_id == null) {
-			runStrategy(strategy, timeSeriesService.getDataSet());
+			try {
+				runStrategy(strategy, timeSeriesService.getDataSet());
+			} catch (Exception e) {
+				logger.severe("Error runStrategy on strategy="+ strategy);
+				throw e;
+			}
 		} 
 		else if (strategy != null && security_id != null) {
 			List<TimeSeries> timeSeriesList = new ArrayList<TimeSeries>();
@@ -88,7 +103,12 @@ public class StrategyAnalysis {
 				throw new RuntimeException("Timeseries is null or empty. Download security prices.");
 			}
 			timeSeriesList.add(timeSeries);
-			runStrategy(strategy, timeSeriesList);
+			try {
+				runStrategy(strategy, timeSeriesList);
+			} catch (Exception e) {
+				logger.severe("Error runStrategy on strategy="+ strategy+ " and security_id="+security_id);
+				throw e;
+			}
 		} 
 		else {
 			throw new UnsupportedOperationException("kalle anka");
@@ -96,21 +116,24 @@ public class StrategyAnalysis {
 		
 	}
 	
-	private void runStrategy(String strategy, List<TimeSeries> timeSeriesList) {
+	private void runStrategy(String strategy, List<TimeSeries> timeSeriesList) throws DataIntegrityViolationException{
 		FeaturedStrategy fs = null;
 		List<Trade> trades = null;
         double totalProfit ;
         double totalProfitPercentage;
         Date latestTradeDate= null;
         Strategy strategyToRun = null;
-        List<IndicatorValues> indicatorValues = new ArrayList<IndicatorValues>();
         
 		for (TimeSeries series : timeSeriesList) {
-			strategyToRun = getStrategyToRun(strategy, series, indicatorValues);
+			logger.info("runStrategy("+strategy+", "+series.getName()+")");
+	        Set<StrategyIndicatorValue> indicatorValueSet = new HashSet<StrategyIndicatorValue>();
+			strategyToRun = getStrategyToRun(strategy, series, indicatorValueSet);
 			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			trades = tradingRecord.getTrades();
 
+			logger.info(trades.size()+" trades found.");
+			
 			Set<StrategyTrade> strategyTradeList = new HashSet<StrategyTrade>();
 			StrategyTrade strategyTrade = null;
 			
@@ -164,25 +187,72 @@ public class StrategyAnalysis {
 			fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
 			fs.setTotalTransactionCost(
 					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
-			//fs.setIndicatorValues(indicatorValues);
 
 			FeaturedStrategy fsRes =fsRepo.saveAndFlush(fs);
 	
+			//Trades
 			List<StrategyTrade>  existSt = tradesRepo.findByFeaturedStrategyId(fsRes.getId());
-			tradesRepo.deleteInBatch(existSt);
-	
-			strategyTradeList.forEach(st -> {
-				st.setFeaturedStrategy(fsRes);
-				tradesRepo.saveAndFlush(st);
-				
-			});
+//			tradesRepo.deleteInBatch(existSt);
+//			tradesRepo.flush();
+			if (existSt.isEmpty()) {
+				strategyTradeList.forEach(st -> {
+					st.setFeaturedStrategy(fsRes);
+//					logger.info("saving st.getDate="+st.getDate());
+					tradesRepo.saveAndFlush(st);
+				});
+			}
+			
+			//indicatorvalue
+//			List<StrategyIndicatorValue>  existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.getId());
+////			indicatorValueRepo.deleteInBatch(existIv);
+////			indicatorValueRepo.flush();
+//			if (existIv.isEmpty()) {
+//				indicatorValueSet.forEach(iv -> {
+//					iv.setFeaturedStrategy(fsRes);
+////					logger.info("saving iv.getDate"+iv.getDate());
+//					indicatorValueRepo.saveAndFlush(iv);
+//				});	
+//			}
 			
 		}
 
 	}
 
-	private Strategy getStrategyToRun(String strategy,  TimeSeries series, List<IndicatorValues> indVals) {
-		logger.info("getStrategyToRun("+strategy+")");
+	
+	public SortedSet<StrategyIndicatorValue> getIndicatorValues(String strategy, TimeSeries series) {
+		logger.info("getIndicatorValues("+strategy+", "+series.getName()+")");
+
+		Strategy strategyToRun = null;
+		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
+			RSI2Strategy strategyReguested = new RSI2Strategy(series);
+			strategyToRun = strategyReguested.buildStrategy();
+			return strategyReguested.getIndicatorValues();
+		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
+			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
+			return strategyReguested.getIndicatorValues();
+		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
+			GlobalExtremaStrategy strategyReguested = new GlobalExtremaStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
+//			indVals.addAll(strategyReguested.getIndicatorValues());
+		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
+			CCICorrectionStrategy strategyReguested = new CCICorrectionStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
+//			indVals.addAll(strategyReguested.getIndicatorValues());
+		}
+		
+		if (strategyToRun == null) {
+			throw new RuntimeException("strategyToRun is null");
+		}		
+		
+		
+		return null;
+		
+	}
+	
+	
+	private Strategy getStrategyToRun(String strategy,  TimeSeries series, Set<StrategyIndicatorValue> indVals) {
+		logger.info("getStrategyToRun("+strategy+", "+series.getName());
 		Strategy strategyToRun = null;
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
@@ -206,108 +276,10 @@ public class StrategyAnalysis {
 			throw new RuntimeException("strategyToRun is null");
 		}
 
-		logger.info("indVals set to="+indVals.size());
 		
 		return strategyToRun;
 	}
 	
-	
-//	/**
-//	 * Load all TimeSeries defined by and run all available strategies.
-//	 * 
-//	 * @return List of FeaturedStrategy
-//	 */
-//	@Deprecated
-//	public List<FeaturedStrategyDTO> runStrategyMatrix() {
-//		logger.info("runStrategyMatrix()");
-//		List<TimeSeries> timeSeriesList = timeSeriesService.getDataSet();
-//		List<FeaturedStrategyDTO> fsList = new ArrayList<FeaturedStrategyDTO>();
-//		FeaturedStrategyDTO fs = null;
-//		List<Trade> trades = null;
-//		
-//        double totalProfit ;
-//        double totalProfitPercentage;
-//        Date latestTradeDate= null;
-//
-//		for (TimeSeries series : timeSeriesList) {
-//			logger.info("series.getName()="+series.getName());
-//			logger.info("series.getBarCount()="+series.getBarCount());
-//			Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(series);  //TODO; Hardcoded it for now
-//			for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
-//				Strategy strategy = entry.getKey();
-//				String name = entry.getValue();
-//				logger.info("name="+name);
-//		        TimeSeriesManager seriesManager = new TimeSeriesManager(series);
-//		        TradingRecord tradingRecord = seriesManager.run(strategy);
-//		        trades = tradingRecord.getTrades();
-//		        if (trades.isEmpty()) {
-//		        	logger.info("No trades for strategy="+name+ " and security="+ series.getName());
-//		        	continue;        	
-//		        } else {
-//		        	logger.info(trades.size()+" StrategyTrade for strategy="+name+ " and security="+ series.getName());
-//		        	
-//		        }
-//		        
-//		        List<TradeView>  tradeViewList = new ArrayList<TradeView>();
-//		        TradeView tr = null;
-//
-//		        for (Trade trade : trades) {
-//		            Bar barEntry = series.getBar(trade.getEntry().getIndex());
-//		            LocalDate buyDate = series.getBar(trade.getEntry().getIndex()).getEndTime().toLocalDate();
-//		            tr = new TradeView();
-//		            tr.setDate(buyDate);
-//		            tr.setType("B");
-//		            tradeViewList.add(tr);
-//	            
-//		            LocalDate sellDate = series.getBar(trade.getExit().getIndex()).getEndTime().toLocalDate();
-//		            tr = new TradeView();
-//		            tr.setDate(sellDate);
-//		            tr.setType("S");
-//		            tradeViewList.add(tr);
-//		            
-//					latestTradeDate = Date.from(barEntry.getEndTime().toInstant());
-//		            
-//		        }		        
-//		        
-//		        fs = new FeaturedStrategyDTO();
-//				fs.setName(name);
-//				fs.setSecurityName(series.getName());
-//				fs.setPeriod(getPeriod(series));
-//				fs.setLatestTrade(latestTradeDate);
-//				totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord).doubleValue();
-//				totalProfitPercentage = (totalProfit - 1) * 100;
-//				fs.setTotalProfit(new BigDecimal(totalProfitPercentage).setScale(2, BigDecimal.ROUND_DOWN));
-//				fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
-//				double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord).doubleValue();
-//				fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
-//				fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
-//				double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord).doubleValue();
-//				if (!Double.isNaN(profitableTradesRatio)) {
-//					fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, BigDecimal.ROUND_DOWN));
-//				}
-//				double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord).doubleValue();
-//				fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, BigDecimal.ROUND_DOWN));
-//				double rewardRiskRatio = new RewardRiskRatioCriterion().calculate(series, tradingRecord).doubleValue();
-//				if (Double.isFinite(rewardRiskRatio)) {
-//					fs.setRewardRiskRatio(new BigDecimal(rewardRiskRatio).setScale(2, BigDecimal.ROUND_DOWN));
-//				}
-//				double buyAndHold = new BuyAndHoldCriterion().calculate(series, tradingRecord).doubleValue();
-//				fs.setBuyAndHold(new BigDecimal(buyAndHold).setScale(2, BigDecimal.ROUND_DOWN ));
-//				double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new TotalProfitCriterion()).calculate(series, tradingRecord).doubleValue();
-//				fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
-//				fs.setTotalTranactionCost(
-//						new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
-////				fs.setTrades(tradeViewList);
-//				//fs.setIndicatorValues(indicatorValues);
-//
-//				fsList.add(fs);
-//		
-//			}
-//		}
-//
-//		return fsList;
-//	}
-
 	private String getPeriod(TimeSeries series) {
 	StringBuilder sb = new StringBuilder();
     if (!series.getBarData().isEmpty()) {

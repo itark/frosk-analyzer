@@ -51,6 +51,7 @@ public class DataSetHelper {
 	public void post_construct() {
 		datasets.add("YAHOO-OMX30-All securites included in OMX30.csv");	
 		datasets.add("YAHOO-OSCAR-The Money Machine.csv");	
+		datasets.add("YAHOO-INDEX-World indexes.csv");	
 	}
 
 	/**

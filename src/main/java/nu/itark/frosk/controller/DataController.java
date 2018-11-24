@@ -2,9 +2,8 @@ package nu.itark.frosk.controller;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.SortedSet;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,25 +14,23 @@ import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.Bar;
 import org.ta4j.core.TimeSeries;
 
-import nu.itark.frosk.analysis.ChartValueDTO;
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DailyPrices;
-import nu.itark.frosk.dataset.IndicatorValues;
-import nu.itark.frosk.dataset.TradeView;
 import nu.itark.frosk.model.Customer;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.CustomerRepository;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
+import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
-import nu.itark.frosk.service.ChartValuesService;
 import nu.itark.frosk.service.TimeSeriesService;
 
 @RestController
@@ -51,7 +48,9 @@ public class DataController {
 
 	@Autowired
 	TradesRepository tradesRepository;		
-	
+
+	@Autowired
+	StrategyIndicatorValueRepository stratIndicatorValueRepository;		
 	
 	@Autowired
 	SecurityRepository securityRepository;	
@@ -64,16 +63,13 @@ public class DataController {
 	TimeSeriesService timeSeriesService;	
 
 	@Autowired
-	ChartValuesService chartValuesService;		
-	
-	@Autowired
 	StrategyAnalysis strategyAnalysis;	
 	
-	//TODO refactor
-	Map<String, List<TradeView>> tradesList = new HashMap<String, List<TradeView>>();
-	
-	//TODO refactor
-	Map<String, List<IndicatorValues>> indicatorValuesList = new HashMap<String,  List<IndicatorValues>>();
+//	//TODO refactor
+//	Map<String, List<TradeView>> tradesList = new HashMap<String, List<TradeView>>();
+//	
+//	//TODO refactor
+//	Map<String, List<IndicatorValues>> indicatorValuesList = new HashMap<String,  List<IndicatorValues>>();
 	
 //	/**
 //	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy
@@ -205,37 +201,29 @@ public class DataController {
 
 
 	/**
-	 * @Example  http://localhost:8080/dailyPrices?security=BOL.ST&strategy=RSI2Strategy
-	 * 
-	 * @param securityName
-	 * @param database
-	 * @return List<ChartValueDTO> to present in UI.
-	 */
-	@RequestMapping(path="/chartValues", method=RequestMethod.GET)
-	public List<ChartValueDTO> getChartValues(@RequestParam("security") String security,  @RequestParam("strategy") String strategy) {
-		logger.info("/chartValues...security=" + security);
-		
-		List<ChartValueDTO> chartValues = chartValuesService.getChartValues(strategy, security);
-		
-		return chartValues;
-
-	}
-	
-	
-	
-	/**
-	 * @Example  http://localhost:8080/frosk-analyzer/indicatorValues?security=SAND.ST
+	 * @Example  http://localhost:8080/frosk-analyzer/indicatorValues?security=VOLV-B.ST&strategy=RSI2Strategy
 	 * 
 	 * @param securityName
 	 * @param database
 	 * @return
 	 */
 	@RequestMapping(path="/indicatorValues", method=RequestMethod.GET)
-	public List<IndicatorValues> getIndicatorValues(@RequestParam("security") String securityName){
-		logger.info("/indicatorValues...securityName="+securityName);
-		logger.info("/indicatorValuesList.size=="+indicatorValuesList.size());
+	public SortedSet<StrategyIndicatorValue> getIndicatorValues(@RequestParam("security") String security, @RequestParam("strategy") String strategy){
+		logger.info("/indicatorValues...security="+security+"strategy="+strategy);	
+//		List<StrategyIndicatorValue> indicatorValueList = new ArrayList<StrategyIndicatorValue>();
 
-		return indicatorValuesList.get(securityName);
+		TimeSeries timeSeries = timeSeriesService.getDataSet(security);
+		
+		return strategyAnalysis.getIndicatorValues(strategy, timeSeries);
+		
+//		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security );
+//
+//		stratIndicatorValueRepository.findByFeaturedStrategyOrderByDate(fs).forEach(iv -> {
+//			iv.setFeaturedStrategy(null); //to be able to use entity, avoid recursion
+//			indicatorValueList.add(iv);
+//		});		
+		
+//		return indicatorValueList;
 		
 	}	
 	
@@ -249,30 +237,17 @@ public class DataController {
 	@RequestMapping(path="/trades", method=RequestMethod.GET)
 	public List<StrategyTrade> getTrades(@RequestParam("security") String security, @RequestParam("strategy") String strategy){
 		logger.info("/trades...security="+security+"strategy="+strategy);	
-	
 		List<StrategyTrade> trades = new ArrayList<StrategyTrade>();
-		
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security );
 
-		logger.info("fs name="+fs.getName());
-	
-		tradesRepository.findAll();
-		
-		
-		logger.info("trades="+tradesRepository.findAll().size());
-		
 		tradesRepository.findByFeaturedStrategy(fs).forEach(trade -> {
-			logger.info("HEJSVEJ");
-			trade.setFeaturedStrategy(null); //to be able ti use entity
+			trade.setFeaturedStrategy(null); //to be able to use entity, avooid recursion
 			trades.add(trade);
 		});
-		
 		
 		return trades;
 
 	}	
-	
-
 	
 	//Below demo stuff on JPA
 

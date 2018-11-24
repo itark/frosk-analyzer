@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -119,15 +120,15 @@ public class WebController {
 		Logger logger = Logger.getLogger(WebController.class.getName());
 		logger.log(Level.INFO, "run , now YAHOO only");
 	
-		strategyAnalysis.run(null, null);		
+		try {
+			strategyAnalysis.run(null, null);
+		} catch (DataIntegrityViolationException e) {
+			logger.severe("Error running StrategyAnalysis!, error:"+ e);
+			throw e;
+		}		
 
 		return "Strategy Analysis executed, list";	
 	}		
 
-	
-
-
-	
-	
 	
 }

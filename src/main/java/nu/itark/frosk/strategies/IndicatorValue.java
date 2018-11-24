@@ -1,17 +1,17 @@
 package nu.itark.frosk.strategies;
 
-import java.util.List;
+import java.util.Set;
 
-import nu.itark.frosk.dataset.IndicatorValues;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 
 public interface IndicatorValue {
 
 	/**
 	 * Return indicator values
 	 * 
-	 * @return List<IndicatorValues>
-	 * @see {@linkplain IndicatorValues}
+	 * @return List<StrategyIndicatorValue>
+	 * @see {@linkplain StrategyIndicatorValue}
 	 */
-	public List<IndicatorValues> getIndicatorValues();
+	public Set<StrategyIndicatorValue> getIndicatorValues();
 
 }

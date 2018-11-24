@@ -83,6 +83,9 @@ public class FeaturedStrategy {
 	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
 	private Set<StrategyTrade> trades;
 
+	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
+	private Set<StrategyIndicatorValue> indicatorValues;	
+	
 	public FeaturedStrategy () {}
 
 	public FeaturedStrategy(String name,String securityName, BigDecimal totalProfit, Integer numberOfTicks,

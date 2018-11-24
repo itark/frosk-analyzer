@@ -91,9 +91,9 @@ header {
                                     <span class="caret"></span>
                                 </button>
                                 <ul class="dropdown-menu pull-right" role="menu">
-                                    <li><a href="#" onclick="renderTable('OMX30');">OMX30</a>
-                                    </li>
-                                    <li><a href ="#" onclick="renderTable('OSCAR');">OSCAR</a>
+                                    <li><a href ="#" onclick="renderTable('INDEX');">INDEX</a></li>
+                                    <li><a href="#" onclick="renderTable('OMX30');">OMX30</a></li>
+                                    <li><a href ="#" onclick="renderTable('OSCAR');">OSCAR</a></li>
                                 </ul>
                             </div>
                         </div>

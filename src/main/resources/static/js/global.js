@@ -35,7 +35,7 @@ function renderTable(dataset) {
 	
 //	         	renderChartOHLC();
 //	         	renderChartLine();
-	         	renderChartLineWithAddons();
+	         	renderChartLineWithAddons3();
 	        	
 	    }) ; 
 	
@@ -54,7 +54,7 @@ function renderTable(dataset) {
 		if(strategy != 'ALL') {
 			featStratTable.columns( [0] ).visible( false, false );
 			featStratTable.columns.adjust().draw( true );
-			console.log("should set name to hide");
+			console.log("shold set name to hide");
 		}
 	    
 	    
@@ -227,7 +227,7 @@ function renderChartLineWithAddons() {
     	      "fromField": "volume",
     	      "toField": "volume"
     	    } ],
-    	    "compared": false,
+    	  //  "compared": false,
     	    "categoryField": "date",
     	    "dataLoader": {
     	    	  "url": dailyPricesUrl,
@@ -246,9 +246,6 @@ function renderChartLineWithAddons() {
     	    	      return newData;
     	    	  }
     	    },		    	    
-    	    /**
-	        * data loader for events data
-	        */
 	        "eventDataLoader": {
     	          "url": tradesUrl,
     	          "format": "json",
@@ -285,11 +282,27 @@ function renderChartLineWithAddons() {
 	    	            return data;
 	    	          }
 	       }  //eventDataLoader
-    	  }], //dataset
+    	  }
+    	  ,{
+		      "title": strategy,
+		      "fieldMappings": [ {
+		        "fromField": "value",
+		        "toField": "close"
+		      } ],
+		      "categoryField": "date",
+	    	    "dataLoader": {
+	    	    	  "url": indicatorValueUrl,
+	    	    	  "format": "json",
+	    	    	  "showErrors": true,
+	    	    	  "async": true
+	    	    }			      
+		    }    	  
+    	  ], //dataset
     	  "dataDateFormat": "YYYY-MM-DD",	    	  
+ 
     	  "panels": [ {
     		    "showCategoryAxis": false,
-    		    "title": "Value",
+    		    "title": "Close",
     		    "percentHeight": 70,
     		    "stockGraphs": [ {
 //	    		        "type": "candlestick",
@@ -306,21 +319,22 @@ function renderChartLineWithAddons() {
 //	    		        "fillAlphas": 1,
 //	    		        "useDataSetColors": false,
 //	    		        "comparable": true,
-//	    		        "compareField": "value",
+//	    		        "compareField": "close",
 //	    		        "showBalloon": false,
-//	    		        "proCandlesticks": true
-    		    	"id": "g1",
-    		      "valueField": "close",
-    		      "comparable": true,
-    		      "compareField": "value",
-    		      "balloonText": "[[title]]:<b>[[value]]</b>",
-    		      "compareGraphBalloonText": "[[title]]:<b>[[value]]</b>"
+//	    		        "proCandlesticks": true,
+    			      "id": "g1",
+    			      "valueField": "close",
+    			      "comparable": true,
+    			      "compareField": "close",
+    			      "balloonText": "[[title]]:<b>[[close]]</b>",
+    			      "compareGraphBalloonText": "[[title]]:<b>[[value]]</b>"
     		    } ],
     		    "stockLegend": {
     		      "periodValueTextComparing": "[[percents.value.close]]%",
     		      "periodValueTextRegular": "[[value.close]]"
     		    }
-    		  }, {
+    		  }, 
+    		  {
     		    "title": "Volume",
     		    "percentHeight": 30,
     		    "stockGraphs": [ {
@@ -332,7 +346,8 @@ function renderChartLineWithAddons() {
     		    "stockLegend": {
     		      "periodValueTextRegular": "[[value.close]]"
     		    }
-    		  } ],  //panel
+    		  }
+    		  ],  //panel
 
     		  "chartScrollbarSettings": {
     		    "graph": "g1"
@@ -355,6 +370,7 @@ function renderChartLineWithAddons() {
     		      "label": "1 month"
     		    }, {
     		      "period": "YYYY",
+    		      "selected": true,
     		      "count": 1,
     		      "label": "1 year"
     		    }, {
@@ -362,7 +378,6 @@ function renderChartLineWithAddons() {
     		      "label": "YTD"
     		    }, {
     		      "period": "MAX",
-    		      "selected": true,
     		      "label": "MAX"
     		    } ]
     		  },
@@ -372,8 +387,284 @@ function renderChartLineWithAddons() {
     		  }
     		  
     });
-	
-	
+    
+    $("#charttype").text('Line addons');
+    
+    
 }
 
+function renderChartLineWithAddons3() {
+
+	security = selectedSecurity;
+	strategy = selectedStrategy;
+
+	console.log('about to render chart on strategyName=' + strategy+' and security=' + security);
+	
+	var dailyPricesUrl = "dailyPrices?security="+security;
+ 	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
+ 	var indicatorValueUrl = "indicatorValues?security="+security+"&strategy="+strategy;
+
+ 	console.log("dailyPricesUrl",dailyPricesUrl);
+ 	console.log("tradesUrl",tradesUrl);
+	console.log("indicatorValueUrl",indicatorValueUrl);
+	
+	
+	
+	var chart = AmCharts.makeChart( "chart-div", {
+		  "type": "stock",
+		  "theme": "light",
+		  "color": "#fff",
+		  "dataSets": [ {
+		    "title": security,
+		    "fieldMappings": [ {
+		      "fromField": "open",
+		      "toField": "open"
+		    }, {
+		      "fromField": "high",
+		      "toField": "high"
+		    }, {
+		      "fromField": "low",
+		      "toField": "low"
+		    }, {
+		      "fromField": "close",
+		      "toField": "close"
+		    }, {
+		      "fromField": "volume",
+		      "toField": "volume"
+		    } ],
+		    "compared": false,
+		    "categoryField": "date",
+
+    	    "dataLoader": {
+  	    	  "url": dailyPricesUrl,
+  	    	  "format": "json",
+  	    	  "showErrors": true,
+  	    	  "async": true
+    	    },	    
+
+		    /**
+		     * data loader for events data
+		     */
+		    "eventDataLoader": {
+		      "url": tradesUrl,
+		      "format": "json",
+		      "showCurtain": true,
+		      "showErrors": true,
+		      "async": true,
+		      "reverse": true,
+		      "delimiter": ",",
+		      "useColumnNames": true,
+		      "postProcess": function( data ) {
+		    	 // console.log('data3',data);
+  	            for ( var x in data ) {
+  	              switch( data[x].type ) {
+  	                case 'Buy':
+  	                  var color = "#00CC00";
+  	                  var type =  "arrowUp";
+  	                  var buysell = "Köp";
+  	                  break;
+  	                default:
+  	                  var color = "#CC0000";
+  	                  var type =  "arrowDown";
+  	                  var buysell = "Sälj";
+  	                  break;
+  	              }
+
+  	              data[x] = {
+  	                type: type,
+  	                graph: "g1",
+  	                backgroundColor: color,
+  	                date: data[x].date,
+  	                text: buysell,
+  	                description: "<strong>" + data[x].type + "</strong><br /> price:" + data[x].price
+  	              };
+		        }
+		        return data;
+		      }
+		    }
+
+		  }, {
+		    "title": strategy,
+		    "fieldMappings": [ {
+		      "fromField": "value",
+		      "toField": "close"
+		    } ],
+		    "compared": true,
+		    "categoryField": "date",
+	  	    "dataLoader": {
+		    	  "url": indicatorValueUrl,
+		    	  "format": "json",
+		    	  "showErrors": true,
+		    	  "async": true
+		    }			      
+		  } ],
+		  "dataDateFormat": "YYYY-MM-DD",
+
+		  "panels": [ {
+		      "title": "Close",
+		      "percentHeight": 70,
+		      "stockGraphs": [ {
+			      "id": "g1",
+			      "valueField": "close",
+			      "comparable": false,
+			      "compareField": "close",
+			      "balloonText": "[[title]]:<b>[[close]]</b>",
+			      "compareGraphBalloonText": "[[title]]:<b>[[value]]</b>"
+		      } ],
+
+		      "stockLegend": {
+		        "valueTextRegular": undefined,
+		        "periodValueTextComparing": "[[percents.value.close]]%"
+		      }
+
+		    },
+
+  		  	{
+    		  "title": "Volume",
+    		  "percentHeight": 30,
+    		  "stockGraphs": [ {
+    		    "valueField": "volume",
+    		    "type": "column",
+    		    "showBalloon": false,
+    		    "fillAlphas": 1
+    		    } ],
+    		    "stockLegend": {
+    		      "periodValueTextRegular": "[[value.close]]"
+    		    }
+    		 },
+
+    		 {
+		      "title": strategy,
+		      "percentHeight": 30,
+		      "marginTop": 1,
+		      "showCategoryAxis": false,
+		      "stockGraphs": [ {
+			      "id": "g1",
+			      "valueField": "close",
+			      "comparable": true,
+			      "compareField": "close",
+			      "balloonText": "[[title]]:<b>[[close]]</b>",
+			      "compareGraphBalloonText": "[[title]]:<b>[[value]]</b>"
+		      } ],
+		      "stockLegend": {
+		        "markerType": "bubble",
+		        "markerSize": 12,
+		        "labelText": "[[title]]",
+		        "periodValueTextComparing": "[[value.close]]"
+		      },
+
+		      "valueAxes": [ {
+		        "usePrefixes": true
+		      } ]
+		    }
+
+    		],
+
+//		  "panelsSettings": {
+//		      //  "color": "#fff",
+//		    "plotAreaFillColors": "#333",
+//		    "plotAreaFillAlphas": 1,
+//		    "marginLeft": 60,
+//		    "marginTop": 5,
+//		    "marginBottom": 5
+//		  },
+
+		  "chartScrollbarSettings": {
+  		    "graph": "g1"
+  		  },
+
+  		  "chartCursorSettings": {
+  		    "valueBalloonsEnabled": true,
+  		    "fullWidth": true,
+  		    "cursorAlpha": 0.1,
+  		    "valueLineBalloonEnabled": true,
+  		    "valueLineEnabled": true,
+  		    "valueLineAlpha": 0.5
+  		  },
+		  
+//		  "chartScrollbarSettings": {
+//		    "graph": "g1",
+//		    "graphType": "line",
+//		    "usePeriod": "WW",
+//		    "backgroundColor": "#333",
+//		    "graphFillColor": "#666",
+//		    "graphFillAlpha": 0.5,
+//		    "gridColor": "#555",
+//		    "gridAlpha": 1,
+//		    "selectedBackgroundColor": "#444",
+//		    "selectedGraphFillAlpha": 1
+//		  },
+
+//		  "categoryAxesSettings": {
+//		    "equalSpacing": true,
+//		    "gridColor": "#555",
+//		    "gridAlpha": 1
+//		  },
+//
+//		  "valueAxesSettings": {
+//		    "gridColor": "#555",
+//		    "gridAlpha": 1,
+//		    "inside": false,
+//		    "showLastLabel": true
+//		  },
+//
+//		  "chartCursorSettings": {
+//		    "pan": true,
+//		    "valueLineEnabled": true,
+//		    "valueLineBalloonEnabled": true
+//		  },
+//
+//		  "legendSettings": {
+//		    //"color": "#fff"
+//		  },
+//
+//		  "stockEventsSettings": {
+//		    "showAt": "high",
+//		    "type": "pin"
+//		  },
+//
+//		  "balloon": {
+//		    "textAlign": "left",
+//		    "offsetY": 10
+//		  },
+
+		  "periodSelector": {
+		    "position": "bottom",
+		    "periods": [ {
+		        "period": "DD",
+		        "count": 10,
+		        "label": "10D"
+		      }, {
+		        "period": "MM",
+		        "count": 1,
+		        "label": "1M"
+		      }, {
+		        "period": "MM",
+		        "count": 6,
+		        "label": "6M"
+		      }, {
+		        "period": "YYYY",
+		        "count": 1,
+		        "label": "1Y"
+		      }, {
+		        "period": "YYYY",
+		        "count": 2,
+		        "label": "2Y"
+		      },
+		      {
+		        "period": "YTD",
+		        "label": "YTD"
+		      },
+		      {
+		        "period": "MAX",
+		        "selected": true,
+		        "label": "MAX"
+		      }
+		    ]
+		  }
+		} );	
+	
+    $("#charttype").text('Line addons3');
+	
+}
 

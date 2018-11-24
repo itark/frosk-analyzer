@@ -11,6 +11,7 @@ drop table data_set;
 drop table security_price;
 drop table security;
 drop table strategy_trade;
+drop table strat_indicator_value;
 drop table featured_strategy;
 
 
@@ -34,12 +35,18 @@ order by timestamp;
 SELECT count(*) FROM SECURITY_PRICE;
 
 SELECT * FROM featured_strategy
-where id = 431266;
+--where id = 465678;
+where security_name LIKE '%ABB%';
 
 
 select * from strategy_trade
 --delete from strategy_trade
-where featured_strategy_id = 431183;
+where featured_strategy_id = 465673;
+
+select * from strat_indicator_value
+select count(*) from strat_indicator_value;
+where featured_strategy_id = 465673
+order by date;
 
 select * from data_set;
 select * from data_set_securities;

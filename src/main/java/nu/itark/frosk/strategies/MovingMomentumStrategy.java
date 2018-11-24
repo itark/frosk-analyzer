@@ -22,8 +22,11 @@
  */
 package nu.itark.frosk.strategies;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import org.ta4j.core.BaseStrategy;
@@ -39,7 +42,7 @@ import org.ta4j.core.trading.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.trading.rules.OverIndicatorRule;
 import org.ta4j.core.trading.rules.UnderIndicatorRule;
 
-import nu.itark.frosk.dataset.IndicatorValues;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 
 
 /**
@@ -49,11 +52,13 @@ import nu.itark.frosk.dataset.IndicatorValues;
  */
 public class MovingMomentumStrategy implements IndicatorValue {
 	Logger logger = Logger.getLogger(MovingMomentumStrategy.class.getName()); 
+
 	TimeSeries series = null;
 	MACDIndicator macd = null;
 	EMAIndicator shortEma = null;
 	
-	List<IndicatorValues> indicatorValues = new ArrayList<IndicatorValues>();
+	SortedSet<StrategyIndicatorValue> indicatorValues = new TreeSet<>(
+			Comparator.comparing(StrategyIndicatorValue::getDate));	
 	
 	public MovingMomentumStrategy(TimeSeries series) {
 		this.series = series;
@@ -93,22 +98,20 @@ public class MovingMomentumStrategy implements IndicatorValue {
     }
 
     
-    private void setIndicatorValues(EMAIndicator indicator, TimeSeries series2) {
-		IndicatorValues iv = null;
-		for (int i = 0; i < series.getBarCount(); i++) {
-			iv = new IndicatorValues();
-			iv.setDate(series.getBar(i).getEndTime().toLocalDate().toString());
-			iv.setValue(indicator.getValue(i).doubleValue());
-			indicatorValues.add(iv);
-		}
-
-//    	logger.info("indicatorValues size="+indicatorValues.size());
-		
-	}
-
-	@Override
-	public List<IndicatorValues> getIndicatorValues() {
+    private void setIndicatorValues(EMAIndicator indicator, TimeSeries series) {
+ 		StrategyIndicatorValue iv = null;
+ 		for (int i = 0; i < series.getBarCount(); i++) {
+ 			Date iDate = Date.from(series.getBar(i).getEndTime().toInstant());
+ 			BigDecimal iBig = BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue());
+ 			iv = new StrategyIndicatorValue(iDate, iBig);
+ 			indicatorValues.add(iv);
+ 		}
+ 		
+ 	}    
+    
+    @Override
+	public SortedSet<StrategyIndicatorValue> getIndicatorValues() {
 		return indicatorValues;
-	}
+	}	
  
 }

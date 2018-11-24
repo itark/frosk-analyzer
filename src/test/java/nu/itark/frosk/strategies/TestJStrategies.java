@@ -43,8 +43,8 @@ public class TestJStrategies {
 		run(rsi.buildStrategy(),timeSeries);
 		
 		//Moving Momentum
-		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
-		run(mm.buildStrategy(),timeSeries);
+//		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
+//		run(mm.buildStrategy(),timeSeries);
 		
 		//Global Extrema
 //		GlobalExtremaStrategy ge = new GlobalExtremaStrategy(timeSeries);

@@ -22,11 +22,15 @@
  */
 package nu.itark.frosk.strategies;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import org.ta4j.core.Bar;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -39,7 +43,7 @@ import org.ta4j.core.trading.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.trading.rules.OverIndicatorRule;
 import org.ta4j.core.trading.rules.UnderIndicatorRule;
 
-import nu.itark.frosk.dataset.IndicatorValues;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 
 
 /**
@@ -51,13 +55,11 @@ public class RSI2Strategy implements IndicatorValue{
 
 	Logger logger = Logger.getLogger(RSI2Strategy.class.getName());
 
-	//TODO
-	List<Bar>  rsiValues = null;
-	
 	RSIIndicator rsi = null;
 	TimeSeries series = null;
 	
-	List<IndicatorValues> indicatorValues = new ArrayList<IndicatorValues>();
+	SortedSet<StrategyIndicatorValue> indicatorValues = new TreeSet<>(
+			Comparator.comparing(StrategyIndicatorValue::getDate));	
 	
 	public RSI2Strategy(TimeSeries series) {
 		this.series = series;
@@ -94,27 +96,22 @@ public class RSI2Strategy implements IndicatorValue{
         
         setIndicatorValues(rsi, series);
         
-        
         return new BaseStrategy("RSI2Strategy", entryRule, exitRule);
     }
 
     private void setIndicatorValues(RSIIndicator indicator, TimeSeries series) {
-		IndicatorValues iv = null;
-		for (int i = 0; i < series.getBarCount(); i++) {
-			iv = new IndicatorValues();
-			iv.setDate(series.getBar(i).getEndTime().toLocalDate().toString());
-			iv.setValue(indicator.getValue(i).doubleValue());
-			indicatorValues.add(iv);
-		}
-
-//    	logger.info("indicatorValues size="+indicatorValues.size());
-		
-	}
-    
-    
+ 		StrategyIndicatorValue iv = null;
+ 		for (int i = 0; i < series.getBarCount(); i++) {
+ 			Date iDate = Date.from(series.getBar(i).getEndTime().toInstant());
+ 			BigDecimal iBig = BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue());
+ 			iv = new StrategyIndicatorValue(iDate, iBig);
+ 			indicatorValues.add(iv);
+ 		}
+ 		
+ 	}    
     
     @Override
-	public List<IndicatorValues> getIndicatorValues() {
+	public SortedSet<StrategyIndicatorValue> getIndicatorValues() {
 		return indicatorValues;
 	}	    
     

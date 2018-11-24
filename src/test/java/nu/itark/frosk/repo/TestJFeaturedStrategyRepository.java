@@ -16,6 +16,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.model.StrategyTrade;
 
 @RunWith(SpringRunner.class)
@@ -28,7 +29,10 @@ public class TestJFeaturedStrategyRepository {
 	FeaturedStrategyRepository fsRepo;
 
 	@Autowired
-	TradesRepository trRepo;	
+	TradesRepository tradesRepo;	
+
+	@Autowired
+	StrategyIndicatorValueRepository indicatorValuesRepo;		
 	
 	
 	@Autowired
@@ -146,7 +150,7 @@ public class TestJFeaturedStrategyRepository {
 	@Test
 	public void testManyToOne() {
 	
-		trRepo.deleteAllInBatch();
+		tradesRepo.deleteAllInBatch();
 		fsRepo.deleteAllInBatch();
 		
 		
@@ -176,17 +180,22 @@ public class TestJFeaturedStrategyRepository {
 
 		logger.info("featuredStrategyREs id="+featuredStrategyREs.getId());
 		
-		//1. save trade
+		// save trade
 		StrategyTrade trades = new StrategyTrade(new Date(), "X", new BigDecimal(23));
 		trades.setFeaturedStrategy(featuredStrategyREs);
 
 		StrategyTrade trades2 = new StrategyTrade(new Date(), "Y", new BigDecimal(23));
 		trades2.setFeaturedStrategy(featuredStrategyREs);
 
-		trRepo.saveAndFlush(trades);
-		trRepo.saveAndFlush(trades2);
-
+		// save indicatorvalues
+		StrategyIndicatorValue indicatorValue = new StrategyIndicatorValue(new Date(), new BigDecimal(21));
+		indicatorValue.setFeaturedStrategy(featuredStrategyREs);
 		
+		
+		tradesRepo.saveAndFlush(trades);
+		tradesRepo.saveAndFlush(trades2);
+
+		indicatorValuesRepo.saveAndFlush(indicatorValue);
 		
 		
 	}

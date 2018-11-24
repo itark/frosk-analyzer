@@ -26,19 +26,19 @@
 }
 
 header {
-    padding: 15px 0 10px;
+    padding: 1px 0 10px;
 }
 
 #clock-div {
   width: 100%;
   height: 98vh;
 }
-
-canvas {
-  display: block;
-  vertical-align: bottom;
-}
-
+/*
+ canvas { 
+   display: block; 
+   vertical-align: bottom; 
+ } 
+*/
 #particles-js {
   position: absolute;
   width: 100%;
@@ -55,10 +55,9 @@ canvas {
 <body>
 
  <div id="wrapper">
- 
 	<nav class="navbar navbar-default">
+
 	  <div class="container-fluid">
-	    
 	    <div class="navbar-header">
 	      <a class="navbar-brand" href="/frosk-analyzer" title="powered by Har-em Foundations">Evening Star</a>
 	    </div>
@@ -80,6 +79,8 @@ canvas {
 	</nav>
 
 
+	<div id="particles-js"></div>
+
 	<header>
 		 <div class="container-fluid">
 			<div id="particles-js"></div>
@@ -91,9 +92,10 @@ canvas {
 		        </div>
 		 </div>
 	</header>
-
 	<section>
       <div class="container-fluid">
+
+		<div id="particles-js"></div>
 
         <div class="row">
            <div class="col-lg-12 col-md-12">
@@ -109,8 +111,9 @@ canvas {
       </div>
     </footer>   
 
+<!--  
 </div>
-
+-->
 <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 <script type="text/javascript">
 

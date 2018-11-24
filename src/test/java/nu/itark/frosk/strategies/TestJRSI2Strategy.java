@@ -67,6 +67,7 @@ public class TestJRSI2Strategy {
 		RSI2Strategy strat = new RSI2Strategy(timeSeries);
         
         Strategy strategy = strat.buildStrategy();
+//        strat.getIndicatorValues().size()
         TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Trade> trades = tradingRecord.getTrades();     
