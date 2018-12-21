@@ -75,8 +75,8 @@ public class YAHOODataManager  {
 			try {
 				securityPriceRepository.save(sp);
 			} catch (DataIntegrityViolationException e) {
-				logger.severe("Duplicate ."+e);
-				throw e;
+				logger.severe("Duplicate ."+e+"continues....");
+				//throw e;
 			}
 		});
 

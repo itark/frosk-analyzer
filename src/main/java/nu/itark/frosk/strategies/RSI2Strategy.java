@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -104,7 +105,8 @@ public class RSI2Strategy implements IndicatorValue{
  		for (int i = 0; i < series.getBarCount(); i++) {
  			Date iDate = Date.from(series.getBar(i).getEndTime().toInstant());
  			BigDecimal iBig = BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue());
- 			iv = new StrategyIndicatorValue(iDate, iBig);
+ 			String indicatorStr = indicator.getClass().getSimpleName();
+ 			iv = new StrategyIndicatorValue(iDate, iBig, indicatorStr);
  			indicatorValues.add(iv);
  		}
  		
@@ -113,6 +115,12 @@ public class RSI2Strategy implements IndicatorValue{
     @Override
 	public SortedSet<StrategyIndicatorValue> getIndicatorValues() {
 		return indicatorValues;
+	}
+
+	@Override
+	public List<StrategyIndicatorValue> getIndicatorValues2() {
+		// TODO Auto-generated method stub
+		return null;
 	}	    
     
 }

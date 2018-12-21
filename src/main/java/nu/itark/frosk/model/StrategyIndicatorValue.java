@@ -21,7 +21,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "strat_indicator_value", uniqueConstraints={@UniqueConstraint(columnNames={"date", "featured_strategy_id"})})
+@Table(name = "strat_indicator_value", uniqueConstraints={@UniqueConstraint(columnNames={"indicator", "date", "featured_strategy_id"})})
 public class StrategyIndicatorValue {
 	
 	@Id
@@ -31,6 +31,10 @@ public class StrategyIndicatorValue {
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "date")
 	private Date date;
+
+//	@NotNull
+	@Column(name = "indicator")
+	private String indicator;	
 	
 	@NotNull
 	@Column(name = "value")
@@ -42,9 +46,10 @@ public class StrategyIndicatorValue {
 
     protected StrategyIndicatorValue(){}
     
-    public StrategyIndicatorValue(Date date, BigDecimal value){
+    public StrategyIndicatorValue(Date date, BigDecimal value, String indicator){
     	this.date = date;
     	this.value = value;
+    	this.indicator = indicator;
     }
     
 

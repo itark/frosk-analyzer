@@ -30,10 +30,10 @@ public class TestJStrategyAnalysis {
 	@Test
 	public final void runMM() {
 		logger.info("MM="+MovingMomentumStrategy.class.getSimpleName());
-//		Long sec_id = ts.getSecurityId("ERIC-B.ST");
+		Long sec_id = ts.getSecurityId("ERIC-B.ST");
 //		Long sec_id = ts.getSecurityId("SSAB-B.ST");
 //		Long sec_id = ts.getSecurityId("ATCO-B.ST");
-		Long sec_id = ts.getSecurityId("VOLV-B.ST");
+//		Long sec_id = ts.getSecurityId("VOLV-B.ST");
 		strategyAnalysis.run(MovingMomentumStrategy.class.getSimpleName(), sec_id);
 
 //		list.forEach(dto -> logger.info("dto="+ReflectionToStringBuilder.toString(dto)));

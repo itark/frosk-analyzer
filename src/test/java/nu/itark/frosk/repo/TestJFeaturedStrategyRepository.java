@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.ta4j.core.indicators.EMAIndicator;
 
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
@@ -188,7 +189,7 @@ public class TestJFeaturedStrategyRepository {
 		trades2.setFeaturedStrategy(featuredStrategyREs);
 
 		// save indicatorvalues
-		StrategyIndicatorValue indicatorValue = new StrategyIndicatorValue(new Date(), new BigDecimal(21));
+		StrategyIndicatorValue indicatorValue = new StrategyIndicatorValue(new Date(), new BigDecimal(21), "EMAIndicator");
 		indicatorValue.setFeaturedStrategy(featuredStrategyREs);
 		
 		

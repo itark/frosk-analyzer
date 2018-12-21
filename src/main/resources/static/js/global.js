@@ -398,6 +398,7 @@ function renderChartLineWithAddons3() {
 	security = selectedSecurity;
 	strategy = selectedStrategy;
 
+	console.log('renderChartLineWithAddons3');
 	console.log('about to render chart on strategyName=' + strategy+' and security=' + security);
 	
 	var dailyPricesUrl = "dailyPrices?security="+security;
@@ -432,7 +433,7 @@ function renderChartLineWithAddons3() {
 		      "fromField": "volume",
 		      "toField": "volume"
 		    } ],
-		    "compared": false,
+		    "compared": true,
 		    "categoryField": "date",
 
     	    "dataLoader": {
@@ -506,7 +507,7 @@ function renderChartLineWithAddons3() {
 		      "stockGraphs": [ {
 			      "id": "g1",
 			      "valueField": "close",
-			      "comparable": false,
+			      "comparable": true,
 			      "compareField": "close",
 			      "balloonText": "[[title]]:<b>[[close]]</b>",
 			      "compareGraphBalloonText": "[[title]]:<b>[[value]]</b>"

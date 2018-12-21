@@ -12,7 +12,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.Bar;
+import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
+import org.ta4j.core.TimeSeriesManager;
+import org.ta4j.core.TradingRecord;
 
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.analysis.StrategiesMap;
@@ -208,13 +211,26 @@ public class DataController {
 	 * @return
 	 */
 	@RequestMapping(path="/indicatorValues", method=RequestMethod.GET)
-	public SortedSet<StrategyIndicatorValue> getIndicatorValues(@RequestParam("security") String security, @RequestParam("strategy") String strategy){
+	public List<StrategyIndicatorValue> getIndicatorValues(@RequestParam("security") String security, @RequestParam("strategy") String strategy){
 		logger.info("/indicatorValues...security="+security+"strategy="+strategy);	
 //		List<StrategyIndicatorValue> indicatorValueList = new ArrayList<StrategyIndicatorValue>();
 
-		TimeSeries timeSeries = timeSeriesService.getDataSet(security);
 		
-		return strategyAnalysis.getIndicatorValues(strategy, timeSeries);
+		TimeSeries timeSeries = timeSeriesService.getDataSet(security);
+
+//		TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
+//		TradingRecord tradingRecord = seriesManager.run(strategy);
+//		trades = tradingRecord.getTrades();		
+		
+//		Strategy strategyS = strategyAnalysis.getStrategyToRun(strategy, timeSeries, null);
+		
+	
+		strategyAnalysis.run(strategy, timeSeriesService.getSecurityId(security));
+		List<StrategyIndicatorValue> indicatorsValues = strategyAnalysis.getIndicatorValues(strategy, timeSeries);
+		
+		
+		
+		return indicatorsValues;
 		
 //		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security );
 //

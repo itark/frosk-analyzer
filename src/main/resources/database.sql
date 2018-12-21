@@ -44,8 +44,10 @@ select * from strategy_trade
 where featured_strategy_id = 465673;
 
 select * from strat_indicator_value
-select count(*) from strat_indicator_value;
-where featured_strategy_id = 465673
+where indicator is not null;
+
+select count(*) from strat_indicator_value
+where featured_strategy_id = 475247
 order by date;
 
 select * from data_set;

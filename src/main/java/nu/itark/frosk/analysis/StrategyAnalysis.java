@@ -192,6 +192,7 @@ public class StrategyAnalysis {
 	
 			//Trades
 			List<StrategyTrade>  existSt = tradesRepo.findByFeaturedStrategyId(fsRes.getId());
+//			logger.info("Exiting trades="+existSt.size());
 //			tradesRepo.deleteInBatch(existSt);
 //			tradesRepo.flush();
 			if (existSt.isEmpty()) {
@@ -202,35 +203,34 @@ public class StrategyAnalysis {
 				});
 			}
 			
-			//indicatorvalue
-//			List<StrategyIndicatorValue>  existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.getId());
-////			indicatorValueRepo.deleteInBatch(existIv);
-////			indicatorValueRepo.flush();
-//			if (existIv.isEmpty()) {
-//				indicatorValueSet.forEach(iv -> {
-//					iv.setFeaturedStrategy(fsRes);
-////					logger.info("saving iv.getDate"+iv.getDate());
-//					indicatorValueRepo.saveAndFlush(iv);
-//				});	
-//			}
-			
+			//indicatorvalue //TODO to indicatorvalueS
+			List<StrategyIndicatorValue>  existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.getId());
+//			logger.info("Exiting indicatorValues="+existIv.size());
+	
+			indicatorValueRepo.deleteInBatch(existIv);
+			indicatorValueRepo.flush();
+				indicatorValueSet.forEach(iv -> {
+					iv.setFeaturedStrategy(fsRes);
+//					logger.info("saving iv.getDate"+iv.getDate());
+					indicatorValueRepo.saveAndFlush(iv);
+				});	
 		}
 
 	}
 
 	
-	public SortedSet<StrategyIndicatorValue> getIndicatorValues(String strategy, TimeSeries series) {
+	public List<StrategyIndicatorValue> getIndicatorValues(String strategy, TimeSeries series) {
 		logger.info("getIndicatorValues("+strategy+", "+series.getName()+")");
 
 		Strategy strategyToRun = null;
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
 			strategyToRun = strategyReguested.buildStrategy();
-			return strategyReguested.getIndicatorValues();
+			return null;
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
 			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		
-			return strategyReguested.getIndicatorValues();
+			return strategyReguested.getIndicatorValues2();
 		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
 			GlobalExtremaStrategy strategyReguested = new GlobalExtremaStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		
@@ -251,17 +251,18 @@ public class StrategyAnalysis {
 	}
 	
 	
-	private Strategy getStrategyToRun(String strategy,  TimeSeries series, Set<StrategyIndicatorValue> indVals) {
+	public Strategy getStrategyToRun(String strategy,  TimeSeries series, Set<StrategyIndicatorValue> indVals) {
 		logger.info("getStrategyToRun("+strategy+", "+series.getName());
 		Strategy strategyToRun = null;
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
 			strategyToRun = strategyReguested.buildStrategy();
-			indVals.addAll(strategyReguested.getIndicatorValues());
+//			indVals.addAll(strategyReguested.getIndicatorValues());
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
 			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
-			indVals.addAll(strategyReguested.getIndicatorValues());
+			strategyToRun = strategyReguested.buildStrategy();	
+//			logger.info("strategyReguested.getIndicatorValues()="+strategyReguested.getIndicatorValues());
+//			indVals.addAll(strategyReguested.getIndicatorValues());
 		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
 			GlobalExtremaStrategy strategyReguested = new GlobalExtremaStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		

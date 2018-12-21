@@ -39,12 +39,12 @@ public class TestJStrategies {
 	public void runAllSingle() {
 		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
 		//RSI2
-		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
-		run(rsi.buildStrategy(),timeSeries);
+//		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
+//		run(rsi.buildStrategy(),timeSeries);
 		
 		//Moving Momentum
-//		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
-//		run(mm.buildStrategy(),timeSeries);
+		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
+		run(mm.buildStrategy(),timeSeries);
 		
 		//Global Extrema
 //		GlobalExtremaStrategy ge = new GlobalExtremaStrategy(timeSeries);
