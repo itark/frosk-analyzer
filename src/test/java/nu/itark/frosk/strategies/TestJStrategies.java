@@ -19,7 +19,16 @@ import org.ta4j.core.TimeSeries;
 import org.ta4j.core.TimeSeriesManager;
 import org.ta4j.core.Trade;
 import org.ta4j.core.TradingRecord;
+import org.ta4j.core.analysis.criteria.AverageProfitCriterion;
+import org.ta4j.core.analysis.criteria.AverageProfitableTradesCriterion;
+import org.ta4j.core.analysis.criteria.BuyAndHoldCriterion;
+import org.ta4j.core.analysis.criteria.LinearTransactionCostCriterion;
+import org.ta4j.core.analysis.criteria.MaximumDrawdownCriterion;
+import org.ta4j.core.analysis.criteria.NumberOfBarsCriterion;
+import org.ta4j.core.analysis.criteria.NumberOfTradesCriterion;
+import org.ta4j.core.analysis.criteria.RewardRiskRatioCriterion;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
+import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
 import org.ta4j.core.num.Num;
 
 import nu.itark.frosk.analysis.StrategiesMap;
@@ -37,22 +46,31 @@ public class TestJStrategies {
 	
 	@Test
 	public void runAllSingle() {
-		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
-		//RSI2
+//		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
+		TimeSeries timeSeries = timeSeriesService.getDataSet("KINV-B.ST");
+
 //		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
 //		run(rsi.buildStrategy(),timeSeries);
 		
-		//Moving Momentum
-		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
-		run(mm.buildStrategy(),timeSeries);
+//		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
+//		run(mm.buildStrategy(),timeSeries);
 		
-		//Global Extrema
 //		GlobalExtremaStrategy ge = new GlobalExtremaStrategy(timeSeries);
 //		run(ge.buildStrategy(),timeSeries);
 		
-		//CCI Corrections
 //		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
 //		run(cci.buildStrategy(),timeSeries);
+		
+//		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
+//		run(eng.buildStrategy(),timeSeries);
+		
+//		HaramiStrategy harami = new HaramiStrategy(timeSeries);
+//		run(harami.buildStrategy(),timeSeries);	
+	
+		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
+		run(three.buildStrategy(),timeSeries);		
+		
+		
 		
 	}
 
@@ -61,8 +79,12 @@ public class TestJStrategies {
 	public void runAllList() {
 		List<TimeSeries> timeSeriesList=   timeSeriesService.getDataSet();
 		timeSeriesList.forEach(ts -> {
-			RSI2Strategy rsi = new RSI2Strategy(ts);
-			run(rsi.buildStrategy(),ts);
+//			RSI2Strategy rsi = new RSI2Strategy(ts);
+//			run(rsi.buildStrategy(),ts);
+			
+			ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(ts);
+			run(three.buildStrategy(),ts);		
+			
 			
 		});
 		//RSI2
@@ -73,30 +95,59 @@ public class TestJStrategies {
 	
 	
 	public final void run(Strategy strategy, TimeSeries timeSeries) {
-		logger.info("::"+strategy.getName()+"::");
+//		logger.info("::"+strategy.getName()+"::");
 		TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Trade> trades = tradingRecord.getTrades();
+		
+		NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
+
 
 		for (Trade trade : trades) {
 			Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
-			logger.info(timeSeries.getName() + "::barEntry=" + barEntry.getDateName());
+//			logger.info(timeSeries.getName() + "::barEntry=" + barEntry.getDateName());
 			Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
-			logger.info(timeSeries.getName() + "::barExit=" + barExit.getDateName());
+//			logger.info(timeSeries.getName() + "::barExit=" + barExit.getDateName());
 			Num closePriceBuy = barEntry.getClosePrice();
 			Num closePriceSell = barExit.getClosePrice();
 			Num profit = closePriceSell.minus(closePriceBuy);
 
-			logger.info("profit=" + profit);
+//			logger.info("profit=" + profit);
 
 		}
 
-		logger.info("Number of trades for the strategy: " + tradingRecord.getTradeCount());
-		// Analysis
-		logger.info("Total profit for the strategy: " + new TotalProfitCriterion().calculate(timeSeries, tradingRecord));
-		double totalProfit = new TotalProfitCriterion().calculate(timeSeries, tradingRecord).doubleValue();
-		double totalProfitPercentage = (totalProfit - 1) * 100; // TODO minus
-		logger.info("Total profit for the strategy (%): " + totalProfitPercentage);
+//		logger.info("Number of trades for the strategy: " + tradingRecord.getTradeCount());
+//		// Analysis
+//		logger.info("Total profit for the strategy: " + new TotalProfitCriterion().calculate(timeSeries, tradingRecord));
+//		double totalProfit = new TotalProfitCriterion().calculate(timeSeries, tradingRecord).doubleValue();
+//		double totalProfitPercentage = (totalProfit - 1) * 100; // TODO minus
+//		logger.info("Total profit for the strategy (%): " + totalProfitPercentage);
+		
+		
+	      // Total profit
+        TotalProfitCriterion totalProfit = new TotalProfitCriterion();
+        logger.info("Total profit: " + percent(totalProfit.calculate(timeSeries, tradingRecord).doubleValue()));
+        
+        // Number of bars
+        logger.info("Number of bars: " + new NumberOfBarsCriterion().calculate(timeSeries, tradingRecord));
+        // Average profit (per bar)
+        logger.info("Average profit (per bar): " + percent(new AverageProfitCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+        // Number of trades
+        logger.info("Number of trades: " + new NumberOfTradesCriterion().calculate(timeSeries, tradingRecord));
+        // Profitable trades ratio
+        logger.info("Profitable trades ratio: " + percent(new AverageProfitableTradesCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+        // Maximum drawdown
+        logger.info("Maximum drawdown: " + percent(new MaximumDrawdownCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+        // Reward-risk ratio
+        logger.info("Reward-risk ratio: " + new RewardRiskRatioCriterion().calculate(timeSeries, tradingRecord));
+        // Total transaction cost
+        logger.info("Total transaction cost (from $1000): " + new LinearTransactionCostCriterion(1000, 0.005).calculate(timeSeries, tradingRecord));
+        // Buy-and-hold
+        logger.info("Buy-and-hold: " + percent(new BuyAndHoldCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+        // Total profit vs buy-and-hold
+        logger.info("Custom strategy profit vs buy-and-hold strategy profit: " + percent(new VersusBuyAndHoldCriterion(totalProfit).calculate(timeSeries, tradingRecord).doubleValue()));		
+		
+		
 	}
 	
 	
@@ -184,6 +235,15 @@ public class TestJStrategies {
 		 
 		 System.out.println("xxx="+xxx);
 		
+	}
+	
+	private String percent(double value) {
+		NumberFormat format = NumberFormat.getPercentInstance();
+		format.setMinimumFractionDigits(1);
+
+		double raw = (value - 1);
+
+		return format.format(raw);
 	}
 	
 }

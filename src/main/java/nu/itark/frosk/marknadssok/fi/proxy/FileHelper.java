@@ -10,7 +10,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -18,30 +21,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * This class helps managing files for HovedEnheter and Underenheter
- * 
- * 
- * @author Fredrik Möller
- * @date Dec 2, 2016
- *
- */
+@Service
 public class FileHelper {
-//	private static Logger logger = LogManager.getLogger(FileHelper.class);
-	private RestTemplate restTemplate = null;
+	Logger logger = Logger.getLogger(FileHelper.class.getName());	
+
+	@Autowired
+	RestTemplate restTemplate;
 	
-	/**
-	 * Constructor injects the RestTemplate
-	 * 
-	 * @param restTemplate
-	 */
-	public FileHelper(RestTemplate restTemplate) {
-		this.restTemplate = restTemplate;
+	@Bean 
+	public RestTemplate restTemplate() {
+		return new RestTemplate();
 	}
-	
 	
 	/**
 	 * This method get file from url and save it on disk.
@@ -53,8 +47,7 @@ public class FileHelper {
 	 * @throws IOException 
 	 */
 	public void downloadFile(String downloadUrl, String writeFile) throws IOException  {
-	restTemplate.getMessageConverters().add(new ByteArrayHttpMessageConverter()); //Funkar för google finance download
-//		restTemplate.getMessageConverters().add(new StringHttpMessageConverter(StandardCharsets.UTF_8));
+	restTemplate.getMessageConverters().add(new ByteArrayHttpMessageConverter()); 
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
@@ -63,7 +56,7 @@ public class FileHelper {
 		try {
 			ResponseEntity<byte[]> response = restTemplate.exchange(downloadUrl, HttpMethod.GET, entity, byte[].class, "1");
 
-//			logger.info("File downloaded from:" + downloadUrl + ", size=" + response.getBody().length);
+			logger.info("File downloaded from:" + downloadUrl + ", size=" + response.getBody().length);
 			if (response.getStatusCode() == HttpStatus.OK) {
 				ByteArrayInputStream bis = new ByteArrayInputStream(response.getBody());
 				BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(bis));
@@ -81,31 +74,20 @@ public class FileHelper {
 				fos.close();
 				bis.close();
 
-
-//				ByteArrayInputStream bis = new ByteArrayInputStream(response.getBody());
-//				FileOutputStream fos = new FileOutputStream(writeFile);
-//				byte[] buffer = new byte[1024];
-//				int len = 0;
-//				while ((len = bis.read(buffer)) > 0) {
-//					fos.write(buffer, 0, len);
-//				}
-//
-//				fos.close();
-//				bis.close();
 										
 			}
 		} catch (RestClientException rcex) {
-//			logger.info("Can not access :" + downloadUrl, rcex);
+			logger.severe("Can not access :" + downloadUrl + rcex);
 			throw rcex;
 		} catch (FileNotFoundException fnfex) {
-//			logger.info("Can not find  :" +writeFile, fnfex);
+			logger.severe("Can not find  :" +writeFile +fnfex);
 			throw fnfex;
 		} catch (IOException ioex) {
-//			logger.info("Can not use  :" +writeFile, ioex);
+			logger.severe("Can not use  :" +writeFile + ioex);
 			throw ioex;
 		}
 	
-//		logger.info("File: "+ writeFile + " saved on disk.");
+		logger.info("File: "+ writeFile + " saved on disk.");
 	}
 
 }

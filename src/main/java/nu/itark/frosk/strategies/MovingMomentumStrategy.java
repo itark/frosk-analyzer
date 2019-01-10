@@ -106,13 +106,13 @@ public class MovingMomentumStrategy implements IndicatorValue {
 
     
     private void setIndicatorValues(EMAIndicator indicator, TimeSeries series, String name) {
-    	logger.info("setIndicatorValues, name="+name);
+//    	logger.info("setIndicatorValues, name="+name);
     	StrategyIndicatorValue iv = null;
  		for (int i = 0; i < series.getBarCount(); i++) {
  			Date iDate = Date.from(series.getBar(i).getEndTime().toInstant());
 // 			BigDecimal iBig = BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue());
- 			logger.info(BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue())+":series");
- 			logger.info(BigDecimal.valueOf(indicator.getValue(i).doubleValue())+":indicator");
+// 			logger.info(BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue())+":series");
+// 			logger.info(BigDecimal.valueOf(indicator.getValue(i).doubleValue())+":indicator");
  			BigDecimal iBig = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 // 			String indicatorStr = indicator.getClass().getSimpleName();
  			iv = new StrategyIndicatorValue(iDate, iBig, name);
