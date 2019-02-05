@@ -1,4 +1,4 @@
-package nu.itark.frosk.crypto.gdax;
+package nu.itark.frosk.crypto.coinbase;
 
 import java.util.List;
 
@@ -11,13 +11,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.MarketData;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.OrderItem;
+import nu.itark.frosk.crypto.coinbase.MarketDataProxy;
 
 //import nu.itark.frosk.coinbase.exchange.api.marketdata.MarketData;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@Slf4j
 public class TestJMarketDataProxy { //extends BaseTest {
 
  
@@ -29,7 +32,7 @@ public class TestJMarketDataProxy { //extends BaseTest {
     public void testGetMarketDataOrderBook() {
     	MarketData marketData = marketDataProxy.getMarketDataOrderBook("BTC-GBP", "2");
  
-    		System.out.println(""+ReflectionToStringBuilder.toString(marketData));
+    		log.info("marketData="+ReflectionToStringBuilder.toString(marketData));
     	
     		List<OrderItem> asks = marketData.getAsks();
     		asks.forEach(ask -> System.out.println("ask="+ReflectionToStringBuilder.toString(ask, ToStringStyle.MULTI_LINE_STYLE)));

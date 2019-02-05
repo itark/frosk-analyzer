@@ -1,4 +1,4 @@
-package nu.itark.frosk.crypto.gdax;
+package nu.itark.frosk.crypto.coinbase;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

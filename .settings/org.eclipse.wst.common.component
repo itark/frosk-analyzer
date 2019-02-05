@@ -5,6 +5,12 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/resources"/>
         <wb-resource deploy-path="/" source-path="/target/m2e-wtp/web-resources"/>
         <wb-resource deploy-path="/" source-path="/src/main/webapp"/>
+        <dependent-module archiveName="YahooFinanceAPI-LOCAL-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/YahooFinanceAPI/YahooFinanceAPI">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="ta4j-core-0.12.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/ta4j-core/ta4j-core">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="context-root" value="frosk-analyzer"/>
         <property name="java-output-path" value="/frosk-analyzer/target/classes"/>
     </wb-module>

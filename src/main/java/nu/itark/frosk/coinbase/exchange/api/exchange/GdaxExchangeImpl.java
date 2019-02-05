@@ -20,14 +20,17 @@ import org.springframework.web.client.RestTemplate;
 
 import com.google.gson.Gson;
 
+import lombok.extern.slf4j.Slf4j;
+
 
 /**
  * Created by irufus on 2/25/15.
  */
 @Component
+@Slf4j
 public class GdaxExchangeImpl implements GdaxExchange {
 
-    static Logger log = Logger.getLogger(GdaxExchangeImpl.class.getName());
+//    static Logger log = Logger.getLogger(GdaxExchangeImpl.class.getName());
 
     String publicKey;
     String passphrase;
@@ -43,7 +46,13 @@ public class GdaxExchangeImpl implements GdaxExchange {
                             @Value("${gdax.api.baseUrl}") String baseUrl,
                             Signature signature,
                             RestTemplate restTemplate) {
-        this.publicKey = publicKey;
+
+    	log.info("publicKey",publicKey);
+    	
+    	log.info("signature",signature);
+    	
+    	
+    	this.publicKey = publicKey;
         this.passphrase = passphrase;
         this.baseUrl = baseUrl;
         this.signature = signature;
@@ -157,6 +166,6 @@ public class GdaxExchangeImpl implements GdaxExchange {
             curlTest += "-d '" + jsonBody + "' ";
 
         curlTest += "-X " + method + " " + getBaseUrl() + resource;
-        log.debug(curlTest);
+        log.info(curlTest);
     }
 }
