@@ -1,0 +1,12 @@
+gdax:
+  api:
+    baseUrl: "https://api.gdax.com/"
+  key: "b8be83d2559333093594ddb99e536ada"
+  secret: "3fcnVmx8sA+TWmsEBJEqBlMoXMi0/SDKDREzd4oTMsB76OVcpnjaCZy0qzV+JJ1soVMBNJ0lJtGgp1PSw/9JzQ=="
+  passphrase: "it4akf6tik"
+
+websocket:
+  baseUrl: "wss://ws-feed.gdax.com/"
+
+gui:
+  enabled: true

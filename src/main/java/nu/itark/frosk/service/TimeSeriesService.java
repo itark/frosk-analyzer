@@ -31,7 +31,7 @@ public class TimeSeriesService  {
 	/**
 	 * Retrive from {@linkplain SecurityPriceRepository}
 	 * 
-	 * @return
+	 * @return List<TimeSeries> for alla securities in database
 	 */
 	public List<TimeSeries> getDataSet() {
 		Iterable<Security> spList = securityRepository.findAll();  

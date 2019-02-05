@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +37,12 @@ import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.TimeSeriesService;
 import nu.itark.frosk.strategies.CCICorrectionStrategy;
+import nu.itark.frosk.strategies.EngulfingStrategy;
 import nu.itark.frosk.strategies.GlobalExtremaStrategy;
+import nu.itark.frosk.strategies.HaramiStrategy;
 import nu.itark.frosk.strategies.MovingMomentumStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
+import nu.itark.frosk.strategies.ThreeBlackWhiteStrategy;
 /**
  * This class diplays analysis criterion values after running a trading strategy
  * over a time series.
@@ -226,7 +228,7 @@ public class StrategyAnalysis {
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
 			strategyToRun = strategyReguested.buildStrategy();
-			return null;
+			return strategyReguested.getIndicatorValues2();
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
 			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		
@@ -234,11 +236,18 @@ public class StrategyAnalysis {
 		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
 			GlobalExtremaStrategy strategyReguested = new GlobalExtremaStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		
-//			indVals.addAll(strategyReguested.getIndicatorValues());
 		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
 			CCICorrectionStrategy strategyReguested = new CCICorrectionStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		
-//			indVals.addAll(strategyReguested.getIndicatorValues());
+		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
+			EngulfingStrategy strategyReguested = new EngulfingStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
+		} else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
+			HaramiStrategy strategyReguested = new HaramiStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
+		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
+			ThreeBlackWhiteStrategy strategyReguested = new ThreeBlackWhiteStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
 		}
 		
 		if (strategyToRun == null) {
@@ -257,20 +266,28 @@ public class StrategyAnalysis {
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
 			strategyToRun = strategyReguested.buildStrategy();
-//			indVals.addAll(strategyReguested.getIndicatorValues());
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
 			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();	
-//			logger.info("strategyReguested.getIndicatorValues()="+strategyReguested.getIndicatorValues());
-//			indVals.addAll(strategyReguested.getIndicatorValues());
 		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
 			GlobalExtremaStrategy strategyReguested = new GlobalExtremaStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		
-//			indVals.addAll(strategyReguested.getIndicatorValues());
 		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
 			CCICorrectionStrategy strategyReguested = new CCICorrectionStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		
-//			indVals.addAll(strategyReguested.getIndicatorValues());
+		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
+			EngulfingStrategy strategyReguested = new EngulfingStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
+		} else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
+			HaramiStrategy strategyReguested = new HaramiStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
+		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
+			ThreeBlackWhiteStrategy strategyReguested = new ThreeBlackWhiteStrategy(series);
+			strategyToRun = strategyReguested.buildStrategy();		
+		}
+		
+		else {
+			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
 		
 		if (strategyToRun == null) {

@@ -31,11 +31,12 @@ import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
 import org.ta4j.core.num.Num;
 
+import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.service.TimeSeriesService;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = {FroskApplication.class})
 public class TestJStrategies {
 
 	Logger logger = Logger.getLogger(TestJStrategies.class.getName());
@@ -45,15 +46,18 @@ public class TestJStrategies {
 	
 	
 	@Test
-	public void runAllSingle() {
-//		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
-		TimeSeries timeSeries = timeSeriesService.getDataSet("KINV-B.ST");
+	public void runAllSingleDataSet() {
+		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
+//		TimeSeries timeSeries = timeSeriesService.getDataSet("KINV-B.ST");
 
 //		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
 //		run(rsi.buildStrategy(),timeSeries);
 		
 //		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
 //		run(mm.buildStrategy(),timeSeries);
+
+//		MovingMomentumStrategy2 mm2 =  new MovingMomentumStrategy2(timeSeries);
+//		run(mm2.buildStrategy(),timeSeries);
 		
 //		GlobalExtremaStrategy ge = new GlobalExtremaStrategy(timeSeries);
 //		run(ge.buildStrategy(),timeSeries);
@@ -67,8 +71,13 @@ public class TestJStrategies {
 //		HaramiStrategy harami = new HaramiStrategy(timeSeries);
 //		run(harami.buildStrategy(),timeSeries);	
 	
-		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
-		run(three.buildStrategy(),timeSeries);		
+//		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
+//		run(three.buildStrategy(),timeSeries);		
+
+		ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(timeSeries);
+		run(cd.buildStrategy(),timeSeries);
+		
+		
 		
 		
 		
@@ -76,14 +85,18 @@ public class TestJStrategies {
 
 	
 	@Test
-	public void runAllList() {
+	public void runAllDataSetList() {
 		List<TimeSeries> timeSeriesList=   timeSeriesService.getDataSet();
 		timeSeriesList.forEach(ts -> {
 //			RSI2Strategy rsi = new RSI2Strategy(ts);
 //			run(rsi.buildStrategy(),ts);
 			
-			ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(ts);
-			run(three.buildStrategy(),ts);		
+//			ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(ts);
+//			run(three.buildStrategy(),ts);		
+			
+			ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(ts);
+			run(cd.buildStrategy(),ts);			
+			
 			
 			
 		});
@@ -182,7 +195,7 @@ public class TestJStrategies {
 	
 	
 	@Test
-	public void chooseBestForAllSecurity() {
+	public void chooseBestForAllSecurities() {
 		NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
 		double highestProfit = 0;
 		String highestProfitName = "";
@@ -191,6 +204,9 @@ public class TestJStrategies {
 		// The analysis criterion
 		AnalysisCriterion profitCriterion = new TotalProfitCriterion();
 
+		// The analysis criterion
+		AnalysisCriterion nrOfTradesCriterion = new NumberOfTradesCriterion();		
+		
 		for (TimeSeries timeSeries : timeSeriesList) {
 			Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 			TimeSeriesManager timeSeriesManager = new TimeSeriesManager(timeSeries);
@@ -204,18 +220,40 @@ public class TestJStrategies {
 					highestProfitName = timeSeries.getName();
 					highestProfitNameStrategy = strategy.getName();
 				}
+				
+				
+//				double profit = nrOfTradesCriterion.calculate(timeSeries, tradingRecord).doubleValue();
+//				if (profit > highestProfit) {
+//					highestProfit = profit;
+//					highestProfitName = timeSeries.getName();
+//					highestProfitNameStrategy = strategy.getName();
+//				}				
+				
+				
+				
 //				System.out.println(
 //						"\tProfit for strategy: " + name + " and security :" + timeSeries.getName() + " = " + profit);
 			}
-			Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager,
-					new ArrayList<Strategy>(strategies.keySet()));
-			System.out.println("\t\t--> Best strategy for : "+timeSeries.getName()+" = " + strategies.get(bestStrategy));
+			Strategy bestProfitStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
+			System.out.println("\t\t--> Best strategy(profit criteria) for : "+timeSeries.getName()+" = " + strategies.get(bestProfitStrategy));
 			 double highestProfitPercentage = (highestProfit - 1 );  //TODO minus
 			System.out.println("\t\t--> HighestProfit Name: " + highestProfitName + " profit: " + format.format(highestProfitPercentage));
 			System.out.println("\t\t--> Strategy: " + highestProfitNameStrategy + "\n");
 
+//			Strategy bestNrOfTradesStrategy = nrOfTradesCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
+//			System.out.println("\t\t--> Best strategy(nr of trades) for : "+timeSeries.getName()+" = " + strategies.get(bestNrOfTradesStrategy));
+//			 double highestProfitPercentage = (highestProfit - 1 );  //TODO minus
+//			System.out.println("\t\t--> HighestProfit Name: " + highestProfitName + " profit: " + format.format(highestProfitPercentage));
+//			System.out.println("\t\t--> Strategy: " + highestProfitNameStrategy + "\n");
+
+		
+		
+		
 		}
 
+		
+		
+		
 	}	
 	
 	

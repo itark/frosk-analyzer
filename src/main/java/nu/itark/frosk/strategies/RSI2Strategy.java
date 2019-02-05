@@ -23,13 +23,10 @@
 package nu.itark.frosk.strategies;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import org.ta4j.core.BaseStrategy;
@@ -59,8 +56,10 @@ public class RSI2Strategy implements IndicatorValue{
 	RSIIndicator rsi = null;
 	TimeSeries series = null;
 	
-	SortedSet<StrategyIndicatorValue> indicatorValues = new TreeSet<>(
-			Comparator.comparing(StrategyIndicatorValue::getDate));	
+//	SortedSet<StrategyIndicatorValue> indicatorValues = new TreeSet<>(
+//			Comparator.comparing(StrategyIndicatorValue::getDate));	
+	
+	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();		
 	
 	public RSI2Strategy(TimeSeries series) {
 		this.series = series;
@@ -78,6 +77,9 @@ public class RSI2Strategy implements IndicatorValue{
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
         SMAIndicator longSma = new SMAIndicator(closePrice, 200);
+        
+        setIndicatorValues(longSma, series, "longSma");
+
 
         // We use a 2-period RSI indicator to identify buying
         // or selling opportunities within the bigger trend.
@@ -95,32 +97,41 @@ public class RSI2Strategy implements IndicatorValue{
                 .and(new CrossedUpIndicatorRule(rsi, 95)) // Signal 1
                 .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
         
-        setIndicatorValues(rsi, series);
+//        setIndicatorValues(rsi, series);
         
         return new BaseStrategy("RSI2Strategy", entryRule, exitRule);
     }
 
-    private void setIndicatorValues(RSIIndicator indicator, TimeSeries series) {
- 		StrategyIndicatorValue iv = null;
+    
+    private void setIndicatorValues(SMAIndicator indicator, TimeSeries series, String name) {
+//    	logger.info("setIndicatorValues, name="+name);
+    	StrategyIndicatorValue iv = null;
  		for (int i = 0; i < series.getBarCount(); i++) {
  			Date iDate = Date.from(series.getBar(i).getEndTime().toInstant());
- 			BigDecimal iBig = BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue());
- 			String indicatorStr = indicator.getClass().getSimpleName();
- 			iv = new StrategyIndicatorValue(iDate, iBig, indicatorStr);
+// 			BigDecimal iBig = BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue());
+// 			logger.info(BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue())+":series");
+// 			logger.info(BigDecimal.valueOf(indicator.getValue(i).doubleValue())+":indicator");
+ 			BigDecimal iBig = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
+// 			String indicatorStr = indicator.getClass().getSimpleName();
+ 			iv = new StrategyIndicatorValue(iDate, iBig, name);
  			indicatorValues.add(iv);
  		}
  		
- 	}    
+ 	}     
+    
+    
+    
+    
     
     @Override
 	public SortedSet<StrategyIndicatorValue> getIndicatorValues() {
-		return indicatorValues;
+    	throw new RuntimeException("not use...");
 	}
 
 	@Override
 	public List<StrategyIndicatorValue> getIndicatorValues2() {
 		// TODO Auto-generated method stub
-		return null;
+		return indicatorValues;
 	}	    
     
 }

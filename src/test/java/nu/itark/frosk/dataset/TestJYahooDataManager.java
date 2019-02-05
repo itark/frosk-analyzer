@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,11 +18,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import ch.pschatzmann.stocks.Context;
+import ch.pschatzmann.stocks.IStockRecord;
+import ch.pschatzmann.stocks.StockData;
+import ch.pschatzmann.stocks.StockID;
+import ch.pschatzmann.stocks.input.YahooReader;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
 import yahoofinance.histquotes.HistoricalQuote;
 import yahoofinance.histquotes.Interval;
+import yahoofinance.quotes.stock.StockStats;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -41,6 +48,18 @@ public class TestJYahooDataManager {
 		tsManager.syncronize("VOLV-B.ST");
 	}
 	
+//	@Test
+//	public void testYahooApple() {
+//		Context.setCachingActive(false);
+//		StockID apple = new StockID("AAPL", "NASDAQ");
+//		StockData sd = Context.getStockData(apple, new YahooReader());
+//		logger.info("{size=}"+sd.getHistory().size());
+//		IStockRecord sr = sd.getValue(Context.date("2012-01-10"));
+//		Assert.assertEquals(178.46, sr.getClosing().doubleValue(), 0.001);
+//	}
+	
+	
+	
 	
 	@Test
 	public void test() throws IOException {
@@ -54,6 +73,10 @@ public class TestJYahooDataManager {
 		BigDecimal dividend = stock.getDividend().getAnnualYieldPercent();
 
 		stock.print();	
+		
+		StockStats xx =stock.getStats();
+		
+		System.out.println("xx="+ReflectionToStringBuilder.toString(xx));
 	
 	
 	}

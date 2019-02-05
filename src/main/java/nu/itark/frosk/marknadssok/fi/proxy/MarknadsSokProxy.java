@@ -32,13 +32,19 @@ public class MarknadsSokProxy {
 	//	private String url = "https://marknadssok.fi.se/publiceringsklient/sv-SE/Search/Search?SearchFunctionType=Insyn&Utgivare=&PersonILedandeSt%C3%A4llningNamn=&Transaktionsdatum.From=&Transaktionsdatum.To=&Publiceringsdatum.From=&Publiceringsdatum.To=&button=export&Page=1";
 	private String url = "https://marknadssok.fi.se/publiceringsklient/sv-SE/Search/Search?SearchFunctionType=Insyn&Utgivare=&PersonILedandeSt%C3%A4llningNamn=&Transaktionsdatum.From=&Transaktionsdatum.To=&Publiceringsdatum.From=2018-09-01&Publiceringsdatum.To=2018-09-06&button=export&Page=1";	
 	static String fileName = "marknadsok.csv";
+
+
+	@Autowired
+	RestTemplate restTemplate;
 	
-	@Bean 
-	public RestTemplate restTemplate() {
-		RestTemplate restTemplate = new RestTemplate();
-		restTemplate.getMessageConverters().add(new ByteArrayHttpMessageConverter());
-		return restTemplate;
-	}	
+	
+	
+//	@Bean 
+//	public RestTemplate restTemplate() {
+//		RestTemplate restTemplate = new RestTemplate();
+//		restTemplate.getMessageConverters().add(new ByteArrayHttpMessageConverter());
+//		return restTemplate;
+//	}	
 
 	@Autowired
 	FileHelper fileHelper;
@@ -58,7 +64,7 @@ public class MarknadsSokProxy {
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
 		HttpEntity<String> entity = new HttpEntity<String>(headers);
 		
-		ResponseEntity<byte[]> response = restTemplate().exchange(url, HttpMethod.GET, entity, byte[].class);
+		ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, byte[].class);
 		logger.info("File downloaded from:" + url + ", size=" + response.getBody().length);
 	
 		ByteArrayInputStream bis = new ByteArrayInputStream(response.getBody());

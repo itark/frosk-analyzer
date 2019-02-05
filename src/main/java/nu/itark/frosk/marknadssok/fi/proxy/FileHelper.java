@@ -32,10 +32,10 @@ public class FileHelper {
 	@Autowired
 	RestTemplate restTemplate;
 	
-	@Bean 
-	public RestTemplate restTemplate() {
-		return new RestTemplate();
-	}
+//	@Bean 
+//	public RestTemplate restTemplate() {
+//		return new RestTemplate();
+//	}
 	
 	/**
 	 * This method get file from url and save it on disk.

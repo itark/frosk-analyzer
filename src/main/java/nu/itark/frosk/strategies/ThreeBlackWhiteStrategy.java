@@ -22,13 +22,22 @@
  */
 package nu.itark.frosk.strategies;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.SortedSet;
+
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
 import org.ta4j.core.indicators.candles.ThreeBlackCrowsIndicator;
 import org.ta4j.core.indicators.candles.ThreeWhiteSoldiersIndicator;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.trading.rules.BooleanIndicatorRule;
+
+import nu.itark.frosk.model.StrategyIndicatorValue;
 
 /**
  * Three black crows indicator.
@@ -36,9 +45,11 @@ import org.ta4j.core.trading.rules.BooleanIndicatorRule;
  * @see <a href="http://www.investopedia.com/terms/t/three_black_crows.asp">
  *     http://www.investopedia.com/terms/t/three_black_crows.asp</a>
  */
-public class ThreeBlackWhiteStrategy {
+public class ThreeBlackWhiteStrategy implements IndicatorValue{
 
 	TimeSeries series = null;
+	
+	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();	
 	   
 	public ThreeBlackWhiteStrategy(TimeSeries series) {
 		this.series = series;
@@ -52,6 +63,10 @@ public class ThreeBlackWhiteStrategy {
             throw new IllegalArgumentException("Series cannot be null");
         }
 
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+  
+        setIndicatorValues(closePrice, series, "closePrice");     
+        
         ThreeWhiteSoldiersIndicator  bullish = new ThreeWhiteSoldiersIndicator(series, 100,series.numOf(5));
         ThreeBlackCrowsIndicator  bearish = new ThreeBlackCrowsIndicator(series, 100, 5);
         
@@ -61,5 +76,28 @@ public class ThreeBlackWhiteStrategy {
         Strategy strategy = new BaseStrategy("ThreeBlackWhiteStrategy", entryRule, exitRule);
         return strategy;
     }
+    
+    private void setIndicatorValues(ClosePriceIndicator indicator, TimeSeries series, String name) {
+    	StrategyIndicatorValue iv = null;
+ 		for (int i = 0; i < series.getBarCount(); i++) {
+ 			Date iDate = Date.from(series.getBar(i).getEndTime().toInstant());
+ 			BigDecimal iBig = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
+ 			iv = new StrategyIndicatorValue(iDate, iBig, name);
+ 			indicatorValues.add(iv);
+ 		}
+ 		
+ 	} 
+    
+    @Override
+	public SortedSet<StrategyIndicatorValue> getIndicatorValues() {
+    	throw new RuntimeException("not use...");
+	}  
+    
+    
+	@Override
+	public List<StrategyIndicatorValue> getIndicatorValues2() {
+		// TODO Auto-generated method stub
+		return indicatorValues;
+	}	    
 
 }
