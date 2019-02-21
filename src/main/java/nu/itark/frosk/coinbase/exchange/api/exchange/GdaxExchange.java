@@ -27,4 +27,5 @@ public interface GdaxExchange {
     public <T> List<T> pagedGetAsList(String endpoint, ParameterizedTypeReference<T[]> responseType, String beforeOrAfter, Integer pageNumber, Integer limit);
     public <T, R> T post(String endpoint, ParameterizedTypeReference<T> type, R jsonObject);
     public <T> T delete(String endpoint, ParameterizedTypeReference<T> type);
+	Object getString(String resourcePath);
 }

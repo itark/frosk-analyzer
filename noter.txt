@@ -25,3 +25,11 @@ plugins {
 springBoot {
     mainClass = 'com.coinbase.exchange.api.GdaxApiApplication'
 }
+
+
+curl -H 'accept:application/json' -H 'content-type:application/json' -H 'CB-ACCESS-KEY:b8be83d2559333093594ddb99e536ada' -H 'CB-ACCESS-SIGN:al5aooNOPen9I0PPC/YTQqE6PRBZgGhxQT97QTV4GAk=' -H 'CB-ACCESS-TIMESTAMP:1549663763' -H 'CB-ACCESS-PASSPHRASE:it4akf6tik' -X GET https://api.gdax.com//products/BTC-EUR/candles
+
+
+
+
+

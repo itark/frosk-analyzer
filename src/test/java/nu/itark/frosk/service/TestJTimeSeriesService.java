@@ -2,6 +2,11 @@ package nu.itark.frosk.service;
 
 import static org.junit.Assert.assertNotNull;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import org.junit.Test;
@@ -18,6 +23,7 @@ public class TestJTimeSeriesService {
 
 	@Autowired
 	private TimeSeriesService ts;
+
 	
 //	@Test
 //	public void testGetDataSetPerSecurity() throws Exception {
@@ -57,6 +63,53 @@ public class TestJTimeSeriesService {
 //		System.out.println("size="+sec.getBarCount());
 		
 	}	
+	
+	@Test
+	public void testGetCandlesFromCoinbase() {
+		
+	TimeSeries timeSeries = ts.getDataSetFromCoinbase("BTC-EUR");	
+	assertNotNull(timeSeries);
+		
+		
+	}
+	
+	@Test
+	public void testDatessss(){
+		
+		long time = 1550664480;  //GMT: Wednesday 20 February 2019 12:08:00 
+		
+		long m = System.currentTimeMillis();
+		
+		System.out.println("m="+m);
+		
+		
+		ZonedDateTime dateTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1550664480),ZoneId.systemDefault());
+
+		System.out.println("dateTime="+dateTime);
+
+		
+		LocalDate date =
+			    Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalDate();
+		
+		
+		System.out.println("date="+date);
+		
+
+		LocalDateTime date2 =
+			    LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault());		
+		
+		
+		System.out.println("date2="+date2);
+		
+		LocalDateTime date3 =
+			    LocalDateTime.ofInstant(Instant.ofEpochMilli(m), ZoneId.systemDefault());	
+		
+		System.out.println("date3="+date3);
+		
+		
+		
+	}
+	
 	
 	
 	

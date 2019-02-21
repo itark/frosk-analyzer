@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -61,19 +60,53 @@ public class GdaxExchangeImpl implements GdaxExchange {
 
     @Override
     public <T> T get(String resourcePath, ParameterizedTypeReference<T> responseType) {
-        try {
+ 
+    	log.info("::KILROY WAS HERE.");
+    	
+    	
+    	try {
             ResponseEntity<T> responseEntity = restTemplate.exchange(getBaseUrl() + resourcePath,
                     GET,
                     securityHeaders(resourcePath,
                     "GET",
                      ""),
                     responseType);
+            
+            log.info("responseEntity.getBody()="+responseEntity.getBody());
+            
             return responseEntity.getBody();
         } catch (HttpClientErrorException ex) {
             log.error("GET request Failed for '" + resourcePath + "': " + ex.getResponseBodyAsString());
         }
         return null;
     }
+    
+    
+    @Override
+    public Object getString(String resourcePath) {
+ 
+    	log.info("::String KILROY WAS HERE.");
+    	
+    	
+    	try {
+            ResponseEntity<Object> responseEntity = restTemplate.exchange(getBaseUrl() + resourcePath,
+                    GET,
+                    securityHeaders(resourcePath,
+                    "GET",
+                     ""),
+                    Object.class);
+            
+            log.info("responseEntity.getBody()="+responseEntity.getBody());
+            
+            return responseEntity.getBody();
+        } catch (HttpClientErrorException ex) {
+            log.error("GET request Failed for '" + resourcePath + "': " + ex.getResponseBodyAsString());
+        }
+        return null;
+    }   
+    
+    
+    
 
     @Override
     public <T> List<T> getAsList(String resourcePath, ParameterizedTypeReference<T[]> responseType) {

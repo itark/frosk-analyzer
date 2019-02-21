@@ -18,11 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import ch.pschatzmann.stocks.Context;
-import ch.pschatzmann.stocks.IStockRecord;
-import ch.pschatzmann.stocks.StockData;
-import ch.pschatzmann.stocks.StockID;
-import ch.pschatzmann.stocks.input.YahooReader;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;

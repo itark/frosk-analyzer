@@ -26,22 +26,6 @@
 
 	<dependencies>
 
-<!--  
-      <dependency>
-         <groupId>gdax-java</groupId>
-         <artifactId>gdax-java</artifactId>
-         <scope>system</scope>
-         <version>0.9.0</version>
-         <systemPath>${basedir}\src\lib\gdax-java-0-9-0.jar</systemPath>
-      </dependency>
-
-			<dependency>
-	 		 <groupId>irufus</groupId>
-	 		 <artifactId>gdax-java</artifactId>
-	  		 <version>0.9.0</version>
-			</dependency>
--->
-
 	 <dependency>
 	    <groupId>org.springframework</groupId>
 	    <artifactId>spring-websocket</artifactId>
@@ -82,7 +66,18 @@
     </dependency>
 
 
-
+<dependency>
+    <groupId>com.fasterxml.jackson.module</groupId>
+    <artifactId>jackson-module-parameter-names</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.fasterxml.jackson.datatype</groupId>
+    <artifactId>jackson-datatype-jdk8</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.fasterxml.jackson.datatype</groupId>
+    <artifactId>jackson-datatype-jsr310</artifactId>
+</dependency>
 
 
 		<dependency>
@@ -138,26 +133,26 @@
 		  <version>0.12</version>
 		</dependency>
 
-
+<!--  
 		<dependency>
 			<groupId>ch.pschatzmann</groupId>
 			<artifactId>investor</artifactId>
 			<version>0.9-SNAPSHOT</version>
 		</dependency>
-
+-->
 
 	    <dependency>
 	        <groupId>com.opencsv</groupId>
 	        <artifactId>opencsv</artifactId>
 	        <version>3.9</version>
 	    </dependency>	
-
+<!-- 
         <dependency>
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
             <version>1.0.17</version>
         </dependency>
-
+ -->
 
 		<!-- webjars  -->
 		<dependency>
@@ -249,7 +244,6 @@
 
 	</dependencies>
 <!-- https://www.baeldung.com/tomcat-deploy-war -->
- 
 	<build>
 		<finalName>frosk-analyzer</finalName>
  
@@ -272,13 +266,13 @@
 		</plugins>
 
 	</build>
-
+<!--  
 	<repositories>
 	    <repository>
 	      <id>pschatzmann</id>
 	      <url>http://software.pschatzmann.ch/repository/maven-public/</url>
 	    </repository>
 	</repositories>
-
+-->
 
 </project>

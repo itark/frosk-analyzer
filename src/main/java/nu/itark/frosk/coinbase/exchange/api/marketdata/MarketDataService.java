@@ -30,4 +30,22 @@ public class MarketDataService {
         String tradesEndpoint = PRODUCT_ENDPOINT + "/" + productId + "/trades";
         return exchange.getAsList(tradesEndpoint, new ParameterizedTypeReference<Trade[]>(){});
     }
+
+
+    public Ticker getMarketDataTicker(String productId) {
+        String marketDataEndpoint = PRODUCT_ENDPOINT + "/" + productId + "/ticker";
+        return exchange.get(marketDataEndpoint, new ParameterizedTypeReference<Ticker>(){});
+    }
+
+ 
+    //TODO
+    // https://api.gdax.com/products/ETH-EUR/candles?start=2017-07-02T15:25:00.00000Z&end=2017-07-02T16:12:00.00000Z&granularity=3600
+    public List<HistoricRate> getMarketDataCandles(String productId) {
+        String marketDataEndpoint = PRODUCT_ENDPOINT + "/" + productId + "/candles";
+        return exchange.getAsList(marketDataEndpoint, new ParameterizedTypeReference<HistoricRate[]>(){});
+    }
+    
 }
+
+
+

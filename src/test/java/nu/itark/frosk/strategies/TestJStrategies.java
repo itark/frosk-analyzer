@@ -47,38 +47,34 @@ public class TestJStrategies {
 	
 	@Test
 	public void runAllSingleDataSet() {
-		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
+//		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("KINV-B.ST");
+		TimeSeries timeSeries = timeSeriesService.getDataSetFromCoinbase("BTC-EUR");
 
-//		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
-//		run(rsi.buildStrategy(),timeSeries);
+		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
+		run(rsi.buildStrategy(),timeSeries);
 		
-//		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
-//		run(mm.buildStrategy(),timeSeries);
+		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
+		run(mm.buildStrategy(),timeSeries);
 
-//		MovingMomentumStrategy2 mm2 =  new MovingMomentumStrategy2(timeSeries);
-//		run(mm2.buildStrategy(),timeSeries);
 		
-//		GlobalExtremaStrategy ge = new GlobalExtremaStrategy(timeSeries);
-//		run(ge.buildStrategy(),timeSeries);
+		GlobalExtremaStrategy ge = new GlobalExtremaStrategy(timeSeries);
+		run(ge.buildStrategy(),timeSeries);
 		
-//		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
-//		run(cci.buildStrategy(),timeSeries);
+		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
+		run(cci.buildStrategy(),timeSeries);
 		
-//		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
-//		run(eng.buildStrategy(),timeSeries);
+		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
+		run(eng.buildStrategy(),timeSeries);
 		
-//		HaramiStrategy harami = new HaramiStrategy(timeSeries);
-//		run(harami.buildStrategy(),timeSeries);	
+		HaramiStrategy harami = new HaramiStrategy(timeSeries);
+		run(harami.buildStrategy(),timeSeries);	
 	
-//		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
-//		run(three.buildStrategy(),timeSeries);		
+		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
+		run(three.buildStrategy(),timeSeries);		
 
 		ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(timeSeries);
 		run(cd.buildStrategy(),timeSeries);
-		
-		
-		
 		
 		
 	}
@@ -108,7 +104,7 @@ public class TestJStrategies {
 	
 	
 	public final void run(Strategy strategy, TimeSeries timeSeries) {
-//		logger.info("::"+strategy.getName()+"::");
+		logger.info("******"+strategy.getName()+"******");
 		TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Trade> trades = tradingRecord.getTrades();
@@ -118,24 +114,17 @@ public class TestJStrategies {
 
 		for (Trade trade : trades) {
 			Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
-//			logger.info(timeSeries.getName() + "::barEntry=" + barEntry.getDateName());
+			logger.info(timeSeries.getName() + "::barEntry=" + barEntry.getDateName());
 			Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
-//			logger.info(timeSeries.getName() + "::barExit=" + barExit.getDateName());
+			logger.info(timeSeries.getName() + "::barExit=" + barExit.getDateName());
 			Num closePriceBuy = barEntry.getClosePrice();
 			Num closePriceSell = barExit.getClosePrice();
 			Num profit = closePriceSell.minus(closePriceBuy);
 
-//			logger.info("profit=" + profit);
+			logger.info("profit=" + profit);
 
 		}
 
-//		logger.info("Number of trades for the strategy: " + tradingRecord.getTradeCount());
-//		// Analysis
-//		logger.info("Total profit for the strategy: " + new TotalProfitCriterion().calculate(timeSeries, tradingRecord));
-//		double totalProfit = new TotalProfitCriterion().calculate(timeSeries, tradingRecord).doubleValue();
-//		double totalProfitPercentage = (totalProfit - 1) * 100; // TODO minus
-//		logger.info("Total profit for the strategy (%): " + totalProfitPercentage);
-		
 		
 	      // Total profit
         TotalProfitCriterion totalProfit = new TotalProfitCriterion();

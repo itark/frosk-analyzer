@@ -1,11 +1,13 @@
 package nu.itark.frosk.service;
 
 
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,8 @@ import org.ta4j.core.BaseTimeSeries;
 import org.ta4j.core.TimeSeries;
 import org.ta4j.core.num.PrecisionNum;
 
+import nu.itark.frosk.coinbase.exchange.api.marketdata.HistoricRate;
+import nu.itark.frosk.crypto.coinbase.MarketDataProxy;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
@@ -27,6 +31,9 @@ public class TimeSeriesService  {
 	
 	@Autowired
 	SecurityRepository securityRepository;	
+	
+	@Autowired
+	MarketDataProxy marketDataProxyCoinbase;
 	
 	/**
 	 * Retrive from {@linkplain SecurityPriceRepository}
@@ -60,7 +67,6 @@ public class TimeSeriesService  {
 		return  getDataSet( getSecurityId(securityName)  );
 	}
 	
-	
 	/**
 	 * Return TimesSeries bases on id in Security.
 	 * 
@@ -82,6 +88,31 @@ public class TimeSeriesService  {
 		     series.addBar(dateTime, row.getOpen(), row.getHigh(),  row.getLow(), row.getClose(), row.getVolume());			
 		});
 		
+		return series;
+		
+	}	
+	
+
+	/**
+	 * Return TimesSeries bases on productId in Coinbase.
+	 * 
+	 * @param productId 
+	 * @return TimeSeries
+	 */
+	public TimeSeries getDataSetFromCoinbase(String productId) {
+		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(productId).withNumTypeOf(PrecisionNum.class).build();
+		List<HistoricRate> candlesList= marketDataProxyCoinbase.getMarketDataCandles("BTC-EUR");
+	
+		List<HistoricRate> sortedList = candlesList
+				.stream()
+				.sorted((p1, p2) -> ((Long)p1.getTime()).compareTo(p2.getTime()))
+				.collect(Collectors.toList());
+		
+		sortedList.forEach(row -> {
+			ZonedDateTime dateTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(row.getTime()),ZoneId.systemDefault());
+			series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
+		});
+
 		return series;
 		
 	}	
