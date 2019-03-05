@@ -21,6 +21,7 @@ import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
+import nu.itark.frosk.util.DateTimeManager;
 
 @Service
 public class TimeSeriesService  {
@@ -96,12 +97,15 @@ public class TimeSeriesService  {
 	/**
 	 * Return TimesSeries bases on productId in Coinbase.
 	 * 
+	 * NOTE: start and end hardcoded,granularity set to fifteen minutes
+	 * 
 	 * @param productId 
 	 * @return TimeSeries
 	 */
 	public TimeSeries getDataSetFromCoinbase(String productId) {
 		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(productId).withNumTypeOf(PrecisionNum.class).build();
-		List<HistoricRate> candlesList= marketDataProxyCoinbase.getMarketDataCandles("BTC-EUR");
+		//TODO externalize range: d
+		List<HistoricRate> candlesList= marketDataProxyCoinbase.getMarketDataCandles("BTC-EUR", DateTimeManager.start(1), DateTimeManager.end(), MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
 	
 		List<HistoricRate> sortedList = candlesList
 				.stream()

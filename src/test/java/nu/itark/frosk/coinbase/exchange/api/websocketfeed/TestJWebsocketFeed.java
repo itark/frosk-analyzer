@@ -17,16 +17,31 @@ public class TestJWebsocketFeed {
 	@Autowired
 	WebsocketFeed websocketFeed;
 	
+
+	@Test
+	public void testWebsocketSubscribeOrderReceived() throws InterruptedException {
+		String[] productIds = new String[]{"BTC-GBP", "ETH-BTC"}; // make this configurable.
+	
+		
+        log.info("*** Subscribing ***");
+        websocketFeed.subscribeOrderReceived(new Subscribe(productIds));		
+		
+        Thread.sleep(2000);
+        
+        log.info("*** ready sleeping ***");
+		
+	}	
+	
 	
 	@Test
-	public void testWebsocket() throws InterruptedException {
+	public void testWebsocketSubscribe() throws InterruptedException {
 		String[] productIds = new String[]{"BTC-GBP", "ETH-BTC"}; // make this configurable.
 	
 		
         log.info("*** Subscribing ***");
         websocketFeed.subscribe(new Subscribe(productIds));		
 		
-        Thread.sleep(20000);
+        Thread.sleep(2000);
         
         log.info("*** ready sleeping ***");
 		

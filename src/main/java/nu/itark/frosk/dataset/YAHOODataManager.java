@@ -1,5 +1,6 @@
 package nu.itark.frosk.dataset;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -17,7 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
@@ -39,8 +42,9 @@ import yahoofinance.histquotes.Interval;
  */
 
 @Service
+@Slf4j
 public class YAHOODataManager  {
-	Logger logger = Logger.getLogger(YAHOODataManager.class.getName());
+//	Logger logger = Logger.getLogger(YAHOODataManager.class.getName());
 	
 	@Value("${frosk.download.years}")
 	public int years;	
@@ -58,16 +62,16 @@ public class YAHOODataManager  {
 	 * Download prices and insert into database.
 	 */
 	public void syncronize() {
-		logger.info("sync="+Database.YAHOO.toString());
+		log.info("sync="+Database.YAHOO.toString());
 		Iterable<Security> securities = securityRepository.findByDatabase(Database.YAHOO.toString()); 
 		
-		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
+		securities.forEach(sec -> log.info("NAME="+ sec.getName()));
 		
 		List<SecurityPrice> spList;
 		try {
 			spList = getDataSet(securities);
 		} catch (IOException e) {
-			logger.severe("Could not retrieve dataset");
+			log.error("Could not retrieve dataset");
 			throw new RuntimeException(e);
 		}
 
@@ -75,8 +79,8 @@ public class YAHOODataManager  {
 			try {
 				securityPriceRepository.save(sp);
 			} catch (DataIntegrityViolationException e) {
-				logger.severe("Duplicate ."+e+"continues....");
-				//throw e;
+				log.error("Duplicate ."+e+"continues....");
+				//continue
 			}
 		});
 
@@ -86,17 +90,19 @@ public class YAHOODataManager  {
 	 * Download prices and insert into database for one security
 	 */
 	public void syncronize(String sec) {
-		logger.info("sync="+Database.YAHOO.toString());
+		log.info("sync="+Database.YAHOO.toString());
 		Security security = securityRepository.findByName(sec);
-		List<Security> securities = Arrays.asList(security);
+
+		Assert.notNull(security, "security can not be null");
 		
-		securities.forEach(sc -> logger.info("NAME="+ sc.getName()));
+		List<Security> securities = Arrays.asList(security);
+		securities.forEach(sc -> log.info("NAME="+ sc.getName()));
 		
 		List<SecurityPrice> spList;
 		try {
 			spList = getDataSet(securities);
 		} catch (IOException e) {
-			logger.severe("Could not retrieve dataset");
+			log.error("Could not retrieve dataset");
 			throw new RuntimeException(e);
 		}
 
@@ -104,23 +110,21 @@ public class YAHOODataManager  {
 			try {
 				securityPriceRepository.save(sp);
 			} catch (DataIntegrityViolationException e) {
-				logger.severe("Duplicate ." + e);
-				throw e;
+				log.error("Duplicate ." + e);
+				//continue
 			}
 		});
 
 	}	
 	
-	
-	
-	
-	private List<SecurityPrice> getDataSet(Iterable<Security> securities) throws IOException  {
-		logger.info("getDataSet(Iterable<Security> names)");
+	private List<SecurityPrice> getDataSet(Iterable<Security> securities) throws IOException {
+		log.info("getDataSet(Iterable<Security> names)");
 		List<SecurityPrice> sp = new ArrayList<>();
 		Map<Long, List<HistoricalQuote>> stockQuotes = getStocks(securities);
-		
-		stockQuotes.forEach((sec_id,quote) -> {
-			try {
+
+		if (stockQuotes != null) {
+
+			stockQuotes.forEach((sec_id, quote) -> {
 				quote.forEach(row -> {
 					Date date = Date.from(Instant.ofEpochMilli(row.getDate().getTimeInMillis()));
 					SecurityPrice securityPrice = null;
@@ -129,19 +133,15 @@ public class YAHOODataManager  {
 						securityPrice = new SecurityPrice(sec_id, date, row.getOpen(), row.getHigh(), row.getLow(),
 								row.getClose(), row.getVolume());
 						sp.add(securityPrice);
-					} 
+					}
 				});
-				
-			} catch (Throwable e) {
-				logger.info("Could not get data from Yahoo.");
-				throw new RuntimeException(e);
-			}
 
+			});
 
-		});
+		}
 
 		return sp;
-		
+
 	}
 	
 	
@@ -153,57 +153,58 @@ public class YAHOODataManager  {
 	 * @throws IOException
 	 */
 	private Map<Long, List<HistoricalQuote>> getStocks(Iterable<Security> securities) throws IOException {
-		logger.info("getStocks(Iterable<Security> securities");
+		log.info("getStocks(Iterable<Security> securities");
 		Map<Long, List<HistoricalQuote>> stocks = new HashMap<Long, List<HistoricalQuote>>();
-		
-		Calendar to = Calendar.getInstance(TimeZone.getDefault());
-		
-        securities.forEach((security) -> {
-            Calendar from = Calendar.getInstance(TimeZone.getDefault());
-        	boolean isToday = false;
-            Date toDay = new Date();
-        	SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());		
-            if (topSp != null) {
-            	Date lastDate = topSp.getTimestamp();
-            	logger.info("security="+security.getName()+ ", found lastDate="+lastDate);
 
-            	if (DateUtils.isSameDay(lastDate, toDay) || isFriday(lastDate)) {
-            		logger.info("isToday or isWeekend::lastDate="+lastDate.toString()+", toDay="+toDay.toString());
-            		isToday = true;
-            	} else if (DateUtils.isSameDay(lastDate, DateUtils.addDays(toDay, -1))) {
-            		logger.info("last is yeasterday");
-            		from.setTime(lastDate);
-            		from.add(Calendar.DATE, 2); 
-            	}
-            	else {
-            		from.setTime(lastDate);
-            		from.add(Calendar.DATE, 1); 
-            		logger.info("Not today, from set to:"+from.getTime().toString());
-            	}
-            } else {
-                from.add(Calendar.YEAR, -years);
-            }
- 
-    		try {
-    			if (!isToday) {
-    				logger.info("Retrieving history for "+security.getName()+" from "+from.getTime());
-       				Stock stock = YahooFinance.get(security.getName());
-       				List<HistoricalQuote> histQuotes = stock.getHistory(from, to, Interval.DAILY);  
-       				
-    				stocks.put(security.getId(), histQuotes);
-    
-    			} else {
-                	logger.info("Today, no action.");
-    			}
-			} catch (IOException e) {
-				logger.severe("Could not extract data for security="+security);
-				e.printStackTrace();
-			} 
-        	
-        });
-        
-        return stocks;
-        
+		Calendar to = Calendar.getInstance(TimeZone.getDefault());
+
+		securities.forEach((security) -> {
+			Calendar from = Calendar.getInstance(TimeZone.getDefault());
+			boolean isToday = false;
+			Date toDay = new Date();
+			SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
+			if (topSp != null) {
+				Date lastDate = topSp.getTimestamp();
+				log.info("security=" + security.getName() + ", found lastDate=" + lastDate);
+				if (DateUtils.isSameDay(lastDate, toDay)) {
+					log.info("isToday ::lastDate=" + lastDate.toString() + ", toDay=" + toDay.toString());
+					isToday = true;
+				} else if (DateUtils.isSameDay(lastDate, DateUtils.addDays(toDay, -1))) {
+					log.info("last is yeasterday");
+					from.setTime(lastDate);
+					from.add(Calendar.DATE, 1);
+				} else {
+					from.setTime(lastDate);
+					from.add(Calendar.DATE, 1);
+					log.info("Not today, from set to:" + from.getTime().toString());
+				}
+			} else {
+				from.add(Calendar.YEAR, -years);
+			}
+
+			if (!isToday) {
+				log.info("Retrieving history for " + security.getName() + " from " + from.getTime());
+				Stock stock;
+				try {
+					stock = YahooFinance.get(security.getName());
+					List<HistoricalQuote> histQuotes = stock.getHistory(from, to, Interval.DAILY);
+					stocks.put(security.getId(), histQuotes);
+
+				} catch (FileNotFoundException fe) {
+					log.info("Not found: "+ fe.getMessage() + " continues...");
+					// continue
+				} catch (Exception e) {
+					log.error("ERROR:", e);
+					// throw e;
+				}
+
+			} else {
+				log.info("Today, no action.");
+			}
+		});
+
+		return stocks;
+
 	}
 
 	private boolean isFriday(Date date) {

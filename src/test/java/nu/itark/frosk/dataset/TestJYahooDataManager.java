@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
@@ -27,8 +28,9 @@ import yahoofinance.quotes.stock.StockStats;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@Slf4j
 public class TestJYahooDataManager {
-	Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
+//	Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
 	
 	@Autowired
 	YAHOODataManager tsManager;
@@ -39,8 +41,8 @@ public class TestJYahooDataManager {
 	@Test 
 	public void syncOne(){
 		
-//		tsManager.syncronize("MAV.ST");
-		tsManager.syncronize("VOLV-B.ST");
+		tsManager.syncronize("NDA-SE.ST");
+//		tsManager.syncronize("VOLV-B.ST");
 	}
 	
 //	@Test
@@ -60,18 +62,30 @@ public class TestJYahooDataManager {
 	public void test() throws IOException {
 
 //		CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
-		Stock stock = YahooFinance.get("VOLV-B.ST",true);
+//		Stock stock = YahooFinance.get("VOLV-B.ST",true);
+		Stock stock;
+		try {
+			stock = YahooFinance.get("NDA-SEK.ST",true);
 
-		BigDecimal price = stock.getQuote().getPrice();
-		BigDecimal change = stock.getQuote().getChangeInPercent();
-		BigDecimal peg = stock.getStats().getPeg();
-		BigDecimal dividend = stock.getDividend().getAnnualYieldPercent();
+			BigDecimal price = stock.getQuote().getPrice();
+			BigDecimal change = stock.getQuote().getChangeInPercent();
+			BigDecimal peg = stock.getStats().getPeg();
+			BigDecimal dividend = stock.getDividend().getAnnualYieldPercent();
 
-		stock.print();	
+			stock.print();	
+			
+			StockStats xx =stock.getStats();
+			
+			System.out.println("xx="+ReflectionToStringBuilder.toString(xx));
 		
-		StockStats xx =stock.getStats();
 		
-		System.out.println("xx="+ReflectionToStringBuilder.toString(xx));
+		
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+
 	
 	
 	}
@@ -94,7 +108,7 @@ public class TestJYahooDataManager {
 		System.out.println("from="+from.getTime());
 	
 		String theX = String.valueOf(from.getTimeInMillis() / 1000);
-		logger.info("theX="+theX);		
+		log.info("theX="+theX);		
 		
 		
 		Stock google = YahooFinance.get("SAND.ST", from, to, Interval.DAILY);
@@ -128,7 +142,7 @@ public class TestJYahooDataManager {
 	public void testSyncronize() {
 		tsManager.syncronize();
 	 
-		logger.info("count="+secRepo.count());
+		log.info("count="+secRepo.count());
 		
 	}	
 
@@ -172,7 +186,7 @@ public class TestJYahooDataManager {
 	
 	List<HistoricalQuote> intelList =intel.getHistory();
 	
-	logger.info("intelList.size()="+intelList.size());
+	log.info("intelList.size()="+intelList.size());
 	
 	
 	
@@ -182,18 +196,18 @@ public class TestJYahooDataManager {
 	@Test
 	public void testOfOneDay(){
 		Calendar from = Calendar.getInstance();
-		logger.info("from="+from.getTime());
+		log.info("from="+from.getTime());
 		from.add(Calendar.DATE, 1); 		
-		logger.info("from="+from.getTime());
+		log.info("from="+from.getTime());
 		
 	}
 	
 	@Test
 	public void testOfOneYear(){
 		Calendar from = Calendar.getInstance();
-		logger.info("from="+from.getTime());
+		log.info("from="+from.getTime());
 		from.add(Calendar.YEAR, -1); 		
-		logger.info("from="+from.getTime());
+		log.info("from="+from.getTime());
 		
 	}
 	
