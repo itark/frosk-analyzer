@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
+import nu.itark.frosk.changedetection.ChangeDetector;
 import nu.itark.frosk.coinbase.exchange.api.exchange.Signature;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.HeartBeat;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
@@ -48,6 +49,11 @@ public class WebsocketFeed {
     String passphrase;
     String key;
     boolean guiEnabled;
+    
+    
+    @Autowired
+    ChangeDetector<Double> changeDetector;
+    
 
     @Autowired
 	public WebsocketFeed(@Value("${websocket.baseUrl}") String websocketUrl, @Value("${gdax.key}") String key,
@@ -124,40 +130,52 @@ public class WebsocketFeed {
     }
 
 
-    public void subscribeOrderReceived(Subscribe msg) {
-    	String jsonSubscribeMessage = signObject(msg);
+	public void subscribeOrderReceived(Subscribe msg) {
+		String jsonSubscribeMessage = signObject(msg);
+		final int i;
+		addMessageHandler(json -> {
+			OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
+			
+			if (message.getType().equals("heartbeat")) {
+				HeartBeat heartbeat = getObject(json, new TypeReference<HeartBeat>() {});
+				log.info("heartbeat {}", heartbeat);
+			} else if (message.getType().equals("received")) {
+				OrderReceived orderReceived = getObject(json, new TypeReference<OrderReceived>() {});
+				if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
+					log.info("limit orderReceived {}", orderReceived);
 
-        addMessageHandler(json -> {
-                    OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
+					//TODO Observation.calcLimitOrderImbalance
+					
+//			    	log.info("orderReceived.getPrice().doubleValue() {}", orderReceived.getPrice().doubleValue());
+			    	changeDetector.update(orderReceived.getPrice().doubleValue());
 
-                    if (message.getType().equals("heartbeat"))
-                    {
-                        HeartBeat heartbeat = getObject(json, new TypeReference<HeartBeat>() {});
-                        log.info("heartbeat {}", heartbeat);
-                    }
-                    else if (message.getType().equals("received"))
-                    {
-//                        log.info("order received {}", json);
-//                        OrderReceivedOrderBookMessage orderReceived = getObject(json, new TypeReference<OrderReceivedOrderBookMessage>() {});
-//                        log.info("orderReceived {}", orderReceived);
+			        if(!changeDetector.isReady()) {
+			            return;
+			        }
 
+			        boolean change = changeDetector.isChange();
 
-							OrderReceived orderReceived = getObject(json, new TypeReference<OrderReceived>() {});
-							if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
-								log.info("limit orderReceived {}", orderReceived);
-							} else if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.MARKET.getValue())) {
-								log.info("market orderReceived {}", orderReceived);
-							}                        
-                    
+			        if(change) {
+			            log.info("CHANGE DETECTED! Time to send a midnight page to the sysadmin. Anomalous value: {}",
+			            		orderReceived.getPrice().doubleValue());
 
-                        
-                    }
-        	
-        });
+			            // One alarm is enough. This is the new data source now.
+			            // If it changes again, we want to know.
+			            changeDetector.reset();
+			        }
+		
+				
+				} else if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.MARKET.getValue())) {
+					log.info("market orderReceived {}", orderReceived);
+				}
 
-        sendMessage(jsonSubscribeMessage);
-        
-    }    
+			}
+
+		});
+
+		sendMessage(jsonSubscribeMessage);
+
+	}
 
     public void subscribe(Subscribe msg) {
     	String jsonSubscribeMessage = signObject(msg);

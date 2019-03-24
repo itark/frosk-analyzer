@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class OrderItem implements Comparable {
 
-    private BigDecimal price;
+    BigDecimal price;
     private BigDecimal size;
     private String orderId;
     private BigDecimal num;

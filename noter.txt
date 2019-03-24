@@ -4,3 +4,23 @@ SANDBOX:
 
 
 
+2019-03-12:
+TestJWebsocketFeed
+
+TestJMarketDataProxy.getMarketData50AndMidMarket  the Thing!!!
+
+
+
+20198-03-24:
+
+BTC-USD, nej :https://support.pro.coinbase.com/customer/en/portal/articles/2945308-locations-and-trading-pairs
+
+Coinbase Pro users can view the order book for any trading pair but can only trade on the order books available in 
+their country as outlined in the table above. 
+As the availability of trading pairs is a function of compliance with local regulators, we are unable to make exceptions.
+
+
+
+
+
+

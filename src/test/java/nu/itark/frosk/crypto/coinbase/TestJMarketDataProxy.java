@@ -1,13 +1,10 @@
 package nu.itark.frosk.crypto.coinbase;
 
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.changedetection.LimitOrderImbalance;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.HistoricRate;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.MarketData;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.OrderItem;
@@ -30,22 +28,41 @@ import nu.itark.frosk.util.DateTimeManager;
 @Slf4j
 public class TestJMarketDataProxy { //extends BaseTest {
 
- 
+	static String productId = "BTC-USD";
+	static String LEVEL_1 = "1";
+	static String LEVEL_2 = "2";
+	
+	/* Fiat EURO
+	BTC/EUR
+	BCH/EUR
+	ETH/EUR
+	ETC/EUR
+	LTC/EUR
+	XLM/EUR
+	XRP/EUR
+	ZRX/EUR
+	*/
+	
+	
 	
     @Autowired
     MarketDataProxy marketDataProxy;
     
+    @Autowired
+    LimitOrderImbalance loi; 
+    
     @Test
     public void testGetMarketDataOrderBook() {
-    	MarketData marketData = marketDataProxy.getMarketDataOrderBook("BTC-EUR", "2");
+    	String level = "1";
+    	MarketData marketData = marketDataProxy.getMarketDataOrderBook(productId, level);
  
 //    		log.info("marketData="+ReflectionToStringBuilder.toString(marketData));
     	
     		List<OrderItem> asks = marketData.getAsks();
-    		asks.forEach(ask -> System.out.println("ask="+ReflectionToStringBuilder.toString(ask, ToStringStyle.MULTI_LINE_STYLE)));
+//    		asks.forEach(ask -> System.out.println("ask="+ReflectionToStringBuilder.toString(ask, ToStringStyle.MULTI_LINE_STYLE)));
     		
     		List<OrderItem> bids = marketData.getBids();
-    		bids.forEach(bid -> System.out.println("bid="+ReflectionToStringBuilder.toString(bid, ToStringStyle.MULTI_LINE_STYLE)));
+//    		bids.forEach(bid -> System.out.println("bid="+ReflectionToStringBuilder.toString(bid, ToStringStyle.MULTI_LINE_STYLE)));
    
     		log.info("marketData.getSequence()="+marketData.getSequence());
     		
@@ -55,6 +72,26 @@ public class TestJMarketDataProxy { //extends BaseTest {
     		Assert.assertTrue(marketData.getSequence() > 0);
     	
     }
+    
+    
+    @Test
+    public final void getMarketData50AndMidMarket() {
+    	
+    	//Mid market at observation i
+    	MarketData midMarket = marketDataProxy.getMarketDataOrderBook(productId, LEVEL_1);
+   		
+    	//The limit order imbalance measurement 
+    	MarketData best50 = marketDataProxy.getMarketDataOrderBook(productId, LEVEL_2); 	
+
+   		Double loiObservation = loi.calculate(midMarket, best50);
+   		
+   		
+   		log.warn("LOI value="+loiObservation);
+   		
+    	
+    	
+    }
+    
 
     @Test
     public void testGetMarketDataTicker() {
