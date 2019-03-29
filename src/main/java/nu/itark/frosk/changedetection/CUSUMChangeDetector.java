@@ -66,8 +66,8 @@ public class CUSUMChangeDetector implements ChangeDetector<Double> {
 
         cusum = Math.max(0, cusumPrev +(xi - runningMean - magnitude));
         
-        log.info("xi {}",xi);   
-        log.info("cusum {}",cusum);
+//        log.info("xi {}",xi);   
+//        log.info("cusum {}",cusum);
  
         if(isReady()) {
 //        	log.info("isReady...change {}, {}",change, cusum);

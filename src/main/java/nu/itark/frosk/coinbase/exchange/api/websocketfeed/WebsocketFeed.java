@@ -144,7 +144,7 @@ public class WebsocketFeed {
 				if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
 					log.info("limit orderReceived {}", orderReceived);
 
-					//TODO Observation.calcLimitOrderImbalance
+					//TODO Observations.calcLimitOrderImbalance
 					
 //			    	log.info("orderReceived.getPrice().doubleValue() {}", orderReceived.getPrice().doubleValue());
 			    	changeDetector.update(orderReceived.getPrice().doubleValue());
@@ -156,9 +156,7 @@ public class WebsocketFeed {
 			        boolean change = changeDetector.isChange();
 
 			        if(change) {
-			            log.info("CHANGE DETECTED! Time to send a midnight page to the sysadmin. Anomalous value: {}",
-			            		orderReceived.getPrice().doubleValue());
-
+			            log.info("CHANGE DETECTED! Anomalous value: {}", orderReceived.getPrice().doubleValue());
 			            // One alarm is enough. This is the new data source now.
 			            // If it changes again, we want to know.
 			            changeDetector.reset();

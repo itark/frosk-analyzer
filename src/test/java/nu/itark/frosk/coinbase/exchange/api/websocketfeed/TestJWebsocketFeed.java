@@ -36,13 +36,13 @@ public class TestJWebsocketFeed {
 	
 	@Test
 	public void testWebsocketSubscribe() throws InterruptedException {
-		String[] productIds = new String[]{"BTC-GBP", "ETH-BTC"}; // make this configurable.
+		String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
 	
 		
         log.info("*** Subscribing ***");
         websocketFeed.subscribe(new Subscribe(productIds));		
 		
-        Thread.sleep(2000);
+        Thread.sleep(3000);
         
         log.info("*** ready sleeping ***");
 		
