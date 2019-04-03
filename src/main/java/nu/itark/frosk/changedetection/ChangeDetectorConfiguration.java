@@ -9,9 +9,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ChangeDetectorConfiguration {
 
+//    @Bean
+//    ChangeDetector<Double> changeDetector() {
+//        return new CUSUMChangeDetector();
+//    }
+
     @Bean
     ChangeDetector<Double> changeDetector() {
-        return new CUSUMChangeDetector();
-    }
-
+        return new ThorburnChangeDetector();
+    }    
+    
+    
 }

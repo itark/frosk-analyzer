@@ -54,6 +54,9 @@ public class WebsocketFeed {
     @Autowired
     ChangeDetector<Double> changeDetector;
     
+    @Autowired
+    Observations observations;
+    
 
     @Autowired
 	public WebsocketFeed(@Value("${websocket.baseUrl}") String websocketUrl, @Value("${gdax.key}") String key,
@@ -142,13 +145,18 @@ public class WebsocketFeed {
 			} else if (message.getType().equals("received")) {
 				OrderReceived orderReceived = getObject(json, new TypeReference<OrderReceived>() {});
 				if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
-					log.info("limit orderReceived {}", orderReceived);
+//					log.info("limit orderReceived {}", orderReceived);
 
-					//TODO Observations.calcLimitOrderImbalance
 					
-//			    	log.info("orderReceived.getPrice().doubleValue() {}", orderReceived.getPrice().doubleValue());
-			    	changeDetector.update(orderReceived.getPrice().doubleValue());
+					
+					observations.synchronizeBest(orderReceived);
+					
+//					Double xi = observations.calculateLimitOrderImbalance();
+//					
+//			    	changeDetector.update(xi);
 
+			    	
+			    	
 			        if(!changeDetector.isReady()) {
 			            return;
 			        }

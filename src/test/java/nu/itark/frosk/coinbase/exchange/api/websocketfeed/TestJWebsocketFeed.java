@@ -20,7 +20,6 @@ public class TestJWebsocketFeed {
 
 	@Test
 	public void testWebsocketSubscribeOrderReceived() throws InterruptedException {
-//		String[] productIds = new String[]{"BTC-GBP", "ETH-BTC"}; // make this configurable.
 		String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
 	
 		

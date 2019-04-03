@@ -19,7 +19,9 @@ Coinbase Pro users can view the order book for any trading pair but can only tra
 their country as outlined in the table above. 
 As the availability of trading pairs is a function of compliance with local regulators, we are unable to make exceptions.
 
+2019-03-29:
 
+1.Börja med att testa observation som poll av MarketData 50 st
 
 
 

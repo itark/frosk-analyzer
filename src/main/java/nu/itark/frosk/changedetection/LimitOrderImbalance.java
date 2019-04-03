@@ -15,11 +15,13 @@ public class LimitOrderImbalance {
 
 	
 	/**
-	 * Doing the page 16 stuff
+	 * Doing the page 16 stuff.
+	 * 
+	 * Relates to 1 observation but top 50 instead of 20 top
 	 * 
 	 * @param midMarket
 	 * @param best50
-	 * @return
+	 * @return limit order imbalance at this observation
 	 */
 	public Double calculate(MarketData midMarket, MarketData best50) {
 		
@@ -59,5 +61,11 @@ public class LimitOrderImbalance {
 		return limitOrderImbalanceMeasurement;
 		
 	}
+	
+	
+
+	
+	
+	
 	
 }
