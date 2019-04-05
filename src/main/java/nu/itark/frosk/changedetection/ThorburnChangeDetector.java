@@ -16,7 +16,7 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
 
     private final static double DEFAULT_MAGNITUDE = 0.05;
     private final static double DEFAULT_THRESHOLD = 3;
-    private final static long DEFAULT_READY_AFTER = 20;  //50
+    private final static long DEFAULT_READY_AFTER = 2;  //50
 
     private double cusumPrev = 0;
     private double cusum;
@@ -69,31 +69,14 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
         
 //        log.info("xi {}",xi);   
 //        log.info("cusum {}",cusum);
- 
+// 
         if(isReady()) {
-//        	log.info("isReady...change {}, {}",change, cusum);
             this.change = cusum > threshold;
+//        	log.info("isReady...change {}, {}",change, cusum);
         }
 
         cusumPrev = cusum;
     }
-    
-    
-
-    public void update(OrderReceived orderReceived) {
-        ++observationCount;
-
-        log.info("::update::");
-
- 
-        if(isReady()) {
-//        	log.info("isReady...change {}, {}",change, cusum);
-            this.change = cusum > threshold;
-        }
-
-        cusumPrev = cusum;
-    }   
-    
     
 
     @Override

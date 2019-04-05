@@ -21,7 +21,11 @@ As the availability of trading pairs is a function of compliance with local regu
 
 2019-03-29:
 
-1.Börja med att testa observation som poll av MarketData 50 st
+(1.Börja med att testa observation som poll av MarketData 50 st)
+
+2019-04-05:
+
+1. Gör poc på websocket. För att skjuta ut loi samt algo-värden. Senare för köp och sälj-punkter
 
 
 

@@ -20,13 +20,12 @@ public class TestJWebsocketFeed {
 
 	@Test
 	public void testWebsocketSubscribeOrderReceived() throws InterruptedException {
-		String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
 	
 		
         log.info("*** Subscribing ***");
-        websocketFeed.subscribeOrderReceived(new Subscribe(productIds));		
-		
-        Thread.sleep(5000);
+        websocketFeed.subscribeOrderReceived(new Subscribe());		
+        
+        Thread.sleep(20000);
         
         log.info("*** ready sleeping ***");
 		

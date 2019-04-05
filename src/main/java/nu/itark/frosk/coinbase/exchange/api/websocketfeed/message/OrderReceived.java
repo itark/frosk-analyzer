@@ -41,6 +41,7 @@ public class OrderReceived {
     String order_type;
     
     String client_oid;
+    BigDecimal funds;
 	
 	
     /**

@@ -1,18 +1,19 @@
 package nu.itark.frosk.coinbase.exchange.api.websocketfeed;
 
+import java.math.BigDecimal;
 import java.util.Comparator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.changedetection.LimitOrderImbalance;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.OrderItem;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderReceived;
+import nu.itark.frosk.crypto.coinbase.MarketDataProxy;
 
 /**
  * This class observes websocketfeed and do calculations.
@@ -25,17 +26,33 @@ import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderReceived;
 @Slf4j
 public class Observations {
 
-	List<OrderItem> best50Bids;	
-	List<OrderItem> best50Asks;
-	
-	static int DEFAULT_QUEUE_SIZE = 10;
+	static int DEFAULT_QUEUE_SIZE = 100;
+    static String LEVEL_1 = "1";
 
-	Queue<OrderReceived> bestBids = new CircularFifoQueue<OrderReceived>(DEFAULT_QUEUE_SIZE);	
-	Queue<OrderReceived> bestAsks = new CircularFifoQueue<OrderReceived>(DEFAULT_QUEUE_SIZE);	
+	Queue<OrderReceived> bestBidsQueue = new CircularFifoQueue<OrderReceived>(DEFAULT_QUEUE_SIZE);	
+	Queue<OrderReceived> bestAsksQueue = new CircularFifoQueue<OrderReceived>(DEFAULT_QUEUE_SIZE);	
 	
 	
 	@Autowired
 	LimitOrderImbalance limitOrderImbalance ;
+	
+	
+    @Autowired
+    MarketDataProxy marketDataProxy;
+    
+
+
+	String productId = null;
+	
+	BigDecimal midMarketPrice = null;
+    
+	public void setProductId(String productId) {
+		this.productId = productId;
+	}
+	
+	public void setMidMarketPrice(BigDecimal midMarketPrice) {
+		this.midMarketPrice = midMarketPrice;
+	}
 	
 	/**
 	 * This one is synchronous.
@@ -46,21 +63,21 @@ public class Observations {
 	 * @return
 	 */
 	public Double calculateLimitOrderImbalance() {
+//		log.info("::calculateLimitOrderImbalance  ::");
+		Assert.notNull("productId can not be null",productId);
+		if (bestBidsQueue.size() < DEFAULT_QUEUE_SIZE && bestAsksQueue.size() < DEFAULT_QUEUE_SIZE) {
+			return null;
+		}
 		
-//		orderReceived.get
+		if (midMarketPrice == null) {
+			midMarketPrice = marketDataProxy.getMarketDataTicker(productId).getPrice();
+		}
 		
-//   		List<OrderItem> best50Asks = best50.getAsks();   
-//   		List<OrderItem> best50Bids = best50.getBids();  		
-//		
-//		limitOrderImbalance.calculate(midMarket, best50)
+		Double loi = limitOrderImbalance.calculate(midMarketPrice, bestBidsQueue, bestAsksQueue);
 		
-		//1. Ta fifo och kolla max i den
-
-		//2. Sedan lägg till om högre
-
-		//3. Sedan calcLimitorderImb.
+//		log.info("loi {}", loi);
 		
-		return null;
+		return loi;
 		
 	}
 	
@@ -70,7 +87,7 @@ public class Observations {
 	 * @param orderReceived
 	 */
 	public void synchronizeBest(OrderReceived orderReceived) {
-		log.info("::synchronizeBest {} ::", DEFAULT_QUEUE_SIZE);
+//		log.info("::synchronizeBest {} ::", DEFAULT_QUEUE_SIZE);
 		if ("sell".equals(orderReceived.getSide())) {
 			 synchronizeBestBids(orderReceived);
 		} else if ("buy".equals(orderReceived.getSide())) {
@@ -79,48 +96,63 @@ public class Observations {
 	}	
 	
 	private void synchronizeBestBids(OrderReceived orderReceived) {
-//		log.info("::synchronizeBestBids :: {}", bestBids.size());
-		if (bestBids.isEmpty()) {
-			bestBids.add(orderReceived);
+//		log.info("::synchronizeBestBids :: {}", bestBidsQueue.size());
+		if (bestBidsQueue.isEmpty()) {
+			bestBidsQueue.add(orderReceived);
 			
 			return;
 		}
-		bestBids.forEach(order -> {
+		bestBidsQueue.forEach(order -> {
 			if ( orderReceived.getPrice().compareTo( order.getPrice() ) == 1) {
 //				log.info("orderReceived.getPrice(): {} greater then {}",orderReceived.getPrice(), order.getPrice() );
-				bestBids.add(orderReceived);
+				bestBidsQueue.add(orderReceived);
 				return;
 			} 
 		});
 	}
 	
 	private void synchronizeBestAsks(OrderReceived orderReceived) {
-//		log.info("::synchronizeBestAsks ::{}", bestAsks.size());
-		if (bestAsks.isEmpty()) {
-			bestAsks.add(orderReceived);
+//		log.info("::synchronizeBestAsks ::{}", bestAsksQueue.size());
+		if (bestAsksQueue.isEmpty()) {
+			bestAsksQueue.add(orderReceived);
 			return;
 		}
-		bestAsks.forEach(order -> {
+		bestAsksQueue.forEach(order -> {
 			if ( orderReceived.getPrice().compareTo( order.getPrice() ) == 1) {
 //				log.info("orderReceived.getPrice(): {} greater then {}",orderReceived.getPrice(), order.getPrice() );
-				bestAsks.add(orderReceived);
+				bestAsksQueue.add(orderReceived);
 				return;
 			} 
 		});		
 		
 	}	
 	
-	private Double getMaxPrice(List<OrderItem> best50Asks) {
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	private Double getMaxBestAskPrice() {
+		OrderReceived order = bestAsksQueue
+				.stream().max(Comparator.comparing(OrderReceived::getPrice))
+				.orElseThrow(NoSuchElementException::new);
 
-		OrderItem maxOrderItem = best50Asks
-				      .stream()
-				      .max(Comparator.comparing(OrderItem::getPrice))
-				      .orElseThrow(NoSuchElementException::new);		
-		
-		return maxOrderItem.getPrice().doubleValue();
-		
-		
-	}
+		return order.getPrice().doubleValue();
+
+	}	
+
+	private Double getMaxBestBidPrice() {
+		OrderReceived order = bestBidsQueue
+				.stream().max(Comparator.comparing(OrderReceived::getPrice))
+				.orElseThrow(NoSuchElementException::new);
+
+		return order.getPrice().doubleValue();
+
+	}		
 	
 	
 }

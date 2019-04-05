@@ -1,12 +1,13 @@
 package nu.itark.frosk.coinbase.exchange.api.websocketfeed.message;
 
 /**
- * Created by robevansuk on 12/03/2017.
+ * Hold product_id now : BTC-EUR
  */
 public class Subscribe {
 
     String type;
-    String[] product_ids;
+//    String[] product_ids;
+    String[] product_ids = new String[]{"BTC-EUR"}; // make this configurable.
 
     // Used for signing the subscribe message to the Websocket feed
     String signature;
@@ -14,7 +15,9 @@ public class Subscribe {
     String timestamp;
     String apiKey;
 
-    public Subscribe() { }
+    public Subscribe() {
+        this.type = "subscribe";
+    }
 
     public Subscribe(String[] product_ids) {
         this.type = "subscribe";

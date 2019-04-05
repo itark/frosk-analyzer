@@ -135,7 +135,8 @@ public class WebsocketFeed {
 
 	public void subscribeOrderReceived(Subscribe msg) {
 		String jsonSubscribeMessage = signObject(msg);
-		final int i;
+		observations.setProductId(msg.getProduct_ids()[0]);
+		
 		addMessageHandler(json -> {
 			OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
 			
@@ -147,16 +148,13 @@ public class WebsocketFeed {
 				if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
 //					log.info("limit orderReceived {}", orderReceived);
 
-					
-					
 					observations.synchronizeBest(orderReceived);
 					
-//					Double xi = observations.calculateLimitOrderImbalance();
-//					
-//			    	changeDetector.update(xi);
+					Double xi = observations.calculateLimitOrderImbalance();
+					if (xi != null) {
+				    	changeDetector.update(xi);
+					}
 
-			    	
-			    	
 			        if(!changeDetector.isReady()) {
 			            return;
 			        }
@@ -172,10 +170,18 @@ public class WebsocketFeed {
 		
 				
 				} else if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.MARKET.getValue())) {
-					log.info("market orderReceived {}", orderReceived);
+					//log.info("market orderReceived {}", orderReceived);
 				}
 
-			}
+			}  else if (message.getType().equals("done")) {
+                if (message.getReason().equals("filled")) {
+                    OrderBookMessage doneOrder = getObject(json, new TypeReference<OrderDoneOrderBookMessage>() {});
+                    //log.info("Order done: " + doneOrder.toString());
+                    if (doneOrder.getPrice() != null) {
+                        observations.setMidMarketPrice(doneOrder.getPrice());
+                    }
+                }
+            }
 
 		});
 
