@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -75,14 +76,14 @@ public class TimeSeriesService  {
 	 * @return TimeSeries
 	 */
 	public TimeSeries getDataSet(Long security_id) {
-		Security security = securityRepository.findById(security_id);
+		Optional<Security> security = securityRepository.findById(security_id);
 		//Sanity check
 		if (security == null){
 			throw new RuntimeException("Security is null");
 		}
 
-		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(security.getName()).withNumTypeOf(PrecisionNum.class).build();
-		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityIdOrderByTimestamp(security.getId()); 
+		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(security.get().getName()).withNumTypeOf(PrecisionNum.class).build();
+		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityIdOrderByTimestamp(security.get().getId()); 
 		
 		securityPrices.forEach(row -> {
 			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());		

@@ -67,6 +67,12 @@ public class WebController {
 	public String all(Map<String, Object> model) {
 		return "all";	
 	}		
+
+	@RequestMapping("/websocket")
+	public String websocket(Map<String, Object> model) {
+		return "websocket";	
+	}		
+	
 	
 	/**
 	* @Example  http://localhost:8080/frosk-analyzer/highlander

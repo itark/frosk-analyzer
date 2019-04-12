@@ -71,6 +71,9 @@ header {
 	            <li><a href="rsi">Relative Strenght Index-2</a></li>
 	            <li role="separator" class="divider"></li>
 	            <li><a href="all">All</a></li>
+	            <li role="separator" class="divider"></li>
+	            <li><a href="websocket">Websocket PoC</a></li>
+
 	          </ul>
 	        </li>
 	      </ul>

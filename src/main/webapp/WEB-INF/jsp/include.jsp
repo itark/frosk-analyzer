@@ -36,6 +36,13 @@
 		<script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>  	
 	
 		<script src="js/global.js"></script>  	
+
+
+		<script src="webjars/sockjs-client/sockjs.js"></script>
+		<script src="webjars/stomp-websocket/stomp.js"></script>
+
+
+
 	
 	
 	    

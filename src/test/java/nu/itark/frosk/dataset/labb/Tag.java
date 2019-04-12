@@ -12,8 +12,6 @@ import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import org.hibernate.annotations.NaturalId;
-
 import lombok.Data;
 
 @Data
@@ -26,7 +24,7 @@ public class Tag {
 
     @NotNull
     @Size(max = 100)
-    @NaturalId
+//    @NaturalId
     private String name;
 
     @ManyToMany(mappedBy = "tags")

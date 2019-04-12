@@ -5,7 +5,7 @@
 
 	<groupId>nu.itark.frosk</groupId>
 	<artifactId>frosk-analyzer</artifactId>
-	<version>0.0.3</version>
+	<version>0.0.4</version>
 	<packaging>war</packaging>
 
 	<name>frosk-analyzer</name>
@@ -14,8 +14,8 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.7.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<version>2.1.2.RELEASE</version> <!-- 1.5.7.RELEASE -->
+		<!--relativePath/>  lookup parent from repository -->
 	</parent>
 
 	 <properties>
@@ -23,61 +23,65 @@
 	    <maven.compiler.target>1.8</maven.compiler.target>
 	  </properties>
 
-
 	<dependencies>
+
 
 	 <dependency>
 	    <groupId>org.springframework</groupId>
 	    <artifactId>spring-websocket</artifactId>
-	    <version>5.0.5.RELEASE</version>
+	    <!-- version>5.0.5.RELEASE</version-->
 	 </dependency>
 	 <dependency>
 	    <groupId>org.springframework</groupId>
 	    <artifactId>spring-messaging</artifactId>
-	    <version>5.0.5.RELEASE</version>
+	    <!-- version>5.0.5.RELEASE</version-->
 	 </dependency>
+
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-websocket</artifactId>
+	</dependency>
  
  
- 
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>2.8.0</version>
-      <scope>compile</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>commons-logging</artifactId>
-          <groupId>commons-logging</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
+	    <dependency>
+	      <groupId>com.google.code.gson</groupId>
+	      <artifactId>gson</artifactId>
+	      <version>2.8.0</version>
+	      <scope>compile</scope>
+	      <exclusions>
+	        <exclusion>
+	          <artifactId>commons-logging</artifactId>
+	          <groupId>commons-logging</groupId>
+	        </exclusion>
+	      </exclusions>
+	    </dependency>
 
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>2.9.7</version>
-      <scope>compile</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>commons-logging</artifactId>
-          <groupId>commons-logging</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
+	    <dependency>
+	      <groupId>joda-time</groupId>
+	      <artifactId>joda-time</artifactId>
+	      <version>2.9.7</version>
+	      <scope>compile</scope>
+	      <exclusions>
+	        <exclusion>
+	          <artifactId>commons-logging</artifactId>
+	          <groupId>commons-logging</groupId>
+	        </exclusion>
+	      </exclusions>
+	    </dependency>
 
 
-<dependency>
-    <groupId>com.fasterxml.jackson.module</groupId>
-    <artifactId>jackson-module-parameter-names</artifactId>
-</dependency>
-<dependency>
-    <groupId>com.fasterxml.jackson.datatype</groupId>
-    <artifactId>jackson-datatype-jdk8</artifactId>
-</dependency>
-<dependency>
-    <groupId>com.fasterxml.jackson.datatype</groupId>
-    <artifactId>jackson-datatype-jsr310</artifactId>
-</dependency>
+		<dependency>
+		    <groupId>com.fasterxml.jackson.module</groupId>
+		    <artifactId>jackson-module-parameter-names</artifactId>
+		</dependency>
+		<dependency>
+		    <groupId>com.fasterxml.jackson.datatype</groupId>
+		    <artifactId>jackson-datatype-jdk8</artifactId>
+		</dependency>
+		<dependency>
+		    <groupId>com.fasterxml.jackson.datatype</groupId>
+		    <artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
 
 
 		<dependency>
@@ -133,26 +137,11 @@
 		  <version>0.12</version>
 		</dependency>
 
-<!--  
-		<dependency>
-			<groupId>ch.pschatzmann</groupId>
-			<artifactId>investor</artifactId>
-			<version>0.9-SNAPSHOT</version>
-		</dependency>
--->
-
 	    <dependency>
 	        <groupId>com.opencsv</groupId>
 	        <artifactId>opencsv</artifactId>
 	        <version>3.9</version>
 	    </dependency>	
-<!-- 
-        <dependency>
-            <groupId>org.jfree</groupId>
-            <artifactId>jfreechart</artifactId>
-            <version>1.0.17</version>
-        </dependency>
- -->
 
 		<!-- webjars  -->
 		<dependency>
@@ -230,8 +219,22 @@
 	    <dependency>
 	        <groupId>org.webjars</groupId>
 	        <artifactId>webjars-locator</artifactId>
-	        <!--  version>0.30</version-->
+	        <version>0.32</version>
 	    </dependency>
+
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>sockjs-client</artifactId>
+			<version>1.1.1</version>
+		</dependency>   
+
+		<dependency>
+		    <groupId>org.webjars</groupId>
+		    <artifactId>stomp-websocket</artifactId>
+		    <version>2.3.1</version>
+		</dependency>
+
+	    
 		<!-- end webjars -->
 
       <dependency>
@@ -253,9 +256,17 @@
  
 		<plugins>
 			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
+		        <groupId>org.springframework.boot</groupId>
+		        <artifactId>spring-boot-maven-plugin</artifactId>
+		    </plugin>
+			<plugin>
+			    <groupId>org.apache.maven.plugins</groupId>
+			    <artifactId>maven-surefire-plugin</artifactId>
+			    <configuration>
+			        <skipTests>true</skipTests>
+			    </configuration>
 			</plugin>
+
 			<plugin>
 			    <groupId>org.apache.tomcat.maven</groupId>
 			    <artifactId>tomcat7-maven-plugin</artifactId>
@@ -270,13 +281,5 @@
 		</plugins>
 
 	</build>
-<!--  
-	<repositories>
-	    <repository>
-	      <id>pschatzmann</id>
-	      <url>http://software.pschatzmann.ch/repository/maven-public/</url>
-	    </repository>
-	</repositories>
--->
 
 </project>

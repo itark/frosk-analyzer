@@ -329,51 +329,6 @@ public class DataController {
 
 	}	
 	
-	
-	@RequestMapping("/save")
-	public String process(){
-		// save a single Customer
-		custRepository.save(new Customer("Jack", "Smith"));
-		// save a list of Customers
-		custRepository.save(Arrays.asList(new Customer("Adam", "Johnson"), new Customer("Kim", "Smith"),
-										new Customer("David", "Williams"), new Customer("Peter", "Davis")));
-		
-		return "Done";
-	}
-	
-	@RequestMapping("/findall")
-	public String findAll(){
-		String result = "";
-		for(Customer cust : custRepository.findAll()){
-			result += cust.toString() + "<br>";
-		}
-		
-		return result;
-	}
-	
-	@RequestMapping("/findall2")
-	public List<Customer> findAll2() {
-		List<Customer> list = new ArrayList<Customer>();
-		for (Customer cust : custRepository.findAll()) {
-			list.add(cust);
-		}
-		return list;
-	}	
-	
-	@RequestMapping("/findbyid")
-	public String findById(@RequestParam("id") long id){
-		String result = "";
-		result = custRepository.findOne(id).toString();
-		return result;
-	}
-	
-	@RequestMapping("/findbylastname")
-	public String fetchDataByLastName(@RequestParam("lastname") String lastName){
-		String result = "";
-		for(Customer cust: custRepository.findByLastName(lastName)){
-			result += cust.toString() + "<br>"; 
-		}
-		
-		return result;
-	}
+
+
 }

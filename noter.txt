@@ -21,11 +21,25 @@ As the availability of trading pairs is a function of compliance with local regu
 
 2019-03-29:
 
-(1.Börja med att testa observation som poll av MarketData 50 st)
+(1.Börja med att testa observation som poll av MarketData 50 st), nja sikta på websocket feed istället
+
+
 
 2019-04-05:
 
 1. Gör poc på websocket. För att skjuta ut loi samt algo-värden. Senare för köp och sälj-punkter
+bygger efter denna: https://www.baeldung.com/websockets-spring
+
+
+
+
+- https://www.baeldung.com/java-websockets
+- https://spring.io/guides/gs/messaging-stomp-websocket/
+- https://www.callicoder.com/spring-boot-websocket-chat-example/
+--https://www.baeldung.com/websockets-spring
+
+
+
 
 
 

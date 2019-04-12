@@ -127,27 +127,27 @@ public class StrategyAnalysis {
         Strategy strategyToRun = null;
         
 		for (TimeSeries series : timeSeriesList) {
-			logger.info("runStrategy("+strategy+", "+series.getName()+")");
+//			logger.info("runStrategy("+strategy+", "+series.getName()+")");
 	        Set<StrategyIndicatorValue> indicatorValueSet = new HashSet<StrategyIndicatorValue>();
 			strategyToRun = getStrategyToRun(strategy, series, indicatorValueSet);
 			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			trades = tradingRecord.getTrades();
 
-			logger.info(trades.size()+" trades found.");
+//			logger.info(trades.size()+" trades found.");
 			
 			Set<StrategyTrade> strategyTradeList = new HashSet<StrategyTrade>();
 			StrategyTrade strategyTrade = null;
 			
 			for (Trade trade : trades) {
 				Bar barEntry = series.getBar(trade.getEntry().getIndex());
-		      	logger.info(series.getName()+"::barEntry="+barEntry.getDateName());
+//		      	logger.info(series.getName()+"::barEntry="+barEntry.getDateName());
 				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
 				strategyTrade = new StrategyTrade(buyDate,"Buy",BigDecimal.valueOf(barEntry.getMinPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 
 				Bar barExit = series.getBar(trade.getExit().getIndex());
-			   	logger.info(series.getName()+"::barExit="+barExit.getDateName());
+//			   	logger.info(series.getName()+"::barExit="+barExit.getDateName());
 				Date sellDate = Date.from(barExit.getEndTime().toInstant());
 				strategyTrade = new StrategyTrade(sellDate,"Sell",BigDecimal.valueOf(barExit.getMinPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
@@ -222,7 +222,7 @@ public class StrategyAnalysis {
 
 	
 	public List<StrategyIndicatorValue> getIndicatorValues(String strategy, TimeSeries series) {
-		logger.info("getIndicatorValues("+strategy+", "+series.getName()+")");
+//		logger.info("getIndicatorValues("+strategy+", "+series.getName()+")");
 
 		Strategy strategyToRun = null;
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
@@ -261,7 +261,7 @@ public class StrategyAnalysis {
 	
 	
 	public Strategy getStrategyToRun(String strategy,  TimeSeries series, Set<StrategyIndicatorValue> indVals) {
-		logger.info("getStrategyToRun("+strategy+", "+series.getName());
+//		logger.info("getStrategyToRun("+strategy+", "+series.getName());
 		Strategy strategyToRun = null;
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
