@@ -72,8 +72,8 @@ header {
 	            <li role="separator" class="divider"></li>
 	            <li><a href="all">All</a></li>
 	            <li role="separator" class="divider"></li>
-	            <li><a href="websocket">Websocket PoC</a></li>
-
+	            <li><a href="echo">echo</a></li>
+	            <li><a href="snake">snake</a></li>
 	          </ul>
 	        </li>
 	      </ul>

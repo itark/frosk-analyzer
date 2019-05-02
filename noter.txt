@@ -32,6 +32,14 @@ bygger efter denna: https://www.baeldung.com/websockets-spring
 
 
 
+2019-04-30:
+
+
+Testa /echo, inte snake
+
+
+Streaming https://plot.ly/javascript/streaming/#streaming-subplots
+
 
 - https://www.baeldung.com/java-websockets
 - https://spring.io/guides/gs/messaging-stomp-websocket/

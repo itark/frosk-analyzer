@@ -5,6 +5,8 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/resources"/>
         <wb-resource deploy-path="/" source-path="/target/m2e-wtp/web-resources"/>
         <wb-resource deploy-path="/" source-path="/src/main/webapp"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/target/generated-sources/annotations"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/target/generated-test-sources/test-annotations"/>
         <dependent-module archiveName="YahooFinanceAPI-LOCAL-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/YahooFinanceAPI/YahooFinanceAPI">
             <dependency-type>uses</dependency-type>
         </dependent-module>

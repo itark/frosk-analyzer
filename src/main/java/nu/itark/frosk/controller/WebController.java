@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -17,6 +18,7 @@ import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
 
 @Controller
+
 public class WebController {
 	Logger logger = Logger.getLogger(WebController.class.getName());
 
@@ -32,7 +34,9 @@ public class WebController {
 	@Autowired
 	HighLander highLander;
 
-	@RequestMapping("/")
+	//@RequestMapping("/")
+	@GetMapping({"/"})
+	//@RequestMapping(value="/", method={RequestMethod.GET, RequestMethod.POST})
 	public String welcome2(Map<String, Object> model) {
 		return "index";	
 	
@@ -58,8 +62,10 @@ public class WebController {
 		return "rsi_lab";	
 	}		
 	
-	@RequestMapping("/ma")
+	//@RequestMapping("/ma")
+	@GetMapping({"/ma"})
 	public String ma(Map<String, Object> model) {
+		logger.info("when is the fucking ma.jsp");
 		return "ma";	
 	}	
 	
@@ -68,9 +74,14 @@ public class WebController {
 		return "all";	
 	}		
 
-	@RequestMapping("/websocket")
+	@RequestMapping("/echo")
 	public String websocket(Map<String, Object> model) {
-		return "websocket";	
+		return "echo";	
+	}		
+
+	@RequestMapping("/snake")
+	public String rrswebsocket(Map<String, Object> model) {
+		return "snake";	
 	}		
 	
 	

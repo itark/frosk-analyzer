@@ -22,15 +22,9 @@ import javax.websocket.OnMessage;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-import lombok.extern.slf4j.Slf4j;
-
-@ServerEndpoint("/reverseKALLE")
-@Slf4j
+@ServerEndpoint("/reverse")
 public class ReverseWebSocketEndpoint {
 
-	
-	{log.info("KALLE ANKA!!!");}
-	
 	@OnMessage
 	public void handleMessage(Session session, String message) throws IOException {
 		session.getBasicRemote()

@@ -20,10 +20,14 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 public class Snake {
+	
+	private static final Log logger = LogFactory.getLog(Snake.class);
 
 	private static final int DEFAULT_LENGTH = 5;
 
@@ -72,10 +76,12 @@ public class Snake {
 	}
 
 	protected void sendMessage(String msg) throws Exception {
+		//logger.info("msg="+ msg);
 		this.session.sendMessage(new TextMessage(msg));
 	}
 
 	public void update(Collection<Snake> snakes) throws Exception {
+		//logger.info("update="+ snakes);
 		synchronized (this.monitor) {
 			Location nextLocation = this.head.getAdjacentLocation(this.direction);
 			if (nextLocation.x >= SnakeUtils.PLAYFIELD_WIDTH) {

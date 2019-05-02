@@ -127,15 +127,6 @@ public class Observations {
 		
 	}	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	private Double getMaxBestAskPrice() {
 		OrderReceived order = bestAsksQueue
 				.stream().max(Comparator.comparing(OrderReceived::getPrice))

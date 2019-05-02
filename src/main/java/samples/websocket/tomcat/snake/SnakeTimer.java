@@ -95,6 +95,7 @@ public final class SnakeTimer {
 	}
 
 	public static void startTimer() {
+		logger.info("::startTimer::");
 		gameTimer = new Timer(SnakeTimer.class.getSimpleName() + " Timer");
 		gameTimer.scheduleAtFixedRate(new TimerTask() {
 			@Override

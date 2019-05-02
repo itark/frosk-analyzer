@@ -102,16 +102,12 @@ public class LimitOrderImbalance {
    		
    		limitOrderImbalanceMeasurement =   ( (leftRoof + rigthRoof) / (leftFloor + rightFloor) ) - midMarketPrice.doubleValue();
  
-// 		log.info("limitOrderImbalanceMeasurement {} ", limitOrderImbalanceMeasurement); 	   		
+ 		//log.info("limitOrderImbalanceMeasurement {} ", limitOrderImbalanceMeasurement); 	   		
  		    		
    		
 		return limitOrderImbalanceMeasurement;
 		
 	}
-	
-	
-	
-	
 	
 	
 }

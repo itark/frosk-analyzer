@@ -18,6 +18,7 @@ package samples.websocket.tomcat.echo;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketHandler;
@@ -25,7 +26,7 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 /**
- * Echo messages by implementing a Spring {@link WebSocketHandler} abstraction.
+ * Echo messages by implementing a Spring {@link CoinbaseWebSocketHandler} abstraction.
  */
 public class EchoWebSocketHandler extends TextWebSocketHandler {
 

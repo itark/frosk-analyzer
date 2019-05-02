@@ -21,7 +21,6 @@ import lombok.Data;
 @Table(name = "security")
 public class Security {
 
-
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;

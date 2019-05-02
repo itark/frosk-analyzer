@@ -53,6 +53,7 @@ public class HistoricRate {
 			ObjectCodec oc = jsonParser.getCodec();
 			JsonNode node = oc.readTree(jsonParser);
 			
+			
 			if (node.isArray()) {
 				long time = node.path(0).asLong();
 

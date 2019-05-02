@@ -21,12 +21,16 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 public class SnakeWebSocketHandler extends TextWebSocketHandler {
+	
+	private static final Log logger = LogFactory.getLog(SnakeWebSocketHandler.class);
 
 	private static final AtomicInteger snakeIds = new AtomicInteger(0);
 
@@ -65,6 +69,7 @@ public class SnakeWebSocketHandler extends TextWebSocketHandler {
 
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+		logger.info(";;afterConnectionEstablished;");
 		this.snake = new Snake(this.id, session);
 		SnakeTimer.addSnake(this.snake);
 		StringBuilder sb = new StringBuilder();

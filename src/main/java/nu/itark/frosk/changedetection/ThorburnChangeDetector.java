@@ -1,7 +1,11 @@
 package nu.itark.frosk.changedetection;
 
+import java.io.IOException;
+
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderReceived;
 
 /**
  * @author Fredrik Möller
@@ -31,6 +35,10 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
     double runningVariance = 0.0;
 
     boolean change = false;
+    
+
+
+	WebSocketSession webSocketsession;
 
     /**
      * Create a CUSUM detector
@@ -48,11 +56,19 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
 
     public ThorburnChangeDetector() {
         this(DEFAULT_MAGNITUDE, DEFAULT_THRESHOLD, DEFAULT_READY_AFTER);
+        
     }
 
+	public void setWebSocketsession(WebSocketSession webSocketsession) {
+		this.webSocketsession = webSocketsession;
+	}   
+    
+    
+    
     @Override
     public void update(Double xi) {
-        ++observationCount;
+        StringBuilder sb = new StringBuilder();
+    	++observationCount;
 
         // Instead of providing the target mean as a parameter as
         // we would in an offline test, we calculate it as we go to
@@ -67,6 +83,8 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
 
         cusum = Math.max(0, cusumPrev +(xi - runningMean - magnitude));
         
+        
+        
 //        log.info("xi {}",xi);   
 //        log.info("cusum {}",cusum);
 // 
@@ -76,7 +94,23 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
         }
 
         cusumPrev = cusum;
+        
+
+        sb.append(cusum);
+        
+        sendMessage(sb.toString());
     }
+   
+	protected void sendMessage(String msg)  {
+		log.info("msg="+ msg);
+		try {
+			webSocketsession.sendMessage(new TextMessage(msg));
+		} catch (IOException e) {
+			log.error("Could not send message", e);
+			
+		}
+	}
+    
     
 
     @Override
