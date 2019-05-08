@@ -45,6 +45,8 @@ public class OrderBookMessage implements Comparable {
     String client_oid;
     String stp;
 
+    String message;
+
     public OrderBookMessage() { }
 
     public OrderBookMessage(String type, String time, String product_id,
@@ -309,5 +311,20 @@ public class OrderBookMessage implements Comparable {
     	return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     	
     }
+
+    /**
+     * @return the message
+     */
+    public String getMessage() {
+        return message;
+    }
+
+    /**
+     * @param message the message to set
+     */
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     
 }

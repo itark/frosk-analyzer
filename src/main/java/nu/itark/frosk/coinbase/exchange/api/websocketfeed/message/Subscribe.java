@@ -5,9 +5,14 @@ package nu.itark.frosk.coinbase.exchange.api.websocketfeed.message;
  */
 public class Subscribe {
 
-    String type;
+    private static final String HEARTBEAT = "heartbeat";
+	String type;
 //    String[] product_ids;
     String[] product_ids = new String[]{"BTC-EUR"}; // make this configurable.
+    // String[] channels = new String[]{"level2", "heartbeat"}; // make this configurable.
+    //String[] channels = new String[]{HEARTBEAT}; // make this configurable.
+
+    Channel[] channel;
 
     // Used for signing the subscribe message to the Websocket feed
     String signature;
@@ -23,6 +28,12 @@ public class Subscribe {
         this.type = "subscribe";
         this.product_ids = product_ids;
     }
+
+    public Subscribe(Channel[] channel) {
+        this.type = "subscribe";
+        this.channel = channel;
+    }
+
 
     public String getType() {
         return type;
@@ -58,6 +69,42 @@ public class Subscribe {
     public Subscribe setKey(String apiKey) {
         this.apiKey = apiKey;
         return this;
+    }
+
+
+    /**
+     * @return the signature
+     */
+    public String getSignature() {
+        return signature;
+    }
+
+    /**
+     * @return the passphrase
+     */
+    public String getPassphrase() {
+        return passphrase;
+    }
+
+    /**
+     * @return the timestamp
+     */
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    /**
+     * @return the apiKey
+     */
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    /**
+     * @param apiKey the apiKey to set
+     */
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
     }
 
 }

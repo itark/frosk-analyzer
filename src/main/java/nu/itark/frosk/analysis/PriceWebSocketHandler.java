@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package nu.itark.frosk.changedetection;
+package nu.itark.frosk.analysis;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -24,33 +24,24 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.Observations;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.WebsocketFeed;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.Subscribe;
 
-public class CoinbaseWebSocketHandler extends TextWebSocketHandler {
+@Slf4j
+public class PriceWebSocketHandler extends TextWebSocketHandler {
 	
-	private static final Log logger = LogFactory.getLog(CoinbaseWebSocketHandler.class);
-
-	@Autowired	
-	ThorburnChangeDetector  thorburnChangeDetector;
-	
-	
-	@Autowired
-	WebsocketFeed websocketFeed;
-
+	// private static final Log logger = LogFactory.getLog(PriceWebSocketHandler.class);
 
 	@Autowired
 	Observations observations;
 
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-		logger.info("::afterConnectionEstablished::");
+		log.info("::afterConnectionEstablished::");
 		
 		
-		websocketFeed.subscribeOrderReceived(new Subscribe());		
-		thorburnChangeDetector.setWebSocketsession(session);
-		observations.setWebSocketsessionPrice(session);
+	  //  observations.setWebSocketsessionPrice();		
+	  observations.setWebSocketsessionPrice(session);
         
 		
 	}
@@ -58,21 +49,20 @@ public class CoinbaseWebSocketHandler extends TextWebSocketHandler {
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message)
 			throws Exception {
-		// cvclogger.info("::handleTextMessage::");
+		// log.info("::handleTextMessage::");
+		
 		String payload = message.getPayload();
-		// logger.info("payload="+payload);
+		// log.info("payload="+payload);
 
 	}
 
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status)
 			throws Exception {
-		logger.info("::afterConnectionClosed::");
+		log.info("::afterConnectionClosed::");
 		
 		
 		//TODO stäng koppel till coinbase
-
-		//websocketFeed.unsubscribeOrderReceived(new Subscribe());	
 	}
 
 	

@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.Channel;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.Subscribe;
 
 @RunWith(SpringRunner.class)
@@ -46,5 +47,32 @@ public class TestJWebsocketFeed {
 		
 	}
 	
+		
+	@Test
+	public void testWebsocketSubscribeonChannel() throws InterruptedException {
+		String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
 	
+		
+		log.info("*** Subscribing ***");
+
+		// Channel channel = new Channel();
+		// channel.setName("heartbeat");
+		// channel.setProduct_ids(productIds);
+
+		Channel[] channel = new Channel[1]; 
+		channel[0].setName("full");
+		channel[0].setProduct_ids(productIds);
+
+		Subscribe subscribeChannel = new Subscribe(channel);
+
+        websocketFeed.subscribeHeartBeat(subscribeChannel);		
+		
+        Thread.sleep(3000);
+        
+        log.info("*** ready sleeping ***");
+		
+	}
+
+
+
 }

@@ -98,7 +98,7 @@ public class WebsocketFeed {
      */
     @OnClose
     public void onClose(Session userSession, CloseReason reason) {
-        System.out.println("closing websocket");
+        log.info("WebsocketFeed::onClose, reason {}:", reason.getReasonPhrase());
         this.userSession = null;
     }
 
@@ -109,6 +109,7 @@ public class WebsocketFeed {
      */
     @OnMessage
     public void onMessage(String message) {
+       // log.info("onMessage, message {}", message);
         if (this.messageHandler != null) {
             this.messageHandler.handleMessage(message);
         }
@@ -129,6 +130,7 @@ public class WebsocketFeed {
      * @param message
      */
     public void sendMessage(String message) {
+        //log.info("sendMessage, message : {}", message);
         this.userSession.getAsyncRemote().sendText(message);
     }
 
@@ -138,15 +140,16 @@ public class WebsocketFeed {
 		observations.setProductId(msg.getProduct_ids()[0]);
 		
 		addMessageHandler(json -> {
+            // log.info("json {}", json);
 			OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
-			
+			// log.info("message.getType() {}", message.getType());
 			if (message.getType().equals("heartbeat")) {
 				HeartBeat heartbeat = getObject(json, new TypeReference<HeartBeat>() {});
 				log.info("heartbeat {}", heartbeat);
 			} else if (message.getType().equals("received")) {
 				OrderReceived orderReceived = getObject(json, new TypeReference<OrderReceived>() {});
 				if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
-//					log.info("limit orderReceived {}", orderReceived);
+					//log.info("limit orderReceived {}", orderReceived);
 
 					observations.synchronizeBest(orderReceived);
 					
@@ -176,9 +179,11 @@ public class WebsocketFeed {
 			}  else if (message.getType().equals("done")) {
                 if (message.getReason().equals("filled")) {
                     OrderBookMessage doneOrder = getObject(json, new TypeReference<OrderDoneOrderBookMessage>() {});
-                    //log.info("Order done: " + doneOrder.toString());
+                    log.info("Order done/filled: " + doneOrder.toString());
                     if (doneOrder.getPrice() != null) {
                         observations.setMidMarketPrice(doneOrder.getPrice());
+                        observations.sendPriceMessage(doneOrder.getPrice().toString(), doneOrder.getTime());
+
                     }
                 }
             }
@@ -249,10 +254,71 @@ public class WebsocketFeed {
         sendMessage(jsonSubscribeMessage);
         
     }    
+
+
     
-    
-    
-    
+    public void subscribeHeartBeat(Subscribe msg) {
+        String jsonSubscribeMessage = signObject(msg);
+        
+        log.info("jsonSubscribeMessage {}", jsonSubscribeMessage);
+
+        addMessageHandler(json -> {
+            log.info("json : {}", json);
+                    OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
+
+                    String type = message.getType();
+
+                    if (type.equals("heartbeat"))
+                    {
+                        HeartBeat heartbeat = getObject(json, new TypeReference<HeartBeat>() {});
+                        log.info("heartbeat", heartbeat);
+                    }
+                    else if (type.equals("received"))
+                    {
+                        // received orders are not necessarily live orders - so I'm ignoring these msgs as they're
+                        // subject to change.
+                         log.info("order received {}", message);
+                        
+                        
+
+                    }
+                    else if (type.equals("open"))
+                    {
+                        OrderOpenOrderBookMessage open = getObject(json, new TypeReference<OrderOpenOrderBookMessage>() {});
+//                        log.info("Order opened: " + open );
+                    }
+                    else if (type.equals("done"))
+                    {
+                        if (!message.getReason().equals("filled")) {
+                            OrderBookMessage doneOrder = getObject(json, new TypeReference<OrderDoneOrderBookMessage>() {});
+//                            log.info("Order done: " + doneOrder.toString());
+                        }
+                    }
+                    else if (type.equals("match"))
+                    {
+                        OrderBookMessage matchedOrder = getObject(json, new TypeReference<OrderMatchOrderBookMessage>(){});
+//                        log.info("Order matched: " + matchedOrder);
+                    }
+                    else if (type.equals("change"))
+                    {
+                        // TODO - possibly need to provide implementation for this to work in real time.
+//                         log.info("Order Changed {}", json);
+                        // orderBook.updateOrderBookWithChange(getObject(json, new TypeReference<OrderChangeOrderBookMessage>(){}));
+                    }
+                    else
+                    {
+                        // Not sure this is required unless I'm attempting to place orders
+                        // ERROR
+                        log.error("Error {}", json);
+                        // orderBook.orderBookError(getObject(json, new TypeReference<ErrorOrderBookMessage>(){}));
+                    }
+        	
+        });
+
+        // send message to websocket
+        sendMessage(jsonSubscribeMessage);
+        
+    }    
     
     
     public void subscribeORG(Subscribe msg) {

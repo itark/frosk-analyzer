@@ -9,6 +9,7 @@ import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 import org.springframework.web.socket.handler.PerConnectionWebSocketHandler;
 
+import nu.itark.frosk.analysis.PriceWebSocketHandler;
 import nu.itark.frosk.changedetection.CoinbaseWebSocketHandler;
 import samples.websocket.tomcat.snake.SnakeWebSocketHandler;
 
@@ -21,6 +22,8 @@ public class FroskWebSocketConfig implements WebSocketConfigurer {
 	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
 		registry.addHandler(snakeWebSocketHandler(), "/snake").withSockJS();
 		registry.addHandler(coinbaseWebSocketHandler(), "/ws").withSockJS();
+		// registry.addHandler(priceWebSocketHandler(), "/price").withSockJS();
+
 	}
 
 	@Bean
@@ -34,5 +37,8 @@ public class FroskWebSocketConfig implements WebSocketConfigurer {
 		return new PerConnectionWebSocketHandler(CoinbaseWebSocketHandler.class);
 	}		
 	
-	
+	@Bean
+	public WebSocketHandler priceWebSocketHandler() {
+		return new PerConnectionWebSocketHandler(PriceWebSocketHandler.class);
+	}		
 }

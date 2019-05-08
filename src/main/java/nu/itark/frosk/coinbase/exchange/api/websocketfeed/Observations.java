@@ -1,5 +1,6 @@
 package nu.itark.frosk.coinbase.exchange.api.websocketfeed;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -9,6 +10,8 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.changedetection.LimitOrderImbalance;
@@ -41,6 +44,7 @@ public class Observations {
     MarketDataProxy marketDataProxy;
     
 
+	WebSocketSession webSocketsessionPrice;
 
 	String productId = null;
 	
@@ -127,6 +131,16 @@ public class Observations {
 		
 	}	
 	
+	protected void sendPriceMessage(String price, String time)  {
+		log.info("price {}, time {}",price, time);
+		try {
+			webSocketsessionPrice.sendMessage(new TextMessage(String.format("{\"type\":\"price\",\"price\":\"%s\",\"time\":\"%s\"}", price, time)));
+		} catch (IOException e) {
+			log.error("Could not send price message", e);
+		}
+	}
+
+
 	private Double getMaxBestAskPrice() {
 		OrderReceived order = bestAsksQueue
 				.stream().max(Comparator.comparing(OrderReceived::getPrice))
@@ -143,7 +157,92 @@ public class Observations {
 
 		return order.getPrice().doubleValue();
 
-	}		
+	}
+
+
+	/**
+	 * @return the bestBidsQueue
+	 */
+	public Queue<OrderReceived> getBestBidsQueue() {
+		return bestBidsQueue;
+	}
+
+	/**
+	 * @param bestBidsQueue the bestBidsQueue to set
+	 */
+	public void setBestBidsQueue(Queue<OrderReceived> bestBidsQueue) {
+		this.bestBidsQueue = bestBidsQueue;
+	}
+
+	/**
+	 * @return the bestAsksQueue
+	 */
+	public Queue<OrderReceived> getBestAsksQueue() {
+		return bestAsksQueue;
+	}
+
+	/**
+	 * @param bestAsksQueue the bestAsksQueue to set
+	 */
+	public void setBestAsksQueue(Queue<OrderReceived> bestAsksQueue) {
+		this.bestAsksQueue = bestAsksQueue;
+	}
+
+	/**
+	 * @return the limitOrderImbalance
+	 */
+	public LimitOrderImbalance getLimitOrderImbalance() {
+		return limitOrderImbalance;
+	}
+
+	/**
+	 * @param limitOrderImbalance the limitOrderImbalance to set
+	 */
+	public void setLimitOrderImbalance(LimitOrderImbalance limitOrderImbalance) {
+		this.limitOrderImbalance = limitOrderImbalance;
+	}
+
+	/**
+	 * @return the marketDataProxy
+	 */
+	public MarketDataProxy getMarketDataProxy() {
+		return marketDataProxy;
+	}
+
+	/**
+	 * @param marketDataProxy the marketDataProxy to set
+	 */
+	public void setMarketDataProxy(MarketDataProxy marketDataProxy) {
+		this.marketDataProxy = marketDataProxy;
+	}
+
+	/**
+	 * @param webSocketsessionPrice the webSocketsessionPrice to set
+	 */
+	public void setWebSocketsessionPrice(WebSocketSession webSocketsessionPrice) {
+		this.webSocketsessionPrice = webSocketsessionPrice;
+	}
+
+	/**
+	 * @return the productId
+	 */
+	public String getProductId() {
+		return productId;
+	}
+
+	/**
+	 * @return the midMarketPrice
+	 */
+	public BigDecimal getMidMarketPrice() {
+		return midMarketPrice;
+	}
+
+	/**
+	 * @return the webSocketsessionPrice
+	 */
+	public WebSocketSession getWebSocketsessionPrice() {
+		return webSocketsessionPrice;
+	}
 	
 	
 }

@@ -18,29 +18,44 @@
     ws.onmessage = function (evt) 
     { 
         var received_msg = evt.data;
-        
+
         data = JSON.parse(evt.data);
         
-        console.log("data",data);
+        //console.log("data",data);
         
-        
-        var my_plot = {
-            x: data.x, 
-            y: data.y, 
-            type: 'scatter',
-        };
-        
-        
-        var my_plot2 = {
-            x: data, 
-            y: data, 
-            type: 'scatter',
-        };       
-        
-        
-        
-        
-        Plotly.newPlot('sine-graph', [my_plot2]);
+        var data2;
+        let type = data.type;
+        if(type == 'price') {
+ 
+            data2 = data;
+            console.log("data2.time",data2.time);
+            console.log("data2.price",data2.price);
+
+            var my_plot2 = {
+                x: data2.time, 
+                y: data2.price, 
+                type: 'scatter',
+            }; 
+
+
+            var my_plot3 = {
+                x: ['2013-10-04 22:23:00', '2013-11-04 22:23:00', '2013-12-04 22:23:00'],
+                 y: [1, 3, 6],
+                type: 'scatter',
+            }; 
+
+
+            var my_plot3 = {
+                x: ['2019-05-03T12:38:58.423000Z', '2019-05-03T12:39:13.784000Z', '019-05-03T12:39:38.805000Z'],
+                 y: [4873.90000000, 5390.40000000, 5590.40000000],
+                type: 'scatter',
+            }; 
+
+
+            Plotly.newPlot('sine-graph', [my_plot3]);
+
+        }
+
     };
 		
     ws.onclose = function()

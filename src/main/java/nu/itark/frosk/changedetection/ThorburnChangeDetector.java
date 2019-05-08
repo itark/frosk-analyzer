@@ -36,8 +36,6 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
 
     boolean change = false;
     
-
-
 	WebSocketSession webSocketsession;
 
     /**
@@ -98,14 +96,19 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
 
         sb.append(cusum);
         
-        sendMessage(sb.toString());
+        
+        if (webSocketsession != null) {
+            sendMessage(sb.toString());
+        }
     }
    
-	protected void sendMessage(String msg)  {
-		log.info("msg="+ msg);
+	protected void sendMessage(String cusum)  {
+		// log.info("msg="+ cusum);
 		try {
-			webSocketsession.sendMessage(new TextMessage(msg));
-		} catch (IOException e) {
+			// webSocketsession.sendMessage(new TextMessage(msg));
+			webSocketsession.sendMessage(new TextMessage(String.format("{\"type\":\"cusum\",\"value\":\"%s\"}", cusum)));
+
+        } catch (IOException e) {
 			log.error("Could not send message", e);
 			
 		}

@@ -75,9 +75,15 @@ public class WebController {
 	}		
 
 	@RequestMapping("/echo")
-	public String websocket(Map<String, Object> model) {
+	public String echo(Map<String, Object> model) {
 		return "echo";	
 	}		
+
+	@RequestMapping("/echo2")
+	public String echo2(Map<String, Object> model) {
+		return "echo2";	
+	}	
+
 
 	@RequestMapping("/snake")
 	public String rrswebsocket(Map<String, Object> model) {
