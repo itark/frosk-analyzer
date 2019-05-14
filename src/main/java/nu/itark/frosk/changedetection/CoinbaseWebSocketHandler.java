@@ -48,7 +48,8 @@ public class CoinbaseWebSocketHandler extends TextWebSocketHandler {
 		logger.info("::afterConnectionEstablished::");
 		
 		
-		websocketFeed.subscribeOrderReceived(new Subscribe());		
+		// websocketFeed.subscribeOrderReceived(new Subscribe());		
+		websocketFeed.subscribe(new Subscribe());		
 		thorburnChangeDetector.setWebSocketsession(session);
 		observations.setWebSocketsessionPrice(session);
         

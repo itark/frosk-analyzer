@@ -7,6 +7,8 @@
 <script src="https://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
 <script>
     ws = new SockJS("ws");
+    console.log("ws",ws);
+
     var request_data_interval;
     
     ws.onopen = function()

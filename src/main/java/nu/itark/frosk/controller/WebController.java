@@ -65,7 +65,6 @@ public class WebController {
 	//@RequestMapping("/ma")
 	@GetMapping({"/ma"})
 	public String ma(Map<String, Object> model) {
-		logger.info("when is the fucking ma.jsp");
 		return "ma";	
 	}	
 	
@@ -82,6 +81,11 @@ public class WebController {
 	@RequestMapping("/echo2")
 	public String echo2(Map<String, Object> model) {
 		return "echo2";	
+	}	
+
+	@RequestMapping("/loi")
+	public String loi(Map<String, Object> model) {
+		return "loi";	
 	}	
 
 

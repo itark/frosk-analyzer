@@ -47,6 +47,8 @@ public class OrderBookMessage implements Comparable {
 
     String message;
 
+    Channels channels;
+
     public OrderBookMessage() { }
 
     public OrderBookMessage(String type, String time, String product_id,

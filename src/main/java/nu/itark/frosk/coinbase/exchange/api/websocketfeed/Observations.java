@@ -134,7 +134,10 @@ public class Observations {
 	protected void sendPriceMessage(String price, String time)  {
 		log.info("price {}, time {}",price, time);
 		try {
-			webSocketsessionPrice.sendMessage(new TextMessage(String.format("{\"type\":\"price\",\"price\":\"%s\",\"time\":\"%s\"}", price, time)));
+			if (webSocketsessionPrice != null) {
+				webSocketsessionPrice.sendMessage(new TextMessage(String.format("{\"type\":\"price\",\"price\":\"%s\",\"time\":\"%s\"}", price, time)));
+			}
+
 		} catch (IOException e) {
 			log.error("Could not send price message", e);
 		}

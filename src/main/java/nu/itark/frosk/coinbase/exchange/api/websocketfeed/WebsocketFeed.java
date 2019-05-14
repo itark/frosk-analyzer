@@ -109,7 +109,7 @@ public class WebsocketFeed {
      */
     @OnMessage
     public void onMessage(String message) {
-       // log.info("onMessage, message {}", message);
+        // log.info("onMessage, message {}", message);
         if (this.messageHandler != null) {
             this.messageHandler.handleMessage(message);
         }
@@ -130,7 +130,7 @@ public class WebsocketFeed {
      * @param message
      */
     public void sendMessage(String message) {
-        //log.info("sendMessage, message : {}", message);
+        // log.info("sendMessage, message : {}", message);
         this.userSession.getAsyncRemote().sendText(message);
     }
 
@@ -142,7 +142,8 @@ public class WebsocketFeed {
 		addMessageHandler(json -> {
             // log.info("json {}", json);
 			OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
-			// log.info("message.getType() {}", message.getType());
+            log.info("message.getType() {}", message.getType());
+            
 			if (message.getType().equals("heartbeat")) {
 				HeartBeat heartbeat = getObject(json, new TypeReference<HeartBeat>() {});
 				log.info("heartbeat {}", heartbeat);
@@ -179,13 +180,23 @@ public class WebsocketFeed {
 			}  else if (message.getType().equals("done")) {
                 if (message.getReason().equals("filled")) {
                     OrderBookMessage doneOrder = getObject(json, new TypeReference<OrderDoneOrderBookMessage>() {});
-                    log.info("Order done/filled: " + doneOrder.toString());
-                    if (doneOrder.getPrice() != null) {
-                        observations.setMidMarketPrice(doneOrder.getPrice());
-                        observations.sendPriceMessage(doneOrder.getPrice().toString(), doneOrder.getTime());
+                    // log.info("Order done/filled: " + doneOrder.toString());
+                    // if (doneOrder.getPrice() != null) {
+                    //     observations.setMidMarketPrice(doneOrder.getPrice());
+                    //     observations.sendPriceMessage(doneOrder.getPrice().toString(), doneOrder.getTime());
 
-                    }
+                    // }
                 }
+            } else if (message.getType().equals("match")) {
+                OrderBookMessage matchedOrder = getObject(json, new TypeReference<OrderMatchOrderBookMessage>(){});
+                //log.info("Order matched: " + matchedOrder);
+                observations.setMidMarketPrice(matchedOrder.getPrice());
+                observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
+
+
+
+
+
             }
 
 		});
@@ -212,7 +223,7 @@ public class WebsocketFeed {
                     {
                         // received orders are not necessarily live orders - so I'm ignoring these msgs as they're
                         // subject to change.
-                        log.info("order received {}", message);
+                        //log.info("order received {}", message);
                         
                         
 
@@ -232,7 +243,9 @@ public class WebsocketFeed {
                     else if (type.equals("match"))
                     {
                         OrderBookMessage matchedOrder = getObject(json, new TypeReference<OrderMatchOrderBookMessage>(){});
-//                        log.info("Order matched: " + matchedOrder);
+                        // log.info("Order matched: " + matchedOrder);
+                        observations.setMidMarketPrice(matchedOrder.getPrice());
+                        observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
                     }
                     else if (type.equals("change"))
                     {
@@ -256,8 +269,11 @@ public class WebsocketFeed {
     }    
 
 
-    
-    public void subscribeHeartBeat(Subscribe msg) {
+    @Deprecated
+    public void subscribeOnChannel(Subscribe msg) {
+        log.info("::subscribeHeartBeat::");
+        log.info("msg {}", msg);
+
         String jsonSubscribeMessage = signObject(msg);
         
         log.info("jsonSubscribeMessage {}", jsonSubscribeMessage);
@@ -265,19 +281,20 @@ public class WebsocketFeed {
         addMessageHandler(json -> {
             log.info("json : {}", json);
                     OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
+                    //HeartBeat message = getObject(json, new TypeReference<HeartBeat>() {});
 
                     String type = message.getType();
 
                     if (type.equals("heartbeat"))
                     {
                         HeartBeat heartbeat = getObject(json, new TypeReference<HeartBeat>() {});
-                        log.info("heartbeat", heartbeat);
+                        log.info("heartbeat {}", heartbeat);
                     }
                     else if (type.equals("received"))
                     {
                         // received orders are not necessarily live orders - so I'm ignoring these msgs as they're
                         // subject to change.
-                         log.info("order received {}", message);
+                        // log.info("order received {}", message);
                         
                         
 
@@ -321,78 +338,7 @@ public class WebsocketFeed {
     }    
     
     
-    public void subscribeORG(Subscribe msg) {
-        String jsonSubscribeMessage = signObject(msg);
 
- 
-        addMessageHandler(json -> {
-
-            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-                @Override
-                public Void doInBackground() {
-                    OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
-
-                    String type = message.getType();
-
-                    if (type.equals("heartbeat"))
-                    {
-                        HeartBeat heartbeat = getObject(json, new TypeReference<HeartBeat>() {});
-                        log.info("heartbeat", heartbeat);
-                    }
-                    else if (type.equals("received"))
-                    {
-                        // received orders are not necessarily live orders - so I'm ignoring these msgs as they're
-                        // subject to change.
-//                        log.info("order received {}", json);
-
-                    }
-                    else if (type.equals("open"))
-                    {
-                        OrderOpenOrderBookMessage open = getObject(json, new TypeReference<OrderOpenOrderBookMessage>() {});
-                        log.info("Order opened: " + open );
-                    }
-                    else if (type.equals("done"))
-                    {
-                        if (!message.getReason().equals("filled")) {
-                            OrderBookMessage doneOrder = getObject(json, new TypeReference<OrderDoneOrderBookMessage>() {});
-                            log.info("Order done: " + doneOrder.toString());
-                        }
-                    }
-                    else if (type.equals("match"))
-                    {
-                        OrderBookMessage matchedOrder = getObject(json, new TypeReference<OrderMatchOrderBookMessage>(){});
-//                        log.info("Order matched: " + matchedOrder);
-                    }
-                    else if (type.equals("change"))
-                    {
-                        // TODO - possibly need to provide implementation for this to work in real time.
-//                         log.info("Order Changed {}", json);
-                        // orderBook.updateOrderBookWithChange(getObject(json, new TypeReference<OrderChangeOrderBookMessage>(){}));
-                    }
-                    else
-                    {
-                        // Not sure this is required unless I'm attempting to place orders
-                        // ERROR
-                        log.error("Error {}", json);
-                        // orderBook.orderBookError(getObject(json, new TypeReference<ErrorOrderBookMessage>(){}));
-                    }
-                    return null;
-                }
-
-                public void done() {
-//                	log.info("::: DONE :::");
-                }
-            };
-            worker.execute();
-
-        	
-        	
-        });
-
-        // send message to websocket
-        sendMessage(jsonSubscribeMessage);
-        
-    }
 
     // TODO - get this into postHandle interceptor.
     public String signObject(Subscribe jsonObj) {

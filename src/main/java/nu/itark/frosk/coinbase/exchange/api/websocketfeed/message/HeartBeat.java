@@ -15,6 +15,7 @@ package nu.itark.frosk.coinbase.exchange.api.websocketfeed.message;
  */
 public class HeartBeat extends OrderBookMessage {
 
+    String channels;
     String last_trade_id;
 
 

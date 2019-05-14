@@ -102,13 +102,13 @@ public class TestJMarketDataProxy { //extends BaseTest {
     }
     
     
-    @Test
-    public void testGetTrades() {
-    	List<Trade> tradeList= marketDataProxy.getTrades("BTC-EUR");
-//    	tradeList.forEach(trade -> {
-//    		log.info("trade.getTime()"+trade.getTime());
-//    	});
-    }   
+	@Test
+	public void testGetTrades() {
+		List<Trade> tradeList = marketDataProxy.getTrades("BTC-EUR");
+		tradeList.forEach(trade -> {
+			log.info("price {}, time {}" , trade.getPrice(), trade.getTime());
+		});
+	}  
     
     
    @Test
@@ -121,7 +121,10 @@ public class TestJMarketDataProxy { //extends BaseTest {
 	   These values correspond to timeslices representing one minute, five minutes, fifteen minutes, one hour, six hours, and one day, respectively.
 	   */
 	   
-	   ZonedDateTime endZdt = ZonedDateTime.now(ZoneId.systemDefault());
+	  ZoneId zone1 = ZoneId.of("America/Los_Angeles");
+
+
+	   ZonedDateTime endZdt = ZonedDateTime.now(zone1);
 	   ZonedDateTime startZdt = endZdt.minusDays(1);
 //	   String start = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(startZdt);
 //	   String end = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(endZdt);
@@ -129,9 +132,9 @@ public class TestJMarketDataProxy { //extends BaseTest {
 	   String start = DateTimeManager.start(1);
 	   String end =  DateTimeManager.end();
 	   
-//	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", "2019-02-22T00:00:00.00000Z","2019-02-23T00:00:00.00000Z", "3600" );
-//	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, "3600" );
-	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
+	//    List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", "2019-02-22T00:00:00.00000Z","2019-02-23T00:00:00.00000Z", "3600" );
+	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, "3600" );
+// 	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
 	   
 	   
 	   candlesList.forEach(candle -> {
