@@ -72,10 +72,6 @@ header {
 	            <li role="separator" class="divider"></li>
 	            <li><a href="all">All</a></li>
 	            <li role="separator" class="divider"></li>
-	            <li><a href="echo">echo</a></li>
-              <li><a href="echo2">echo2</a></li>
-	            <li><a href="snake">snake</a></li>
-	            <li role="separator" class="divider"></li>
 	            <li><a href="loi">Limit Order Imbalance</a></li>
 
 	          </ul>

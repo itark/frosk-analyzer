@@ -14,7 +14,7 @@
 	<groupId>nu.itark.frosk</groupId>
 	<artifactId>frosk-analyzer</artifactId>
 	<version>0.0.5</version>
-	<!-- packaging>war</packaging-->
+	<packaging>war</packaging>
 
 	<name>frosk-analyzer</name>
 	<description>Frosk is the thing, holding backend and UI</description>
@@ -225,8 +225,6 @@
 		    <artifactId>stomp-websocket</artifactId>
 		    <version>2.3.1</version>
 		</dependency>
-
-	    
 		<!-- end webjars -->
 
       <dependency>
@@ -235,13 +233,31 @@
          <version>3.5</version>
       </dependency>
 
-	<dependency>
-	    <groupId>org.apache.commons</groupId>
-	    <artifactId>commons-collections4</artifactId>
-	    <version>4.1</version>
-	</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-collections4</artifactId>
+			<version>4.1</version>
+		</dependency>
+
+
+
+		<dependency>
+			<groupId>com.numericalmethod</groupId>
+			<artifactId>suanshu</artifactId>
+			<version>20120606-1.0-SNAPSHOT</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/suanshu-20120606-1.0-SNAPSHOT.jar</systemPath>
+		</dependency>
+
+
+
+		
 
 	</dependencies>
+
+
+
+
 <!-- https://www.baeldung.com/tomcat-deploy-war -->
 	<build>
 <!-- 
@@ -260,7 +276,6 @@
 			        <skipTests>true</skipTests>
 			    </configuration>
 			</plugin>
-
 			<plugin>
 			    <groupId>org.apache.tomcat.maven</groupId>
 			    <artifactId>tomcat7-maven-plugin</artifactId>
@@ -272,6 +287,31 @@
 					<update>true</update>
 			    </configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-maven-plugin</artifactId>
+				<version>9.4.18.v20190429</version>
+				<configuration>
+					<scanIntervalSeconds>0</scanIntervalSeconds>
+					<webApp>
+						<contextPath>/frosk-analyzer</contextPath>
+					</webApp>
+					<systemProperties>
+						<systemProperty>
+							<name>jetty.port</name>
+							<value>8080</value>
+						</systemProperty>
+						<systemProperty>
+							<name>catalina.home</name>
+							<value>${project.build.directory}</value>
+						</systemProperty>
+					</systemProperties>
+				</configuration>
+			</plugin>
+
+
+
+
 		</plugins>
 
 	</build>

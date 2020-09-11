@@ -28,4 +28,11 @@ public interface ChangeDetector<T> {
      */
     void reset();
 
+    /**
+     * Return current cusum
+     * @return
+     */
+    Double cusum();
+
+
 }

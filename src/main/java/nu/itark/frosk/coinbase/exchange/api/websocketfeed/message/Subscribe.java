@@ -9,7 +9,7 @@ public class Subscribe {
 	String type;
 //    String[] product_ids;
     String[] product_ids = new String[]{"BTC-EUR"}; // make this configurable.
-    // String[] channels = new String[]{"level2", "heartbeat"}; // make this configurable.
+    //String[] channels = new String[]{"level2", "heartbeat"}; // make this configurable.
     //String[] channels = new String[]{HEARTBEAT}; // make this configurable.
 
     Channels[] channels;

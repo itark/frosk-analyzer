@@ -5,13 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * @author Fredrik Möller
  *
- * The Cumulative Sum (CUSUM) algorithm has two parameters:
- *
- *      δ (delta)   : The magnitude of acceptable change in standard deviations
- *      λ (lambda) : The threshold in standard deviations
+
  */
 @Slf4j
-public class ThorburnChangeDetector implements ChangeDetector<Double> {
+public class MeanChangeDetector implements ChangeDetector<Double> {
 
     private final static double DEFAULT_MAGNITUDE = 0.05;
     private final static double DEFAULT_THRESHOLD = 3;
@@ -37,7 +34,7 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
      * @param thresholdMultiplier Threshold in stddevs
      * @param readyAfter Number of observations before allowing change to be signalled
      */
-    public ThorburnChangeDetector(double magnitudeMultiplier,
+    public MeanChangeDetector(double magnitudeMultiplier,
                                double thresholdMultiplier,
                                long readyAfter) {
         this.magnitudeMultiplier = magnitudeMultiplier;
@@ -45,7 +42,7 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
         this.readyAfter = readyAfter;
     }
 
-    public ThorburnChangeDetector() {
+    public MeanChangeDetector() {
         this(DEFAULT_MAGNITUDE, DEFAULT_THRESHOLD, DEFAULT_READY_AFTER);
         
     }
@@ -58,17 +55,17 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
         // we would in an offline test, we calculate it as we go to
         // create a target of normality.
         double newMean = runningMean + (xi - runningMean) / observationCount;
-        runningMean = newMean;
-        runningVariance += (xi - runningMean)*(xi - newMean);
-        double std = Math.sqrt(runningVariance);
-
-        magnitude = magnitudeMultiplier * std;
-        threshold = thresholdMultiplier * std;
-
-        cusum = Math.max(0, cusumPrev +(xi - runningMean - magnitude));
+//        runningMean = newMean;
+//        runningVariance += (xi - runningMean)*(xi - newMean);
+//        double std = Math.sqrt(runningVariance);
+//
+//        magnitude = magnitudeMultiplier * std;
+//        threshold = thresholdMultiplier * std;
+//
+//        cusum = Math.max(0, cusumPrev +(xi - runningMean - magnitude));
         
         if(isReady()) {
-            this.change = cusum > threshold;
+            this.change = newMean > xi;
         }
 
         cusumPrev = cusum;

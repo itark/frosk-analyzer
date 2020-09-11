@@ -49,6 +49,20 @@ Streaming https://plot.ly/javascript/streaming/#streaming-subplots
 
 
 
+2019-06-11:
+
+Suanshu
+
+
+
+mvn install:install-file –Dfile=/Users/fredrikmoller/Temp/SuanShu-20120606/target/suanshu-20120606-1.0-SNAPSHOT.jar -DgroupId=com.numericalmethod -DartifactId=suanshu -Dversion=20120606-1.0-SNAPSHOT
+
+
+2019-07-03:
+Test glidande medelvärde på Websocketfeed, håll dig till backend först.
+
+Will F's sida: https://faithfull.me/change-detection-for-software-engineers-part-i-introduction-and-cusum/
+
 
 
 

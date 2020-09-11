@@ -3,8 +3,8 @@ package nu.itark.frosk.coinbase.exchange.api.websocketfeed;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Objects;
 
-import javax.swing.SwingWorker;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
@@ -14,15 +14,17 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 
 import nu.itark.frosk.changedetection.ChangeDetector;
 import nu.itark.frosk.coinbase.exchange.api.exchange.Signature;
@@ -71,7 +73,13 @@ public class WebsocketFeed {
 
 		try {
 			WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+
+			log.trace("websocketUrl="+websocketUrl);
+
 			container.connectToServer(this, new URI(websocketUrl));
+
+            log.trace("container="+container);
+
 
 		} catch (Exception e) {
 			System.out
@@ -98,7 +106,7 @@ public class WebsocketFeed {
      */
     @OnClose
     public void onClose(Session userSession, CloseReason reason) {
-        log.info("WebsocketFeed::onClose, reason {}:", reason.getReasonPhrase());
+        log.trace("WebsocketFeed::onClose, reason {}:", reason.getReasonPhrase());
         this.userSession = null;
     }
 
@@ -109,7 +117,7 @@ public class WebsocketFeed {
      */
     @OnMessage
     public void onMessage(String message) {
-        // log.info("onMessage, message {}", message);
+        log.trace("onMessage, message {}", message);
         if (this.messageHandler != null) {
             this.messageHandler.handleMessage(message);
         }
@@ -130,88 +138,26 @@ public class WebsocketFeed {
      * @param message
      */
     public void sendMessage(String message) {
-        // log.info("sendMessage, message : {}", message);
+        log.trace("sendMessage, message : {}", message);
         this.userSession.getAsyncRemote().sendText(message);
     }
 
 
-	public void subscribeOrderReceived(Subscribe msg) {
-		String jsonSubscribeMessage = signObject(msg);
-		observations.setProductId(msg.getProduct_ids()[0]);
-		
-		addMessageHandler(json -> {
-            // log.info("json {}", json);
-			OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
-            log.info("message.getType() {}", message.getType());
-            
-			if (message.getType().equals("heartbeat")) {
-				HeartBeat heartbeat = getObject(json, new TypeReference<HeartBeat>() {});
-				log.info("heartbeat {}", heartbeat);
-			} else if (message.getType().equals("received")) {
-				OrderReceived orderReceived = getObject(json, new TypeReference<OrderReceived>() {});
-				if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
-					//log.info("limit orderReceived {}", orderReceived);
-
-					observations.synchronizeBest(orderReceived);
-					
-					Double xi = observations.calculateLimitOrderImbalance();
-					if (xi != null) {
-				    	changeDetector.update(xi);
-					}
-
-			        if(!changeDetector.isReady()) {
-			            return;
-			        }
-
-			        boolean change = changeDetector.isChange();
-
-			        if(change) {
-			            log.info("CHANGE DETECTED! Anomalous value: {}", orderReceived.getPrice().doubleValue());
-			            // One alarm is enough. This is the new data source now.
-			            // If it changes again, we want to know.
-			            changeDetector.reset();
-			        }
-		
-				
-				} else if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.MARKET.getValue())) {
-					//log.info("market orderReceived {}", orderReceived);
-				}
-
-			}  else if (message.getType().equals("done")) {
-                if (message.getReason().equals("filled")) {
-                    OrderBookMessage doneOrder = getObject(json, new TypeReference<OrderDoneOrderBookMessage>() {});
-                    // log.info("Order done/filled: " + doneOrder.toString());
-                    // if (doneOrder.getPrice() != null) {
-                    //     observations.setMidMarketPrice(doneOrder.getPrice());
-                    //     observations.sendPriceMessage(doneOrder.getPrice().toString(), doneOrder.getTime());
-
-                    // }
-                }
-            } else if (message.getType().equals("match")) {
-                OrderBookMessage matchedOrder = getObject(json, new TypeReference<OrderMatchOrderBookMessage>(){});
-                //log.info("Order matched: " + matchedOrder);
-                observations.setMidMarketPrice(matchedOrder.getPrice());
-                observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
-
-
-
-
-
-            }
-
-		});
-
-		sendMessage(jsonSubscribeMessage);
-
-	}
 
     public void subscribe(Subscribe msg) {
+        log.trace("msg="+ ReflectionToStringBuilder.toString(msg, ToStringStyle.MULTI_LINE_STYLE));
+
     	String jsonSubscribeMessage = signObject(msg);
+        observations.setProductId(msg.getProduct_ids()[0]);
 
         addMessageHandler(json -> {
+//                    log.info("json="+json);
 
                     OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
-
+                    if (Objects.isNull(message)) {
+                        log.info("oopps, not good, gå vidare");
+                        return;
+                    }
                     String type = message.getType();
 
                     if (type.equals("heartbeat"))
@@ -224,14 +170,18 @@ public class WebsocketFeed {
                         // received orders are not necessarily live orders - so I'm ignoring these msgs as they're
                         // subject to change.
                         //log.info("order received {}", message);
-                        
-                        
+                        OrderReceived orderReceived = getObject(json, new TypeReference<OrderReceived>() {});
+                        if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
+        
+                            observations.synchronizeBest(orderReceived);
+                            observations.process(orderReceived);
 
+                        }                        
                     }
                     else if (type.equals("open"))
                     {
                         OrderOpenOrderBookMessage open = getObject(json, new TypeReference<OrderOpenOrderBookMessage>() {});
-//                        log.info("Order opened: " + open );
+                        // log.info("Order opened: " + open );
                     }
                     else if (type.equals("done"))
                     {
@@ -243,7 +193,7 @@ public class WebsocketFeed {
                     else if (type.equals("match"))
                     {
                         OrderBookMessage matchedOrder = getObject(json, new TypeReference<OrderMatchOrderBookMessage>(){});
-                        // log.info("Order matched: " + matchedOrder);
+                        //log.info("Order matched: " + matchedOrder);
                         observations.setMidMarketPrice(matchedOrder.getPrice());
                         observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
                     }
@@ -267,77 +217,6 @@ public class WebsocketFeed {
         sendMessage(jsonSubscribeMessage);
         
     }    
-
-
-    @Deprecated
-    public void subscribeOnChannel(Subscribe msg) {
-        log.info("::subscribeHeartBeat::");
-        log.info("msg {}", msg);
-
-        String jsonSubscribeMessage = signObject(msg);
-        
-        log.info("jsonSubscribeMessage {}", jsonSubscribeMessage);
-
-        addMessageHandler(json -> {
-            log.info("json : {}", json);
-                    OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
-                    //HeartBeat message = getObject(json, new TypeReference<HeartBeat>() {});
-
-                    String type = message.getType();
-
-                    if (type.equals("heartbeat"))
-                    {
-                        HeartBeat heartbeat = getObject(json, new TypeReference<HeartBeat>() {});
-                        log.info("heartbeat {}", heartbeat);
-                    }
-                    else if (type.equals("received"))
-                    {
-                        // received orders are not necessarily live orders - so I'm ignoring these msgs as they're
-                        // subject to change.
-                        // log.info("order received {}", message);
-                        
-                        
-
-                    }
-                    else if (type.equals("open"))
-                    {
-                        OrderOpenOrderBookMessage open = getObject(json, new TypeReference<OrderOpenOrderBookMessage>() {});
-//                        log.info("Order opened: " + open );
-                    }
-                    else if (type.equals("done"))
-                    {
-                        if (!message.getReason().equals("filled")) {
-                            OrderBookMessage doneOrder = getObject(json, new TypeReference<OrderDoneOrderBookMessage>() {});
-//                            log.info("Order done: " + doneOrder.toString());
-                        }
-                    }
-                    else if (type.equals("match"))
-                    {
-                        OrderBookMessage matchedOrder = getObject(json, new TypeReference<OrderMatchOrderBookMessage>(){});
-//                        log.info("Order matched: " + matchedOrder);
-                    }
-                    else if (type.equals("change"))
-                    {
-                        // TODO - possibly need to provide implementation for this to work in real time.
-//                         log.info("Order Changed {}", json);
-                        // orderBook.updateOrderBookWithChange(getObject(json, new TypeReference<OrderChangeOrderBookMessage>(){}));
-                    }
-                    else
-                    {
-                        // Not sure this is required unless I'm attempting to place orders
-                        // ERROR
-                        log.error("Error {}", json);
-                        // orderBook.orderBookError(getObject(json, new TypeReference<ErrorOrderBookMessage>(){}));
-                    }
-        	
-        });
-
-        // send message to websocket
-        sendMessage(jsonSubscribeMessage);
-        
-    }    
-    
-    
 
 
     // TODO - get this into postHandle interceptor.

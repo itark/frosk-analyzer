@@ -87,6 +87,9 @@ header {
                                     </button>
                                     <ul class="dropdown-menu pull-right" role="menu">
                                         <li><a href="#" onclick="startFeedPrice();">Start feed price</a></li>
+                                        <li><a href="#" onclick="startFeedCusum();">Start feed cusum</a></li>
+                                        <li><a href="#" onclick="startFeedLoi();">Start feed loi</a></li>
+
                                     </ul>
                                 </div>
                             </div>

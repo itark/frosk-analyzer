@@ -19,6 +19,7 @@ import nu.itark.frosk.coinbase.exchange.api.marketdata.MarketData;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.OrderItem;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.Ticker;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.Trade;
+import nu.itark.frosk.strategies.stats.ADF;
 import nu.itark.frosk.util.DateTimeManager;
 
 //import nu.itark.frosk.coinbase.exchange.api.marketdata.MarketData;
@@ -50,7 +51,11 @@ public class TestJMarketDataProxy { //extends BaseTest {
     
     @Autowired
     LimitOrderImbalance loi; 
-    
+	
+    @Autowired
+    ADF adf; 	
+
+
     @Test
     public void testGetMarketDataOrderBook() {
     	String level = "1";
@@ -109,8 +114,17 @@ public class TestJMarketDataProxy { //extends BaseTest {
 			log.info("price {}, time {}" , trade.getPrice(), trade.getTime());
 		});
 	}  
-    
-    
+
+	@Test
+	public void testADF() {
+		List<Trade> tradeList = marketDataProxy.getTrades("BTC-EUR");
+		tradeList.forEach(trade -> {
+			log.info("price {}, time {}" , trade.getPrice(), trade.getTime());
+			log.info("p-value {}", adf.getPValue(trade.getPrice().doubleValue()));
+
+		});
+	}  	
+
    @Test
    public final void testGetCandles() {
 	   

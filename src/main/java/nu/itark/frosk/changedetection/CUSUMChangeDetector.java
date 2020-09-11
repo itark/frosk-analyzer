@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  *      λ (lambda) : The threshold in standard deviations
  */
 @Slf4j
-public class CUSUMChangeDetector implements ChangeDetector<Double> {
+public class CUSUMChangeDetector {//implements ChangeDetector<Double> {
 
     private final static double DEFAULT_MAGNITUDE = 0.05;
     private final static double DEFAULT_THRESHOLD = 3;
@@ -49,7 +49,7 @@ public class CUSUMChangeDetector implements ChangeDetector<Double> {
         this(DEFAULT_MAGNITUDE, DEFAULT_THRESHOLD, DEFAULT_READY_AFTER);
     }
 
-    @Override
+    //@Override
     public void update(Double xi) {
         ++observationCount;
 
@@ -77,12 +77,12 @@ public class CUSUMChangeDetector implements ChangeDetector<Double> {
         cusumPrev = cusum;
     }
 
-    @Override
+    //@Override
     public boolean isChange() {
         return change;
     }
 
-    @Override
+    //@Override
     public boolean isReady() {
         return this.observationCount >= readyAfter;
     }

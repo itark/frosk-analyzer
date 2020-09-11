@@ -16,6 +16,7 @@
 
 package nu.itark.frosk.changedetection;
 
+import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.Channels;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,23 +46,25 @@ public class CoinbaseWebSocketHandler extends TextWebSocketHandler {
 
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-		logger.info("::afterConnectionEstablished::");
-		
-		
-		// websocketFeed.subscribeOrderReceived(new Subscribe());		
-		websocketFeed.subscribe(new Subscribe());		
-		thorburnChangeDetector.setWebSocketsession(session);
-		observations.setWebSocketsessionPrice(session);
-        
+		logger.trace("::afterConnectionEstablished::");
+
+
+		Channels[] channel = new Channels[1];
+		channel[0] = new Channels();
+		channel[0].setName("full");
+//	 	channel[0].setProduct_ids(productIds);
+
+		Subscribe subscribeChannel = new Subscribe(channel);
+
+
+		websocketFeed.subscribe(subscribeChannel);
+		observations.setWebSocketsession(session);
 		
 	}
 
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message)
 			throws Exception {
-		// cvclogger.info("::handleTextMessage::");
-		String payload = message.getPayload();
-		// logger.info("payload="+payload);
 
 	}
 
