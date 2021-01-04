@@ -172,11 +172,9 @@ public class WebsocketFeed {
                         //log.info("order received {}", message);
                         OrderReceived orderReceived = getObject(json, new TypeReference<OrderReceived>() {});
                         if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
-        
-                            observations.synchronizeBest(orderReceived);
-                            observations.process(orderReceived);
-
-                        }                        
+//                            observations.synchronizeBest(orderReceived);
+//                            observations.process(orderReceived);
+                        }
                     }
                     else if (type.equals("open"))
                     {
@@ -193,9 +191,9 @@ public class WebsocketFeed {
                     else if (type.equals("match"))
                     {
                         OrderBookMessage matchedOrder = getObject(json, new TypeReference<OrderMatchOrderBookMessage>(){});
-                        //log.info("Order matched: " + matchedOrder);
+                        log.info("Order matched, on price: " + matchedOrder.getPrice());
                         observations.setMidMarketPrice(matchedOrder.getPrice());
-                        observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
+//                        observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
                     }
                     else if (type.equals("change"))
                     {

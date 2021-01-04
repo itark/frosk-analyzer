@@ -39,7 +39,6 @@ public class TestJObservations {
 			
 		}
 		
-		
 		lois.add(observations.calculateLimitOrderImbalance());
 		
 		lois.forEach(loi -> {
@@ -49,7 +48,28 @@ public class TestJObservations {
 		});
 		
 
-		
-		
 	}
+
+
+	@Test
+	public void testBuy() {
+		BigDecimal price = new BigDecimal(9342.34);
+		observations.buy(BigDecimal.ONE);
+
+		System.out.println(observations.profitAndLoss);
+
+	}
+
+	@Test
+	public void testBuy2() {
+		BigDecimal profitAndLoss = BigDecimal.ZERO;
+		BigDecimal amount = BigDecimal.ONE;
+		BigDecimal price = new BigDecimal(9342.34);
+		BigDecimal value = amount.multiply(price);
+		profitAndLoss = profitAndLoss.add(value);
+
+		System.out.println("PaL:"+profitAndLoss);
+
+	}
+
 }

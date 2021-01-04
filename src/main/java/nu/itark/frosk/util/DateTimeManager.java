@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 
 public class DateTimeManager {
 
-	static String PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+//	static String PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
 	static ZonedDateTime endZdt = ZonedDateTime.now(ZoneId.systemDefault());
 //	static String end = DateTimeFormatter.ofPattern(PATTERN).format(endZdt);
 
@@ -16,7 +16,7 @@ public class DateTimeManager {
 	 * @return
 	 */
 	public static String end() {
-		return DateTimeFormatter.ofPattern(PATTERN).format(endZdt);
+		return DateTimeFormatter.ISO_INSTANT.format(endZdt);
 	}
 
 	/**
@@ -27,7 +27,7 @@ public class DateTimeManager {
 	 */
 	public static String start(int days) {
 		ZonedDateTime startZdt = endZdt.minusDays(days);
-		return DateTimeFormatter.ofPattern(PATTERN).format(startZdt);
+		return DateTimeFormatter.ISO_INSTANT.format(startZdt);
 	}
 
 }

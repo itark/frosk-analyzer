@@ -15,7 +15,14 @@ public interface ChangeDetector<T> {
      * Did the detector signal change at the last item?
      * @return true, if it did.
      */
-    boolean isChange();
+//    boolean isChange();
+
+
+    boolean isChangeHigh();
+
+
+    boolean isChangeLow();
+
 
     /**
      * Has the detector seen enough items to detect change?
@@ -28,11 +35,37 @@ public interface ChangeDetector<T> {
      */
     void reset();
 
+//    /**
+//     * Reset the detector for high, wiping any memory component it retains.
+//     */
+//    void resetHigh();
+//
+//    /**
+//     * Reset the detector for high, wiping any memory component it retains.
+//     */
+//    void resetLow();
+
+
+//    /**
+//     * Return current cusum
+//     * @return
+//     */
+//    Double cusum();
+
+
     /**
-     * Return current cusum
+     * Return current cusumhigh
      * @return
      */
-    Double cusum();
+    Double cusumHigh();
+
+    /**
+     * Return current cusumlow
+     * @return
+     */
+    Double cusumLow();
+
+
 
 
 }

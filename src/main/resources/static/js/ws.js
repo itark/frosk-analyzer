@@ -100,7 +100,7 @@ function startFeedPrice() {
 
 
         }
-        if(type == 'cusum') {
+        if(type == 'cusum_high') {
             data2 = data;
             var update = {
                 x: [[], [data2.time]],
@@ -184,7 +184,7 @@ function startFeedCusum() {
       data = JSON.parse(evt.data);
       console.log("data",data);
 
-      if(data.type == 'cusum') {
+      if(data.type == 'cusum_high') {
           var update = {
               x: [[data.time]],
               y: [[data.value]]

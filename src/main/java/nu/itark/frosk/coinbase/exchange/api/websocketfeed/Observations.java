@@ -3,6 +3,7 @@ package nu.itark.frosk.coinbase.exchange.api.websocketfeed;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Queue;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
@@ -43,7 +44,8 @@ public class Observations {
 
 	// Queue<T> bestBidsQueue = new CircularFifoQueue<T>(DEFAULT_QUEUE_SIZE);	
 	// Queue<T> bestAsksQueue = new CircularFifoQueue<T>(DEFAULT_QUEUE_SIZE);	
-	
+	BigDecimal profitAndLoss = BigDecimal.ZERO;
+	BigDecimal amount = BigDecimal.ONE;
 
 	
 	@Autowired
@@ -62,7 +64,8 @@ public class Observations {
 
 
 	String productId = null;
-	
+
+
 	BigDecimal midMarketPrice = null;
     
 	public void setProductId(String productId) {
@@ -90,26 +93,65 @@ public class Observations {
 			return;
 		}
 
-		boolean change = changeDetector.isChange();
+		boolean change_high = changeDetector.isChangeHigh();
+		boolean change_low = changeDetector.isChangeLow();
+//		boolean change = changeDetector.isChange();
 
-		if(change) {
-			// log.info("CHANGE DETECTED! Anomalous value: {}, mid market price {} ", orderReceived.getPrice().doubleValue(), midMarketPrice);
-			log.info("CHANGE DETECTED! Anomalous value: {}, mid market price {} ", ReflectionToStringBuilder.toString(orderReceived,ToStringStyle.MULTI_LINE_STYLE), midMarketPrice);
+		//sendCusumHighMessage(changeDetector.cusumHigh().toString(),LocalDateTime.now().toString());
+		//		sendLoiMessage(loi.toString(),LocalDateTime.now().toString());
 
-			log.info("isUp {} ", isUp(orderReceived.getPrice()));
-			// One alarm is enough. This is the new data source now.
-			// If it changes again, we want to know.
-			
-			////sendPriceMessage(orderReceived.getPrice().toPlainString(),orderReceived.getTime());
+		if(change_high) {
+			log.info("POSITIVE CHANGE DETECTED! price:{}, side:{} , mid market price:{} ", orderReceived.getPrice().toString(),orderReceived.getSide(), midMarketPrice);
+//			log.info("isUp {} ", isUp(orderReceived.getPrice()));
 
+//			calculateProfitandLoss(orderReceived.getPrice(), true);
+			changeDetector.reset();
+
+		}
+
+		if(change_low) {
+			log.info("NEGATIVE CHANGE DETECTED! price:{}, side:{} , mid market price:{} ", orderReceived.getPrice().toString(),orderReceived.getSide(), midMarketPrice);
+//			log.info("isUp {} ", isUp(orderReceived.getPrice()));
+
+//			calculateProfitandLoss(orderReceived.getPrice(), false);
 			changeDetector.reset();
 		}
 
-		sendCusumMessage(changeDetector.cusum().toString(),LocalDateTime.now().toString());
 
-		// sendCusumMessage(changeDetector.cusum().toString(),orderReceived.getTime());
+
+//		sendCusumHighMessage(changeDetector.cusumHigh().toString(),LocalDateTime.now().toString());
+//		sendCusumLowMessage(changeDetector.cusumLow().toString(),LocalDateTime.now().toString());
+
+
 
 	}
+
+	private void calculateProfitandLoss(BigDecimal orderReceivedPrice, boolean buy) {
+		if (buy) {
+			buy(orderReceivedPrice);
+			//buy
+		} else {
+			//sell
+			sell(orderReceivedPrice);
+		}
+
+//		profitAndLoss
+
+	log.info("profitAndLoss="+profitAndLoss);
+
+	}
+
+
+	void buy(BigDecimal orderReceivedPrice ) {
+		profitAndLoss = profitAndLoss.add(amount.multiply(midMarketPrice));
+	}
+
+	void sell(BigDecimal orderReceivedPrice) {
+		if (!profitAndLoss.equals(BigDecimal.ZERO) ) {
+			profitAndLoss = profitAndLoss.subtract(amount.multiply(midMarketPrice));
+		}
+	}
+
 
 	private boolean isUp(BigDecimal price) {
 		int compare = price.compareTo(midMarketPrice);
@@ -121,7 +163,6 @@ public class Observations {
 	 * 
 	 * Using fifo with best 50 bids and asks
 	 * 
-	 * @param orderReceived
 	 * @return
 	 */
 	public Double calculateLimitOrderImbalance() {
@@ -199,18 +240,32 @@ public class Observations {
 		}
 	}
 
-	protected void sendCusumMessage(String cusum, String time)  {
-		//log.info("::sendCusumMessage::cusum {} ",cusum);
+	protected void sendCusumHighMessage(String cusum_high, String time)  {
+		log.info("::sendCusumMessage::cusum_high {} ",cusum_high);
 		try {
 			if (webSocketsessionPrice != null) {
-				webSocketsessionPrice.sendMessage(new TextMessage(String.format("{\"type\":\"cusum\",\"value\":\"%s\",\"time\":\"%s\"}", cusum, time)));
+				webSocketsessionPrice.sendMessage(new TextMessage(String.format("{\"type\":\"cusum_high\",\"value\":\"%s\",\"time\":\"%s\"}", cusum_high, time)));
 
 			}
 
 		} catch (IOException e) {
-			log.error("Could not send  message", e);
+			log.error("Could not send cusum message", e);
 		}
 	}
+
+	protected void sendCusumLowMessage(String cusum, String time)  {
+		//log.info("::sendCusumMessage::cusum {} ",cusum);
+		try {
+			if (webSocketsessionPrice != null) {
+				webSocketsessionPrice.sendMessage(new TextMessage(String.format("{\"type\":\"cusum_low\",\"value\":\"%s\",\"time\":\"%s\"}", cusum, time)));
+
+			}
+
+		} catch (IOException e) {
+			log.error("Could not send cusum message", e);
+		}
+	}
+
 
 	protected void sendLoiMessage(String loi, String time)  {
 		//log.info("::sendCusumMessage::cusum {} ",cusum);
@@ -221,7 +276,7 @@ public class Observations {
 			}
 
 		} catch (IOException e) {
-			log.error("Could not send price message", e);
+			log.error("Could not send loi message", e);
 		}
 	}
 

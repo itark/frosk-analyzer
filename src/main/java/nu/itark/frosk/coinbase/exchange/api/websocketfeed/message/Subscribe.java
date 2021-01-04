@@ -12,6 +12,7 @@ public class Subscribe {
     //String[] channels = new String[]{"level2", "heartbeat"}; // make this configurable.
     //String[] channels = new String[]{HEARTBEAT}; // make this configurable.
 
+   // https://docs.pro.coinbase.com/#channels
     Channels[] channels;
 
     // Used for signing the subscribe message to the Websocket feed
@@ -24,10 +25,10 @@ public class Subscribe {
         this.type = "subscribe";
     }
 
-    public Subscribe(String[] product_ids) {
-        this.type = "subscribe";
-        this.product_ids = product_ids;
-    }
+//    public Subscribe(String[] product_ids) {
+//        this.type = "subscribe";
+//        this.product_ids = product_ids;
+//    }
 
     public Subscribe(Channels[] channels) {
         this.type = "subscribe";

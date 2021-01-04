@@ -73,13 +73,33 @@ public class MeanChangeDetector implements ChangeDetector<Double> {
     }
 
     @Override
-    public boolean isChange() {
-        return change;
+    public boolean isChangeHigh() {
+        return false;
     }
+
+    @Override
+    public boolean isChangeLow() {
+        return false;
+    }
+
+//    @Override
+//    public boolean isChange() {
+//        return change;
+//    }
 
     @Override
     public boolean isReady() {
         return this.observationCount >= readyAfter;
+    }
+
+    @Override
+    public Double cusumHigh() {
+        return null;
+    }
+
+    @Override
+    public Double cusumLow() {
+        return null;
     }
 
     public void reset() {
@@ -89,9 +109,9 @@ public class MeanChangeDetector implements ChangeDetector<Double> {
         this.observationCount = 0;
     }
 
-    @Override
-    public Double cusum() {
-        return cusum;
-    }
+//    @Override
+//    public Double cusum() {
+//        return cusum;
+//    }
 
 }

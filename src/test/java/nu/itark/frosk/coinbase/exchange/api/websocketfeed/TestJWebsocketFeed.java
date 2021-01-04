@@ -21,30 +21,12 @@ public class TestJWebsocketFeed {
 	@Autowired
 	Observations observations;
 
-//	@Test
-//	public void testWebsocketSubscribe() throws InterruptedException {
-//		String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
-//
-//
-//        log.info("*** Subscribing ***");
-//        websocketFeed.subscribe(new Subscribe(productIds));
-//
-//        Thread.sleep(1000 * 60 * 10);
-//
-//        log.info("*** ready sleeping ***");
-//
-//	}
-//
-		
 	 @Test
 	 public void testWebsocketSubscribeonChannel() throws InterruptedException {
 	 	String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
 	
-		
 	 	log.info("*** Subscribing ***");
-
-
-	 	Channels[] channel = new Channels[1];
+	Channels[] channel = new Channels[1];
 	 	channel[0] = new Channels();
 	 	channel[0].setName("full");
 //	 	channel[0].setProduct_ids(productIds);
@@ -53,7 +35,7 @@ public class TestJWebsocketFeed {
 
 		 websocketFeed.subscribe(subscribeChannel);
 
-         Thread.sleep(20000);
+         Thread.sleep(100000);
         
          log.info("*** ready sleeping ***");
 		

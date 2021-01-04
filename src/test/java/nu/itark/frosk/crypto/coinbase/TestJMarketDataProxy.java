@@ -72,7 +72,7 @@ public class TestJMarketDataProxy { //extends BaseTest {
     		log.info("marketData.getSequence()="+marketData.getSequence());
     		
     		log.info("asks="+asks.size());
-    		log.info("bids="+asks.size());
+    		log.info("bids="+bids.size());
     		
     		Assert.assertTrue(marketData.getSequence() > 0);
     	
@@ -134,21 +134,13 @@ public class TestJMarketDataProxy { //extends BaseTest {
 	   The granularity field must be one of the following values: {60, 300, 900, 3600, 21600, 86400}. Otherwise, your request will be rejected. 
 	   These values correspond to timeslices representing one minute, five minutes, fifteen minutes, one hour, six hours, and one day, respectively.
 	   */
-	   
-	  ZoneId zone1 = ZoneId.of("America/Los_Angeles");
 
-
-	   ZonedDateTime endZdt = ZonedDateTime.now(zone1);
-	   ZonedDateTime startZdt = endZdt.minusDays(1);
-//	   String start = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(startZdt);
-//	   String end = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(endZdt);
-	
 	   String start = DateTimeManager.start(1);
 	   String end =  DateTimeManager.end();
 	   
 	//    List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", "2019-02-22T00:00:00.00000Z","2019-02-23T00:00:00.00000Z", "3600" );
-	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, "3600" );
-// 	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
+	  // List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, "3600" );
+ 	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
 	   
 	   
 	   candlesList.forEach(candle -> {
