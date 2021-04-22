@@ -3,9 +3,13 @@ package nu.itark.frosk.coinbase.exchange.api.websocketfeed;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Queue;
 
+import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -38,12 +42,16 @@ public class Observations {
 	// Queue<OrderOpenOrderBookMessage> bestBidsQueue = new CircularFifoQueue<OrderOpenOrderBookMessage>(DEFAULT_QUEUE_SIZE);	
 	// Queue<OrderOpenOrderBookMessage> bestAsksQueue = new CircularFifoQueue<OrderOpenOrderBookMessage>(DEFAULT_QUEUE_SIZE);	
 
-	 Queue<OrderReceived> bestBidsQueue = new CircularFifoQueue<OrderReceived>(DEFAULT_QUEUE_SIZE);	
-	Queue<OrderReceived> bestAsksQueue = new CircularFifoQueue<OrderReceived>(DEFAULT_QUEUE_SIZE);	
+//	 Queue<OrderReceived> bestBidsQueue = new CircularFifoQueue<OrderReceived>(DEFAULT_QUEUE_SIZE);
+//	Queue<OrderReceived> bestAsksQueue = new CircularFifoQueue<OrderReceived>(DEFAULT_QUEUE_SIZE);
+
+	Queue<OrderBookMessage> bestBidsQueue = new CircularFifoQueue<OrderBookMessage>(DEFAULT_QUEUE_SIZE);
+	Queue<OrderBookMessage> bestAsksQueue = new CircularFifoQueue<OrderBookMessage>(DEFAULT_QUEUE_SIZE);
 
 
-	// Queue<T> bestBidsQueue = new CircularFifoQueue<T>(DEFAULT_QUEUE_SIZE);	
-	// Queue<T> bestAsksQueue = new CircularFifoQueue<T>(DEFAULT_QUEUE_SIZE);	
+//	Queue<T> bestBidsQueue = new CircularFifoQueue<T>(DEFAULT_QUEUE_SIZE);
+//	Queue<T> bestAsksQueue = new CircularFifoQueue<T>(DEFAULT_QUEUE_SIZE);
+
 	BigDecimal profitAndLoss = BigDecimal.ZERO;
 	BigDecimal amount = BigDecimal.ONE;
 
@@ -63,14 +71,14 @@ public class Observations {
     ChangeDetector<Double> changeDetector;
 
 
-	String productId = null;
+//	String productId = null;
 
 
 	BigDecimal midMarketPrice = null;
     
-	public void setProductId(String productId) {
-		this.productId = productId;
-	}
+//	public void setProductId(String productId) {
+//		this.productId = productId;
+//	}
 	
 	public void setMidMarketPrice(BigDecimal midMarketPrice) {
 		this.midMarketPrice = midMarketPrice;
@@ -82,8 +90,8 @@ public class Observations {
 	 * If change send Cusum
 	 * @param orderReceived
 	 */
-	public void process(OrderReceived orderReceived) {
-		Double loi = calculateLimitOrderImbalance();
+	public void process(OrderBookMessage orderReceived) {
+		Double loi = calculateLimitOrderImbalance(orderReceived.getProduct_id());
 
 		if (loi != null) {
 			changeDetector.update(loi);
@@ -95,14 +103,13 @@ public class Observations {
 
 		boolean change_high = changeDetector.isChangeHigh();
 		boolean change_low = changeDetector.isChangeLow();
-//		boolean change = changeDetector.isChange();
 
 		//sendCusumHighMessage(changeDetector.cusumHigh().toString(),LocalDateTime.now().toString());
-		//		sendLoiMessage(loi.toString(),LocalDateTime.now().toString());
+		sendLoiMessage(loi.toString(),LocalDateTime.now().toString());
 
 		if(change_high) {
-			log.info("POSITIVE CHANGE DETECTED! price:{}, side:{} , mid market price:{} ", orderReceived.getPrice().toString(),orderReceived.getSide(), midMarketPrice);
-//			log.info("isUp {} ", isUp(orderReceived.getPrice()));
+//			log.info("HIGH CHANGE DETECTED! price:{}, side:{} , mid market price:{} ", orderReceived.getPrice().toString(),orderReceived.getSide(), midMarketPrice);
+//			log.info("HIGH CHANGE DETECTED! orderReceived:{}, mid market price:{} ", ReflectionToStringBuilder.toString(orderReceived, ToStringStyle.MULTI_LINE_STYLE), midMarketPrice);
 
 //			calculateProfitandLoss(orderReceived.getPrice(), true);
 			changeDetector.reset();
@@ -110,14 +117,12 @@ public class Observations {
 		}
 
 		if(change_low) {
-			log.info("NEGATIVE CHANGE DETECTED! price:{}, side:{} , mid market price:{} ", orderReceived.getPrice().toString(),orderReceived.getSide(), midMarketPrice);
-//			log.info("isUp {} ", isUp(orderReceived.getPrice()));
+//			log.info("LOW CHANGE DETECTED! price:{}, side:{} , mid market price:{} ", orderReceived.getPrice().toString(),orderReceived.getSide(), midMarketPrice);
+//			log.info("LOW CHANGE DETECTED! orderReceived:{},  mid market price:{} ", ReflectionToStringBuilder.toString(orderReceived, ToStringStyle.MULTI_LINE_STYLE), midMarketPrice);
 
 //			calculateProfitandLoss(orderReceived.getPrice(), false);
 			changeDetector.reset();
 		}
-
-
 
 //		sendCusumHighMessage(changeDetector.cusumHigh().toString(),LocalDateTime.now().toString());
 //		sendCusumLowMessage(changeDetector.cusumLow().toString(),LocalDateTime.now().toString());
@@ -161,11 +166,11 @@ public class Observations {
 	/**
 	 * This one is synchronous.
 	 * 
-	 * Using fifo with best 50 bids and asks
+	 * Using fifo with best DEFAULT_QUEUE_SIZE bids and asks
 	 * 
 	 * @return
 	 */
-	public Double calculateLimitOrderImbalance() {
+	public Double calculateLimitOrderImbalance(String productId) {
 		Assert.notNull("productId can not be null",productId);
 		if (bestBidsQueue.size() < DEFAULT_QUEUE_SIZE && bestAsksQueue.size() < DEFAULT_QUEUE_SIZE) {
 			return null;
@@ -186,50 +191,51 @@ public class Observations {
 	 * 
 	 * @param orderReceived
 	 */
-	public void synchronizeBest(OrderReceived orderReceived) {
-//		log.info("::synchronizeBest {} ::", DEFAULT_QUEUE_SIZE);
+	public void synchronizeBest(OrderBookMessage orderReceived) {
 		if ("sell".equals(orderReceived.getSide())) {
 			 synchronizeBestBids(orderReceived);
 		} else if ("buy".equals(orderReceived.getSide())) {
 			 synchronizeBestAsks(orderReceived);
 		}
-	}	
-	
+	}
 
-	private void synchronizeBestBids(OrderReceived order) {
-//		log.info("::synchronizeBestBids :: {}", bestBidsQueue.size());
+
+	private void synchronizeBestBids(OrderBookMessage order) {
 		if (bestBidsQueue.isEmpty()) {
 			bestBidsQueue.add(order);
-			
+
 			return;
 		}
 		bestBidsQueue.forEach(orderOpen -> {
 			if ( order.getPrice().compareTo( orderOpen.getPrice() ) == 1) {
-//				log.info("orderReceived.getPrice(): {} greater then {}",orderReceived.getPrice(), order.getPrice() );
 				bestBidsQueue.add(order);
 				return;
-			} 
+			}
 		});
 	}
-	
-	private void synchronizeBestAsks(OrderReceived order) {
-//		log.info("::synchronizeBestAsks ::{}", bestAsksQueue.size());
+
+	private void synchronizeBestAsks(OrderBookMessage order) {
 		if (bestAsksQueue.isEmpty()) {
 			bestAsksQueue.add(order);
 			return;
 		}
 		bestAsksQueue.forEach(orderOpen -> {
 			if ( order.getPrice().compareTo( orderOpen.getPrice() ) == 1) {
-//				log.info("orderReceived.getPrice(): {} greater then {}",orderReceived.getPrice(), order.getPrice() );
 				bestAsksQueue.add(order);
 				return;
-			} 
-		});		
-		
-	}	
+			}
+		});
+
+	}
 	
 	protected void sendPriceMessage(String price, String time)  {
-		//log.info("price {}, time {}",price, time);
+//		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss.S");
+//		ZonedDateTime dateTime = ZonedDateTime.parse(time, formatter.withZone(ZoneId.systemDefault()));
+		int dateTime = 11;
+		log.info("FRMO: kolla time: price {}, time {}, dateTime {}",price, time, dateTime);
+
+		//FRMO: kolla time: price 45646.62, time 2021-04-22T12:07:16.162315Z
+
 		try {
 			if (webSocketsessionPrice != null) {
 				webSocketsessionPrice.sendMessage(new TextMessage(String.format("{\"type\":\"price\",\"price\":\"%s\",\"time\":\"%s\"}", price, time)));
@@ -303,28 +309,28 @@ public class Observations {
 	/**
 	 * @return the bestBidsQueue
 	 */
-	public Queue<OrderReceived> getBestBidsQueue() {
+	public Queue<OrderBookMessage> getBestBidsQueue() {
 		return bestBidsQueue;
 	}
 
 	/**
 	 * @param bestBidsQueue the bestBidsQueue to set
 	 */
-	public void setBestBidsQueue(Queue<OrderReceived> bestBidsQueue) {
+	public void setBestBidsQueue(Queue<OrderBookMessage> bestBidsQueue) {
 		this.bestBidsQueue = bestBidsQueue;
 	}
 
 	/**
 	 * @return the bestAsksQueue
 	 */
-	public Queue<OrderReceived> getBestAsksQueue() {
+	public Queue<OrderBookMessage> getBestAsksQueue() {
 		return bestAsksQueue;
 	}
 
 	/**
 	 * @param bestAsksQueue the bestAsksQueue to set
 	 */
-	public void setBestAsksQueue(Queue<OrderReceived> bestAsksQueue) {
+	public void setBestAsksQueue(Queue<OrderBookMessage> bestAsksQueue) {
 		this.bestAsksQueue = bestAsksQueue;
 	}
 
@@ -361,13 +367,6 @@ public class Observations {
 	 */
 	public void setWebSocketsession(WebSocketSession webSocketsession) {
 		this.webSocketsessionPrice = webSocketsession;
-	}
-
-	/**
-	 * @return the productId
-	 */
-	public String getProductId() {
-		return productId;
 	}
 
 	/**

@@ -28,6 +28,7 @@ import lombok.Data;
  */
 
 @Data
+@Deprecated //"use OrderReceivedorderBookMessage"
 public class OrderReceived {
 
     String type;

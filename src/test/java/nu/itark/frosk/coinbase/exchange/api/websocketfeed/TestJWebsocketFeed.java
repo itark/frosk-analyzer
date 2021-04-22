@@ -17,30 +17,27 @@ public class TestJWebsocketFeed {
 
 	@Autowired
 	WebsocketFeed websocketFeed;
-	
-	@Autowired
-	Observations observations;
 
-	 @Test
-	 public void testWebsocketSubscribeonChannel() throws InterruptedException {
-	 	String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
-	
-	 	log.info("*** Subscribing ***");
-	Channels[] channel = new Channels[1];
-	 	channel[0] = new Channels();
-	 	channel[0].setName("full");
-//	 	channel[0].setProduct_ids(productIds);
+	@Test
+	public void testWebsocketSubscribeonChannel() throws InterruptedException {
+		String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
 
-	 	Subscribe subscribeChannel = new Subscribe(channel);
+		log.info("*** Subscribing ***");
+		Channels[] channel = new Channels[1];
+		channel[0] = new Channels();
+		channel[0].setName("full");
+	 	channel[0].setProduct_ids(productIds);
 
-		 websocketFeed.subscribe(subscribeChannel);
+		Subscribe subscribeChannel = new Subscribe(channel);
 
-         Thread.sleep(100000);
-        
-         log.info("*** ready sleeping ***");
-		
-	 }
+		websocketFeed.subscribe(subscribeChannel);
 
+		Thread.sleep(100000);
 
+	//	websocketFeed.unsubscribe(subscribeChannel);
+
+		log.info("*** ready sleeping ***");
+
+	}
 
 }

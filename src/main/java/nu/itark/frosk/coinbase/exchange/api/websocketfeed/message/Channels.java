@@ -9,6 +9,6 @@ import lombok.Data;
 public class Channels {
 
     private String name;
-    private String[] product_ids = new String[]{"BTC-EUR"};
+    private String[] product_ids;
     
 }

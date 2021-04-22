@@ -38,14 +38,15 @@
 		<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 		<!--script src="webjars/sockjs-client/sockjs.js"></script-->
 
-		<script src="https://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+		<!--script src="https://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script-->
 
 
 		<script src="js/global.js"></script>  	
-		<script src="js/ws.js"></script>  	
+		<script src="js/ws.js"></script>
+		<script src="js/price.js"></script>
 
 
-		<!--script src="webjars/sockjs-client/sockjs.js"></script-->
+		<script src="webjars/sockjs-client/sockjs.js"></script>
 		<script src="webjars/stomp-websocket/stomp.js"></script>
 
 

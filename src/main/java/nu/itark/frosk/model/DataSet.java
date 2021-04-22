@@ -13,8 +13,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 import lombok.Data;
 
@@ -27,13 +25,9 @@ public class DataSet  {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 
-	@NotNull
-	@Size(max = 20)
 	@Column(name = "name", unique=true)
 	private String name;
 
-	@NotNull
-	@Size(max = 100)
 	@Column(name = "description")
 	private String description;
 

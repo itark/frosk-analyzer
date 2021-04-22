@@ -5,19 +5,13 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 
-import javax.websocket.ClientEndpoint;
-import javax.websocket.CloseReason;
-import javax.websocket.ContainerProvider;
-import javax.websocket.OnClose;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.WebSocketContainer;
+import javax.websocket.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
+import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.*;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
@@ -28,17 +22,10 @@ import org.springframework.stereotype.Service;
 
 import nu.itark.frosk.changedetection.ChangeDetector;
 import nu.itark.frosk.coinbase.exchange.api.exchange.Signature;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.HeartBeat;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderDoneOrderBookMessage;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderMatchOrderBookMessage;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderOpenOrderBookMessage;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderReceived;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.Subscribe;
 
 
-@Service
-@ClientEndpoint
+@Service  //Spring
+@ClientEndpoint  //embedded-Tomcat
 public class WebsocketFeed {
 
     static Logger log = LoggerFactory.getLogger(WebsocketFeed.class);
@@ -53,8 +40,8 @@ public class WebsocketFeed {
     boolean guiEnabled;
     
     
-    @Autowired
-    ChangeDetector<Double> changeDetector;
+//    @Autowired
+//    ChangeDetector<Double> changeDetector;
     
     @Autowired
     Observations observations;
@@ -123,6 +110,15 @@ public class WebsocketFeed {
         }
     }
 
+
+
+    @OnError
+    public void error(Session session, Throwable t) {
+        log.trace("onErros, message {}", t);
+    }
+
+
+
     /**
      * register message handler
      *
@@ -143,19 +139,19 @@ public class WebsocketFeed {
     }
 
 
-
     public void subscribe(Subscribe msg) {
         log.trace("msg="+ ReflectionToStringBuilder.toString(msg, ToStringStyle.MULTI_LINE_STYLE));
 
     	String jsonSubscribeMessage = signObject(msg);
-        observations.setProductId(msg.getProduct_ids()[0]);
+        final Long[] currentSeq = {0L};
 
         addMessageHandler(json -> {
-//                    log.info("json="+json);
+                   log.trace("json="+json);
 
                     OrderBookMessage message = getObject(json, new TypeReference<OrderBookMessage>() {});
                     if (Objects.isNull(message)) {
-                        log.info("oopps, not good, gå vidare");
+                        log.error("oopps, not good, gå vidare");
+                        log.info("json="+json);
                         return;
                     }
                     String type = message.getType();
@@ -169,17 +165,23 @@ public class WebsocketFeed {
                     {
                         // received orders are not necessarily live orders - so I'm ignoring these msgs as they're
                         // subject to change.
-                        //log.info("order received {}", message);
-                        OrderReceived orderReceived = getObject(json, new TypeReference<OrderReceived>() {});
-                        if (orderReceived.getOrder_type().equals(OrderReceived.OrderTypeEnum.LIMIT.getValue())) {
-//                            observations.synchronizeBest(orderReceived);
-//                            observations.process(orderReceived);
-                        }
+//                        OrderReceived orderReceived = getObject(json, new TypeReference<OrderReceived>() {});
+//                        OrderReceivedOrderBookMessage orderReceivedOrderBookMessage = getObject(json, new TypeReference<OrderReceivedOrderBookMessage>() {});
+//                        if (orderReceivedOrderBookMessage.getOrder_type().equals("limit")) {
+//                            observations.synchronizeBest(orderReceivedOrderBookMessage);
+//                            observations.process(orderReceivedOrderBookMessage);
+//                        }
                     }
+//                    The order is now open on the order book.
+//                    This message will only be sent for orders which are not fully filled immediately.
+//                    remaining_size will indicate how much of the order is unfilled and going on the book.
                     else if (type.equals("open"))
                     {
                         OrderOpenOrderBookMessage open = getObject(json, new TypeReference<OrderOpenOrderBookMessage>() {});
-                        // log.info("Order opened: " + open );
+                        log.trace("Order opened: " + open );
+                        observations.synchronizeBest(open);
+                        observations.process(open);
+
                     }
                     else if (type.equals("done"))
                     {
@@ -191,9 +193,15 @@ public class WebsocketFeed {
                     else if (type.equals("match"))
                     {
                         OrderBookMessage matchedOrder = getObject(json, new TypeReference<OrderMatchOrderBookMessage>(){});
-                        log.info("Order matched, on price: " + matchedOrder.getPrice());
+                        //Sanity check
+                        if (matchedOrder.getSequence() < currentSeq[0]) {
+                            log.error("curr:{} act:{}", currentSeq[0],matchedOrder.getSequence());
+                            return;
+                        }
+                        currentSeq[0] =  matchedOrder.getSequence();
+                        //log.info("Order matched, on price: {}, seq: {}", matchedOrder.getPrice(), matchedOrder.getSequence());
                         observations.setMidMarketPrice(matchedOrder.getPrice());
-//                        observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
+                        observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
                     }
                     else if (type.equals("change"))
                     {
@@ -214,7 +222,18 @@ public class WebsocketFeed {
         // send message to websocket
         sendMessage(jsonSubscribeMessage);
         
-    }    
+    }
+
+
+    public void unsubscribe(Subscribe msg) {
+        String jsonSubscribeMessage = signObject(msg);
+
+        msg.setType("unsubscribe");
+
+        sendMessage(jsonSubscribeMessage);
+
+    }
+
 
 
     // TODO - get this into postHandle interceptor.
@@ -240,6 +259,7 @@ public class WebsocketFeed {
         }
         return null;
     }
+
 
     /**
      * OrderBookMessage handler.

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Queue;
 
+import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,9 @@ public class LimitOrderImbalance {
    		List<OrderItem> midMarketAsks = midMarket.getAsks();   
    		List<OrderItem> midMarketBids = midMarket.getBids();   	
  		BigDecimal midMarketPrice = ( midMarketBids.get(0).getPrice().add(midMarketAsks.get(0).getPrice()) ).divide(BigDecimal.valueOf(2));
+
+		System.out.println("midMarketPrice:"+midMarketPrice);
+
  		  
    		List<OrderItem> best50Asks = best50.getAsks();   
    		List<OrderItem> best50Bids = best50.getBids();   	
@@ -72,11 +76,12 @@ public class LimitOrderImbalance {
 	 * 
 	 * Relates to 1 observation but top 50 instead of 20 top
 	 * 
-	 * @param midMarket
-	 * @param best50
+	 * @param midMarketPrice
+	 * @param bestBids
+	 * @param bestAsks
 	 * @return limit order imbalance at this observation
 	 */
-	public Double calculate(BigDecimal midMarketPrice, Queue<OrderReceived> bestBids, Queue<OrderReceived> bestAsks) {
+	public Double calculate(BigDecimal midMarketPrice, Queue<OrderBookMessage> bestBids, Queue<OrderBookMessage> bestAsks) {
 
    		Double limitOrderImbalanceMeasurement = 0.0;
    		Double leftRoof = 0.0;
@@ -85,14 +90,14 @@ public class LimitOrderImbalance {
    		Double rightFloor  = 0.0;
    		
    		
-   		for (OrderReceived orderReceivedBid : bestBids) {
-   			leftRoof += (orderReceivedBid.getPrice().doubleValue() * orderReceivedBid.getSize().doubleValue());
-   			leftFloor += orderReceivedBid.getSize().doubleValue();
+   		for (OrderBookMessage orderReceivedBid : bestBids) {
+   			leftRoof += (orderReceivedBid.getPrice().doubleValue() * orderReceivedBid.getRemaining_size().doubleValue());
+   			leftFloor += orderReceivedBid.getRemaining_size().doubleValue();
 		}
    		
-   		for (OrderReceived orderReceivedAsk : bestAsks) {
-   			rigthRoof += (orderReceivedAsk.getPrice().doubleValue() * orderReceivedAsk.getSize().doubleValue());
-   			rightFloor += orderReceivedAsk.getSize().doubleValue();
+   		for (OrderBookMessage orderReceivedAsk : bestAsks) {
+   			rigthRoof += (orderReceivedAsk.getPrice().doubleValue() * orderReceivedAsk.getRemaining_size().doubleValue());
+   			rightFloor += orderReceivedAsk.getRemaining_size().doubleValue();
 		}
 
 //   		log.info("leftRoof {} ", leftRoof);
@@ -103,7 +108,7 @@ public class LimitOrderImbalance {
    		
    		limitOrderImbalanceMeasurement =   ( (leftRoof + rigthRoof) / (leftFloor + rightFloor) ) - midMarketPrice.doubleValue();
  
- 		//log.info("limitOrderImbalanceMeasurement {} ", limitOrderImbalanceMeasurement); 	   		
+ 		//log.info("loi {} ", limitOrderImbalanceMeasurement);
  		    		
    		
 		return limitOrderImbalanceMeasurement;

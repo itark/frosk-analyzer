@@ -64,5 +64,5 @@ Test glidande medelvärde på Websocketfeed, håll dig till backend först.
 Will F's sida: https://faithfull.me/change-detection-for-software-engineers-part-i-introduction-and-cusum/
 
 
-
+2021: ws verkar inte funka, varken på Jetty eller Tomcat.
 

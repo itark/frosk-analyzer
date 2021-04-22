@@ -47,7 +47,7 @@ public class OrderBookMessage implements Comparable {
 
     String message;
 
-//    Channels channels;
+    Channels[] channels;
 
     public OrderBookMessage() { }
 
@@ -90,13 +90,13 @@ public class OrderBookMessage implements Comparable {
 
     }
 
-//    public Channels getChannels() {
-//        return channels;
-//    }
-//
-//    public void setChannels(Channels channels) {
-//        this.channels = channels;
-//    }
+    public Channels[] getChannels() {
+        return channels;
+    }
+
+    public void setChannels(Channels[] channels) {
+        this.channels = channels;
+    }
 
     public String getClient_oid() {
         return client_oid;

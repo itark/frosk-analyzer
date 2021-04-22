@@ -33,10 +33,6 @@ public class CoinbaseWebSocketHandler extends TextWebSocketHandler {
 	
 	private static final Log logger = LogFactory.getLog(CoinbaseWebSocketHandler.class);
 
-	@Autowired	
-	ThorburnChangeDetector  thorburnChangeDetector;
-	
-	
 	@Autowired
 	WebsocketFeed websocketFeed;
 
@@ -47,24 +43,14 @@ public class CoinbaseWebSocketHandler extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) throws Exception {
 		logger.trace("::afterConnectionEstablished::");
-
-
-		Channels[] channel = new Channels[1];
-		channel[0] = new Channels();
-		channel[0].setName("full");
-//	 	channel[0].setProduct_ids(productIds);
-
-		Subscribe subscribeChannel = new Subscribe(channel);
-
-
-		websocketFeed.subscribe(subscribeChannel);
+		websocketFeed.subscribe(getSubscribe());
 		observations.setWebSocketsession(session);
-		
 	}
 
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message)
 			throws Exception {
+		logger.info("::handleTextMessage::");
 
 	}
 
@@ -72,11 +58,21 @@ public class CoinbaseWebSocketHandler extends TextWebSocketHandler {
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status)
 			throws Exception {
 		logger.info("::afterConnectionClosed::");
-		
-		
-		//TODO stäng koppel till coinbase
 
-		//websocketFeed.unsubscribeOrderReceived(new Subscribe());	
+		//TODO stäng koppel till coinbase
+		websocketFeed.unsubscribe(getSubscribe());
+	}
+
+
+	private static Subscribe getSubscribe() {
+		String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
+		Channels[] channel = new Channels[1];
+		channel[0] = new Channels();
+		channel[0].setName("full");
+		channel[0].setProduct_ids(productIds);
+
+		return new Subscribe(channel);
+
 	}
 
 	

@@ -1,5 +1,6 @@
 package nu.itark.frosk.crypto.coinbase;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -83,15 +84,19 @@ public class TestJMarketDataProxy { //extends BaseTest {
     public final void getMarketData50AndMidMarket() {
     	
     	//Mid market at observation i
-    	MarketData midMarket = marketDataProxy.getMarketDataOrderBook(productId, LEVEL_1);
-   		
+    	MarketData midMarket = marketDataProxy.getMarketDataOrderBook("BTC-EUR", LEVEL_1);
+
+		Ticker ticker = marketDataProxy.getMarketDataTicker("BTC-EUR");
+		log.info("****ticker.getPrice: {}",ticker.getPrice());
+
+
     	//The limit order imbalance measurement 
-    	MarketData best50 = marketDataProxy.getMarketDataOrderBook(productId, LEVEL_2); 	
+    	MarketData best50 = marketDataProxy.getMarketDataOrderBook("BTC-EUR", LEVEL_2);
 
    		Double loiObservation = loi.calculate(midMarket, best50);
    		
    		
-   		log.warn("LOI value="+loiObservation);
+   		log.info("***LOI value: {}",loiObservation);
    		
     	
     	

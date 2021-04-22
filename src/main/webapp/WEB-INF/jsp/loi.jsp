@@ -89,6 +89,7 @@ header {
                                         <li><a href="#" onclick="startFeedPrice();">Start feed price</a></li>
                                         <li><a href="#" onclick="startFeedCusum();">Start feed cusum</a></li>
                                         <li><a href="#" onclick="startFeedLoi();">Start feed loi</a></li>
+                                         <li><a href="#" onclick="startFeedLab();">Start feed LAB</a></li>
 
                                     </ul>
                                 </div>

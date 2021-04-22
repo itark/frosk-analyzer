@@ -15,7 +15,6 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
 
 import lombok.Data;
 
@@ -32,11 +31,9 @@ public class StrategyIndicatorValue {
 	@Column(name = "date")
 	private Date date;
 
-//	@NotNull
 	@Column(name = "indicator")
 	private String indicator;	
 	
-	@NotNull
 	@Column(name = "value")
 	private BigDecimal value;	
 	

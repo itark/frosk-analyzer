@@ -1,14 +1,11 @@
 package nu.itark.frosk.coinbase.exchange.api.websocketfeed.message;
 
-/**
- * Hold product_id now : BTC-EUR
- */
 public class Subscribe {
 
     static final String HEARTBEAT = "heartbeat";
 	String type;
 //    String[] product_ids;
-    String[] product_ids = new String[]{"BTC-EUR"}; // make this configurable.
+   // String[] product_ids = new String[]{"BTC-EUR"}; // make this configurable.
     //String[] channels = new String[]{"level2", "heartbeat"}; // make this configurable.
     //String[] channels = new String[]{HEARTBEAT}; // make this configurable.
 
@@ -44,13 +41,13 @@ public class Subscribe {
         this.type = type;
     }
 
-    public String[] getProduct_ids() {
-        return product_ids;
-    }
-
-    public void setProduct_ids(String[] product_ids) {
-        this.product_ids = product_ids;
-    }
+//    public String[] getProduct_ids() {
+//        return product_ids;
+//    }
+//
+//    public void setProduct_ids(String[] product_ids) {
+//        this.product_ids = product_ids;
+//    }
 
     public Subscribe setSignature(String signature) {
         this.signature = signature;

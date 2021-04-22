@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  *      δ (delta)   : The magnitude of acceptable change in standard deviations
  *      λ (lambda) : The threshold in standard deviations
+ *              // https://en.wikipedia.org/wiki/CUSUM
+ *         //Thorbunr sid 17
  */
 @Slf4j
 public class ThorburnChangeDetector implements ChangeDetector<Double> {
@@ -17,13 +19,13 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
     private final static double DEFAULT_THRESHOLD = 3; //https://github.com/O5ten/halp/blob/master/src/main/java/com/osten/halp/impl/profiling/detector/Cusum.java
     private final static long DEFAULT_READY_AFTER = 50;  //50
 
-    private double cusumPrev_upward = 0;
-    private double cusumPrev_downward = 0;
-    private double cusum_upward;
-    private double cusum_downward;
+    private double cusumPrev_high = 0;
+    private double cusumPrev_low = 0;
+    private double cusum_high;
+    private double cusum_low;
     private double magnitude;
-    private double threshold_upward;
-    private double threshold_downward;
+    private double threshold_high;
+    private double threshold_low;
     private double magnitudeMultiplier;
     private double thresholdMultiplier;
     private long   readyAfter;
@@ -32,9 +34,9 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
     double runningMean      = 0;
     double runningVariance = 0;
 
-    boolean change_upward = false;
-    boolean change_downward = false;
-    double init_loi  = 0; //true value
+    boolean change_high = false;
+    boolean change_low = false;
+    double init_loi  = 0; //true value, sida 18 Thorburn
 
     
     /**
@@ -72,56 +74,46 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
         runningVariance += (loi - runningMean)*(loi - newMean);
         double std = Math.sqrt(runningVariance);
 
-        threshold_upward = thresholdMultiplier * std;
-        threshold_downward = thresholdMultiplier * std;
+        threshold_high = thresholdMultiplier * std;
+        threshold_low = thresholdMultiplier * std;
 
-//        cusum_high = Math.max(0, cusumPrev_high +(loi + runningMean - magnitude));
-//        cusum_low = Math.max(0, cusumPrev_low +(loi - runningMean - magnitude));
-//        cusum_high = Math.max(0, cusumPrev_high +(loi - runningMean ));
-//        cusum_low = Math.max(0, cusumPrev_low - (loi - runningMean ));
-
-        cusum_upward = Math.max(0, cusumPrev_upward + loi - init_loi  );
-        cusum_downward = Math.min(0, cusumPrev_downward +  loi - init_loi );
-
-//        positiveCusum = Math.max( 0, positiveCusum + drift + residual );
-//        negativeCusum = Math.max( 0, Math.abs( negativeCusum + drift - residual ) );/* Abs mig
-
-
-        // https://en.wikipedia.org/wiki/CUSUM
-
-        //Thorbunr sid 17
-
-        log.info(" cusum_upward  {},cusum_downward:{}", cusum_upward , cusum_downward);
-//        log.info("std {},loi:{}",std, loi);
-      //  log.info("init_loi:{}, loi:{}, cusum_high:{}, cusum_low:{}, threshold_high:{}", init_loi, loi, cusum_high, cusum_low, threshold_high);
+        cusum_high = Math.max(0, cusumPrev_high + loi - init_loi  );
+        cusum_low = Math.max(0, Math.abs(cusumPrev_low -  loi - init_loi ));
 
         if(isReady()) {
-            this.change_upward = cusum_upward > threshold_upward;
-            this.change_downward = cusum_downward < threshold_upward;
+            change_high = cusum_high > threshold_high;
+            change_low = cusum_low > threshold_low;
 
-//            if (this.change_high) {
-//                log.info("CHANGE HIGH:loi:{}, cusum_high:{}, cusum_low:{}, threshold {}", loi, cusum_high, cusum_low, threshold_high);
+           // log.info("loi:{}, std:{} cusum_high:{}, cusum_low:{}, threshold_high {}", loi,std, cusum_high, cusum_low, threshold_high);
+
+
+//            if (change_high) {
+//                log.info("HIGH : loi:{}, change_high:{}, change_low:{}, threshold_high {}", loi, change_high, change_low, threshold_high);
+//                log.info("********** \n");
+//                reset();
 //            }
 //
-//            if (this.change_low) {
-//                log.info("CHANGE LOW:loi:{}, cusum_high:{}, cusum_low:{}, threshold {}", loi, cusum_high, cusum_low, threshold_high);
+//            if (change_low) {
+//                log.info("LOW : loi:{}, change_high:{}, change_low:{}, threshold_high {}", loi, change_high, change_low, threshold_high);
+//                log.info("********** \n");
+//                reset();
 //            }
+
         }
 
-        cusumPrev_upward = cusum_upward;
-        cusumPrev_downward = cusum_downward;
+        cusumPrev_high = cusum_high;
+        cusumPrev_low = cusum_low;
 
     }
 
-
     @Override
     public boolean isChangeHigh() {
-        return change_upward;
+        return change_high;
     }
 
     @Override
     public boolean isChangeLow() {
-        return change_downward;
+        return change_low;
     }
 
 
@@ -131,26 +123,27 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
     }
 
     public void reset() {
-        this.cusum_upward = 0;
-        this.cusumPrev_upward = 0;
-        this.cusum_downward = 0;
-        this.cusumPrev_downward = 0;
+        this.cusum_high = 0;
+        this.cusumPrev_high = 0;
+        this.cusum_low = 0;
+        this.cusumPrev_low = 0;
         this.runningMean = 0;
         this.runningVariance = 0;
         this.observationCount = 0;
-        this.threshold_upward = 0;
+        this.threshold_high = 0;
+        this.threshold_low = 0;
         this.init_loi = 0;
     }
 
     @Override
     public Double cusumHigh() {
-        return cusum_upward;
+        return cusum_high;
     }
 
 
     @Override
     public Double cusumLow() {
-        return cusum_downward;
+        return cusum_low;
     }
 
 

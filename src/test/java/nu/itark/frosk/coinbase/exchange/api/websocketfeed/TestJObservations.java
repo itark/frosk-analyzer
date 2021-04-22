@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +25,8 @@ public class TestJObservations {
 	
 	@Test
 	final public void testQueue() {
-		
-		OrderReceived orderReceived = new OrderReceived();
+
+		OrderBookMessage orderReceived = new OrderBookMessage();
 		orderReceived.setSize(new BigDecimal(10));
 		orderReceived.setPrice(new BigDecimal(3567));
 		
@@ -39,7 +40,7 @@ public class TestJObservations {
 			
 		}
 		
-		lois.add(observations.calculateLimitOrderImbalance());
+		lois.add(observations.calculateLimitOrderImbalance("BTC-EUR"));
 		
 		lois.forEach(loi -> {
 			

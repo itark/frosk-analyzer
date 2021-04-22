@@ -6,19 +6,21 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.1.2.RELEASE</version> <!-- 1.5.7.RELEASE -->
-		<relativePath/> 
+		<!-- 1.5.7.RELEASE -->
+		<!--version>2.1.2.RELEASE</version-->
+		<!--version>2.3.3.RELEASE</version-->
+		<version>2.4.3</version>
+		<relativePath/>
 	</parent>
 
 
 	<groupId>nu.itark.frosk</groupId>
 	<artifactId>frosk-analyzer</artifactId>
-	<version>0.0.5</version>
+	<version>0.0.6</version>
 	<packaging>war</packaging>
 
 	<name>frosk-analyzer</name>
 	<description>Frosk is the thing, holding backend and UI</description>
-
 
 	 <properties>
 	    <maven.compiler.source>1.8</maven.compiler.source>
@@ -57,6 +59,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+			<version>2.3.3.RELEASE</version>
+
+
+
 		</dependency> 
  
 	    <dependency>
@@ -74,6 +80,8 @@
 	    <dependency>
 	      <groupId>joda-time</groupId>
 	      <artifactId>joda-time</artifactId>
+		  <version>2.1</version>
+
 	      <scope>compile</scope>
 	      <exclusions>
 	        <exclusion>
@@ -100,7 +108,8 @@
 		<dependency>
 		    <groupId>org.projectlombok</groupId>
 		    <artifactId>lombok</artifactId>
-		    <scope>provided</scope>
+			<version>1.16.12</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -223,8 +232,9 @@
 		<dependency>
 		    <groupId>org.webjars</groupId>
 		    <artifactId>stomp-websocket</artifactId>
-		    <version>2.3.1</version>
+		    <version>2.3.3</version>
 		</dependency>
+
 		<!-- end webjars -->
 
       <dependency>
@@ -239,8 +249,7 @@
 			<version>4.1</version>
 		</dependency>
 
-
-
+		<!--
 		<dependency>
 			<groupId>com.numericalmethod</groupId>
 			<artifactId>suanshu</artifactId>
@@ -248,17 +257,13 @@
 			<scope>system</scope>
 			<systemPath>${basedir}/lib/suanshu-20120606-1.0-SNAPSHOT.jar</systemPath>
 		</dependency>
-
-
-
-		
+		-->
 
 	</dependencies>
 
 
-
-
 <!-- https://www.baeldung.com/tomcat-deploy-war -->
+<!--https://howtodoinjava.com/spring-boot/configure-jetty-server/-->
 	<build>
 <!-- 
 		<finalName>frosk-analyzer</finalName>
@@ -282,7 +287,7 @@
 			    <version>2.2</version>
 			    <configuration>
 			        <url>http://localhost:8080/manager/text</url>
-			        <server>TomcatLocal</server>
+			        <server>TomcatServer</server>
 			        <path>/frosk-analyzer</path>
 					<update>true</update>
 			    </configuration>
@@ -291,6 +296,8 @@
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-maven-plugin</artifactId>
 				<version>9.4.18.v20190429</version>
+				<!--version>9.4.35.v20201120</version-->
+				<!--version>${jettyVersion}</version-->
 				<configuration>
 					<scanIntervalSeconds>0</scanIntervalSeconds>
 					<webApp>
@@ -308,8 +315,6 @@
 					</systemProperties>
 				</configuration>
 			</plugin>
-
-
 
 
 		</plugins>

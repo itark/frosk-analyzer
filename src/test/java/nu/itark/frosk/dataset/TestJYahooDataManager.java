@@ -65,7 +65,7 @@ public class TestJYahooDataManager {
 //		Stock stock = YahooFinance.get("VOLV-B.ST",true);
 		Stock stock;
 		try {
-			stock = YahooFinance.get("NDA-SEK.ST",true);
+			stock = YahooFinance.get("NDA-SE.ST",true);
 
 			BigDecimal price = stock.getQuote().getPrice();
 			BigDecimal change = stock.getQuote().getChangeInPercent();
@@ -92,10 +92,12 @@ public class TestJYahooDataManager {
 	
 	@Test
 	public void test2() throws IOException {
-		Stock google = YahooFinance.get("GOOG");
-		List<HistoricalQuote> googleHistQuotes = google.getHistory();
+		Stock one = YahooFinance.get("GOOG", true);
+		System.out.println("one:"+one.getHistory());
 
-	
+		Stock two = YahooFinance.get("SAND.ST",true);
+		System.out.println("two:"+two.getHistory());
+
 	}	
 	
 	@Test

@@ -14,8 +14,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 import lombok.Data;
 
@@ -34,12 +32,9 @@ public class FeaturedStrategy {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 	
-	@NotNull
-	@Size(max = 50)
 	@Column(name = "name")
 	private String name;
 
-	@NotNull
 	@Column(name = "security_name")
 	private String securityName;
 

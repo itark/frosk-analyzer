@@ -15,8 +15,6 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 import lombok.Data;
 
@@ -33,12 +31,9 @@ public class StrategyTrade {
 	@Column(name = "date")
 	private Date date;
 	
-	@NotNull
 	@Column(name = "price")
 	private BigDecimal price;	
 	
-	@NotNull
-	@Size(max = 100)
 	@Column(name = "type")
 	private String type;
 	
