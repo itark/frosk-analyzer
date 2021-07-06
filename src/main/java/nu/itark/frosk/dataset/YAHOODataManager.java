@@ -3,16 +3,10 @@ package nu.itark.frosk.dataset;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,8 +73,8 @@ public class YAHOODataManager  {
 			try {
 				securityPriceRepository.save(sp);
 			} catch (DataIntegrityViolationException e) {
-				log.error("Duplicate ."+e+"continues....");
-				//continue
+				log.error("Delivered duplicates on sp.getSecurityId(): "+ sp.getSecurityId()+ ", continues....");
+				//sort of ok, continue
 			}
 		});
 

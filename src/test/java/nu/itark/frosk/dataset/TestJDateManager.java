@@ -10,6 +10,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+import static org.junit.Assert.*;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class TestJDateManager {
@@ -18,23 +20,24 @@ public class TestJDateManager {
 
     @Test
     public final void getDate() {
-        String dateTime1 = "2021-04-22T12:22:08.153596Z";
-        DateManager.get(dateTime1);
+        String dateTime = "2021-04-22T12:22:08.153596Z";
+        DateManager.getSeconds(dateTime);
+        assertTrue(DateManager.getSeconds(dateTime) == 8);
+
+        String dateTime1 = "2021-04-22T12:22:00.153596Z";
+        DateManager.getSeconds(dateTime1);
+        assertTrue(DateManager.getSeconds(dateTime1) == 0);
+
 
     }
 
 
     @Test
     public void testInstant() {
-
-        // option a - parsed from the string
-//    DateTimeFormatter f = DateTimeFormatter.ISO_DATE_TIME;
-//    ZonedDateTime zdt = ZonedDateTime.parse("2014-09-02T08:05:23.653Z", f);
-
-//    // option b - specified in the formatter - REQUIRES JDK 8u20 !!!
-    DateTimeFormatter f = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault());
-    ZonedDateTime zdt = ZonedDateTime.parse("2014-09-02T08:05:23.653Z", f);
-
+        DateTimeFormatter f = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault());
+        ZonedDateTime zdt = ZonedDateTime.parse("2014-09-02T08:05:23.653Z", f);
+        int seconds = zdt.getSecond();
+        System.out.println("seconds" + seconds);
 
     }
 

@@ -1,8 +1,9 @@
 package nu.itark.frosk.coinbase.exchange.api.websocketfeed.message;
 
 public class Subscribe {
-
-    static final String HEARTBEAT = "heartbeat";
+    public static final String HEARTBEAT = "heartbeat";
+    public static final String LEVEL2 = "level2";
+    public static final String FULL = "full";
 	String type;
 //    String[] product_ids;
    // String[] product_ids = new String[]{"BTC-EUR"}; // make this configurable.

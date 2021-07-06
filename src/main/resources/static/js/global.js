@@ -21,7 +21,7 @@ function renderTable(dataset) {
 				  { "mData": "averageTickProfit" },
 				  { "mData": "profitableTradesRatio" },
 				  { "mData": "maxDD" }
-			]       
+			]
 	    
 	    });
 	

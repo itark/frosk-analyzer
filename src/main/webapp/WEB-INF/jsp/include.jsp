@@ -11,7 +11,9 @@
    		<link href="webjars/bootstrap-social/bootstrap-social.css" rel="stylesheet"/>
  
 	    <!-- DataTables CSS -->
-	    <link href="webjars/datatables/css/dataTables.bootstrap.css" rel="stylesheet">
+	    <!--link href="webjars/datatables/css/dataTables.bootstrap.css" rel="stylesheet"-->
+	    <link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+
 	    <!-- DataTables Responsive CSS -->
 	    <link href="https://cdn.datatables.net/responsive/1.0.6/css/dataTables.responsive.css" rel="stylesheet">
 	    <link href="https://cdn.datatables.net/select/1.2.3/css/select.dataTables.min.css" rel="stylesheet">
@@ -19,8 +21,11 @@
 		<script src="webjars/jquery/jquery.min.js"></script>
 	    <script src="webjars/bootstrap/js/bootstrap.min.js"></script>
 	
-	    <script src="webjars/datatables/js/jquery.dataTables.min.js"></script>
-	    <script src="webjars/datatables/js/dataTables.bootstrap.min.js"></script> 
+	    <!--script src="webjars/datatables/js/jquery.dataTables.min.js"></script-->
+        <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+	    <!--script src="webjars/datatables/js/dataTables.bootstrap.min.js"></script-->
+	    <script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap4.min.js"></script>
+
 	    <script src="https://cdn.jsdelivr.net/webjars/org.webjars.bower/datatables.net-responsive/2.1.1/js/dataTables.responsive.js"></script>
 	    <script src="https://cdn.datatables.net/select/1.2.3/js/dataTables.select.min.js"></script>
 	

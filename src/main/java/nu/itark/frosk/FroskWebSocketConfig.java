@@ -15,9 +15,11 @@ import samples.websocket.tomcat.snake.SnakeWebSocketHandler;
 
 import javax.servlet.ServletContext;
 
+/** AVSTÄNGT!
 @Configuration
 @EnableAutoConfiguration
 @EnableWebSocket
+*/
 public class FroskWebSocketConfig  implements WebSocketConfigurer {
 
 	//alt 1. https://www.devglan.com/spring-boot/spring-boot-websocket-example

@@ -25,16 +25,17 @@ public class TestJWebsocketFeed {
 		log.info("*** Subscribing ***");
 		Channels[] channel = new Channels[1];
 		channel[0] = new Channels();
-		channel[0].setName("full");
+//		channel[0].setName(Subscribe.LEVEL2);
+		channel[0].setName(Subscribe.FULL);
 	 	channel[0].setProduct_ids(productIds);
 
 		Subscribe subscribeChannel = new Subscribe(channel);
 
 		websocketFeed.subscribe(subscribeChannel);
 
-		Thread.sleep(100000);
+		Thread.sleep(1000000);
 
-	//	websocketFeed.unsubscribe(subscribeChannel);
+		websocketFeed.unsubscribe(subscribeChannel);
 
 		log.info("*** ready sleeping ***");
 
