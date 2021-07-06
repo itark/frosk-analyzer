@@ -16,6 +16,7 @@
 
 package nu.itark.frosk.changedetection;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.Channels;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,6 +30,7 @@ import nu.itark.frosk.coinbase.exchange.api.websocketfeed.Observations;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.WebsocketFeed;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.Subscribe;
 
+@Slf4j
 public class CoinbaseWebSocketHandler extends TextWebSocketHandler {
 	
 	private static final Log logger = LogFactory.getLog(CoinbaseWebSocketHandler.class);
@@ -43,32 +45,32 @@ public class CoinbaseWebSocketHandler extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) throws Exception {
 		logger.trace("::afterConnectionEstablished::");
-		websocketFeed.subscribe(getSubscribe());
+		websocketFeed.subscribe(getSubscribe(Subscribe.FULL));
 		observations.setWebSocketsession(session);
 	}
 
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message)
 			throws Exception {
-		logger.info("::handleTextMessage::");
+//		logger.info("::handleTextMessage::message: "+message);
 
 	}
 
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status)
 			throws Exception {
-		logger.info("::afterConnectionClosed::");
+		log.info("::afterConnectionClosed:: session{}: status{}, ",session,status);
 
 		//TODO stäng koppel till coinbase
-		websocketFeed.unsubscribe(getSubscribe());
+		websocketFeed.unsubscribe(getSubscribe(Subscribe.FULL));
 	}
 
 
-	private static Subscribe getSubscribe() {
+	private static Subscribe getSubscribe(String subchannel) {
 		String[] productIds = new String[]{"BTC-EUR"}; // make this configurable.
 		Channels[] channel = new Channels[1];
 		channel[0] = new Channels();
-		channel[0].setName("full");
+		channel[0].setName(subchannel);
 		channel[0].setProduct_ids(productIds);
 
 		return new Subscribe(channel);

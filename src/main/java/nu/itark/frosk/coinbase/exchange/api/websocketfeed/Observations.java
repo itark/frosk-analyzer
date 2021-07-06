@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Queue;
 
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
+import nu.itark.frosk.dataset.DateManager;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -104,9 +105,10 @@ public class Observations {
 		boolean change_high = changeDetector.isChangeHigh();
 		boolean change_low = changeDetector.isChangeLow();
 
-		//sendCusumHighMessage(changeDetector.cusumHigh().toString(),LocalDateTime.now().toString());
-		sendLoiMessage(loi.toString(),LocalDateTime.now().toString());
-
+		sendCusumHighMessage(changeDetector.cusumHigh().toString(),LocalDateTime.now().toString());
+//		if (DateManager.getSeconds(orderReceived.getTime()) == 0) {
+			sendLoiMessage(loi.toString(), LocalDateTime.now().toString());
+//		}
 		if(change_high) {
 //			log.info("HIGH CHANGE DETECTED! price:{}, side:{} , mid market price:{} ", orderReceived.getPrice().toString(),orderReceived.getSide(), midMarketPrice);
 //			log.info("HIGH CHANGE DETECTED! orderReceived:{}, mid market price:{} ", ReflectionToStringBuilder.toString(orderReceived, ToStringStyle.MULTI_LINE_STYLE), midMarketPrice);
@@ -227,20 +229,12 @@ public class Observations {
 		});
 
 	}
-	
-	protected void sendPriceMessage(String price, String time)  {
-//		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss.S");
-//		ZonedDateTime dateTime = ZonedDateTime.parse(time, formatter.withZone(ZoneId.systemDefault()));
-		int dateTime = 11;
-		log.info("FRMO: kolla time: price {}, time {}, dateTime {}",price, time, dateTime);
 
-		//FRMO: kolla time: price 45646.62, time 2021-04-22T12:07:16.162315Z
-
+	protected void sendPriceMessage(String price, String time) {
 		try {
 			if (webSocketsessionPrice != null) {
 				webSocketsessionPrice.sendMessage(new TextMessage(String.format("{\"type\":\"price\",\"price\":\"%s\",\"time\":\"%s\"}", price, time)));
 			}
-
 		} catch (IOException e) {
 			log.error("Could not send price message", e);
 		}

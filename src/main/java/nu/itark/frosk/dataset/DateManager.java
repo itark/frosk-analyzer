@@ -43,4 +43,16 @@ public class DateManager {
 		return zdt;
 	}
 
+	/**
+	 * Ex. 2021-04-22T12:22:08.153596Z
+	 *
+	 * @param dateTime
+	 * @return SS
+	 */
+	public static int getSeconds(String dateTime) {
+		DateTimeFormatter f = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault());
+		ZonedDateTime zdt = ZonedDateTime.parse(dateTime, f);
+		return zdt.getSecond();
+	}
+
 }

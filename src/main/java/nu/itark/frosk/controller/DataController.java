@@ -1,11 +1,9 @@
 package nu.itark.frosk.controller;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.SortedSet;
+import java.util.*;
 import java.util.logging.Logger;
 
+import org.omg.CORBA.Object;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -112,8 +110,6 @@ public class DataController {
 	/**
 	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy&dataset=OSCAR
 	 * 
-	 * @param securityName
-	 * @param database
 	 * @return
 	 */		
 	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
@@ -128,58 +124,51 @@ public class DataController {
 			strategies.forEach(strategyName -> {
 				dataset.getSecurities().forEach(security -> {
 					FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, security.getName() );
-		
-					FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
-					dto.setName(fs.getName());
-					dto.setSecurityName(fs.getSecurityName());
-					dto.setTotalProfit(fs.getTotalProfit());
-					dto.setNumberOfTicks(fs.getNumberOfTicks());
-					dto.setProfitableTradesRatio(fs.getProfitableTradesRatio());
-					dto.setMaxDD(fs.getMaxDD());
-					dto.setRewardRiskRatio(fs.getRewardRiskRatio());
-					dto.setTotalTranactionCost(fs.getTotalTransactionCost());
-					dto.setBuyAndHold(fs.getBuyAndHold());
-					dto.setTotalProfitVsButAndHold(fs.getTotalProfitVsButAndHold());
-					dto.setPeriod(fs.getPeriod());
-					dto.setLatestTrade(fs.getLatestTrade());
-					
-					returnList.add(dto);
+					returnList.add(getDTO(fs));
 				});					
 			});			
-			
 		} else {
 			dataset.getSecurities().forEach(security -> {
 				FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security.getName() );
-	
-				FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
-				dto.setName(fs.getName());
-				dto.setSecurityName(fs.getSecurityName());
-				dto.setTotalProfit(fs.getTotalProfit());
-				dto.setNumberOfTicks(fs.getNumberOfTicks());
-				dto.setProfitableTradesRatio(fs.getProfitableTradesRatio());
-				dto.setMaxDD(fs.getMaxDD());
-				dto.setRewardRiskRatio(fs.getRewardRiskRatio());
-				dto.setTotalTranactionCost(fs.getTotalTransactionCost());
-				dto.setBuyAndHold(fs.getBuyAndHold());
-				dto.setTotalProfitVsButAndHold(fs.getTotalProfitVsButAndHold());
-				dto.setPeriod(fs.getPeriod());
-				dto.setLatestTrade(fs.getLatestTrade());
-				dto.setNumberofTrades(fs.getNumberofTrades());
-				
-				returnList.add(dto);
+				returnList.add(getDTO(fs));
 			});			
-		
 		}
 
 		return returnList;
-		
-	}	
+	}
+
+
+	private FeaturedStrategyDTO getDTO(FeaturedStrategy fs) {
+		FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
+		dto.setName(fs.getName());
+		dto.setSecurityName(fs.getSecurityName());
+		dto.setTotalProfit(fs.getTotalProfit());
+		dto.setNumberOfTicks(fs.getNumberOfTicks());
+		dto.setAverageTickProfit(fs.getAverageTickProfit());
+		if (Objects.nonNull(fs.getProfitableTradesRatio())) {
+			dto.setProfitableTradesRatio(fs.getProfitableTradesRatio().toPlainString());
+		} else {
+			dto.setProfitableTradesRatio("empty");
+		}
+		dto.setMaxDD(fs.getMaxDD());
+		dto.setRewardRiskRatio(fs.getRewardRiskRatio());
+		dto.setTotalTranactionCost(fs.getTotalTransactionCost());
+		dto.setBuyAndHold(fs.getBuyAndHold());
+		dto.setTotalProfitVsButAndHold(fs.getTotalProfitVsButAndHold());
+		dto.setPeriod(fs.getPeriod());
+		if (Objects.nonNull(fs.getLatestTrade())) {
+			dto.setLatestTrade(fs.getLatestTrade().toString());
+		} else {
+			dto.setLatestTrade("empty");
+		}
+		dto.setNumberofTrades(fs.getNumberofTrades());
+
+		return dto;
+	}
 	
 	/**
 	 * @Example  http://localhost:8080/dailyPrices?security=BOL.ST
 	 * 
-	 * @param securityName
-	 * @param database
 	 * @return
 	 */
 	@RequestMapping(path="/dailyPrices", method=RequestMethod.GET)
@@ -206,8 +195,6 @@ public class DataController {
 	/**
 	 * @Example  http://localhost:8080/frosk-analyzer/indicatorValues?security=VOLV-B.ST&strategy=RSI2Strategy
 	 * 
-	 * @param securityName
-	 * @param database
 	 * @return
 	 */
 	@RequestMapping(path="/indicatorValues", method=RequestMethod.GET)
@@ -270,8 +257,6 @@ public class DataController {
 	/**
 	 * @Example  http://localhost:8080/frosk-analyzer-0.0.1/dummy?id=ALL
 	 * 
-	 * @param securityName
-	 * @param database
 	 * @return
 	 */			
 	@RequestMapping(path="/dummy", method=RequestMethod.GET)
@@ -290,8 +275,6 @@ public class DataController {
 	/**
 	 * @Example  http://localhost:8080/frosk-analyzer-0.0.1/dummy_insert?name=ALL
 	 * 
-	 * @param securityName
-	 * @param database
 	 * @return
 	 */			
 	@RequestMapping(path="/dummy_insert", method=RequestMethod.GET)
@@ -312,8 +295,6 @@ public class DataController {
 	/**
 	 * @Example  http://localhost:8080/frosk-analyzer-0.0.1/dummy_delete?name=ALL
 	 * 
-	 * @param securityName
-	 * @param database
 	 * @return
 	 */			
 	@RequestMapping(path="/dummy_delete", method=RequestMethod.GET)

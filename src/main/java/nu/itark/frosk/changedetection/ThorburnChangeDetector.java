@@ -80,24 +80,27 @@ public class ThorburnChangeDetector implements ChangeDetector<Double> {
         cusum_high = Math.max(0, cusumPrev_high + loi - init_loi  );
         cusum_low = Math.max(0, Math.abs(cusumPrev_low -  loi - init_loi ));
 
+
+        log.info("loi:{}, init_loi:{},std:{} cusum_high:{}, cusum_low:{}, threshold_high {}", loi,init_loi , std, cusum_high, cusum_low, threshold_high);
+
+
         if(isReady()) {
             change_high = cusum_high > threshold_high;
             change_low = cusum_low > threshold_low;
 
            // log.info("loi:{}, std:{} cusum_high:{}, cusum_low:{}, threshold_high {}", loi,std, cusum_high, cusum_low, threshold_high);
 
+            if (change_high) {
+                log.info("HIGH : loi:{}, change_high:{}, change_low:{}, threshold_high {}", loi, change_high, change_low, threshold_high);
+                log.info("********** \n");
+                reset();
+            }
 
-//            if (change_high) {
-//                log.info("HIGH : loi:{}, change_high:{}, change_low:{}, threshold_high {}", loi, change_high, change_low, threshold_high);
-//                log.info("********** \n");
-//                reset();
-//            }
-//
-//            if (change_low) {
-//                log.info("LOW : loi:{}, change_high:{}, change_low:{}, threshold_high {}", loi, change_high, change_low, threshold_high);
-//                log.info("********** \n");
-//                reset();
-//            }
+            if (change_low) {
+                log.info("LOW : loi:{}, change_high:{}, change_low:{}, threshold_high {}", loi, change_high, change_low, threshold_high);
+                log.info("********** \n");
+                reset();
+            }
 
         }
 

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.*;
+import nu.itark.frosk.dataset.DateManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
@@ -63,7 +64,7 @@ public class WebsocketFeed {
 
 			log.trace("websocketUrl="+websocketUrl);
 
-			container.connectToServer(this, new URI(websocketUrl));
+//			container.connectToServer(this, new URI(websocketUrl));
 
             log.trace("container="+container);
 
@@ -199,9 +200,12 @@ public class WebsocketFeed {
                             return;
                         }
                         currentSeq[0] =  matchedOrder.getSequence();
-                        //log.info("Order matched, on price: {}, seq: {}", matchedOrder.getPrice(), matchedOrder.getSequence());
+                        log.info("Order matched, on price: {}, seq: {}", matchedOrder.getPrice(), matchedOrder.getSequence());
                         observations.setMidMarketPrice(matchedOrder.getPrice());
-                        observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
+//                        if (DateManager.getSeconds(matchedOrder.getTime()) == 0) {
+                            observations.sendPriceMessage(matchedOrder.getPrice().toString(), matchedOrder.getTime());
+//                        }
+
                     }
                     else if (type.equals("change"))
                     {
@@ -213,7 +217,8 @@ public class WebsocketFeed {
                     {
                         // Not sure this is required unless I'm attempting to place orders
                         // ERROR
-                        log.error("Error {}", json);
+//                        log.error("type not handled {}:", type);
+                        log.error("json{}", json);
                         // orderBook.orderBookError(getObject(json, new TypeReference<ErrorOrderBookMessage>(){}));
                     }
         	

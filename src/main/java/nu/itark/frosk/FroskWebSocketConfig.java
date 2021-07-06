@@ -15,6 +15,7 @@ import samples.websocket.tomcat.snake.SnakeWebSocketHandler;
 
 import javax.servlet.ServletContext;
 
+
 @Configuration
 @EnableAutoConfiguration
 @EnableWebSocket
