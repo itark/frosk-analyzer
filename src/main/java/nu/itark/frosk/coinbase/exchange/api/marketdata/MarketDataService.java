@@ -9,7 +9,7 @@ import org.springframework.util.Assert;
 
 import nu.itark.frosk.coinbase.exchange.api.exchange.GdaxExchange;
 
-@Service
+//@Service
 public class MarketDataService {
 
     @Autowired

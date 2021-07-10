@@ -25,8 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Created by irufus on 2/25/15.
  */
-@Component
 @Slf4j
+@Deprecated
 public class GdaxExchangeImpl implements GdaxExchange {
 
 //    static Logger log = Logger.getLogger(GdaxExchangeImpl.class.getName());

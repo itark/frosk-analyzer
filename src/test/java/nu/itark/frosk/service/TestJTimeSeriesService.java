@@ -67,17 +67,17 @@ public class TestJTimeSeriesService {
 		
 	}	
 	
-	@Test
-	public void testGetCandlesFromCoinbase() {
-		
-	TimeSeries timeSeries = ts.getDataSetFromCoinbase("BTC-EUR");	
-	
-	log.info("barCount="+timeSeries.getBarCount());
-	
-	assertNotNull(timeSeries);
-		
-		
-	}
+//	@Test
+//	public void testGetCandlesFromCoinbase() {
+//
+//	TimeSeries timeSeries = ts.getDataSetFromCoinbase("BTC-EUR");
+//
+//	log.info("barCount="+timeSeries.getBarCount());
+//
+//	assertNotNull(timeSeries);
+//
+//
+//	}
 	
 	@Test
 	public void testDatessss(){

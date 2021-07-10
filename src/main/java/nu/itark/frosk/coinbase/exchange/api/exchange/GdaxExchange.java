@@ -11,6 +11,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+@Deprecated
 public interface GdaxExchange {
     /**
      * @return

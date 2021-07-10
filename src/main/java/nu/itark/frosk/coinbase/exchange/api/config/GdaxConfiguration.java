@@ -27,7 +27,8 @@ public class GdaxConfiguration {
 	 * 
 	 * @return ObjectMapper
 	 */
-    @Bean
+	//TODO fix för test av gdax-java
+    //@Bean
     @Primary
     public ObjectMapper objectMapper() {
     	return Jackson2ObjectMapperBuilder.json()

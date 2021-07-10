@@ -1,0 +1,12 @@
+1-exchange:
+  api:
+    baseUrl: "https://api.pro.coinbase.com"
+  key: "1d6a1957525f791da9cda390f3509828"
+  secret: "lT3jTi1q7Q/dYazkOEjMEGajY2cLcwSLpsU9nq+cIMUKTK1ngIGJuHz+T1I9UiN0h2J1rweo774N7OkaDQvJsw=="
+  passphrase: "3u93dlvvr6o"
+
+websocket:
+  baseUrl: "wss://ws-feed-public.sandbox.pro.coinbase.com"
+
+gui:
+  enabled: true

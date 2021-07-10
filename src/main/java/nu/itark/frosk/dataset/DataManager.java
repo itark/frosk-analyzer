@@ -28,8 +28,11 @@ public class DataManager {
 	GDAXDataManager gdaxDataManager;		
 	
 	@Autowired
-	BITFINEXDataManager bitfinexDataManager;		
-	
+	BITFINEXDataManager bitfinexDataManager;
+
+	@Autowired
+	COINBASEDataManager coinbaseDataManager;
+
 	/**
 	 * Insert securities from all cvs-files.
 	 */
@@ -61,22 +64,26 @@ public class DataManager {
 		if (database.equals(Database.BITFINEX)) {
 			logger.info("About to run bitfinexDataManager.syncronize()...");
 			bitfinexDataManager.syncronize();
-		}			
-		
-		
-		
-		
+		}
+
+		if (database.equals(Database.COINBASE)) {
+			logger.info("About to run coinbaseDataManager.syncronize()...");
+			coinbaseDataManager.syncronize();
+		}
+
+
 	}
 	
 	public void insertSecurityPricesIntoDatabase(Database database, String security) {
 
 		if (database.equals(Database.YAHOO)) {
 			yahooDataManager.syncronize(security);
-		} else {
+		} else if (database.equals(Database.COINBASE))
+			coinbaseDataManager.syncronize();
+		else {
 			throw new RuntimeException("No database set!");
 		}
-		
-		
+
 	}	
 	
 	

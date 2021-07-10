@@ -15,7 +15,7 @@ import java.util.Base64;
 /**
  * Created by robevansuk on 17/03/2017.
  */
-@Component
+@Deprecated
 public class Signature {
 
     private String secretKey;

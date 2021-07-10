@@ -25,8 +25,9 @@ import nu.itark.frosk.changedetection.ChangeDetector;
 import nu.itark.frosk.coinbase.exchange.api.exchange.Signature;
 
 
-@Service  //Spring
-@ClientEndpoint  //embedded-Tomcat
+//@Service  //Spring
+//@ClientEndpoint  //embedded-Tomcat
+@Deprecated
 public class WebsocketFeed {
 
     static Logger log = LoggerFactory.getLogger(WebsocketFeed.class);

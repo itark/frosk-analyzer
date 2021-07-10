@@ -4,3 +4,13 @@
 .idea/
 
 *.iml
+
+.gradle/5.1.1/executionHistory/
+
+*.bin
+
+*.lock
+
+.gradle/5.1.1/gc.properties
+
+.gradle/buildOutputCleanup/
