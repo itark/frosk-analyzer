@@ -4,12 +4,12 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Queue;
 
+import com.coinbase.exchange.api.marketdata.MarketData;
+import com.coinbase.exchange.api.marketdata.OrderItem;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.MarketData;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.OrderItem;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderOpenOrderBookMessage;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderReceived;
 
@@ -31,7 +31,7 @@ public class LimitOrderImbalance {
 	public Double calculate(MarketData midMarket, MarketData best50) {
 		
 	
-   		List<OrderItem> midMarketAsks = midMarket.getAsks();   
+   		List<OrderItem> midMarketAsks = midMarket.getAsks();
    		List<OrderItem> midMarketBids = midMarket.getBids();   	
  		BigDecimal midMarketPrice = ( midMarketBids.get(0).getPrice().add(midMarketAsks.get(0).getPrice()) ).divide(BigDecimal.valueOf(2));
 

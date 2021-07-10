@@ -178,9 +178,9 @@ public class Observations {
 			return null;
 		}
 		
-		if (midMarketPrice == null) {
-			midMarketPrice = marketDataProxy.getMarketDataTicker(productId).getPrice();
-		}
+//		if (midMarketPrice == null) {
+//			midMarketPrice = marketDataProxy.getMarketDataTicker(productId).getPrice();
+//		}
 		
 		Double loi = limitOrderImbalance.calculate(midMarketPrice, bestBidsQueue, bestAsksQueue);
 		

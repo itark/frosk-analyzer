@@ -103,24 +103,24 @@ public class TimeSeriesService  {
 	 * @param productId 
 	 * @return TimeSeries
 	 */
-	public TimeSeries getDataSetFromCoinbase(String productId) {
-		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(productId).withNumTypeOf(PrecisionNum.class).build();
-		//TODO externalize range: d
-		List<HistoricRate> candlesList= marketDataProxyCoinbase.getMarketDataCandles("BTC-EUR", DateTimeManager.start(1), DateTimeManager.end(), MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
-	
-		List<HistoricRate> sortedList = candlesList
-				.stream()
-				.sorted((p1, p2) -> ((Long)p1.getTime()).compareTo(p2.getTime()))
-				.collect(Collectors.toList());
-		
-		sortedList.forEach(row -> {
-			ZonedDateTime dateTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(row.getTime()),ZoneId.systemDefault());
-			series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
-		});
-
-		return series;
-		
-	}	
+//	public TimeSeries getDataSetFromCoinbase(String productId) {
+//		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(productId).withNumTypeOf(PrecisionNum.class).build();
+//		//TODO externalize range: d
+//		List<HistoricRate> candlesList= marketDataProxyCoinbase.getMarketDataCandles("BTC-EUR", DateTimeManager.start(1), DateTimeManager.end(), MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
+//
+//		List<HistoricRate> sortedList = candlesList
+//				.stream()
+//				.sorted((p1, p2) -> ((Long)p1.getTime()).compareTo(p2.getTime()))
+//				.collect(Collectors.toList());
+//
+//		sortedList.forEach(row -> {
+//			ZonedDateTime dateTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(row.getTime()),ZoneId.systemDefault());
+//			series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
+//		});
+//
+//		return series;
+//
+//	}
 	
 	
 }

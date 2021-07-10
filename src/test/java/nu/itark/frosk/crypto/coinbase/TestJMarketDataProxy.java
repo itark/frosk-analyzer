@@ -5,34 +5,36 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import com.coinbase.exchange.api.marketdata.MarketData;
+import com.coinbase.exchange.api.marketdata.MarketDataService;
+import com.coinbase.exchange.api.marketdata.OrderItem;
+import com.coinbase.exchange.api.marketdata.Trade;
+import com.coinbase.exchange.api.products.ProductService;
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
+import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.changedetection.LimitOrderImbalance;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.HistoricRate;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.MarketData;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.OrderItem;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.Ticker;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.Trade;
 import nu.itark.frosk.strategies.stats.ADF;
 import nu.itark.frosk.util.DateTimeManager;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-//import nu.itark.frosk.coinbase.exchange.api.marketdata.MarketData;
-
-@RunWith(SpringRunner.class)
-@SpringBootTest
+@ExtendWith(SpringExtension.class)
+@Import({IntegrationTestConfiguration.class})
 @Slf4j
-public class TestJMarketDataProxy { //extends BaseTest {
+public class TestJMarketDataProxy extends BaseIntegrationTest {
 
 	static String productId = "BTC-USD";
-	static String LEVEL_1 = "1";
-	static String LEVEL_2 = "2";
+//	static String LEVEL_1 = "1";
+//	static String LEVEL_2 = "2";
 	
 	/* Fiat EURO
 	BTC/EUR
@@ -54,17 +56,34 @@ public class TestJMarketDataProxy { //extends BaseTest {
     LimitOrderImbalance loi; 
 	
     @Autowired
-    ADF adf; 	
+    ADF adf;
 
+	ProductService productService;
+	MarketDataService testee;
+
+	@BeforeEach
+	void setUp() {
+		productService = new ProductService(exchange);
+		testee = new MarketDataService(exchange);
+	}
+
+	@Test
+	public void canGetMarketDataForLevelOneBidAndAsk() {
+		MarketData marketData = testee.getMarketDataOrderBook("BTC-GBP", 1);
+		System.out.println(marketData);
+		marketData.getAsks().forEach(o -> {
+			System.out.println(ReflectionToStringBuilder.toString(o));
+		});
+		assertTrue(marketData.getSequence() > 0);
+	}
 
     @Test
     public void testGetMarketDataOrderBook() {
-    	String level = "1";
-    	MarketData marketData = marketDataProxy.getMarketDataOrderBook(productId, level);
+    	MarketData marketData = marketDataProxy.getMarketDataOrderBook(productId, 1);
  
 //    		log.info("marketData="+ReflectionToStringBuilder.toString(marketData));
     	
-    		List<OrderItem> asks = marketData.getAsks();
+    		List<com.coinbase.exchange.api.marketdata.OrderItem> asks = marketData.getAsks();
 //    		asks.forEach(ask -> System.out.println("ask="+ReflectionToStringBuilder.toString(ask, ToStringStyle.MULTI_LINE_STYLE)));
     		
     		List<OrderItem> bids = marketData.getBids();
@@ -78,20 +97,19 @@ public class TestJMarketDataProxy { //extends BaseTest {
     		Assert.assertTrue(marketData.getSequence() > 0);
     	
     }
-    
-    
+
     @Test
     public final void getMarketData50AndMidMarket() {
     	
     	//Mid market at observation i
-    	MarketData midMarket = marketDataProxy.getMarketDataOrderBook("BTC-EUR", LEVEL_1);
+    	MarketData midMarket = marketDataProxy.getMarketDataOrderBook("BTC-EUR", 1);
 
-		Ticker ticker = marketDataProxy.getMarketDataTicker("BTC-EUR");
-		log.info("****ticker.getPrice: {}",ticker.getPrice());
+//		Ticker ticker = marketDataProxy.getMarketDataTicker("BTC-EUR");
+//		log.info("****ticker.getPrice: {}",ticker.getPrice());
 
 
     	//The limit order imbalance measurement 
-    	MarketData best50 = marketDataProxy.getMarketDataOrderBook("BTC-EUR", LEVEL_2);
+    	MarketData best50 = marketDataProxy.getMarketDataOrderBook("BTC-EUR", 2);
 
    		Double loiObservation = loi.calculate(midMarket, best50);
    		
@@ -103,13 +121,13 @@ public class TestJMarketDataProxy { //extends BaseTest {
     }
     
 
-    @Test
-    public void testGetMarketDataTicker() {
-    	Ticker ticker = marketDataProxy.getMarketDataTicker("BTC-EUR");
- 
-    	log.info("ticker="+ReflectionToStringBuilder.toString(ticker));
-    	
-    }
+//    @Test
+//    public void testGetMarketDataTicker() {
+//    	Ticker ticker = marketDataProxy.getMarketDataTicker("BTC-EUR");
+//
+//    	log.info("ticker="+ReflectionToStringBuilder.toString(ticker));
+//
+//    }
     
     
 	@Test
@@ -145,17 +163,15 @@ public class TestJMarketDataProxy { //extends BaseTest {
 	   
 	//    List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", "2019-02-22T00:00:00.00000Z","2019-02-23T00:00:00.00000Z", "3600" );
 	  // List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, "3600" );
- 	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
+// 	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
+//	   candlesList.forEach(candle -> {
+//		   log.info(ReflectionToStringBuilder.toString(candle));
+//
+//	   });
 	   
-	   
-	   candlesList.forEach(candle -> {
-		   log.info(ReflectionToStringBuilder.toString(candle));
-		   
-	   });
-	   
-	   log.info("candlesList.size="+candlesList.size());
-	   log.info("start="+start);
-	   log.info("end="+end);
+//	   log.info("candlesList.size="+candlesList.size());
+//	   log.info("start="+start);
+//	   log.info("end="+end);
 	   
 	   
    }
