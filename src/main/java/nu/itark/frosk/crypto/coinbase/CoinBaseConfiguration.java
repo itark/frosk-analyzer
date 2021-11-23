@@ -1,4 +1,4 @@
-package nu.itark.frosk.coinbase.config;
+package nu.itark.frosk.crypto.coinbase;
 
 import com.coinbase.exchange.api.exchange.CoinbaseExchange;
 import com.coinbase.exchange.api.exchange.CoinbaseExchangeImpl;
@@ -9,16 +9,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.context.annotation.Bean;
 
-//@SpringBootConfiguration
-public class IntegrationTestConfiguration {
+@SpringBootConfiguration
+public class CoinBaseConfiguration {
 
 //    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper().registerModule(new JavaTimeModule());
+//    public ObjectMapper objectMapper() {
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        objectMapper.registerModule(new JavaTimeModule());
+//        return objectMapper;
+//    }
+
+    @Bean
+    public Signature signature(@Value("${exchange.secret}") String secret) {
+        return new Signature(secret);
     }
 
-//    @Bean
-    public CoinbaseExchange coinbaseExchange(@Value("${exchange.key}") String apiKey,
+    @Bean
+    public CoinbaseExchange coinbasePro(@Value("${exchange.key}") String apiKey,
                                              @Value("${exchange.passphrase}") String passphrase,
                                              @Value("${exchange.api.baseUrl}") String baseUrl,
                                              @Value("${exchange.secret}") String secretKey,

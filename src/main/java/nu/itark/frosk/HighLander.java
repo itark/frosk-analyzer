@@ -42,7 +42,8 @@ public class HighLander {
 	 */
 	public void runInstall() {
 		addDataSetAndSecurities();
-		addDataSetAndSecuritiesFromYahoo();
+//		addDataSetAndSecuritiesFromYahoo();
+		addDataSetAndSecuritiesFromCoinbase();
 		runAllStrategies();
 		
 	}
@@ -80,9 +81,7 @@ public class HighLander {
 	 * 
 	 */
 	private void addDataSetAndSecurities() {
-		
 		dataManager.addDatasetSecuritiesIntoDatabase();
-		
 	}
 	
 	/**
@@ -90,11 +89,13 @@ public class HighLander {
 	 * 
 	 */
 	private void addDataSetAndSecuritiesFromYahoo() {
-		
 		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
-		
-	}	
-	
+	}
+
+	private void addDataSetAndSecuritiesFromCoinbase() {
+		dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
+	}
+
 	/**
 	 * Run all stratregies on all securities.
 	 * This will insert result into {@linkplain FeaturedStrategyRepository}
@@ -102,10 +103,8 @@ public class HighLander {
 	 */
 	private void runAllStrategies() {
 		strategyAnalysis.run(null, null);
-		
-		
+
 	}
-	
-	
+
 	
 }

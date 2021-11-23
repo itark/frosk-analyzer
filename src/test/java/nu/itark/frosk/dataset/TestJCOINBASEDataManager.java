@@ -13,7 +13,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @ExtendWith(SpringExtension.class)
-@Import({IntegrationTestConfiguration.class})
+//@Import({IntegrationTestConfiguration.class})
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @Slf4j

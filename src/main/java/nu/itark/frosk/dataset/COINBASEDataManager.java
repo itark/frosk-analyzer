@@ -4,26 +4,18 @@ import com.coinbase.exchange.model.Candle;
 import com.coinbase.exchange.model.Candles;
 import com.coinbase.exchange.model.Granularity;
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.crypto.coinbase.MarketDataProxy;
 import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
-import yahoofinance.Stock;
-import yahoofinance.YahooFinance;
-import yahoofinance.histquotes.HistoricalQuote;
-import yahoofinance.histquotes.Interval;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -129,11 +121,11 @@ public class COINBASEDataManager {
         log.info("getCurrencies(Iterable<Security> securities");
         Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
 
-        Instant startTime = Instant.now().minus(100, ChronoUnit.DAYS);
+//        Instant startTime = Instant.now().minus(100, ChronoUnit.DAYS);
         Instant endTime = Instant.now();
 
         securities.forEach((security) -> {
-            Calendar from = Calendar.getInstance(TimeZone.getDefault());
+            Instant startTime = Instant.now();
             boolean isToday = false;
             Date toDay = new Date();
             SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
@@ -145,19 +137,19 @@ public class COINBASEDataManager {
                     isToday = true;
                 } else if (DateUtils.isSameDay(lastDate, DateUtils.addDays(toDay, -1))) {
                     log.info("last is yeasterday");
-                    from.setTime(lastDate);
-                    from.add(Calendar.DATE, 1);
+                    startTime.adjustInto(lastDate.toInstant());
+                    startTime.plus(1, ChronoUnit.DAYS);
                 } else {
-                    from.setTime(lastDate);
-                    from.add(Calendar.DATE, 1);
-                    log.info("Not today, from set to:" + from.getTime().toString());
+                    startTime.adjustInto(lastDate.toInstant());
+                    startTime.plus(1, ChronoUnit.DAYS);
+                    log.info("Not today, startTime set to:" + startTime);
                 }
             } else {
-                from.add(Calendar.YEAR, -years);
+                startTime.plus(-years, ChronoUnit.YEARS);
             }
 
             if (!isToday) {
-                log.info("Retrieving history for " + security.getName() + " from " + from.getTime());
+                log.info("Retrieving history for " + security.getName() + " startTime " + startTime);
                 try {
                     Candles candles = productProxy.getCandles("BTC-EUR", startTime,endTime, Granularity.ONE_DAY );
                     System.out.println("candles.size:"+candles.getCandleList().size());
