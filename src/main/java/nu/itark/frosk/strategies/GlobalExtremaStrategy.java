@@ -22,6 +22,8 @@
  */
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -37,10 +39,12 @@ import org.ta4j.core.trading.rules.StopGainRule;
 import org.ta4j.core.trading.rules.StopLossRule;
 import org.ta4j.core.trading.rules.UnderIndicatorRule;
 
+import java.util.List;
+
 /**
  * Strategies which compares current price to global extrema over a week.
  */
-public class GlobalExtremaStrategy {
+public class GlobalExtremaStrategy implements IIndicatorValue {
 
     // We assume that there were at least one trade every 5 minutes during the whole week
     private static final int NB_TICKS_PER_WEEK = 12 * 24 * 7;
@@ -135,8 +139,10 @@ public class GlobalExtremaStrategy {
 
         return new BaseStrategy("GlobalExtremaStrategy", buyingRule, sellingRule);
     }
-    
-    
-    
-    
+
+
+    @Override
+    public List<IndicatorValue> getIndicatorValues() {
+        return indicatorValues;
+    }
 }

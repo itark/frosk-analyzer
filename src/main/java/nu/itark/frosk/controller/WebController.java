@@ -131,13 +131,12 @@ public class WebController {
 	@ResponseBody
 	public String fill(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
-		logger.log(Level.INFO, "fill , now YAHOO only");
-		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
-		
-		return "Security prices inserted";	
+		logger.log(Level.INFO, "fill , YAHOO and COINBASE");
+		dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
+
+		return "Security prices inserted from :"+ Database.COINBASE;
 	}	
 
-	
 	/**
 	* @Example  http://localhost:8080/frosk-analyzer/run
 	 */
@@ -145,7 +144,7 @@ public class WebController {
 	@ResponseBody
 	public String run(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
-		logger.log(Level.INFO, "run , now YAHOO only");
+		logger.log(Level.INFO, "run , YAHOO and COINBASE");
 	
 		try {
 			strategyAnalysis.run(null, null);
@@ -154,7 +153,7 @@ public class WebController {
 			throw e;
 		}		
 
-		return "Strategy Analysis executed, list";	
+		return "Strategy Analysis executed";
 	}		
 
 	

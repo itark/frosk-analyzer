@@ -22,6 +22,8 @@
  */
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -31,12 +33,16 @@ import org.ta4j.core.num.Num;
 import org.ta4j.core.trading.rules.OverIndicatorRule;
 import org.ta4j.core.trading.rules.UnderIndicatorRule;
 
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.List;
+
 /**
  * CCI Correction Strategy
  * <p>
- * @see http://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:cci_correction
+ * @see ://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:cci_correction
  */
-public class CCICorrectionStrategy {
+public class CCICorrectionStrategy implements IIndicatorValue {
 
 	TimeSeries series = null;
 	   
@@ -53,7 +59,11 @@ public class CCICorrectionStrategy {
         }
 
         CCIIndicator longCci = new CCIIndicator(series, 200);
+        setIndicatorValues(longCci, series, "longCci");
+
         CCIIndicator shortCci = new CCIIndicator(series, 5);
+        setIndicatorValues(shortCci, series, "shortCci");
+
         Num plus100 = series.numOf(100);
         Num minus100 = series.numOf(-100);
         
@@ -68,4 +78,18 @@ public class CCICorrectionStrategy {
         return strategy;
     }
 
+    private void setIndicatorValues(CCIIndicator indicator, TimeSeries series, String name) {
+        IndicatorValue iv = null;
+        for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
+            long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+            long value =  indicator.getValue(i).longValue();
+            iv = new IndicatorValue(date,value, name);
+            indicatorValues.add(iv);
+        }
+    }
+
+    @Override
+    public List<IndicatorValue> getIndicatorValues() {
+        return indicatorValues;
+    }
 }

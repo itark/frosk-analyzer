@@ -34,13 +34,13 @@ public class TestJWebsocketFeed extends BaseIntegrationTest {
 
 	@BeforeEach
 	void setUp() {
-		websocketFeed = new WebsocketFeed(
-				baseUrl,
-				key,
-				passphrase,
-				gui,
-				new Signature(secret),
-				objectMapper);
+//		websocketFeed = new WebsocketFeed(
+//				baseUrl,
+//				key,
+//				passphrase,
+//				gui,
+//				new Signature(secret),
+//				objectMapper);
 	}
 
 	@Test

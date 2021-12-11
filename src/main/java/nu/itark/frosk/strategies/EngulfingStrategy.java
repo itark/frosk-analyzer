@@ -22,6 +22,8 @@
  */
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -30,10 +32,12 @@ import org.ta4j.core.indicators.candles.BearishEngulfingIndicator;
 import org.ta4j.core.indicators.candles.BullishEngulfingIndicator;
 import org.ta4j.core.trading.rules.BooleanIndicatorRule;
 
+import java.util.List;
+
 /**
 * https://www.investopedia.com/terms/b/bearishengulfingp.asp
  */
-public class EngulfingStrategy {
+public class EngulfingStrategy  {
 
 	TimeSeries series = null;
 	   

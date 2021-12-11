@@ -1,11 +1,10 @@
 package nu.itark.frosk.analysis;
 
 import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 
 import lombok.Data;
-import nu.itark.frosk.dataset.IndicatorValues;
+import nu.itark.frosk.dataset.IndicatorValue;
 import nu.itark.frosk.model.StrategyTrade;
 
 /**
@@ -35,7 +34,7 @@ public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
 	private String period;
 	private String latestTrade;
 	private List<StrategyTrade> trades;
-	private List<IndicatorValues> indicatorValues;
+	private List<IndicatorValue> indicatorValues;
 
 	@Override
 	public int compareTo(FeaturedStrategyDTO o) {

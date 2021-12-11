@@ -23,11 +23,10 @@
 package nu.itark.frosk.strategies;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.SortedSet;
 
+import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -45,11 +44,11 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  * @see <a href="http://www.investopedia.com/terms/t/three_black_crows.asp">
  *     http://www.investopedia.com/terms/t/three_black_crows.asp</a>
  */
-public class ThreeBlackWhiteStrategy implements IndicatorValue{
+public class ThreeBlackWhiteStrategy implements IIndicatorValue {
 
 	TimeSeries series = null;
 	
-	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();	
+//	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();
 	   
 	public ThreeBlackWhiteStrategy(TimeSeries series) {
 		this.series = series;
@@ -78,25 +77,17 @@ public class ThreeBlackWhiteStrategy implements IndicatorValue{
     }
     
     private void setIndicatorValues(ClosePriceIndicator indicator, TimeSeries series, String name) {
-    	StrategyIndicatorValue iv = null;
- 		for (int i = 0; i < series.getBarCount(); i++) {
- 			Date iDate = Date.from(series.getBar(i).getEndTime().toInstant());
- 			BigDecimal iBig = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
- 			iv = new StrategyIndicatorValue(iDate, iBig, name);
- 			indicatorValues.add(iv);
- 		}
- 		
+		IndicatorValue iv = null;
+		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
+			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			long value =  indicator.getTimeSeries().getBar(i).getClosePrice().longValue();
+			iv = new IndicatorValue(date,value, name);
+			indicatorValues.add(iv);
+		}
  	} 
-    
-    @Override
-	public SortedSet<StrategyIndicatorValue> getIndicatorValues() {
-    	throw new RuntimeException("not use...");
-	}  
-    
-    
+
 	@Override
-	public List<StrategyIndicatorValue> getIndicatorValues2() {
-		// TODO Auto-generated method stub
+	public List<IndicatorValue> getIndicatorValues() {
 		return indicatorValues;
 	}	    
 

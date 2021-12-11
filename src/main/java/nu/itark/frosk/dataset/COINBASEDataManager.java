@@ -117,57 +117,33 @@ public class COINBASEDataManager {
         return sp;
     }
 
+    /*
+    *        close=41233.35
+    *         high=41650.96
+    *         low=40143.18
+    *         open=40352.85
+    *         time=2021-09-18T00:00:00Z
+    *         volume=818.92870287
+    */
     private Map<Long, List<Candle>> getCandles(Iterable<Security> securities) throws IOException {
         log.info("getCurrencies(Iterable<Security> securities");
         Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
-
-//        Instant startTime = Instant.now().minus(100, ChronoUnit.DAYS);
         Instant endTime = Instant.now();
 
         securities.forEach((security) -> {
             Instant startTime = Instant.now();
-            boolean isToday = false;
-            Date toDay = new Date();
             SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
-            if (topSp != null) {
+            if (Objects.nonNull(topSp)) {
                 Date lastDate = topSp.getTimestamp();
-                log.info("security=" + security.getName() + ", found lastDate=" + lastDate);
-                if (DateUtils.isSameDay(lastDate, toDay)) {
-                    log.info("isToday ::lastDate=" + lastDate.toString() + ", toDay=" + toDay.toString());
-                    isToday = true;
-                } else if (DateUtils.isSameDay(lastDate, DateUtils.addDays(toDay, -1))) {
-                    log.info("last is yeasterday");
-                    startTime.adjustInto(lastDate.toInstant());
-                    startTime.plus(1, ChronoUnit.DAYS);
-                } else {
-                    startTime.adjustInto(lastDate.toInstant());
-                    startTime.plus(1, ChronoUnit.DAYS);
-                    log.info("Not today, startTime set to:" + startTime);
-                }
+                startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
+                startTime.plus(1, ChronoUnit.DAYS);
+                log.info("Not today, startTime set to:" + startTime);
             } else {
                 startTime.plus(-years, ChronoUnit.YEARS);
             }
-
-            if (!isToday) {
-                log.info("Retrieving history for " + security.getName() + " startTime " + startTime);
-                try {
-                    Candles candles = productProxy.getCandles("BTC-EUR", startTime,endTime, Granularity.ONE_DAY );
-                    System.out.println("candles.size:"+candles.getCandleList().size());
-                    candlesMap.put(security.getId(), candles.getCandleList());
-//        close=41233.35
-//        high=41650.96
-//        low=40143.18
-//        open=40352.85
-//        time=2021-09-18T00:00:00Z
-//        volume=818.92870287
-                } catch (Exception e) {
-                    log.error("ERROR:", e);
-                    // throw e;
-                }
-
-            } else {
-                log.info("Today, no action.");
-            }
+            log.info("Retrieving history for " + security.getName() + " startTime " + startTime);
+            Candles candles = productProxy.getCandles("BTC-EUR", startTime,endTime, Granularity.ONE_DAY );
+            candlesMap.put(security.getId(), candles.getCandleList());
         });
         return candlesMap;
     }

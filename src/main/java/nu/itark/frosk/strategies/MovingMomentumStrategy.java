@@ -23,12 +23,11 @@
 package nu.itark.frosk.strategies;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.SortedSet;
 import java.util.logging.Logger;
 
+import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -48,21 +47,15 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
 /**
  * Moving momentum strategy.
  * <p>
- * @see http://stockcharts.com/help/doku.php?id=chart_school:trading_strategies:moving_momentum
+ * @see //stockcharts.com/help/doku.php?id=chart_school:trading_strategies:moving_momentum
  */
-public class MovingMomentumStrategy implements IndicatorValue {
+public class MovingMomentumStrategy implements IIndicatorValue {
 	Logger logger = Logger.getLogger(MovingMomentumStrategy.class.getName()); 
 
 	TimeSeries series = null;
 	MACDIndicator macd = null;
 	EMAIndicator shortEma, longEma = null;
-	
-//	SortedSet<StrategyIndicatorValue> indicatorValues = new TreeSet<>(
-//			Comparator.comparing(StrategyIndicatorValue::getDate));	
 
-	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();		
-	
-	
 	public MovingMomentumStrategy(TimeSeries series) {
 		this.series = series;
 	}	
@@ -77,16 +70,19 @@ public class MovingMomentumStrategy implements IndicatorValue {
         // The bias is bullish when the shorter-moving average moves above the longer moving average.
         // The bias is bearish when the shorter-moving average moves below the longer moving average.
         shortEma = new EMAIndicator(closePrice, 9); 
-        setIndicatorValues(shortEma, series, "shortEma");
+        setIndicatorValues(shortEma, "shortEma");
         
-        longEma = new EMAIndicator(closePrice, 26); 
-        setIndicatorValues(longEma, series, "longEma");
+        longEma = new EMAIndicator(closePrice, 26);
+        setIndicatorValues(longEma, "longEma");
 
-        
-        StochasticOscillatorKIndicator stochasticOscillK = new StochasticOscillatorKIndicator(series, 14);  
+        StochasticOscillatorKIndicator stochasticOscillK = new StochasticOscillatorKIndicator(series, 14);
+		setIndicatorValues(stochasticOscillK, "stochasticOscillK");
 
-        macd = new MACDIndicator(closePrice, 9, 26); 
-        EMAIndicator emaMacd = new EMAIndicator(macd, 18); 
+        macd = new MACDIndicator(closePrice, 9, 26);
+		setIndicatorValues(macd, "macd");
+
+        EMAIndicator emaMacd = new EMAIndicator(macd, 18);
+		setIndicatorValues(emaMacd, "emaMacd");
         
         // Entry rule
         Rule entryRule = new OverIndicatorRule(shortEma, longEma) // Trend
@@ -98,36 +94,42 @@ public class MovingMomentumStrategy implements IndicatorValue {
                 .and(new CrossedUpIndicatorRule(stochasticOscillK, 80)) // Signal 1
                 .and(new UnderIndicatorRule(macd, emaMacd)); // Signal 2
 
-  
-        
-        
         return new BaseStrategy("MovingMomentumStrategy", entryRule, exitRule);
     }
 
     
-    private void setIndicatorValues(EMAIndicator indicator, TimeSeries series, String name) {
-//    	logger.info("setIndicatorValues, name="+name);
-    	StrategyIndicatorValue iv = null;
- 		for (int i = 0; i < series.getBarCount(); i++) {
- 			Date iDate = Date.from(series.getBar(i).getEndTime().toInstant());
-// 			BigDecimal iBig = BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue());
-// 			logger.info(BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue())+":series");
-// 			logger.info(BigDecimal.valueOf(indicator.getValue(i).doubleValue())+":indicator");
- 			BigDecimal iBig = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
-// 			String indicatorStr = indicator.getClass().getSimpleName();
- 			iv = new StrategyIndicatorValue(iDate, iBig, name);
+    private void setIndicatorValues(EMAIndicator indicator, String name) {
+    	IndicatorValue iv = null;
+ 		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
+			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			long value =  indicator.getValue(i).longValue();
+ 			iv = new IndicatorValue(date,value, name);
  			indicatorValues.add(iv);
  		}
- 		
- 	}    
+ 	}
+
+	private void setIndicatorValues(MACDIndicator indicator, String name) {
+		IndicatorValue iv = null;
+		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
+			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			long value =  indicator.getValue(i).longValue();
+			iv = new IndicatorValue(date,value, name);
+			indicatorValues.add(iv);
+		}
+	}
+
+	private void setIndicatorValues(StochasticOscillatorKIndicator indicator, String name) {
+		IndicatorValue iv = null;
+		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
+			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			long value =  indicator.getValue(i).longValue();
+			iv = new IndicatorValue(date,value, name);
+			indicatorValues.add(iv);
+		}
+	}
     
     @Override
-	public SortedSet<StrategyIndicatorValue> getIndicatorValues() {
-		throw new RuntimeException("not use...");
-	}	
- 
-    @Override
-	public List<StrategyIndicatorValue> getIndicatorValues2() {
+	public List<IndicatorValue> getIndicatorValues() {
 		return indicatorValues;
 	}    
     

@@ -49,7 +49,7 @@ header {
 	   
 	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 	      <ul class="nav navbar-nav">
-	        <!--  li class="active"><a href="#">Översikt <span class="sr-only">(current)</span></a></li-->
+	        <!--  li class="active"><a href="#">ï¿½versikt <span class="sr-only">(current)</span></a></li-->
 	        <li class="dropdown">
 	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Strategies <span class="caret"></span></a>
 	          <ul class="dropdown-menu">
@@ -94,6 +94,7 @@ header {
                                     <li><a href ="#" onclick="renderTable('INDEX');">INDEX</a></li>
                                     <li><a href="#" onclick="renderTable('OMX30');">OMX30</a></li>
                                     <li><a href ="#" onclick="renderTable('OSCAR');">OSCAR</a></li>
+                                    <li><a href ="#" onclick="renderTable('CB');">CB</a></li>
                                 </ul>
                             </div>
                         </div>

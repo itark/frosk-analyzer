@@ -1,5 +1,6 @@
 var selectedSecurity;
 var selectedStrategy;
+var root;
 
 function renderTable(dataset) {
 		var events = $('#events');
@@ -32,12 +33,17 @@ function renderTable(dataset) {
 	        	var security = featStratTable.rows( indexes ).data().pluck( 'securityName' );
 	         	selectedSecurity = security[0];
 	         	selectedStrategy = name[0];
-	
-//	         	renderChartOHLC();
-//	         	renderChartLine();
-	         	renderChartLineWithAddons3();
-	        	
-	    }) ; 
+                root.dispose();
+                root = am5.Root.new("chart-div");
+
+	            if (selectedStrategy === 'MovingMomentumStrategy') {
+	            	ma();
+	            } else if (selectedStrategy === 'RSI2Strategy') {
+                    rsi2();
+	            } else {
+	                console.log("Error on " + selectedStrategy);
+	            }
+	    }) ;
 	
 	    featStratTable
 			.on( 'draw.dt', function () {
@@ -45,11 +51,11 @@ function renderTable(dataset) {
 		    	let security = featStratTable.rows( 0 ).data().pluck( 'securityName' );
 		    	selectedSecurity = security[0];
 		        if(selectedSecurity != "") {
-//		        	renderChartOHLC();
+                    root.dispose();
+                    root = am5.Root.new("chart-div");
 		        }
 	        
 			} );     
-	    
 
 		if(strategy != 'ALL') {
 			featStratTable.columns( [0] ).visible( false, false );
@@ -57,615 +63,711 @@ function renderTable(dataset) {
 			console.log("shold set name to hide");
 		}
 	    
-	    
-	    
 	    $("#dataset").text(dataset);
   
 }
 
-function renderChartOHLC() {
-	security = selectedSecurity;
-	console.log('about to render chart on strategyName=' + strategy
-			+ ' and security=' + security);
-	var dailyPricesUrl = "dailyPrices?security=" + security;
-	var tradesUrl = "trades?security=" + security + "&strategy="
-			+ strategy;
-	var indicatorValueUrl = "rsiValues?security=" + security
-			+ "&strategy=" + strategy;
-	console.log("dailyPricesUrl", dailyPricesUrl);
-	console.log("tradesUrl", tradesUrl);
-	console.log("indicatorValueUrl", indicatorValueUrl);
+function ma() {
+    security = selectedSecurity;
+    strategy = selectedStrategy;
+    var dailyPricesUrl = "dailyPrices?security="+security+"&strategy="+strategy;
+	var indicatorValueUrl = "indicatorValues?security="+security+"&strategy="+strategy;
 
-	am4core.useTheme(am4themes_animated);
-	var chart = am4core.create("chart-div", am4charts.XYChart);
-	chart.dataSource.url = dailyPricesUrl;
-	chart.paddingRight = 5;
-	chart.dateFormatter.inputDateFormat = "YYYY-MM-dd";
+    root.setThemes([
+      am5themes_Animated.new(root)
+    ]);
+    var chart = root.container.children.push(
+      am5xy.XYChart.new(root, {
+        focusable: true,
+        panX: true,
+        panY: true,
+        wheelX: "panX",
+        wheelY: "zoomX"
+      })
+    );
+    var xAxis = chart.xAxes.push(
+      am5xy.DateAxis.new(root, {
+        maxDeviation:0.5,
+        groupData: true,
+        baseInterval: { timeUnit: "day", count: 1 },
+        renderer: am5xy.AxisRendererX.new(root, {pan:"zoom"}),
+        tooltip: am5.Tooltip.new(root, {
+          themeTags: ["axis"],
+          animationDuration: 300
+        })
+      })
+    );
+    var yAxis = chart.yAxes.push(
+      am5xy.ValueAxis.new(root, {
+        maxDeviation:1,
+        //logarithmic: true,
+        treatZeroAs: 0.000001,
+        renderer: am5xy.AxisRendererY.new(root, {
+            pan:"zoom"
+        })
+      })
+    );
 
-	var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
-	dateAxis.renderer.grid.template.location = 0;
-	var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
-	valueAxis.tooltip.disabled = true;
+    var yyAxis = chart.yAxes.push(
+      am5xy.ValueAxis.new(root, {
+        maxDeviation:1,
+        renderer: am5xy.AxisRendererY.new(root, {
+            opposite: true,
+            pan:"zoom"
+        })
+      })
+    );
 
-	var dateAxis2 = chart.xAxes.push(new am4charts.DateAxis());
-	dateAxis2.renderer.grid.template.location = 0;
-	var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
-	valueAxis2.tooltip.disabled = true;
-
-	var series = chart.series.push(new am4charts.CandlestickSeries());
-	series.name = "Kalle Anka";
-	series.dataFields.dateX = "date";
-	series.dataFields.valueY = "close";
-	series.dataFields.openValueY = "open";
-	series.dataFields.lowValueY = "low";
-	series.dataFields.highValueY = "high";
-	series.simplifiedProcessing = true;
-	series.tooltipText = "Open:{openValueY.value}\nLow:{lowValueY.value}\nHigh:{highValueY.value}\nClose:{valueY.value}";
-
-	series.riseFromPreviousState.properties.fillOpacity = 1;
-	series.dropFromPreviousState.properties.fillOpacity = 0;
-
-	chart.cursor = new am4charts.XYCursor();
-
-	// a separate series for scrollbar
-	var lineSeries = chart.series.push(new am4charts.LineSeries());
-	lineSeries.name = "Donald Duck"
-	lineSeries.dataFields.dateX = "date";
-	lineSeries.dataFields.valueY = "close";
-	// need to set on default state, as initially series is "show"
-	lineSeries.defaultState.properties.visible = false;
-
-	// hide from legend too (in case there is one)
-	lineSeries.hiddenInLegend = true;
-	lineSeries.fillOpacity = 0.5;
-	lineSeries.strokeOpacity = 0.5;
-
-	var scrollbarX = new am4charts.XYChartScrollbar();
-	scrollbarX.series.push(lineSeries);
-	chart.scrollbarX = scrollbarX;
-
-}
-
-function renderChartLine() {
-	security = selectedSecurity;
-	strategy = selectedStrategy;
-	console.log('about to render chart on strategyName=' + strategy
-			+ ' and security=' + security);
-	var dailyPricesUrl = "dailyPrices?security=" + security;
-	var tradesUrl = "trades?security=" + security + "&strategy="
-			+ strategy;
-	var indicatorValueUrl = "rsiValues?security=" + security
-			+ "&strategy=" + strategy;
-	console.log("dailyPricesUrl", dailyPricesUrl);
-	console.log("tradesUrl", tradesUrl);
-	console.log("indicatorValueUrl", indicatorValueUrl);
-
-	am4core.useTheme(am4themes_animated);
-
-	var chart = am4core.create("chart-div", am4charts.XYChart);
-	
-	chart.paddingRight = 5;
-	chart.dateFormatter.inputDateFormat = "YYYY-MM-dd";
-
-	var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
-	dateAxis.renderer.grid.template.location = 0;
-	dateAxis.renderer.labels.template.fill = am4core.color("#e59165");
-
-	var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
-	valueAxis.tooltip.disabled = true;
-	valueAxis.renderer.labels.template.fill = am4core.color("#e59165");
-
-	valueAxis.renderer.minWidth = 90;
-
-	var series = chart.series.push(new am4charts.LineSeries());
-	series.dataSource.url = dailyPricesUrl; 
-	series.name = security;
-	series.dataFields.dateX = "date";
-	series.dataFields.valueY = "close";
-	series.tooltipText = "{valueY.value}";
-	series.fill = am4core.color("#e59165");
-	series.stroke = am4core.color("#e59165");
-	
-	chart.cursor = new am4charts.XYCursor();
-	chart.cursor.xAxis = dateAxis;
-
-	var scrollbarX = new am4charts.XYChartScrollbar();
-	scrollbarX.series.push(series);
-	chart.scrollbarX = scrollbarX;
-
-	chart.legend = new am4charts.Legend();
-	chart.legend.parent = chart.plotContainer;
-	chart.legend.zIndex = 100;
-
-	dateAxis.renderer.grid.template.strokeOpacity = 0.07;
-	valueAxis.renderer.grid.template.strokeOpacity = 0.07;
-	
-
-}
-
-
-function renderChartLineWithAddons() {
-	security = selectedSecurity;
-	strategy = selectedStrategy;
-	var dailyPricesUrl = "dailyPrices?security=" + security;
-	var tradesUrl = "trades?security=" + security + "&strategy="+ strategy;
-	var indicatorValueUrl = "rsiValues?security=" + security+"&strategy=" + strategy;
-
-	console.log('about to render chart on strategyName=' + strategy+' and security=' + security);
-	console.log("dailyPricesUrl", dailyPricesUrl);
-	console.log("tradesUrl", tradesUrl);
-	console.log("indicatorValueUrl", indicatorValueUrl);
-
-	
-	var dailyPricesUrl = "dailyPrices?security="+security;
- 	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
- 	var indicatorValueUrl = "indicatorValues?security="+security+"&strategy="+strategy;
-
- 	console.log("dailyPricesUrl",dailyPricesUrl);
- 	console.log("tradesUrl",tradesUrl);
-	console.log("indicatorValueUrl",indicatorValueUrl);
-   		
-    var chart = AmCharts.makeChart( "chart-div", {
-    	  "type": "stock",
-	      "theme": "light",
-    	  "color": "#fff",
-    	  "dataSets": [{
-    	    "title": security,
-    	    "fieldMappings": [ {
-    	      "fromField": "open",
-    	      "toField": "open"
-    	    }, {
-    	      "fromField": "high",
-    	      "toField": "high"
-    	    }, {
-    	      "fromField": "low",
-    	      "toField": "low"
-    	    }, {
-    	      "fromField": "close",
-    	      "toField": "close"
-    	    }, {
-    	      "fromField": "volume",
-    	      "toField": "volume"
-    	    } ],
-    	  //  "compared": false,
-    	    "categoryField": "date",
-    	    "dataLoader": {
-    	    	  "url": dailyPricesUrl,
-    	    	  "format": "json",
-    	    	  "showErrors": true,
-    	    	  "async": false,
-    	    	  "postProcess": function(data, config, chart) {
-    	    	      var newData = [];
-    	    	      for (var i = 0; i < data.rows.length; i++) {
-    	    	        var dataPoint = {};
-    	    	        for (var c = 0; c < data.columns.length; c++) {
-    	    	          dataPoint[data.columns[c]] = data.rows[i][c];
-    	    	        }
-    	    	        newData.push(dataPoint);
-    	    	      }
-    	    	      return newData;
-    	    	  }
-    	    },		    	    
-	        "eventDataLoader": {
-    	          "url": tradesUrl,
-    	          "format": "json",
-    	          "showErrors": true,
-    	          "showCurtain": true,
-    	          "async": true,
-    	          "reverse": true,
-    	          "delimiter": ",",
-    	          "useColumnNames": true,	    	          
-    	          "postProcess": function ( data, config, chart) {
-	    	            for ( var x in data ) {
-	    	              switch( data[x].type ) {
-	    	                case 'Buy':
-	    	                  var color = "#00CC00";
-	    	                  var type =  "arrowUp";
-	    	                  var buysell = "Köp";
-	    	                  break;
-	    	                default:
-	    	                  var color = "#CC0000";
-	    	                  var type =  "arrowDown";
-	    	                  var buysell = "Sälj";
-	    	                  break;
-	    	              }
-
-	    	              data[x] = {
-	    	                type: type,
-	    	                graph: "g1",
-	    	                backgroundColor: color,
-	    	                date: data[x].date,
-	    	                text: buysell,
-	    	                description: "<strong>" + data[x].type + "</strong><br /> price:" + data[x].price
-	    	              };
-	    	            }
-	    	            return data;
-	    	          }
-	       }  //eventDataLoader
-    	  }
-    	  ,{
-		      "title": strategy,
-		      "fieldMappings": [ {
-		        "fromField": "value",
-		        "toField": "close"
-		      } ],
-		      "categoryField": "date",
-	    	    "dataLoader": {
-	    	    	  "url": indicatorValueUrl,
-	    	    	  "format": "json",
-	    	    	  "showErrors": true,
-	    	    	  "async": true
-	    	    }			      
-		    }    	  
-    	  ], //dataset
-    	  "dataDateFormat": "YYYY-MM-DD",	    	  
- 
-    	  "panels": [ {
-    		    "showCategoryAxis": false,
-    		    "title": "Close",
-    		    "percentHeight": 70,
-    		    "stockGraphs": [ {
-//	    		        "type": "candlestick",
-//	    		        "id": "g1",
-//	    		        "openField": "open",
-//	    		        "closeField": "close",
-//	    		        "highField": "high",
-//	    		        "lowField": "low",
-//	    		        "valueField": "close",
-//	    		        "lineColor": "#7f8da9",
-//	    		        "fillColors": "#7f8da9",
-//	    		        "negativeLineColor": "#db4c3c",
-//	    		        "negativeFillColors": "#db4c3c",
-//	    		        "fillAlphas": 1,
-//	    		        "useDataSetColors": false,
-//	    		        "comparable": true,
-//	    		        "compareField": "close",
-//	    		        "showBalloon": false,
-//	    		        "proCandlesticks": true,
-    			      "id": "g1",
-    			      "valueField": "close",
-    			      "comparable": true,
-    			      "compareField": "close",
-    			      "balloonText": "[[title]]:<b>[[close]]</b>",
-    			      "compareGraphBalloonText": "[[title]]:<b>[[value]]</b>"
-    		    } ],
-    		    "stockLegend": {
-    		      "periodValueTextComparing": "[[percents.value.close]]%",
-    		      "periodValueTextRegular": "[[value.close]]"
-    		    }
-    		  }, 
-    		  {
-    		    "title": "Volume",
-    		    "percentHeight": 30,
-    		    "stockGraphs": [ {
-    		      "valueField": "volume",
-    		      "type": "column",
-    		      "showBalloon": false,
-    		      "fillAlphas": 1
-    		    } ],
-    		    "stockLegend": {
-    		      "periodValueTextRegular": "[[value.close]]"
-    		    }
-    		  }
-    		  ],  //panel
-
-    		  "chartScrollbarSettings": {
-    		    "graph": "g1"
-    		  },
-
-    		  "chartCursorSettings": {
-    		    "valueBalloonsEnabled": true,
-    		    "fullWidth": true,
-    		    "cursorAlpha": 0.1,
-    		    "valueLineBalloonEnabled": true,
-    		    "valueLineEnabled": true,
-    		    "valueLineAlpha": 0.5
-    		  },
-
-    		  "periodSelector": {
-    		    "position": "bottom",
-    		    "periods": [ {
-    		      "period": "MM",
-    		      "count": 1,
-    		      "label": "1 month"
-    		    }, {
-    		      "period": "YYYY",
-    		      "selected": true,
-    		      "count": 1,
-    		      "label": "1 year"
-    		    }, {
-    		      "period": "YTD",
-    		      "label": "YTD"
-    		    }, {
-    		      "period": "MAX",
-    		      "label": "MAX"
-    		    } ]
-    		  },
-
-    		  "export": {
-    		    "enabled": false
-    		  }
-    		  
+    var stochasticOscillKAxisRenderer = am5xy.AxisRendererY.new(root, {
+      inside: true
     });
-    
-    $("#charttype").text('Line addons');
-    
-    
+    stochasticOscillKAxisRenderer.labels.template.setAll({
+      centerY: am5.percent(100),
+      maxPosition: 0.98
+    });
+    var stochasticOscillKAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+      renderer: stochasticOscillKAxisRenderer,
+      height: am5.percent(30),
+      layer: 5,
+      numberFormat: "#a"
+    }));
+    stochasticOscillKAxis.axisHeader.set("paddingTop", 10);
+    stochasticOscillKAxis.axisHeader.children.push(am5.Label.new(root, {
+      text: "stochasticOscillK",
+      fontWeight: "bold",
+      paddingTop: 5,
+      paddingBottom: 5
+    }));
+    var macdAxisRenderer = am5xy.AxisRendererY.new(root, {
+      inside: true
+    });
+    macdAxisRenderer.labels.template.setAll({
+      centerY: am5.percent(100),
+      maxPosition: 0.98
+    });
+    var macdAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+      renderer: macdAxisRenderer,
+      height: am5.percent(30),
+      layer: 5,
+      numberFormat: "#a"
+    }));
+    macdAxis.axisHeader.set("paddingTop", 10);
+    macdAxis.axisHeader.children.push(am5.Label.new(root, {
+      text: "macd",
+      fontWeight: "bold",
+      paddingTop: 5,
+      paddingBottom: 5
+    }));
+
+    var volumeAxisRenderer = am5xy.AxisRendererY.new(root, {
+      inside: true
+    });
+    volumeAxisRenderer.labels.template.setAll({
+      centerY: am5.percent(100),
+      maxPosition: 0.98
+    });
+    var volumeAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+      renderer: volumeAxisRenderer,
+      height: am5.percent(30),
+      layer: 5,
+      numberFormat: "#a"
+    }));
+    volumeAxis.axisHeader.set("paddingTop", 10);
+    volumeAxis.axisHeader.children.push(am5.Label.new(root, {
+      text: "Volume",
+      fontWeight: "bold",
+      paddingTop: 5,
+      paddingBottom: 5
+    }));
+
+    var color = root.interfaceColors.get("background");
+    var series = chart.series.push(
+      am5xy.CandlestickSeries.new(root, {
+        fill: color,
+        calculateAggregates: true,
+        stroke: color,
+        name: security,
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: "value",
+        openValueYField: "open",
+        lowValueYField: "low",
+        highValueYField: "high",
+        valueXField: "date",
+        lowValueYGrouped: "low",
+        highValueYGrouped: "high",
+        openValueYGrouped: "open",
+        valueYGrouped: "close",
+        legendRangeValueText: "{valueYClose}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "open: {openValueY}\nlow: {lowValueY}\nhigh: {highValueY}\nclose: {valueY}"
+        })
+      })
+    );
+    // make professional
+    series.columns.template.get("themeTags").push("pro");
+    var longEmaSeries = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "longEmaSeries",
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: "value",
+        valueXField: "date",
+        fill: am5.color(0x095256),
+        stroke: am5.color(0x095256),
+        legendValueText: "{valueY}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "{valueY}"
+        })
+    }));
+    var shortEmaSeries = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "shortEmaSeries",
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: "value",
+        valueXField: "date",
+        legendValueText: "{valueY}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "{valueY}"
+        })
+    }));
+    var stochasticOscillKSeries = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "stochasticOscillK",
+        xAxis: xAxis,
+        yAxis: stochasticOscillKAxis,
+        valueYField: "value",
+        valueXField: "date",
+        legendValueText: "{valueY}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "{valueY}"
+        })
+    }));
+    var macdSeries = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "macd",
+        xAxis: xAxis,
+        yAxis: macdAxis,
+        valueYField: "value",
+        valueXField: "date",
+        legendValueText: "{valueY}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "{valueY}"
+        })
+    }));
+/*
+    var emaMacdSeries = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "emaMacd",
+        xAxis: xAxis,
+        yAxis: macdAxis,
+        valueYField: "value",
+        valueXField: "date",
+        legendValueText: "{valueY}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "{valueY}"
+        })
+    }));
+*/
+    var firstColor = chart.get("colors") .getIndex(0);
+    var volumeSeries = chart.series.push(am5xy.ColumnSeries.new(root, {
+      name: "Volym",
+      clustered:false,
+      fill: firstColor,
+      stroke: firstColor,
+      valueYField: "volume",
+      valueXField: "date",
+      valueYGrouped: "sum",
+      xAxis: xAxis,
+      yAxis: volumeAxis,
+      legendValueText: "{valueY}",
+      tooltip: am5.Tooltip.new(root, {
+        labelText: "{valueY}"
+      })
+    }));
+
+
+    stochasticOscillKSeries.strokes.template.setAll({ strokeWidth: 1 });
+    var cursor = chart.set(
+      "cursor",
+      am5xy.XYCursor.new(root, {
+        xAxis: xAxis
+      })
+    );
+    cursor.lineY.set("visible", false);
+    chart.leftAxesContainer.set("layout", root.verticalLayout);
+    var scrollbar = am5xy.XYChartScrollbar.new(root, {
+      orientation: "horizontal",
+      height: 50
+    });
+    chart.set("scrollbarX", scrollbar);
+    var sbxAxis = scrollbar.chart.xAxes.push(
+      am5xy.DateAxis.new(root, {
+        groupData: true,
+        groupIntervals: [{ timeUnit: "week", count: 1 }],
+        baseInterval: { timeUnit: "day", count: 1 },
+        renderer: am5xy.AxisRendererX.new(root, {
+          opposite: false,
+          strokeOpacity: 0
+        })
+      })
+    );
+    var sbyAxis = scrollbar.chart.yAxes.push(
+      am5xy.ValueAxis.new(root, {
+        renderer: am5xy.AxisRendererY.new(root, {})
+      })
+    );
+    var sbseries = scrollbar.chart.series.push(
+      am5xy.LineSeries.new(root, {
+        xAxis: sbxAxis,
+        yAxis: sbyAxis,
+        valueYField: "value",
+        valueXField: "date"
+      })
+    );
+
+    am5.net.load(dailyPricesUrl).then(function(result) {
+      const dailyPrices = am5.JSONParser.parse(result.response);
+      sbseries.data.setAll(dailyPrices);
+      series.data.setAll(dailyPrices);
+      volumeSeries.data.setAll(dailyPrices);
+    }).catch(function(result) {
+      console.log("Error loading " + result);
+    });
+
+    var longEmaData = [];
+    var shortEmaData = [];
+    var stochasticOscillKData = [];
+    var macdData = [];
+    var emaMacdData = [];
+
+    am5.net.load(indicatorValueUrl).then(function(result) {
+      const indicatorValues = am5.JSONParser.parse(result.response);
+      for (let i in indicatorValues) {
+        //console.log(indicatorValues[i]);
+         if (indicatorValues[i].name === 'longEma') {
+             longEmaData.push({
+               date: indicatorValues[i].date,
+               name: indicatorValues[i].name,
+               value: indicatorValues[i].value
+             });
+         } else if(indicatorValues[i].name === 'shortEma') {
+             shortEmaData.push({
+               date: indicatorValues[i].date,
+               name: indicatorValues[i].name,
+               value: indicatorValues[i].value
+             });
+         } else if(indicatorValues[i].name === 'stochasticOscillK') {
+              stochasticOscillKData.push({
+                date: indicatorValues[i].date,
+                name: indicatorValues[i].name,
+                value: indicatorValues[i].value
+              });
+         } else if(indicatorValues[i].name === 'macd') {
+             macdData.push({
+               date: indicatorValues[i].date,
+               name: indicatorValues[i].name,
+               value: indicatorValues[i].value
+             });
+         } else if(indicatorValues[i].name === 'emaMacd') {
+              emaMacdData.push({
+                date: indicatorValues[i].date,
+                name: indicatorValues[i].name,
+                value: indicatorValues[i].value
+              });
+         }
+      }
+      longEmaSeries.data.setAll(longEmaData);
+      shortEmaSeries.data.setAll(shortEmaData);
+      stochasticOscillKSeries.data.setAll(stochasticOscillKData);
+      macdSeries.data.setAll(macdData);
+      //emaMacdSeries.data.setAll(emaMacdData);
+    }).catch(function(result) {
+      console.log("Error loading " + result);
+    });
+
+    var legend = yAxis.axisHeader.children.push(am5.Legend.new(root, {}));
+    legend.data.setAll(chart.series.values);
+    legend.markers.template.setAll({
+      width: 10
+    });
+    legend.markerRectangles.template.setAll({
+      cornerRadiusTR: 0,
+      cornerRadiusBR: 0,
+      cornerRadiusTL: 0,
+      cornerRadiusBL: 0
+    });
+
+    series.appear(1000);
+    longEmaSeries.appear(1000);
+    shortEmaSeries.appear(1000);
+    stochasticOscillKSeries.appear(1000);
+    macdSeries.appear(100);
+    //emaMacdSeries.appear(100);
+    chart.appear(1000, 100);
+
+    $("#charttype").text('ma');
+
 }
 
-function renderChartLineWithAddons3() {
 
-	security = selectedSecurity;
-	strategy = selectedStrategy;
+function rsi2() {
+    security = selectedSecurity;
+    strategy = selectedStrategy;
+    var dailyPricesUrl = "dailyPrices?security="+security+"&strategy="+strategy;
+	var indicatorValueUrl = "indicatorValues?security="+security+"&strategy="+strategy;
+	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
 
-	console.log('renderChartLineWithAddons3');
-	console.log('about to render chart on strategyName=' + strategy+' and security=' + security);
-	
-	var dailyPricesUrl = "dailyPrices?security="+security;
- 	var tradesUrl = "trades?security="+security+"&strategy="+strategy;
- 	var indicatorValueUrl = "indicatorValues?security="+security+"&strategy="+strategy;
+    root.setThemes([
+      am5themes_Animated.new(root)
+    ]);
+    var chart = root.container.children.push(
+      am5xy.XYChart.new(root, {
+        focusable: true,
+        panX: true,
+        panY: true,
+        wheelX: "panX",
+        wheelY: "zoomX"
+      })
+    );
+    var xAxis = chart.xAxes.push(
+      am5xy.DateAxis.new(root, {
+        maxDeviation:0.5,
+        groupData: true,
+        baseInterval: { timeUnit: "day", count: 1 },
+        renderer: am5xy.AxisRendererX.new(root, {pan:"zoom"}),
+        tooltip: am5.Tooltip.new(root, {
+          themeTags: ["axis"],
+          animationDuration: 300
+        })
+      })
+    );
+    var yAxis = chart.yAxes.push(
+      am5xy.ValueAxis.new(root, {
+        maxDeviation:1,
+        //logarithmic: true,
+        treatZeroAs: 0.000001,
+        renderer: am5xy.AxisRendererY.new(root, {
+            pan:"zoom"
+        })
+      })
+    );
 
- 	console.log("dailyPricesUrl",dailyPricesUrl);
- 	console.log("tradesUrl",tradesUrl);
-	console.log("indicatorValueUrl",indicatorValueUrl);
-	
-	
-	
-	var chart = AmCharts.makeChart( "chart-div", {
-		  "type": "stock",
-		  "theme": "light",
-		  "color": "#fff",
-		  "dataSets": [ {
-		    "title": security,
-		    "fieldMappings": [ {
-		      "fromField": "open",
-		      "toField": "open"
-		    }, {
-		      "fromField": "high",
-		      "toField": "high"
-		    }, {
-		      "fromField": "low",
-		      "toField": "low"
-		    }, {
-		      "fromField": "close",
-		      "toField": "close"
-		    }, {
-		      "fromField": "volume",
-		      "toField": "volume"
-		    } ],
-		    "compared": true,
-		    "categoryField": "date",
+    var yyAxis = chart.yAxes.push(
+      am5xy.ValueAxis.new(root, {
+        maxDeviation:1,
+        renderer: am5xy.AxisRendererY.new(root, {
+            opposite: true,
+            pan:"zoom"
+        })
+      })
+    );
 
-    	    "dataLoader": {
-  	    	  "url": dailyPricesUrl,
-  	    	  "format": "json",
-  	    	  "showErrors": true,
-  	    	  "async": true
-    	    },	    
+    var rsiAxisRenderer = am5xy.AxisRendererY.new(root, {
+      inside: true
+    });
+    rsiAxisRenderer.labels.template.setAll({
+      centerY: am5.percent(100),
+      maxPosition: 0.98
+    });
+    var rsiAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+      renderer: rsiAxisRenderer,
+      height: am5.percent(30),
+      layer: 5,
+      numberFormat: "#a"
+    }));
+    rsiAxis.axisHeader.set("paddingTop", 10);
+    rsiAxis.axisHeader.children.push(am5.Label.new(root, {
+      text: "rsi",
+      fontWeight: "bold",
+      paddingTop: 5,
+      paddingBottom: 5
+    }));
+    var volumeAxisRenderer = am5xy.AxisRendererY.new(root, {
+      inside: true
+    });
+    volumeAxisRenderer.labels.template.setAll({
+      centerY: am5.percent(100),
+      maxPosition: 0.98
+    });
+    var volumeAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+      renderer: volumeAxisRenderer,
+      height: am5.percent(30),
+      layer: 5,
+      numberFormat: "#a"
+    }));
+    volumeAxis.axisHeader.set("paddingTop", 10);
+    volumeAxis.axisHeader.children.push(am5.Label.new(root, {
+      text: "Volume",
+      fontWeight: "bold",
+      paddingTop: 5,
+      paddingBottom: 5
+    }));
 
-		    /**
-		     * data loader for events data
-		     */
-		    "eventDataLoader": {
-		      "url": tradesUrl,
-		      "format": "json",
-		      "showCurtain": true,
-		      "showErrors": true,
-		      "async": true,
-		      "reverse": true,
-		      "delimiter": ",",
-		      "useColumnNames": true,
-		      "postProcess": function( data ) {
-		    	 // console.log('data3',data);
-  	            for ( var x in data ) {
-  	              switch( data[x].type ) {
-  	                case 'Buy':
-  	                  var color = "#00CC00";
-  	                  var type =  "arrowUp";
-  	                  var buysell = "Köp";
-  	                  break;
-  	                default:
-  	                  var color = "#CC0000";
-  	                  var type =  "arrowDown";
-  	                  var buysell = "Sälj";
-  	                  break;
-  	              }
+    var color = root.interfaceColors.get("background");
+    var series = chart.series.push(
+      am5xy.CandlestickSeries.new(root, {
+        fill: color,
+        calculateAggregates: true,
+        stroke: color,
+        name: security,
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: "value",
+        openValueYField: "open",
+        lowValueYField: "low",
+        highValueYField: "high",
+        valueXField: "date",
+        lowValueYGrouped: "low",
+        highValueYGrouped: "high",
+        openValueYGrouped: "open",
+        valueYGrouped: "close",
+        legendRangeValueText: "{valueYClose}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "open: {openValueY}\nlow: {lowValueY}\nhigh: {highValueY}\nclose: {valueY}"
+        })
+      })
+    );
+    // make professional
+    series.columns.template.get("themeTags").push("pro");
+    var longSmaSeries = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "longSmaSeries",
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: "value",
+        valueXField: "date",
+        fill: am5.color(0x095256),
+        stroke: am5.color(0x095256),
+        legendValueText: "{valueY}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "{valueY}"
+        })
+    }));
+    var shortSmaSeries = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "shortSmaSeries",
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: "value",
+        valueXField: "date",
+        legendValueText: "{valueY}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "{valueY}"
+        })
+    }));
+    var rsiSeries = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "rsi",
+        xAxis: xAxis,
+        yAxis: rsiAxis,
+        valueYField: "value",
+        valueXField: "date",
+        legendValueText: "{valueY}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "{valueY}"
+        })
+    }));
+    var tradesSeries = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "trades",
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: "value",
+        valueXField: "date",
+        legendValueText: "{valueY}",
+        tooltip: am5.Tooltip.new(root, {
+          pointerOrientation: "horizontal",
+          labelText: "{valueY}"
+        })
+    }));
 
-  	              data[x] = {
-  	                type: type,
-  	                graph: "g1",
-  	                backgroundColor: color,
-  	                date: data[x].date,
-  	                text: buysell,
-  	                description: "<strong>" + data[x].type + "</strong><br /> price:" + data[x].price
-  	              };
-		        }
-		        return data;
-		      }
-		    }
+/*
+    tradesSeries.bullets.push(function() {
+      return am5.Bullet.new(root, {
+        sprite: am5.Circle.new(root, {
+          radius: 4,
+          fill: series.get("fill")
+        })
+      });
+    });
+*/
+    tradesSeries.bullets.push(function() {
+      return am5.Bullet.new(root, {
+        locationX: 0.5,
+        locationY: 0.5,
+        sprite: am5.Label.new(root, {
+          text: "{trade}",
+          centerX: am5.percent(50),
+          //centerY: am5.percent(50),
+          populateText: true,
+          fill: am5.color(0x000000),
+        })
+      });
+    });
 
-		  }, {
-		    "title": strategy,
-		    "fieldMappings": [ {
-		      "fromField": "value",
-		      "toField": "close"
-		    } ],
-		    "compared": true,
-		    "categoryField": "date",
-	  	    "dataLoader": {
-		    	  "url": indicatorValueUrl,
-		    	  "format": "json",
-		    	  "showErrors": true,
-		    	  "async": true
-		    }			      
-		  } ],
-		  "dataDateFormat": "YYYY-MM-DD",
+    var bulletTemplate = am5.Template.new({
+      // This will be default fill for bullets that do not have
+      // it set via templateField
+      fill: am5.color(0xE6E6E6)
+    });
 
-		  "panels": [ {
-		      "title": "Close",
-		      "percentHeight": 70,
-		      "stockGraphs": [ {
-			      "id": "g1",
-			      "valueField": "close",
-			      "comparable": true,
-			      "compareField": "close",
-			      "balloonText": "[[title]]:<b>[[close]]</b>",
-			      "compareGraphBalloonText": "[[title]]:<b>[[value]]</b>"
-		      } ],
+    tradesSeries.bullets.push(function() {
+      return am5.Bullet.new(root, {
+        sprite: am5.Triangle.new(root, {
+          //centerX: am5.percent(30),
+          radius: 8,
+          templateField: "bulletSettings"
+        }, bulletTemplate)
+      });
+    });
 
-		      "stockLegend": {
-		        "valueTextRegular": undefined,
-		        "periodValueTextComparing": "[[percents.value.close]]%"
-		      }
 
-		    },
 
-  		  	{
-    		  "title": "Volume",
-    		  "percentHeight": 30,
-    		  "stockGraphs": [ {
-    		    "valueField": "volume",
-    		    "type": "column",
-    		    "showBalloon": false,
-    		    "fillAlphas": 1
-    		    } ],
-    		    "stockLegend": {
-    		      "periodValueTextRegular": "[[value.close]]"
-    		    }
-    		 },
 
-    		 {
-		      "title": strategy,
-		      "percentHeight": 30,
-		      "marginTop": 1,
-		      "showCategoryAxis": false,
-		      "stockGraphs": [ {
-			      "id": "g1",
-			      "valueField": "close",
-			      "comparable": true,
-			      "compareField": "close",
-			      "balloonText": "[[title]]:<b>[[close]]</b>",
-			      "compareGraphBalloonText": "[[title]]:<b>[[value]]</b>"
-		      } ],
-		      "stockLegend": {
-		        "markerType": "bubble",
-		        "markerSize": 12,
-		        "labelText": "[[title]]",
-		        "periodValueTextComparing": "[[value.close]]"
-		      },
 
-		      "valueAxes": [ {
-		        "usePrefixes": true
-		      } ]
-		    }
 
-    		],
+    var firstColor = chart.get("colors") .getIndex(0);
+    var volumeSeries = chart.series.push(am5xy.ColumnSeries.new(root, {
+      name: "Volym",
+      clustered:false,
+      fill: firstColor,
+      stroke: firstColor,
+      valueYField: "volume",
+      valueXField: "date",
+      valueYGrouped: "sum",
+      xAxis: xAxis,
+      yAxis: volumeAxis,
+      legendValueText: "{valueY}",
+      tooltip: am5.Tooltip.new(root, {
+        labelText: "{valueY}"
+      })
+    }));
+    rsiSeries.strokes.template.setAll({ strokeWidth: 1 });
+    var cursor = chart.set(
+      "cursor",
+      am5xy.XYCursor.new(root, {
+        xAxis: xAxis
+      })
+    );
+    cursor.lineY.set("visible", false);
+    chart.leftAxesContainer.set("layout", root.verticalLayout);
+    var scrollbar = am5xy.XYChartScrollbar.new(root, {
+      orientation: "horizontal",
+      height: 50
+    });
+    chart.set("scrollbarX", scrollbar);
+    var sbxAxis = scrollbar.chart.xAxes.push(
+      am5xy.DateAxis.new(root, {
+        groupData: true,
+        groupIntervals: [{ timeUnit: "week", count: 1 }],
+        baseInterval: { timeUnit: "day", count: 1 },
+        renderer: am5xy.AxisRendererX.new(root, {
+          opposite: false,
+          strokeOpacity: 0
+        })
+      })
+    );
+    var sbyAxis = scrollbar.chart.yAxes.push(
+      am5xy.ValueAxis.new(root, {
+        renderer: am5xy.AxisRendererY.new(root, {})
+      })
+    );
+    var sbseries = scrollbar.chart.series.push(
+      am5xy.LineSeries.new(root, {
+        xAxis: sbxAxis,
+        yAxis: sbyAxis,
+        valueYField: "value",
+        valueXField: "date"
+      })
+    );
 
-//		  "panelsSettings": {
-//		      //  "color": "#fff",
-//		    "plotAreaFillColors": "#333",
-//		    "plotAreaFillAlphas": 1,
-//		    "marginLeft": 60,
-//		    "marginTop": 5,
-//		    "marginBottom": 5
-//		  },
+    var tradeData = [];
+    am5.net.load(dailyPricesUrl).then(function(result) {
+      const dailyPrices = am5.JSONParser.parse(result.response);
+      sbseries.data.setAll(dailyPrices);
+      series.data.setAll(dailyPrices);
+      volumeSeries.data.setAll(dailyPrices);
+      for (let i in dailyPrices) {
+          if (dailyPrices[i].trade) {
+              tradeData.push({
+                date: dailyPrices[i].date,
+                trade: dailyPrices[i].trade,
+                value: dailyPrices[i].value
+              });
+          }
+      }
+       console.log('tradeData',tradeData);
+       tradesSeries.data.setAll(tradeData);
 
-		  "chartScrollbarSettings": {
-  		    "graph": "g1"
-  		  },
+    }).catch(function(result) {
+      console.log("Error loading " + result);
+    });
+/*
+    am5.net.load(tradesUrl).then(function(result) {
+      const trades = am5.JSONParser.parse(result.response);
+      console.log('trades',trades)
+    }).catch(function(result) {
+      console.log("Error loading " + result);
+    });
+*/
 
-  		  "chartCursorSettings": {
-  		    "valueBalloonsEnabled": true,
-  		    "fullWidth": true,
-  		    "cursorAlpha": 0.1,
-  		    "valueLineBalloonEnabled": true,
-  		    "valueLineEnabled": true,
-  		    "valueLineAlpha": 0.5
-  		  },
-		  
-//		  "chartScrollbarSettings": {
-//		    "graph": "g1",
-//		    "graphType": "line",
-//		    "usePeriod": "WW",
-//		    "backgroundColor": "#333",
-//		    "graphFillColor": "#666",
-//		    "graphFillAlpha": 0.5,
-//		    "gridColor": "#555",
-//		    "gridAlpha": 1,
-//		    "selectedBackgroundColor": "#444",
-//		    "selectedGraphFillAlpha": 1
-//		  },
+    var longSmaData = [];
+    var shortSmaData = [];
+    var rsiData = [];
 
-//		  "categoryAxesSettings": {
-//		    "equalSpacing": true,
-//		    "gridColor": "#555",
-//		    "gridAlpha": 1
-//		  },
-//
-//		  "valueAxesSettings": {
-//		    "gridColor": "#555",
-//		    "gridAlpha": 1,
-//		    "inside": false,
-//		    "showLastLabel": true
-//		  },
-//
-//		  "chartCursorSettings": {
-//		    "pan": true,
-//		    "valueLineEnabled": true,
-//		    "valueLineBalloonEnabled": true
-//		  },
-//
-//		  "legendSettings": {
-//		    //"color": "#fff"
-//		  },
-//
-//		  "stockEventsSettings": {
-//		    "showAt": "high",
-//		    "type": "pin"
-//		  },
-//
-//		  "balloon": {
-//		    "textAlign": "left",
-//		    "offsetY": 10
-//		  },
+    am5.net.load(indicatorValueUrl).then(function(result) {
+      const indicatorValues = am5.JSONParser.parse(result.response);
+      for (let i in indicatorValues) {
+         console.log(indicatorValues[i]);
+         if (indicatorValues[i].name === 'longSma') {
+             longSmaData.push({
+               date: indicatorValues[i].date,
+               name: indicatorValues[i].name,
+               value: indicatorValues[i].value
+             });
+         } else if(indicatorValues[i].name === 'shortSma') {
+             shortSmaData.push({
+               date: indicatorValues[i].date,
+               name: indicatorValues[i].name,
+               value: indicatorValues[i].value
+             });
+         } else if(indicatorValues[i].name === 'rsi') {
+             rsiData.push({
+               date: indicatorValues[i].date,
+               name: indicatorValues[i].name,
+               value: indicatorValues[i].value
+             });
+         }
+      }
+      //console.log('longSmaData',longSmaData)
+      longSmaSeries.data.setAll(longSmaData);
+      shortSmaSeries.data.setAll(shortSmaData);
+      rsiSeries.data.setAll(rsiData);
+    }).catch(function(result) {
+      console.log("Error loading " + result);
+    });
 
-		  "periodSelector": {
-		    "position": "bottom",
-		    "periods": [ {
-		        "period": "DD",
-		        "count": 10,
-		        "label": "10D"
-		      }, {
-		        "period": "MM",
-		        "count": 1,
-		        "label": "1M"
-		      }, {
-		        "period": "MM",
-		        "count": 6,
-		        "label": "6M"
-		      }, {
-		        "period": "YYYY",
-		        "count": 1,
-		        "label": "1Y"
-		      }, {
-		        "period": "YYYY",
-		        "count": 2,
-		        "label": "2Y"
-		      },
-		      {
-		        "period": "YTD",
-		        "label": "YTD"
-		      },
-		      {
-		        "period": "MAX",
-		        "selected": true,
-		        "label": "MAX"
-		      }
-		    ]
-		  }
-		} );	
-	
-    $("#charttype").text('Line addons3');
-	
+    var legend = yAxis.axisHeader.children.push(am5.Legend.new(root, {}));
+    legend.data.setAll(chart.series.values);
+    legend.markers.template.setAll({
+      width: 10
+    });
+    legend.markerRectangles.template.setAll({
+      cornerRadiusTR: 0,
+      cornerRadiusBR: 0,
+      cornerRadiusTL: 0,
+      cornerRadiusBL: 0
+    });
+
+    series.appear(1000);
+    longSmaSeries.appear(1000);
+    shortSmaSeries.appear(1000);
+
+    chart.appear(1000, 100);
+
+    $("#charttype").text('rsi2');
+
 }
-

@@ -49,7 +49,6 @@ header {
 	   
 	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 	      <ul class="nav navbar-nav">
-	        <!--  li class="active"><a href="#">Översikt <span class="sr-only">(current)</span></a></li-->
 	        <li class="dropdown">
 	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Strategies <span class="caret"></span></a>
 	          <ul class="dropdown-menu">
@@ -66,17 +65,9 @@ header {
 
 	<header>
       <div class="container-fluid">
- 
+
         <div class="row">
-          <div class="col-lg-12 col-md-12 text-center">
-            <h2>The Moving Momentum, a.k.a Moving Average</h2>
-            <p>Moving averages are trend-following indicators that lag price. This strategy employs two moving averages to define the trading bias. 
-            The bias is bullish when the shorter-moving average moves above the longer moving average. The bias is bearish when the shorter-moving average moves below the longer moving average.</p>
-          </div>
-        </div>
- 
-        <div class="row">
-            <div class="col-lg-4 col-md-4">
+            <div class="col-lg-2 col-md-2">
                 <div class="panel panel-default">
                     <div class="panel-heading">
   						<i class="fa fa-table fa-fw"></i>
@@ -90,6 +81,7 @@ header {
                                     <li><a href ="#" onclick="renderTable('INDEX');">INDEX</a></li>
                                     <li><a href="#" onclick="renderTable('OMX30');">OMX30</a></li>
                                     <li><a href ="#" onclick="renderTable('OSCAR');">OSCAR</a></li>
+                                    <li><a href ="#" onclick="renderTable('CB');">CB</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -129,7 +121,7 @@ header {
                 </div>
            </div>
  
-           <div class="col-lg-8 col-md-8">
+           <div class="col-lg-10 col-md-10">
                  <div class="panel panel-default">
                         <div class="panel-heading">
                             <i class="fa fa-bar-chart-o fa-fw"></i>
@@ -140,21 +132,22 @@ header {
                                         <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu pull-right" role="menu">
-                                        <li><a href="#" onclick="renderChartOHLC();">Candle(v4)</a>
-                                        </li>
-                                        <li><a href="#" onclick="renderChartLine();">Line(v4)</a>
                                          </li>
-                                        <li><a href="#" onclick="renderChartLineWithAddons();">Line addons</a>
+               					          <li><a href="#" onclick="ma();">MovingMomentum</a>
                                          </li>
-               					          <li><a href="#" onclick="renderChartLineWithAddons3();">Line addons3</a>
-                                         </li>                              
+                                         </li>
+               					          <li><a href="#" onclick="rsi2();">RSI2</a>
+                                         </li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
                         <!-- /.panel-heading -->
 	   					<div class="panel-body">
-			           		<div class="col-12 dc-chart" id="chart-div"></div>
+	   					    <div class="row">
+			           		    <div class="col-12 dc-chart" id="chart-div"></div>
+			           	    </div>
+
 	  					</div>
                         <!-- /.panel-body -->
                     </div>
@@ -167,7 +160,7 @@ header {
    
      <footer class="bg-primary text-white">
       <div class="container text-center">
-        <p>Copyright &copy; Evening Star 2018</p>
+        <p>Copyright &copy; Evening Star 2022</p>
       </div>
     </footer>   
 
@@ -176,6 +169,7 @@ header {
  <script>
 
  	strategy="MovingMomentumStrategy";
+ 	root = am5.Root.new("chart-div");
  	
 </script>
 

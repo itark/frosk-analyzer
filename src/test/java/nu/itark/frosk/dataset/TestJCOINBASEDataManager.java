@@ -12,9 +12,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+
 @ExtendWith(SpringExtension.class)
 //@Import({IntegrationTestConfiguration.class})
-@RunWith(SpringRunner.class)
+@org.junit.runner.RunWith(SpringRunner.class)
 @SpringBootTest
 @Slf4j
 public class TestJCOINBASEDataManager extends BaseIntegrationTest {
@@ -26,6 +30,29 @@ public class TestJCOINBASEDataManager extends BaseIntegrationTest {
     public void syncOne(){
         coinbaseDataManager.syncronize("BTC-EUR");
     }
+
+    @Test
+    public void testInstansDate() {
+
+       // ZonedDateTime date = ZonedDateTime.now();
+
+        Instant date = Instant.now();
+
+        // prints the date
+        System.out.println(date);
+
+        // Parses the date
+        LocalDate date1 = LocalDate.parse("2015-01-31");
+
+        // Uses the function to adjust the date
+        date = (Instant)date1.adjustInto(date);
+
+        // Prints the adjusted date
+        System.out.println(date);
+
+
+    }
+
 
 
 }

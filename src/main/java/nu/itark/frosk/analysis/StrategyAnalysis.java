@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import nu.itark.frosk.dataset.IndicatorValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -72,7 +73,7 @@ public class StrategyAnalysis {
 	 * <li>Analyse on all strategies and selected security, or</li>
 	 * 
 	 * @param strategy can be null
-	 * @param security can be null
+	 * @param security_id can be null
 	 */
 	public void run(String strategy, Long security_id) throws DataIntegrityViolationException {
 		logger.info("run("+strategy+", "+security_id+")");
@@ -127,9 +128,8 @@ public class StrategyAnalysis {
         Strategy strategyToRun = null;
         
 		for (TimeSeries series : timeSeriesList) {
-//			logger.info("runStrategy("+strategy+", "+series.getName()+")");
-	        Set<StrategyIndicatorValue> indicatorValueSet = new HashSet<StrategyIndicatorValue>();
-			strategyToRun = getStrategyToRun(strategy, series, indicatorValueSet);
+			logger.info("runStrategy("+strategy+", "+series.getName()+")");
+			strategyToRun = getStrategyToRun(strategy, series);
 			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			trades = tradingRecord.getTrades();
@@ -206,39 +206,41 @@ public class StrategyAnalysis {
 			}
 			
 			//indicatorvalue //TODO to indicatorvalueS
-			List<StrategyIndicatorValue>  existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.getId());
+//			List<StrategyIndicatorValue>  existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.getId());
 //			logger.info("Exiting indicatorValues="+existIv.size());
 	
-			indicatorValueRepo.deleteInBatch(existIv);
-			indicatorValueRepo.flush();
-				indicatorValueSet.forEach(iv -> {
-					iv.setFeaturedStrategy(fsRes);
+//			indicatorValueRepo.deleteInBatch(existIv);
+//			indicatorValueRepo.flush();
+//				indicatorValueSet.forEach(iv -> {
+//					iv.setFeaturedStrategy(fsRes);
 //					logger.info("saving iv.getDate"+iv.getDate());
-					indicatorValueRepo.saveAndFlush(iv);
-				});	
+//					indicatorValueRepo.saveAndFlush(iv);
+//				});
 		}
 
 	}
 
-	
-	public List<StrategyIndicatorValue> getIndicatorValues(String strategy, TimeSeries series) {
+	//TODO implement IndicatorValue
+	public List<IndicatorValue> getIndicatorValues(String strategy, TimeSeries series) {
 //		logger.info("getIndicatorValues("+strategy+", "+series.getName()+")");
 
 		Strategy strategyToRun = null;
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
 			strategyToRun = strategyReguested.buildStrategy();
-			return strategyReguested.getIndicatorValues2();
+			return strategyReguested.getIndicatorValues();
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
 			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		
-			return strategyReguested.getIndicatorValues2();
+			return strategyReguested.getIndicatorValues();
 		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
 			GlobalExtremaStrategy strategyReguested = new GlobalExtremaStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
+			strategyToRun = strategyReguested.buildStrategy();
+			return strategyReguested.getIndicatorValues();
 		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
 			CCICorrectionStrategy strategyReguested = new CCICorrectionStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
+			strategyToRun = strategyReguested.buildStrategy();
+			return strategyReguested.getIndicatorValues();
 		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
 			EngulfingStrategy strategyReguested = new EngulfingStrategy(series);
 			strategyToRun = strategyReguested.buildStrategy();		
@@ -247,7 +249,8 @@ public class StrategyAnalysis {
 			strategyToRun = strategyReguested.buildStrategy();		
 		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
 			ThreeBlackWhiteStrategy strategyReguested = new ThreeBlackWhiteStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
+			strategyToRun = strategyReguested.buildStrategy();
+			return strategyReguested.getIndicatorValues();
 		}
 		
 		if (strategyToRun == null) {
@@ -260,7 +263,7 @@ public class StrategyAnalysis {
 	}
 	
 	
-	public Strategy getStrategyToRun(String strategy,  TimeSeries series, Set<StrategyIndicatorValue> indVals) {
+	public Strategy getStrategyToRun(String strategy,  TimeSeries series) {
 //		logger.info("getStrategyToRun("+strategy+", "+series.getName());
 		Strategy strategyToRun = null;
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {

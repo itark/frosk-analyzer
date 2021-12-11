@@ -23,12 +23,11 @@
 package nu.itark.frosk.strategies;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.SortedSet;
 import java.util.logging.Logger;
 
+import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -47,28 +46,24 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
 /**
  * 2-Period RSI Strategy
  * <p>
- * @see http://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:rsi2
+ * @see //stockcharts.com/school/doku.php?id=chart_school:trading_strategies:rsi2
  */
-public class RSI2Strategy implements IndicatorValue{
+public class RSI2Strategy implements IIndicatorValue {
 
 	Logger logger = Logger.getLogger(RSI2Strategy.class.getName());
 
 	RSIIndicator rsi = null;
 	TimeSeries series = null;
-	
+
 //	SortedSet<StrategyIndicatorValue> indicatorValues = new TreeSet<>(
-//			Comparator.comparing(StrategyIndicatorValue::getDate));	
-	
-	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();		
-	
+//			Comparator.comparing(StrategyIndicatorValue::getDate));
+
+//	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();
+
 	public RSI2Strategy(TimeSeries series) {
 		this.series = series;
 	}
-	
-	/**
-     * @param series a time series
-     * @return a 2-period RSI strategy
-     */
+
     public Strategy buildStrategy() {
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
@@ -76,62 +71,53 @@ public class RSI2Strategy implements IndicatorValue{
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
+		setIndicatorValues(shortSma, "shortSma");
         SMAIndicator longSma = new SMAIndicator(closePrice, 200);
-        
-        setIndicatorValues(longSma, series, "longSma");
+        setIndicatorValues(longSma, "longSma");
 
-
-        // We use a 2-period RSI indicator to identify buying
         // or selling opportunities within the bigger trend.
         rsi = new RSIIndicator(closePrice, 2);
-        
+		setIndicatorValues(rsi, "rsi");
+
         // Entry rule
         // The long-term trend is up when a security is above its 200-period SMA.
         Rule entryRule = new OverIndicatorRule(shortSma, longSma) // Trend
-                .and(new CrossedDownIndicatorRule(rsi, 5)) // Signal 1
+               // .and(new CrossedDownIndicatorRule(rsi, 5)) // Signal 1
                 .and(new OverIndicatorRule(shortSma, closePrice)); // Signal 2
-        
+
         // Exit rule
         // The long-term trend is down when a security is below its 200-period SMA.
         Rule exitRule = new UnderIndicatorRule(shortSma, longSma) // Trend
-                .and(new CrossedUpIndicatorRule(rsi, 95)) // Signal 1
+               // .and(new CrossedUpIndicatorRule(rsi, 95)) // Signal 1
                 .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
-        
-//        setIndicatorValues(rsi, series);
-        
+
         return new BaseStrategy("RSI2Strategy", entryRule, exitRule);
     }
 
-    
-    private void setIndicatorValues(SMAIndicator indicator, TimeSeries series, String name) {
-//    	logger.info("setIndicatorValues, name="+name);
-    	StrategyIndicatorValue iv = null;
- 		for (int i = 0; i < series.getBarCount(); i++) {
- 			Date iDate = Date.from(series.getBar(i).getEndTime().toInstant());
-// 			BigDecimal iBig = BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue());
-// 			logger.info(BigDecimal.valueOf(series.getBar(i).getMinPrice().doubleValue())+":series");
-// 			logger.info(BigDecimal.valueOf(indicator.getValue(i).doubleValue())+":indicator");
- 			BigDecimal iBig = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
-// 			String indicatorStr = indicator.getClass().getSimpleName();
- 			iv = new StrategyIndicatorValue(iDate, iBig, name);
- 			indicatorValues.add(iv);
- 		}
- 		
- 	}     
-    
-    
-    
-    
-    
-    @Override
-	public SortedSet<StrategyIndicatorValue> getIndicatorValues() {
-    	throw new RuntimeException("not use...");
+
+    private void setIndicatorValues(SMAIndicator indicator, String name) {
+		IndicatorValue iv;
+		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
+			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			long value =  indicator.getValue(i).longValue();
+			iv = new IndicatorValue(date,value, name);
+			indicatorValues.add(iv);
+		}
+ 	}
+
+	private void setIndicatorValues(RSIIndicator indicator, String name) {
+		IndicatorValue iv;
+		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
+			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			long value =  indicator.getValue(i).longValue();
+			iv = new IndicatorValue(date,value, name);
+			indicatorValues.add(iv);
+		}
 	}
 
-	@Override
-	public List<StrategyIndicatorValue> getIndicatorValues2() {
-		// TODO Auto-generated method stub
+    @Override
+	public List<IndicatorValue> getIndicatorValues() {
 		return indicatorValues;
-	}	    
-    
+	}
+
 }

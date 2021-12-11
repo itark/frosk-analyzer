@@ -42,7 +42,7 @@ public class HighLander {
 	 */
 	public void runInstall() {
 		addDataSetAndSecurities();
-//		addDataSetAndSecuritiesFromYahoo();
+		addDataSetAndSecuritiesFromYahoo();
 		addDataSetAndSecuritiesFromCoinbase();
 		runAllStrategies();
 		
