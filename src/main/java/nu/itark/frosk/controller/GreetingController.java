@@ -11,6 +11,15 @@ public class GreetingController {
 
     Logger logger = Logger.getLogger(GreetingController.class.getName());
 
+
+    /**
+     *  curl -XGET http://localhost:8080/hello
+     *
+     * @param message
+     * @return
+     * @throws Exception
+     */
+
     @MessageMapping("/hello")
     @SendTo("/topic/price")
     public String greeting(String message) throws Exception {

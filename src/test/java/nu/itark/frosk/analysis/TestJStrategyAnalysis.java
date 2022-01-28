@@ -1,21 +1,15 @@
 package nu.itark.frosk.analysis;
 
-import java.util.Date;
-import java.util.List;
-import java.util.logging.Logger;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.ta4j.core.TimeSeries;
-
 import nu.itark.frosk.service.TimeSeriesService;
 import nu.itark.frosk.strategies.MovingMomentumStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
-@RunWith(SpringRunner.class)
+import java.util.Date;
+import java.util.logging.Logger;
+
 @SpringBootTest
 public class TestJStrategyAnalysis {
 	Logger logger = Logger.getLogger(TestJStrategyAnalysis.class.getName());

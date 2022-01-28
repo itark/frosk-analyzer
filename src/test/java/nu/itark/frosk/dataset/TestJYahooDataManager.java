@@ -11,9 +11,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -26,7 +24,8 @@ import yahoofinance.histquotes.HistoricalQuote;
 import yahoofinance.histquotes.Interval;
 import yahoofinance.quotes.stock.StockStats;
 
-@RunWith(SpringRunner.class)
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 @SpringBootTest
 @Slf4j
 public class TestJYahooDataManager {
@@ -38,7 +37,7 @@ public class TestJYahooDataManager {
 	@Autowired
 	SecurityPriceRepository secRepo;
 	
-	@Test 
+	@Test
 	public void syncOne(){
 		
 		tsManager.syncronize("NDA-SE.ST");
@@ -159,7 +158,7 @@ public class TestJYahooDataManager {
 
 		Stock volvo = YahooFinance.get("VOLV-B.ST");
 		List<HistoricalQuote> quotes = volvo.getHistory(from, to, Interval.DAILY);	
-		Assert.assertNotNull(quotes);
+		assertNotNull(quotes);
 	
 	}	
 	

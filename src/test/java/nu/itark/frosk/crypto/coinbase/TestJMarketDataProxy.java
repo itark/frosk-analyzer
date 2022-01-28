@@ -11,11 +11,9 @@ import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.HistoricRate;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -70,7 +68,7 @@ public class TestJMarketDataProxy extends BaseIntegrationTest {
     		log.info("marketData.getSequence()="+marketData.getSequence());
     		log.info("asks="+asks.size());
     		log.info("bids="+bids.size());
-    		Assert.assertTrue(marketData.getSequence() > 0);
+    		assertTrue(marketData.getSequence() > 0);
     }
 
     @Test

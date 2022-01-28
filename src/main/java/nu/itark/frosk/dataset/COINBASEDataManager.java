@@ -136,10 +136,10 @@ public class COINBASEDataManager {
             if (Objects.nonNull(topSp)) {
                 Date lastDate = topSp.getTimestamp();
                 startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
-                startTime.plus(1, ChronoUnit.DAYS);
+                startTime = startTime.plus(1, ChronoUnit.DAYS);
                 log.info("Not today, startTime set to:" + startTime);
             } else {
-                startTime.plus(-years, ChronoUnit.YEARS);
+                startTime=  startTime.minus(300, ChronoUnit.DAYS);
             }
             log.info("Retrieving history for " + security.getName() + " startTime " + startTime);
             Candles candles = productProxy.getCandles("BTC-EUR", startTime,endTime, Granularity.ONE_DAY );

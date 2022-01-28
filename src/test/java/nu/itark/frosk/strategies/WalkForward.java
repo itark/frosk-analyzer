@@ -22,6 +22,14 @@
  */
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.analysis.StrategiesMap;
+import nu.itark.frosk.service.TimeSeriesService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.ta4j.core.*;
+import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
+
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -29,29 +37,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.ta4j.core.AnalysisCriterion;
-import org.ta4j.core.BaseTimeSeries;
-import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
-import org.ta4j.core.TimeSeriesManager;
-import org.ta4j.core.TradingRecord;
-import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
-
-import nu.itark.frosk.analysis.StrategiesMap;
-import nu.itark.frosk.service.TimeSeriesService;
-
 /**
  * Walk-forward optimization example.
  * <p>
  * @see http://en.wikipedia.org/wiki/Walk_forward_optimization
  * @see http://www.futuresmag.com/2010/04/01/can-your-system-do-the-walk
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class WalkForward {
  

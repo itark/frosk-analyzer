@@ -1,16 +1,14 @@
 package nu.itark.frosk.controller;
 
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import nu.itark.frosk.dataset.IndicatorValue;
 import nu.itark.frosk.dataset.Trade;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
 import org.ta4j.core.TimeSeries;
 
@@ -33,6 +31,7 @@ import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.TimeSeriesService;
 
 @RestController
+//@RequestMapping("/frosk-analyzer")
 public class DataController {
 	Logger logger = Logger.getLogger(DataController.class.getName());
 
@@ -54,30 +53,39 @@ public class DataController {
 	TimeSeriesService timeSeriesService;	
 
 	@Autowired
-	StrategyAnalysis strategyAnalysis;	
+	StrategyAnalysis strategyAnalysis;
+
+	//  curl localhost:8080/actuator/health
+
 
 	/**
-	 * @Example  http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy&dataset=OSCAR
+	 * @Example  curl -XGET http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy&dataset=CB
+	 *
+	 * curl -XGET http://localhost:8080/frosk-analyzer/featuredStrategies/RSI2Strategy/CB
 	 * 
 	 * @return
 	 */		
-	@RequestMapping(path="/featuredStrategies", method=RequestMethod.GET)
-	public List<FeaturedStrategyDTO> getFeaturedStrategies(@RequestParam("strategy") String strategy, @RequestParam("dataset") String datasetName){
-		logger.info("strategy="+strategy+", dataset="+datasetName);
+	@RequestMapping(path="/featuredStrategies/{strategy}/{dataset}", method=RequestMethod.GET)
+	public List<FeaturedStrategyDTO> getFeaturedStrategies(@PathVariable("strategy") String strategy, @PathVariable("dataset") String dataset){
+		logger.info("strategy="+strategy+", dataset="+dataset);
 		List<FeaturedStrategyDTO> returnList = new ArrayList<>();
 
-		DataSet dataset = datasetRepository.findByName(datasetName);
+		DataSet datasetet = datasetRepository.findByName(dataset);
+		if(Objects.isNull(datasetet)){
+			logger.log(Level.WARNING, "Kunde inte hitta Dataset för :"+dataset+ " kolla ditt data.");
+			throw new RuntimeException("Kunde inte hitta Dataset för :"+dataset+ " kolla ditt data.");
+		}
 
 		if ("ALL".equals(strategy)) {
 			List<String> strategies = StrategiesMap.buildStrategiesMap();
 			strategies.forEach(strategyName -> {
-				dataset.getSecurities().forEach(security -> {
+				datasetet.getSecurities().forEach(security -> {
 					FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, security.getName() );
 					returnList.add(getDTO(fs));
 				});					
 			});			
 		} else {
-			dataset.getSecurities().forEach(security -> {
+			datasetet.getSecurities().forEach(security -> {
 				FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security.getName() );
 				returnList.add(getDTO(fs));
 			});			
@@ -142,7 +150,7 @@ public class DataController {
 			dpList.stream()
 					.filter(dp -> dp.getDate() == trade.getDate())
 					.forEach(dp -> dp.setTrade(trade.getType()));
-			//System.out.println("trade:" + trade);
+			logger.info("trade:" + trade);
 		}
 	}
 

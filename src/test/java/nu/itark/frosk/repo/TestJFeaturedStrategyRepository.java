@@ -1,26 +1,18 @@
 package nu.itark.frosk.repo;
 
+import nu.itark.frosk.model.*;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.ta4j.core.indicators.EMAIndicator;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import nu.itark.frosk.model.DataSet;
-import nu.itark.frosk.model.FeaturedStrategy;
-import nu.itark.frosk.model.Security;
-import nu.itark.frosk.model.StrategyIndicatorValue;
-import nu.itark.frosk.model.StrategyTrade;
-
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class TestJFeaturedStrategyRepository {
 	Logger logger = Logger.getLogger(TestJFeaturedStrategyRepository.class.getName());
@@ -138,7 +130,7 @@ public class TestJFeaturedStrategyRepository {
 	public void testFindByName() {
 	
 	List<FeaturedStrategy> fsList = fsRepo.findByName("RSI2Strategy");
-	Assert.assertNotNull(fsList);
+	assertNotNull(fsList);
 
 	fsList.forEach(fs -> logger.info("sec="+fs.getSecurityName()+", tr size="+fs.getTrades().size()));
 	

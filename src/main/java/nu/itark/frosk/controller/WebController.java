@@ -18,7 +18,7 @@ import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
 
 @Controller
-
+//@RequestMapping("/frosk-analyzer")
 public class WebController {
 	Logger logger = Logger.getLogger(WebController.class.getName());
 
@@ -98,7 +98,7 @@ public class WebController {
 	/**
 	* @Example  http://localhost:8080/frosk-analyzer/highlander
 	 */
-	@RequestMapping(value="highlander", method={RequestMethod.GET, RequestMethod.POST})
+	@RequestMapping("/highlander")
 	@ResponseBody
 	public String runHighlander(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
@@ -114,7 +114,7 @@ public class WebController {
 	/**
 	* @Example  http://localhost:8080/frosk-analyzer/initDatabase
 	 */
-	@RequestMapping(value="initDatabase", method={RequestMethod.GET, RequestMethod.POST})
+	@RequestMapping("/initDatabase")
 	@ResponseBody
 	public String initDatabase(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
@@ -132,9 +132,11 @@ public class WebController {
 	public String fill(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
 		logger.log(Level.INFO, "fill , YAHOO and COINBASE");
-		dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
 
-		return "Security prices inserted from :"+ Database.COINBASE;
+		dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
+		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
+
+		return "Security prices inserted from :"+ Database.COINBASE + " and "+Database.YAHOO ;
 	}	
 
 	/**

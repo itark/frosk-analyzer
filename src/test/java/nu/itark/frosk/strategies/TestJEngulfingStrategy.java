@@ -22,32 +22,22 @@
  */
 package nu.itark.frosk.strategies;
 
-import java.util.List;
-import java.util.logging.Logger;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import nu.itark.frosk.dataset.TestJYahooDataManager;
+import nu.itark.frosk.service.TimeSeriesService;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.ta4j.core.Bar;
-import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
-import org.ta4j.core.TimeSeriesManager;
-import org.ta4j.core.Trade;
-import org.ta4j.core.TradingRecord;
+import org.ta4j.core.*;
 import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 import org.ta4j.core.num.Num;
 
-import nu.itark.frosk.dataset.TestJYahooDataManager;
-import nu.itark.frosk.service.TimeSeriesService;
+import java.util.List;
+import java.util.logging.Logger;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class TestJEngulfingStrategy {
 
 	Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
-	 
 	 
 	 @Autowired
 	 TimeSeriesService timeSeriesService;

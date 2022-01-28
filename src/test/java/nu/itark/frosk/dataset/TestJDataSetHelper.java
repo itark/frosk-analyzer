@@ -1,8 +1,7 @@
 package nu.itark.frosk.dataset;
 
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -12,7 +11,6 @@ import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class TestJDataSetHelper {
 

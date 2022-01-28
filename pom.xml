@@ -2,27 +2,36 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<!-- 1.5.7.RELEASE -->
-		<!--version>2.1.2.RELEASE</version-->
-		<!--version>2.3.3.RELEASE</version-->
-		<version>2.4.3</version>
+		<version>2.6.3</version>
 		<relativePath/>
 	</parent>
-
-
 	<groupId>nu.itark.frosk</groupId>
 	<artifactId>frosk-analyzer</artifactId>
-	<version>0.0.6</version>
-	<packaging>war</packaging>
+	<version>0.0.8</version>
 
 	<name>frosk-analyzer</name>
 	<description>Frosk is the thing, holding backend and UI</description>
 
+	<!--sdk use java 11.0.14-librca  -->
+
+	<properties>
+		<maven.test.skip>true</maven.test.skip>
+	</properties>
+
 	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -35,12 +44,6 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-tomcat</artifactId>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 		
@@ -48,13 +51,18 @@
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-jasper</artifactId>
             <scope>provided</scope>
-        </dependency>		
- 
+        </dependency>
+
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jstl</artifactId>
+			<version>1.2</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
-			<version>2.3.3.RELEASE</version>
 		</dependency>
  
 	    <dependency>
@@ -83,6 +91,7 @@
 	      </exclusions>
 	    </dependency>
 
+<!--
 		<dependency>
 		    <groupId>com.fasterxml.jackson.module</groupId>
 		    <artifactId>jackson-module-parameter-names</artifactId>
@@ -95,12 +104,11 @@
 		    <groupId>com.fasterxml.jackson.datatype</groupId>
 		    <artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
-
+-->
 		<dependency>
-		    <groupId>org.projectlombok</groupId>
-		    <artifactId>lombok</artifactId>
-			<version>1.18.20</version>
-			<scope>provided</scope>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
 		</dependency>
 
 		<dependency>
@@ -108,7 +116,6 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-
 
 		<dependency>
 		  <groupId>com.jimmoores</groupId>
@@ -268,15 +275,6 @@
 			<version>0.11.0</version>
 		</dependency>
 
-<!--
-		<dependency>
-			<groupId>com.coinbase.exchange</groupId>
-			<artifactId>gdax-java</artifactId>
-			<version>0.11.0</version>
-			<scope>system</scope>
-			<systemPath>${user.home}/.m2/repository/com/coinbase/exchange/gdax-java/0.11.0/gdax-java-0.11.0.jar</systemPath>
-		</dependency>
--->
 		<!--
 		<dependency>
 			<groupId>com.numericalmethod</groupId>
@@ -290,102 +288,28 @@
 	</dependencies>
 
 
-<!-- https://www.baeldung.com/tomcat-deploy-war -->
-<!--https://howtodoinjava.com/spring-boot/configure-jetty-server/-->
 	<build>
-<!-- 
-		<finalName>frosk-analyzer</finalName>
- --> 
 		<plugins>
 			<plugin>
 		        <groupId>org.springframework.boot</groupId>
 		        <artifactId>spring-boot-maven-plugin</artifactId>
-		    </plugin>
-
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>versions-maven-plugin</artifactId>
-				<version>2.5</version>
 				<configuration>
-					<generateBackupPoms>false</generateBackupPoms>
+					<image>
+						<env>
+							<BP_JVM_VERSION>11.*</BP_JVM_VERSION>
+						</env>
+					</image>
 				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.0</version>
-			</plugin>
-
+		    </plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.0</version>
+				<version>2.22.2</version>
 				<configuration>
-					<argLine>
-						--illegal-access=permit
-					</argLine>
-					<skipTests>true</skipTests>
+					<skipTests>${tests.skip}</skipTests>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>2.22.0</version>
-				<configuration>
-					<argLine>
-						--illegal-access=permit
-					</argLine>
-				</configuration>
-			</plugin>
-
-<!--
-			<plugin>
-			    <groupId>org.apache.maven.plugins</groupId>
-			    <artifactId>maven-surefire-plugin</artifactId>
-			    <configuration>
-			        <skipTests>true</skipTests>
-			    </configuration>
-			</plugin>
--->
-			<plugin>
-			    <groupId>org.apache.tomcat.maven</groupId>
-			    <artifactId>tomcat7-maven-plugin</artifactId>
-			    <version>2.2</version>
-			    <configuration>
-			        <url>http://localhost:8080/manager/text</url>
-			        <server>TomcatServer</server>
-			        <path>/frosk-analyzer</path>
-					<update>true</update>
-			    </configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.jetty</groupId>
-				<artifactId>jetty-maven-plugin</artifactId>
-				<version>9.4.18.v20190429</version>
-				<!--version>9.4.35.v20201120</version-->
-				<!--version>${jettyVersion}</version-->
-				<configuration>
-					<scanIntervalSeconds>0</scanIntervalSeconds>
-					<webApp>
-						<contextPath>/frosk-analyzer</contextPath>
-					</webApp>
-					<systemProperties>
-						<systemProperty>
-							<name>jetty.port</name>
-							<value>8080</value>
-						</systemProperty>
-						<systemProperty>
-							<name>catalina.home</name>
-							<value>${project.build.directory}</value>
-						</systemProperty>
-					</systemProperties>
-				</configuration>
-			</plugin>
-
-
 		</plugins>
-
 	</build>
 
 </project>

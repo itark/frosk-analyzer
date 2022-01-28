@@ -1,13 +1,13 @@
 package nu.itark.frosk.dataset;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TestJAbstractTimeSeriesManager {
 
 	TimeSeriesManager tsManager = null;
 	
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		
 	}

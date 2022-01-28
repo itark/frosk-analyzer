@@ -1,5 +1,18 @@
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.FroskApplication;
+import nu.itark.frosk.analysis.StrategiesMap;
+import nu.itark.frosk.service.TimeSeriesService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.ta4j.core.*;
+import org.ta4j.core.analysis.criteria.NumberOfBarsCriterion;
+import org.ta4j.core.analysis.criteria.NumberOfTradesCriterion;
+import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
+import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
+import org.ta4j.core.num.Num;
+
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,35 +20,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.ta4j.core.AnalysisCriterion;
-import org.ta4j.core.Bar;
-import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
-import org.ta4j.core.TimeSeriesManager;
-import org.ta4j.core.Trade;
-import org.ta4j.core.TradingRecord;
-import org.ta4j.core.analysis.criteria.AverageProfitCriterion;
-import org.ta4j.core.analysis.criteria.AverageProfitableTradesCriterion;
-import org.ta4j.core.analysis.criteria.BuyAndHoldCriterion;
-import org.ta4j.core.analysis.criteria.LinearTransactionCostCriterion;
-import org.ta4j.core.analysis.criteria.MaximumDrawdownCriterion;
-import org.ta4j.core.analysis.criteria.NumberOfBarsCriterion;
-import org.ta4j.core.analysis.criteria.NumberOfTradesCriterion;
-import org.ta4j.core.analysis.criteria.RewardRiskRatioCriterion;
-import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
-import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
-import org.ta4j.core.num.Num;
-
-import nu.itark.frosk.FroskApplication;
-import nu.itark.frosk.analysis.StrategiesMap;
-import nu.itark.frosk.service.TimeSeriesService;
-
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = {FroskApplication.class})
 public class TestJStrategies {
 
@@ -171,7 +155,7 @@ public class TestJStrategies {
 	@Test
 	public void chooseBestForSecurity() {
 		// Splitting the series into slices
-		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
+		TimeSeries timeSeries = timeSeriesService.getDataSet("BTC-EUR");
 
 		// Building the map of strategies
 		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);

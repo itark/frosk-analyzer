@@ -1,20 +1,16 @@
 package nu.itark.frosk.repo;
 
-import java.util.logging.Logger;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-
-import nu.itark.frosk.dataset.labb.Post;
 import nu.itark.frosk.dataset.labb.Tag;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.Security;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
-@RunWith(SpringRunner.class)
+import java.util.logging.Logger;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 @SpringBootTest
 public class TestJDataSetRepository {
 	Logger logger = Logger.getLogger(TestJDataSetRepository.class.getName());
@@ -74,7 +70,7 @@ public class TestJDataSetRepository {
 		DataSet dataSet = new DataSet("OMX30", "All securities included in the OMX30-index.");
 		Security security = securityRepo.findByName("SAND.ST");
 		
-		Assert.assertNotNull(security);
+		assertNotNull(security);
 		
 		logger.info("security="+security);
 		dataSet.getSecurities().add(security);

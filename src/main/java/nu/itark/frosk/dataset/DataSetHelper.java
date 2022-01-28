@@ -49,10 +49,10 @@ public class DataSetHelper {
 	
 	@PostConstruct
 	public void post_construct() {
-//		datasets.add("YAHOO-OMX30-All securites included in OMX30.csv");
-//		datasets.add("YAHOO-OSCAR-The Money Machine.csv");
-//		datasets.add("YAHOO-INDEX-World indexes.csv");
-		datasets.add("COINBASE-CB-Simple.csv");
+		datasets.add("codes/YAHOO-OMX30-All securites included in OMX30.csv");
+		datasets.add("codes/YAHOO-OSCAR-The Money Machine.csv");
+		datasets.add("codes/YAHOO-INDEX-World indexes.csv");
+		datasets.add("codes/COINBASE-CB-Simple.csv");
 	}
 
 	/**
@@ -75,8 +75,10 @@ public class DataSetHelper {
 			in = new BufferedReader(new InputStreamReader(file.getInputStream()));
 		} catch (IOException e) {
 			logger.severe("Could not read file, file="+file);
-		}		
+		}
 
+
+		csvFile = StringUtils.substringAfter(csvFile, "/");
 		String database = StringUtils.substringBefore(csvFile, "-");
 		String datasetName =  StringUtils.substringBetween(csvFile, "-");
 		String datasetDesc =  StringUtils.substringAfterLast(csvFile, "-");

@@ -10,18 +10,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-public class FroskApplication extends SpringBootServletInitializer {
+@EnableJpaRepositories(basePackages = "nu.itark.frosk.repo")
+public class FroskApplication  {
 
 	public static void main(String[] args){
 		SpringApplication.run(FroskApplication.class, args);
 	}
-
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(FroskApplication.class);
-    }
 
     @Bean
     public MarketDataService initmarketDataService(CoinbaseExchange exchange) {

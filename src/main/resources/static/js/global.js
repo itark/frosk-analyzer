@@ -8,7 +8,16 @@ function renderTable(dataset) {
 	    	responsive: true,
 	    	select: true,
 	    	destroy: true,
-	    	"sAjaxSource": "featuredStrategies?strategy="+strategy+"&dataset="+dataset,
+	    	"searching": false,
+	    	"info": false,
+	    	"paging": false,
+            "bPaginate": false,
+            "bLengthChange": false,
+            "bFilter": true,
+            "bSort": false,
+            "bInfo": false,
+            "bAutoWidth": false
+	    	"sAjaxSource": "featuredStrategies/"+strategy+"/"+dataset,
 			"sAjaxDataProp": "",
 			"order": [[ 2, "desc" ]],
 			"aoColumns": [
@@ -346,7 +355,6 @@ function ma() {
     am5.net.load(indicatorValueUrl).then(function(result) {
       const indicatorValues = am5.JSONParser.parse(result.response);
       for (let i in indicatorValues) {
-        //console.log(indicatorValues[i]);
          if (indicatorValues[i].name === 'longEma') {
              longEmaData.push({
                date: indicatorValues[i].date,
@@ -383,7 +391,6 @@ function ma() {
       shortEmaSeries.data.setAll(shortEmaData);
       stochasticOscillKSeries.data.setAll(stochasticOscillKData);
       macdSeries.data.setAll(macdData);
-      //emaMacdSeries.data.setAll(emaMacdData);
     }).catch(function(result) {
       console.log("Error loading " + result);
     });
@@ -405,13 +412,11 @@ function ma() {
     shortEmaSeries.appear(1000);
     stochasticOscillKSeries.appear(1000);
     macdSeries.appear(100);
-    //emaMacdSeries.appear(100);
     chart.appear(1000, 100);
 
     $("#charttype").text('ma');
 
 }
-
 
 function rsi2() {
     security = selectedSecurity;
@@ -571,63 +576,26 @@ function rsi2() {
           labelText: "{valueY}"
         })
     }));
-    var tradesSeries = chart.series.push(am5xy.LineSeries.new(root, {
-        name: "trades",
-        xAxis: xAxis,
-        yAxis: yAxis,
-        valueYField: "value",
-        valueXField: "date",
-        legendValueText: "{valueY}",
-        tooltip: am5.Tooltip.new(root, {
-          pointerOrientation: "horizontal",
-          labelText: "{valueY}"
-        })
-    }));
 
-/*
-    tradesSeries.bullets.push(function() {
+    series.bullets.push(function(root, series, dataItem) {
+     var _centerY;
+     if (dataItem.dataContext.trade) {
+      if (dataItem.dataContext.trade === 'Buy') {
+        _centerY = 0;
+      } else {
+        _centerY = 100;
+      }
       return am5.Bullet.new(root, {
-        sprite: am5.Circle.new(root, {
-          radius: 4,
-          fill: series.get("fill")
-        })
-      });
-    });
-*/
-    tradesSeries.bullets.push(function() {
-      return am5.Bullet.new(root, {
-        locationX: 0.5,
-        locationY: 0.5,
         sprite: am5.Label.new(root, {
           text: "{trade}",
           centerX: am5.percent(50),
-          //centerY: am5.percent(50),
+          centerY: am5.percent(_centerY),
           populateText: true,
           fill: am5.color(0x000000),
         })
       });
+     }
     });
-
-    var bulletTemplate = am5.Template.new({
-      // This will be default fill for bullets that do not have
-      // it set via templateField
-      fill: am5.color(0xE6E6E6)
-    });
-
-    tradesSeries.bullets.push(function() {
-      return am5.Bullet.new(root, {
-        sprite: am5.Triangle.new(root, {
-          //centerX: am5.percent(30),
-          radius: 8,
-          templateField: "bulletSettings"
-        }, bulletTemplate)
-      });
-    });
-
-
-
-
-
 
     var firstColor = chart.get("colors") .getIndex(0);
     var volumeSeries = chart.series.push(am5xy.ColumnSeries.new(root, {
@@ -690,34 +658,13 @@ function rsi2() {
       sbseries.data.setAll(dailyPrices);
       series.data.setAll(dailyPrices);
       volumeSeries.data.setAll(dailyPrices);
-      for (let i in dailyPrices) {
-          if (dailyPrices[i].trade) {
-              tradeData.push({
-                date: dailyPrices[i].date,
-                trade: dailyPrices[i].trade,
-                value: dailyPrices[i].value
-              });
-          }
-      }
-       console.log('tradeData',tradeData);
-       tradesSeries.data.setAll(tradeData);
-
     }).catch(function(result) {
       console.log("Error loading " + result);
     });
-/*
-    am5.net.load(tradesUrl).then(function(result) {
-      const trades = am5.JSONParser.parse(result.response);
-      console.log('trades',trades)
-    }).catch(function(result) {
-      console.log("Error loading " + result);
-    });
-*/
 
     var longSmaData = [];
     var shortSmaData = [];
     var rsiData = [];
-
     am5.net.load(indicatorValueUrl).then(function(result) {
       const indicatorValues = am5.JSONParser.parse(result.response);
       for (let i in indicatorValues) {
@@ -742,7 +689,6 @@ function rsi2() {
              });
          }
       }
-      //console.log('longSmaData',longSmaData)
       longSmaSeries.data.setAll(longSmaData);
       shortSmaSeries.data.setAll(shortSmaData);
       rsiSeries.data.setAll(rsiData);

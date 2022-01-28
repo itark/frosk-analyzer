@@ -1,16 +1,12 @@
 package nu.itark.frosk.repo;
 
-import java.util.logging.Logger;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import nu.itark.frosk.model.Security;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-import nu.itark.frosk.model.Security;
+import java.util.logging.Logger;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class TestJSecurityRepository {
 	Logger logger = Logger.getLogger(TestJSecurityRepository.class.getName());
@@ -19,7 +15,6 @@ public class TestJSecurityRepository {
 	@Autowired
 	SecurityRepository securityRepo;
 	
-
 	@Test
 	public final void testExist() {
 		

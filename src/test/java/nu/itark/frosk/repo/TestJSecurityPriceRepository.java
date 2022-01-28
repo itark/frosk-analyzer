@@ -1,9 +1,15 @@
 package nu.itark.frosk.repo;
 
-import static org.junit.Assert.assertNotNull;
+import nu.itark.frosk.model.SecurityPrice;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import yahoofinance.Stock;
+import yahoofinance.YahooFinance;
+import yahoofinance.histquotes.HistoricalQuote;
+import yahoofinance.histquotes.Interval;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -12,31 +18,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.ta4j.core.TimeSeries;
-
-import nu.itark.frosk.model.SecurityPrice;
-import nu.itark.frosk.repo.SecurityPriceRepository;
-import yahoofinance.Stock;
-import yahoofinance.YahooFinance;
-import yahoofinance.histquotes.HistoricalQuote;
-import yahoofinance.histquotes.Interval;
-
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class TestJSecurityPriceRepository {
 	Logger logger = Logger.getLogger(TestJSecurityPriceRepository.class.getName());
 
-	
 	@Autowired
 	SecurityPriceRepository secRepo;
 	
-
-
 	@Test
 	public void testTestMultiples() throws IOException {	
 		String[] symbols = new String[] { "INTC", "BABA", "TSLA", "AIR.PA", "YHOO" };

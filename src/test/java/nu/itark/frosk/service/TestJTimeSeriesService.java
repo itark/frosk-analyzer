@@ -1,25 +1,17 @@
 package nu.itark.frosk.service;
 
-import static org.junit.Assert.assertNotNull;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.List;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.ta4j.core.TimeSeries;
 
-import lombok.extern.slf4j.Slf4j;
+import java.time.*;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 @Slf4j
 public class TestJTimeSeriesService {

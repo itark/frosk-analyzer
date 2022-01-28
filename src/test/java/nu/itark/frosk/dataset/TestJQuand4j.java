@@ -1,6 +1,6 @@
 package nu.itark.frosk.dataset;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.threeten.bp.LocalDate;
 
 import com.jimmoores.quandl.DataSetRequest;

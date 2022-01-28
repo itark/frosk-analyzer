@@ -4,6 +4,8 @@ import com.coinbase.exchange.api.exchange.CoinbaseExchange;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * This is an integration test. Tests extending this class should be
  * run it against the Coinbase Pro sandbox API. To do this you will need
