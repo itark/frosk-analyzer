@@ -82,13 +82,13 @@ public class RSI2Strategy implements IIndicatorValue {
         // Entry rule
         // The long-term trend is up when a security is above its 200-period SMA.
         Rule entryRule = new OverIndicatorRule(shortSma, longSma) // Trend
-               // .and(new CrossedDownIndicatorRule(rsi, 5)) // Signal 1
+               .and(new CrossedDownIndicatorRule(rsi, 5)) // Signal 1
                 .and(new OverIndicatorRule(shortSma, closePrice)); // Signal 2
 
         // Exit rule
         // The long-term trend is down when a security is below its 200-period SMA.
         Rule exitRule = new UnderIndicatorRule(shortSma, longSma) // Trend
-               // .and(new CrossedUpIndicatorRule(rsi, 95)) // Signal 1
+                .and(new CrossedUpIndicatorRule(rsi, 95)) // Signal 1
                 .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
 
         return new BaseStrategy("RSI2Strategy", entryRule, exitRule);

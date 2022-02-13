@@ -6,6 +6,8 @@
 <html>
 	<head>
 
+	    <link href="css/global.css" rel="stylesheet">
+	    
 		<link type="text/css" href="webjars/bootstrap/css/bootstrap.min.css"  rel="stylesheet"/>
 	    <link href="webjars/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
    		<link href="webjars/bootstrap-social/bootstrap-social.css" rel="stylesheet"/>
@@ -42,20 +44,20 @@
 
 		<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
+        <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+        <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+        <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
 		<script src="js/global.js"></script>  	
+		<script src="js/rsi2Chart.js"></script>
+		<script src="js/maChart.js"></script>
+
 		<script src="js/ws.js"></script>
 		<script src="js/price.js"></script>
-		<script src="js/ma.js"></script>
 		<script src="js/particles.js"></script>
 
 		<script src="webjars/sockjs-client/sockjs.js"></script>
 		<script src="webjars/stomp-websocket/stomp.js"></script>
 
-        <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
-	
-	
-	    
 	</head>
 </html>

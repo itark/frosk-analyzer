@@ -134,10 +134,15 @@ public class COINBASEDataManager {
             Instant startTime = Instant.now();
             SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
             if (Objects.nonNull(topSp)) {
+                log.info("Last timestamp {} for security.getId(): {}",topSp.getTimestamp(),security.getId());
                 Date lastDate = topSp.getTimestamp();
-                startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
-                startTime = startTime.plus(1, ChronoUnit.DAYS);
-                log.info("Not today, startTime set to:" + startTime);
+                if (lastDate.toInstant().isBefore(startTime)) {
+                    log.info("lastDate.toInstant() {}, startTime {}", lastDate.toInstant(), startTime);
+                } else {
+                    startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
+                    startTime = startTime.plus(1, ChronoUnit.DAYS);
+                    log.info("Not today, startTime set to:" + startTime);
+                }
             } else {
                 startTime=  startTime.minus(300, ChronoUnit.DAYS);
             }

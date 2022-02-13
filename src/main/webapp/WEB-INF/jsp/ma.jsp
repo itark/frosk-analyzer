@@ -18,25 +18,12 @@
 
 <style>
 
-#chart-div {
-	width		: 100%;
-	height		: 750px;
-	font-size	: 11px;
-}
-
-header {
-    padding: 15px 0 10px;
-}
-
 </style>
 
 <body>
-
  <div id="wrapper">
- 
 	<nav class="navbar navbar-default">
 	  <div class="container-fluid">
-	    
 	    <div class="navbar-header">
 	      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
 	        <span class="sr-only">Toggle navigation</span>
@@ -46,7 +33,6 @@ header {
 	      </button>
 	      <a class="navbar-brand" href="/frosk-analyzer" title="powered by Har-em Foundations">Evening Star</a>
 	    </div>
-	   
 	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 	      <ul class="nav navbar-nav">
 	        <li class="dropdown">
@@ -65,7 +51,6 @@ header {
 
 	<header>
       <div class="container-fluid">
-
         <div class="row">
             <div class="col-lg-2 col-md-2">
                 <div class="panel panel-default">
@@ -78,10 +63,10 @@ header {
                                     <span class="caret"></span>
                                 </button>
                                 <ul class="dropdown-menu pull-right" role="menu">
-                                    <li><a href ="#" onclick="renderTable('INDEX');">INDEX</a></li>
-                                    <li><a href="#" onclick="renderTable('OMX30');">OMX30</a></li>
-                                    <li><a href ="#" onclick="renderTable('OSCAR');">OSCAR</a></li>
-                                    <li><a href ="#" onclick="renderTable('CB');">CB</a></li>
+                                    <li><a href ="#" onclick="renderTable('INDEX','chart-div');">INDEX</a></li>
+                                    <li><a href="#" onclick="renderTable('OMX30','chart-div');">OMX30</a></li>
+                                    <li><a href ="#" onclick="renderTable('OSCAR','chart-div');">OSCAR</a></li>
+                                    <li><a href ="#" onclick="renderTable('CB','chart-div');">CB</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -125,39 +110,18 @@ header {
                  <div class="panel panel-default">
                         <div class="panel-heading">
                             <i class="fa fa-bar-chart-o fa-fw"></i>
-                            <div class="pull-right">
-                                <div class="btn-group">
-                                    <button id="charttype" type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
-                                        Chart type
-                                        <span class="caret"></span>
-                                    </button>
-                                    <ul class="dropdown-menu pull-right" role="menu">
-                                         </li>
-               					          <li><a href="#" onclick="ma();">MovingMomentum</a>
-                                         </li>
-                                         </li>
-               					          <li><a href="#" onclick="rsi2();">RSI2</a>
-                                         </li>
-                                    </ul>
-                                </div>
-                            </div>
                         </div>
-                        <!-- /.panel-heading -->
 	   					<div class="panel-body">
 	   					    <div class="row">
 			           		    <div class="col-12 dc-chart" id="chart-div"></div>
 			           	    </div>
-
 	  					</div>
-                        <!-- /.panel-body -->
                     </div>
-                    <!-- /.panel -->
            </div>
          </div>
  		</div>
      </header>
 
-   
      <footer class="bg-primary text-white">
       <div class="container text-center">
         <p>Copyright &copy; Evening Star 2022</p>
@@ -169,8 +133,7 @@ header {
  <script>
 
  	strategy="MovingMomentumStrategy";
- 	root = am5.Root.new("chart-div");
- 	
+
 </script>
 
 </body>
