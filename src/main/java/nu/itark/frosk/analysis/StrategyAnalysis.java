@@ -135,6 +135,11 @@ public class StrategyAnalysis {
 			trades = tradingRecord.getTrades();
 
 //			logger.info(trades.size()+" trades found.");
+
+			if (series.getBarData().isEmpty()){
+				//abort
+				return;
+			}
 			
 			Set<StrategyTrade> strategyTradeList = new HashSet<StrategyTrade>();
 			StrategyTrade strategyTrade = null;
@@ -191,31 +196,14 @@ public class StrategyAnalysis {
 					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
 
 			FeaturedStrategy fsRes =fsRepo.saveAndFlush(fs);
-	
 			//Trades
 			List<StrategyTrade>  existSt = tradesRepo.findByFeaturedStrategyId(fsRes.getId());
-//			logger.info("Exiting trades="+existSt.size());
-//			tradesRepo.deleteInBatch(existSt);
-//			tradesRepo.flush();
 			if (existSt.isEmpty()) {
 				strategyTradeList.forEach(st -> {
 					st.setFeaturedStrategy(fsRes);
-//					logger.info("saving st.getDate="+st.getDate());
 					tradesRepo.saveAndFlush(st);
 				});
 			}
-			
-			//indicatorvalue //TODO to indicatorvalueS
-//			List<StrategyIndicatorValue>  existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.getId());
-//			logger.info("Exiting indicatorValues="+existIv.size());
-	
-//			indicatorValueRepo.deleteInBatch(existIv);
-//			indicatorValueRepo.flush();
-//				indicatorValueSet.forEach(iv -> {
-//					iv.setFeaturedStrategy(fsRes);
-//					logger.info("saving iv.getDate"+iv.getDate());
-//					indicatorValueRepo.saveAndFlush(iv);
-//				});
 		}
 
 	}
@@ -256,8 +244,7 @@ public class StrategyAnalysis {
 		if (strategyToRun == null) {
 			throw new RuntimeException("strategyToRun is null");
 		}		
-		
-		
+
 		return null;
 		
 	}

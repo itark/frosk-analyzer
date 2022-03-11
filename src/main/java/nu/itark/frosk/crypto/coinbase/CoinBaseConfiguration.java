@@ -9,15 +9,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Initeras i gdax, ta bport vid tillfälle
+ *
+ *
+ */
 @SpringBootConfiguration
 public class CoinBaseConfiguration {
-
-//    @Bean
-//    public ObjectMapper objectMapper() {
-//        ObjectMapper objectMapper = new ObjectMapper();
-//        objectMapper.registerModule(new JavaTimeModule());
-//        return objectMapper;
-//    }
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        return objectMapper;
+    }
 
     @Bean
     public Signature signature(@Value("${exchange.secret}") String secret) {
@@ -26,15 +30,16 @@ public class CoinBaseConfiguration {
 
     @Bean
     public CoinbaseExchange coinbasePro(@Value("${exchange.key}") String apiKey,
-                                             @Value("${exchange.passphrase}") String passphrase,
-                                             @Value("${exchange.api.baseUrl}") String baseUrl,
-                                             @Value("${exchange.secret}") String secretKey,
-                                             ObjectMapper objectMapper) {
+                                        @Value("${exchange.passphrase}") String passphrase,
+                                        @Value("${exchange.api.baseUrl}") String baseUrl,
+                                        @Value("${exchange.secret}") String secretKey,
+                                        ObjectMapper objectMapper) {
         return new CoinbaseExchangeImpl(apiKey,
                 passphrase,
                 baseUrl,
                 new Signature(secretKey),
                 objectMapper);
     }
+
 
 }

@@ -6,10 +6,13 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
 
+import com.coinbase.exchange.model.Product;
+import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -45,14 +48,17 @@ public class DataSetHelper {
 	SecurityRepository securityRepository;
 
 	@Autowired
-	DataSetRepository datasetRepository;	
+	DataSetRepository datasetRepository;
+
+	@Autowired
+	ProductProxy productProxy;
 	
 	@PostConstruct
 	public void post_construct() {
 		datasets.add("codes/YAHOO-OMX30-All securites included in OMX30.csv");
 		datasets.add("codes/YAHOO-OSCAR-The Money Machine.csv");
 		datasets.add("codes/YAHOO-INDEX-World indexes.csv");
-		datasets.add("codes/COINBASE-CB-Simple.csv");
+//		datasets.add("codes/COINBASE-CB-Simple.csv");
 	}
 
 	/**
@@ -60,13 +66,44 @@ public class DataSetHelper {
 	 * 
 	 */
 	public void addDatasetSecuritiesFromCvsFile() {
-	
 		datasets.forEach(csvFile -> {
 			saveToRepo(csvFile);
 		});
-		
-	}	
-	
+	}
+
+	public void addDatasetSecuritiesForCoinBase() {
+		saveCoinbaseToRepo();
+	}
+
+	@SneakyThrows
+	private void saveCoinbaseToRepo() {
+		DataSet dataset;
+		String database = "COINBASE";
+		String datasetName =  "COINBASE";
+		if ( (dataset = datasetRepository.findByName(datasetName)) != null ) {
+			logger.info("Dataset="+dataset.getName()+ " exist in database: COINBASE");
+		} else {
+			dataset = new DataSet("COINBASE", "COINBASE");
+			dataset = datasetRepository.saveAndFlush(dataset);
+			logger.info("Saved dataset="+dataset.getName()+ " to database.");
+		}
+
+		for (Product product: productProxy.getProductsForQuoteCurrency("EUR")) {
+			Security security = securityRepository.findByName(product.getId());
+			if (Objects.nonNull(security) ) {
+				logger.info("Security="+security.getName()+ " exist in database:" + database);
+				checkIfAddToDataset(datasetName, dataset, security);
+			} else {
+				logger.info("Security name::"+product.getId()+" to be inserted::");
+				security = securityRepository.saveAndFlush(new Security(product.getId(), product.getDisplay_name(), database));
+				checkIfAddToDataset(datasetName, dataset, security);
+			}
+		}
+
+		datasetRepository.saveAndFlush(dataset);
+
+	}
+
 	@SneakyThrows
 	private void saveToRepo(String csvFile) {
 		Resource file = new ClassPathResource(csvFile);
@@ -77,7 +114,6 @@ public class DataSetHelper {
 			logger.severe("Could not read file, file="+file);
 		}
 
-
 		csvFile = StringUtils.substringAfter(csvFile, "/");
 		String database = StringUtils.substringBefore(csvFile, "-");
 		String datasetName =  StringUtils.substringBetween(csvFile, "-");
@@ -86,35 +122,28 @@ public class DataSetHelper {
 
 		DataSet dataset;
 		if ( (dataset = datasetRepository.findByName(datasetName)) != null ) {
-			logger.info("Dataset="+dataset.getName()+ " exist in database.");
+			logger.info("Dataset="+dataset.getName()+ " exist in database: "+ database);
 		} else {
 			dataset = new DataSet(datasetName, datasetDesc);
 			dataset = datasetRepository.saveAndFlush(dataset);
 			logger.info("Saved dataset="+dataset.getName()+ " to database.");
 		}		
 		
-		
 		CSVReader csvReader = new CSVReader(in, ',', '"', 1);
 		String[] line;
 		while ((line = csvReader.readNext()) != null) {
 			String name = line[0];
 			String description = line[1];
-			Security security;
-	
-			if ( (security = securityRepository.findByName(name)) != null ) {
-				logger.info("Security="+security.getName()+ " exist in database.");
-
+			Security security = securityRepository.findByName(name);
+				if (Objects.nonNull(security) ) {
+				logger.info("Security="+security.getName()+ " exist in database:" + database);
 				checkIfAddToDataset(datasetName, dataset, security);
-
 			} else {
 				logger.info("Security name::"+name+" to be inserted::");
 				security = securityRepository.saveAndFlush(new Security(name, description, database));
-
 				checkIfAddToDataset(datasetName, dataset, security);
-				
+
 			}
-
-
 		}
 
 		datasetRepository.saveAndFlush(dataset);

@@ -193,20 +193,22 @@ function maChart(divId) {
           labelText: "{valueY}"
         })
     }));
-/*
+
     var emaMacdSeries = chart.series.push(am5xy.LineSeries.new(root, {
         name: "emaMacd",
         xAxis: xAxis,
         yAxis: macdAxis,
         valueYField: "value",
         valueXField: "date",
+        fill: am5.color(0x095256),
+        stroke: am5.color(0x095256),
         legendValueText: "{valueY}",
         tooltip: am5.Tooltip.new(root, {
           pointerOrientation: "horizontal",
           labelText: "{valueY}"
         })
     }));
-*/
+
     var firstColor = chart.get("colors") .getIndex(0);
     var volumeSeries = chart.series.push(am5xy.ColumnSeries.new(root, {
       name: "Volym",
@@ -318,6 +320,7 @@ function maChart(divId) {
       shortEmaSeries.data.setAll(shortEmaData);
       stochasticOscillKSeries.data.setAll(stochasticOscillKData);
       macdSeries.data.setAll(macdData);
+      emaMacdSeries.data.setAll(emaMacdData);
     }).catch(function(result) {
       console.log("Error loading " + result);
     });
@@ -339,6 +342,7 @@ function maChart(divId) {
     shortEmaSeries.appear(1000);
     stochasticOscillKSeries.appear(1000);
     macdSeries.appear(100);
+    emaMacdSeries.appear(100);
     chart.appear(1000, 100);
 
 }

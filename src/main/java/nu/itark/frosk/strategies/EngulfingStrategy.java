@@ -58,7 +58,7 @@ public class EngulfingStrategy  {
         
         Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
         Rule exitRule = new BooleanIndicatorRule(bearish); // Bear trend
-        
+
         Strategy strategy = new BaseStrategy("EngulfingStrategy", entryRule, exitRule);
         return strategy;
     }

@@ -59,7 +59,7 @@ public class DataController {
 
 
 	/**
-	 * @Example  curl -XGET http://localhost:8080/frosk-analyzer/featuredStrategies?strategy=RSI2Strategy&dataset=CB
+	 * @Example  curl -XGET http://localhost:8080/frosk-analyzer/featuredStrategies/MovingMomentumStrategy/COINBASE
 	 *
 	 * curl -XGET http://localhost:8080/frosk-analyzer/featuredStrategies/RSI2Strategy/CB
 	 * 
@@ -86,7 +86,12 @@ public class DataController {
 			});			
 		} else {
 			datasetet.getSecurities().forEach(security -> {
-				FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security.getName() );
+				FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security.getName());
+				if(Objects.isNull(fs)){
+					logger.log(Level.WARNING, "Kunde inte hitta FeaturedStrategy för "+strategy+" och "+security.getName()+". Kolla ditt data. Kanske inte kört runStrategy");
+					return;
+					//throw new RuntimeException("Kunde inte hitta FeaturedStrategy för "+strategy+" och "+security.getName()+". Kolla ditt data. Kanske inte kört runStrategy");
+				}
 				returnList.add(getDTO(fs));
 			});			
 		}

@@ -66,8 +66,13 @@ public class WebController {
 	@GetMapping({"/ma"})
 	public String ma(Map<String, Object> model) {
 		return "ma";	
-	}	
-	
+	}
+
+	@GetMapping({"/engulfing"})
+	public String engulfing(Map<String, Object> model) {
+		return "engulfing";
+	}
+
 	@RequestMapping("/all")
 	public String all(Map<String, Object> model) {
 		return "all";	
@@ -104,7 +109,7 @@ public class WebController {
 		Logger logger = Logger.getLogger(WebController.class.getName());
 		logger.log(Level.INFO, "highlander");
 		
-		highLander.runInstall();
+		highLander.runCleanInstall();
 		
 		return "Highlander executed";	
 	}
@@ -131,10 +136,10 @@ public class WebController {
 	@ResponseBody
 	public String fill(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
-		logger.log(Level.INFO, "fill , YAHOO and COINBASE");
+		logger.log(Level.INFO, "fill , COINBASE");
 
 		dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
-		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
+		//dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
 
 		return "Security prices inserted from :"+ Database.COINBASE + " and "+Database.YAHOO ;
 	}	

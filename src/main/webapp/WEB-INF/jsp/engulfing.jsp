@@ -40,6 +40,7 @@
 	          <ul class="dropdown-menu">
 	            <li><a href="ma">Moving Momentum</a></li>
 	            <li><a href="rsi">Relative Strenght Index-2</a></li>
+	            <li><a href="engulfing">Engulfing</a></li>
 	            <li role="separator" class="divider"></li>
 	            <li><a href="all">All</a></li>
 	          </ul>
@@ -63,9 +64,6 @@
                                     <span class="caret"></span>
                                 </button>
                                 <ul class="dropdown-menu pull-right" role="menu">
-                                    <li><a href ="#" onclick="renderTable('INDEX','chart-div');">INDEX</a></li>
-                                    <li><a href="#" onclick="renderTable('OMX30','chart-div');">OMX30</a></li>
-                                    <li><a href ="#" onclick="renderTable('OSCAR','chart-div');">OSCAR</a></li>
                                     <li><a href ="#" onclick="renderTable('COINBASE','chart-div');">COINBASE</a></li>
                                 </ul>
                             </div>
@@ -79,7 +77,7 @@
 				                <th>Security</th>
 				                <th>Profit%</th>
 				                <th>Trades</th>
-				                <th>LatestTrade</th>
+				                <th>LatestTrade</th>				                
 				                <th>Period</th>
 								<th>Ticks</th>
 				                <th>AverageProfit</th>
@@ -105,7 +103,7 @@
                    </div>
                 </div>
            </div>
-
+ 
            <div class="col-lg-10 col-md-10">
                  <div class="panel panel-default">
                         <div class="panel-heading">
@@ -126,13 +124,13 @@
       <div class="container text-center">
         <p>Copyright &copy; Evening Star 2022</p>
       </div>
-    </footer>
+    </footer>   
 
 </div>
 
  <script>
 
- 	strategy="ALL";
+ 	strategy="EngulfingStrategy";
 
 </script>
 

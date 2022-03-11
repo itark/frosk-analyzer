@@ -7,6 +7,7 @@ import com.coinbase.exchange.api.marketdata.Trade;
 import com.coinbase.exchange.api.products.ProductService;
 import com.coinbase.exchange.model.Candles;
 import com.coinbase.exchange.model.Granularity;
+import com.coinbase.exchange.model.Product;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.changedetection.LimitOrderImbalance;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
@@ -26,6 +27,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -48,9 +50,26 @@ public class TestJProductProxy extends BaseIntegrationTest {
 	XRP/EUR
 	ZRX/EUR
 	*/
-	
+
+
     @Autowired
     ProductProxy productProxy;
+
+    @Test
+    public final void testBaseCurrencyProducts() {
+        List<Product> btcProducts = productProxy.getProductsForBaseCurrency("BTC");
+        btcProducts.forEach(b-> {
+            System.out.println("id:"+b.getId());
+        });
+    }
+
+    @Test
+    public final void testQuoteCurrencyProducts() {
+        List<Product> btcProducts = productProxy.getProductsForQuoteCurrency("EUR");
+        btcProducts.forEach(b-> {
+            System.out.println("id:"+b.getId());
+        });
+    }
 
    @Test
    public final void testGetCandlesOneDay() {

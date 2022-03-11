@@ -53,6 +53,8 @@ function renderTable(dataset, divId) {
 	            	maChart(divId);
 	            } else if (selectedStrategy === 'RSI2Strategy') {
                     rsi2Chart(divId);
+           	    } else if (selectedStrategy === 'EngulfingStrategy') {
+                   maChart(divId);  //TODO
 	            } else {
 	                console.log("Error on " + selectedStrategy);
 	            }

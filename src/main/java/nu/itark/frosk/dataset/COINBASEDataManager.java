@@ -44,7 +44,7 @@ public class COINBASEDataManager {
         log.info("sync="+Database.COINBASE.toString());
         Iterable<Security> securities = securityRepository.findByDatabase(Database.COINBASE.toString());
 
-        securities.forEach(sec -> log.info("NAME="+ sec.getName()));
+        securities.forEach(sec -> log.info("to be syncronized, NAME="+ sec.getName()));
 
         List<SecurityPrice> spList;
         try {
@@ -134,10 +134,11 @@ public class COINBASEDataManager {
             Instant startTime = Instant.now();
             SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
             if (Objects.nonNull(topSp)) {
-                log.info("Last timestamp {} for security.getId(): {}",topSp.getTimestamp(),security.getId());
+                log.info("Last timestamp {} for security.getName(): {}",topSp.getTimestamp(),security.getName());
                 Date lastDate = topSp.getTimestamp();
                 if (lastDate.toInstant().isBefore(startTime)) {
                     log.info("lastDate.toInstant() {}, startTime {}", lastDate.toInstant(), startTime);
+                    startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
                 } else {
                     startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
                     startTime = startTime.plus(1, ChronoUnit.DAYS);
@@ -147,7 +148,9 @@ public class COINBASEDataManager {
                 startTime=  startTime.minus(300, ChronoUnit.DAYS);
             }
             log.info("Retrieving history for " + security.getName() + " startTime " + startTime);
-            Candles candles = productProxy.getCandles("BTC-EUR", startTime,endTime, Granularity.ONE_DAY );
+            Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, Granularity.ONE_DAY );
+            //Candles candles = productProxy.getCandles("BTC-EUR", startTime,endTime, Granularity.ONE_HOUR );
+
             candlesMap.put(security.getId(), candles.getCandleList());
         });
         return candlesMap;

@@ -33,17 +33,15 @@ public class TestJStrategies {
 	public void runAllSingleDataSet() {
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("KINV-B.ST");
-		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
-		
-		
-		
+//		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
+		TimeSeries timeSeries = timeSeriesService.getDataSet("MAV.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSetFromCoinbase("BTC-EUR");
 
 //		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
 //		run(rsi.buildStrategy(),timeSeries);
 		
-//		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
-//		run(mm.buildStrategy(),timeSeries);
+		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
+		run(mm.buildStrategy(),timeSeries);
 
 //		GlobalExtremaStrategy ge1 = new GlobalExtremaStrategy(timeSeries);
 //		run(ge1.buildStrategy(),timeSeries);
@@ -54,8 +52,6 @@ public class TestJStrategies {
 //		GlobalExtremaStrategy ge3 = new GlobalExtremaStrategy(timeSeries);
 //		run(ge3.buildStrategy(2,2),timeSeries);
 		
-		
-		
 //		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
 //		run(cci.buildStrategy(),timeSeries);
 		
@@ -65,8 +61,8 @@ public class TestJStrategies {
 //		HaramiStrategy harami = new HaramiStrategy(timeSeries);
 //		run(harami.buildStrategy(),timeSeries);	
 	
-		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
-		run(three.buildStrategy(),timeSeries);		
+//		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
+//		run(three.buildStrategy(),timeSeries);
 
 //		ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(timeSeries);
 //		run(cd.buildStrategy(),timeSeries);

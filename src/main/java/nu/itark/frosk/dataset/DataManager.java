@@ -37,7 +37,10 @@ public class DataManager {
 	 * Insert securities from all cvs-files.
 	 */
 	public void addDatasetSecuritiesIntoDatabase(){
-		dataSetHelper.addDatasetSecuritiesFromCvsFile();
+		//TODO
+		//dataSetHelper.addDatasetSecuritiesFromCvsFile();
+
+		dataSetHelper.addDatasetSecuritiesForCoinBase();
 	}
 	
 	/**

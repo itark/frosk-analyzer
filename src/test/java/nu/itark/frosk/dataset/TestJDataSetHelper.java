@@ -24,19 +24,16 @@ public class TestJDataSetHelper {
 	DataSetRepository datasetRepository;		
 	
 	@Test
-	public final void run() {
-
+	public final void runAddFromFile() {
 		dataSetHelper.addDatasetSecuritiesFromCvsFile();
-		
 	}
 
-//	@Test
-//	public final void runDatasetIntoDatabase() {
-//
-//		dataSetHelper.insertDataset();
-//		
-//	}
-	
+	@Test
+	public final void runAddForCoinbase() {
+		dataSetHelper.addDatasetSecuritiesForCoinBase();
+	}
+
+
 	@Test
 	public void helloworld() {
 		datasetRepository.deleteAllInBatch();

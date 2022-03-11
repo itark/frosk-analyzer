@@ -9,25 +9,25 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.context.annotation.Bean;
 
-//@SpringBootConfiguration
+@SpringBootConfiguration
 public class IntegrationTestConfiguration {
 
 //    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper().registerModule(new JavaTimeModule());
-    }
+//    public ObjectMapper objectMapper() {
+//        return new ObjectMapper().registerModule(new JavaTimeModule());
+//    }
 
 //    @Bean
-    public CoinbaseExchange coinbaseExchange(@Value("${exchange.key}") String apiKey,
-                                             @Value("${exchange.passphrase}") String passphrase,
-                                             @Value("${exchange.api.baseUrl}") String baseUrl,
-                                             @Value("${exchange.secret}") String secretKey,
-                                             ObjectMapper objectMapper) {
-        return new CoinbaseExchangeImpl(apiKey,
-                passphrase,
-                baseUrl,
-                new Signature(secretKey),
-                objectMapper);
-    }
+//    public CoinbaseExchange coinbaseExchange(@Value("${exchange.key}") String apiKey,
+//                                             @Value("${exchange.passphrase}") String passphrase,
+//                                             @Value("${exchange.api.baseUrl}") String baseUrl,
+//                                             @Value("${exchange.secret}") String secretKey,
+//                                             ObjectMapper objectMapper) {
+//        return new CoinbaseExchangeImpl(apiKey,
+//                passphrase,
+//                baseUrl,
+//                new Signature(secretKey),
+//                objectMapper);
+//    }
 
 }

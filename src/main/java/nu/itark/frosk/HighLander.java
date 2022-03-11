@@ -42,12 +42,11 @@ public class HighLander {
 	 */
 	public void runInstall() {
 		addDataSetAndSecurities();
-		addDataSetAndSecuritiesFromYahoo();
-		addDataSetAndSecuritiesFromCoinbase();
+		//addSecurityPricesFromYahoo();
+		addSecurityPricesFromCoinbase();
 		runAllStrategies();
 		
 	}
-
 
 	/**
 	 * Full setup, from scratch
@@ -84,15 +83,11 @@ public class HighLander {
 		dataManager.addDatasetSecuritiesIntoDatabase();
 	}
 	
-	/**
-	 * Add security prices from yahoo, by Securities defined in {@linkplain SecurityRepository}
-	 * 
-	 */
-	private void addDataSetAndSecuritiesFromYahoo() {
+	private void addSecurityPricesFromYahoo() {
 		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
 	}
 
-	private void addDataSetAndSecuritiesFromCoinbase() {
+	private void addSecurityPricesFromCoinbase() {
 		dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
 	}
 
