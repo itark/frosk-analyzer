@@ -18,15 +18,9 @@ import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DailyPrice;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
-import nu.itark.frosk.model.Security;
-import nu.itark.frosk.model.StrategyIndicatorValue;
-import nu.itark.frosk.model.StrategyTrade;
-import nu.itark.frosk.repo.CustomerRepository;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
-import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
-import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.TimeSeriesService;
 
@@ -41,13 +35,8 @@ public class DataController {
 	@Autowired
 	TradesRepository tradesRepository;		
 
-
-	@Autowired
-	SecurityRepository securityRepository;	
-
 	@Autowired
 	DataSetRepository datasetRepository;		
-	
 	
 	@Autowired
 	TimeSeriesService timeSeriesService;	
