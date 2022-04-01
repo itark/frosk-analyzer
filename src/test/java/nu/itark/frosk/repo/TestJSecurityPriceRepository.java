@@ -1,5 +1,6 @@
 package nu.itark.frosk.repo;
 
+import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.model.SecurityPrice;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-@SpringBootTest
+@SpringBootTest(classes = FroskApplication.class)
 public class TestJSecurityPriceRepository {
 	Logger logger = Logger.getLogger(TestJSecurityPriceRepository.class.getName());
 
