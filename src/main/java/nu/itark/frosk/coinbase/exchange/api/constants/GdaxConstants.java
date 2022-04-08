@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Created by robevansuk on 25/01/2017.
  */
+@Deprecated
 public class GdaxConstants {
 
     public static Mac SHARED_MAC;

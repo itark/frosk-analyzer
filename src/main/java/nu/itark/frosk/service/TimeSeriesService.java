@@ -4,13 +4,19 @@ package nu.itark.frosk.service;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import com.coinbase.exchange.model.Candle;
+import com.coinbase.exchange.model.Candles;
+import com.coinbase.exchange.model.Granularity;
+import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.BaseTimeSeries;
 import org.ta4j.core.TimeSeries;
@@ -24,7 +30,7 @@ import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.util.DateTimeManager;
 
-@Service
+@Component
 public class TimeSeriesService  {
 	Logger logger = Logger.getLogger(TimeSeriesService.class.getName());
 	
@@ -35,8 +41,8 @@ public class TimeSeriesService  {
 	SecurityRepository securityRepository;	
 	
 	@Autowired
-	MarketDataProxy marketDataProxyCoinbase;
-	
+	ProductProxy productProxy;
+
 	/**
 	 * Retrive from {@linkplain SecurityPriceRepository}
 	 * 
@@ -62,7 +68,7 @@ public class TimeSeriesService  {
 	/**
 	 * Return TimesSeries bases on name in Security.
 	 * 
-	 * @param name in {@linkplain Security}
+	 * @param  {@linkplain Security}
 	 * @return TimeSeries
 	 */
 	public TimeSeries getDataSet(String securityName) {
@@ -103,24 +109,31 @@ public class TimeSeriesService  {
 	 * @param productId 
 	 * @return TimeSeries
 	 */
-//	public TimeSeries getDataSetFromCoinbase(String productId) {
-//		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(productId).withNumTypeOf(PrecisionNum.class).build();
-//		//TODO externalize range: d
-//		List<HistoricRate> candlesList= marketDataProxyCoinbase.getMarketDataCandles("BTC-EUR", DateTimeManager.start(1), DateTimeManager.end(), MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
-//
-//		List<HistoricRate> sortedList = candlesList
-//				.stream()
-//				.sorted((p1, p2) -> ((Long)p1.getTime()).compareTo(p2.getTime()))
-//				.collect(Collectors.toList());
-//
-//		sortedList.forEach(row -> {
-//			ZonedDateTime dateTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(row.getTime()),ZoneId.systemDefault());
-//			series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
-//		});
-//
-//		return series;
-//
-//	}
-	
+	public TimeSeries getDataSetFromCoinbase(String productId) {
+		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(productId).withNumTypeOf(PrecisionNum.class).build();
+
+		//TODO ser över tiden
+		Instant startTime = Instant.now().minus(400, ChronoUnit.DAYS);
+		Instant endTime = Instant.now().minus(100, ChronoUnit.DAYS);
+
+		System.out.println("startTime:"+startTime);
+		System.out.println("endTime"+endTime);
+
+  		Candles candles = productProxy.getCandles(productId, startTime,endTime, Granularity.ONE_DAY );
+
+		List<Candle> sortedList = candles.getCandleList()
+				.stream()
+				.sorted((p1, p2)-> p1.getTime().compareTo(p2.getTime()))
+				.collect(Collectors.toList());
+
+		sortedList.forEach(row -> {
+			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTime(),ZoneId.systemDefault());
+			series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
+		});
+
+		return series;
+
+	}
+
 	
 }

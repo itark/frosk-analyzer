@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 /**
  * Created by irufus on 2/28/15.
  */
+@Deprecated
 public class Message {
     private String type;
     private Long sequence;

@@ -11,6 +11,7 @@ import java.util.List;
 /**
  * Created by robevansuk on 20/03/2017.
  */
+@Deprecated
 public class OrderItem implements Comparable {
 
     BigDecimal price;

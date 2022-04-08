@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 /**
  * Created by robevansuk on 12/03/2017.
  */
+@Deprecated
 public class Trade {
     LocalDateTime time;
     Long trade_id;

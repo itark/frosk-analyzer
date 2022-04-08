@@ -8,13 +8,14 @@ import com.coinbase.exchange.model.Candles;
 import com.coinbase.exchange.model.Granularity;
 import com.coinbase.exchange.model.Product;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
+@Component
 public class ProductProxy {
 
 	@Autowired

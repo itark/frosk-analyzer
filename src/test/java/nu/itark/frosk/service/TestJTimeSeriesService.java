@@ -1,9 +1,14 @@
 package nu.itark.frosk.service;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
+import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.ta4j.core.TimeSeries;
 
 import java.time.*;
@@ -12,22 +17,14 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
+//@ExtendWith(SpringExtension.class)
+//@Import({IntegrationTestConfiguration.class})
 @SpringBootTest
-@Slf4j
-public class TestJTimeSeriesService {
+public class TestJTimeSeriesService extends BaseIntegrationTest {
 
 	@Autowired
 	private TimeSeriesService ts;
 
-	
-//	@Test
-//	public void testGetDataSetPerSecurity() throws Exception {
-//		TimeSeries sec = ts.getDataSet("SAND.ST");
-//		assertNotNull(sec);
-//		
-//		System.out.println("size="+sec.getBarCount());
-//		
-//	}	
 	
 	@Test
 	public void testSecurityId() throws Exception {
@@ -35,8 +32,6 @@ public class TestJTimeSeriesService {
 		assertNotNull(sec_id);
 		
 	}	
-	
-	
 	
 	@Test
 	public void testGetDataSet() throws Exception {
@@ -59,17 +54,17 @@ public class TestJTimeSeriesService {
 		
 	}	
 	
-//	@Test
-//	public void testGetCandlesFromCoinbase() {
-//
-//	TimeSeries timeSeries = ts.getDataSetFromCoinbase("BTC-EUR");
-//
-//	log.info("barCount="+timeSeries.getBarCount());
-//
-//	assertNotNull(timeSeries);
-//
-//
-//	}
+	@Test
+	public void testGetCandlesFromCoinbase() {
+
+	TimeSeries timeSeries = ts.getDataSetFromCoinbase("BTC-EUR");
+
+	System.out.println("barCount="+timeSeries.getBarCount());
+
+	assertNotNull(timeSeries);
+
+
+	}
 	
 	@Test
 	public void testDatessss(){

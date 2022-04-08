@@ -143,11 +143,6 @@ public class TestJStrategies {
 		
 	}
 	
-	
-	
-	
-	
-	
 	@Test
 	public void chooseBestForSecurity() {
 		// Splitting the series into slices

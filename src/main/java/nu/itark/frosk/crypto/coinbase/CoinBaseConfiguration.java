@@ -14,8 +14,10 @@ import org.springframework.context.annotation.Bean;
  *
  *
  */
-@SpringBootConfiguration
+//@SpringBootConfiguration
+    @Deprecated
 public class CoinBaseConfiguration {
+/*
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -41,5 +43,6 @@ public class CoinBaseConfiguration {
                 objectMapper);
     }
 
+*/
 
 }

@@ -3,6 +3,7 @@ package nu.itark.frosk.coinbase.exchange.api.marketdata;
 /**
  * Created by irufus on 3/2/15.
  */
+@Deprecated
 public class MessageEX {
     public static class MessageType{
         public final static String RECEIEVED = "received";

@@ -13,8 +13,8 @@ import samples.websocket.tomcat.snake.SnakeWebSocketHandler;
 
 import javax.servlet.ServletContext;
 
-@Configuration
-@EnableWebSocketMessageBroker
+//@Configuration
+//@EnableWebSocketMessageBroker
 public class FroskWebSocketConfigBroker implements WebSocketMessageBrokerConfigurer {
 
 	//alt 1. https://www.devglan.com/spring-boot/spring-boot-websocket-example

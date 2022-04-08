@@ -3,6 +3,7 @@ package nu.itark.frosk.crypto.coinbase;
 import com.coinbase.exchange.api.payments.PaymentService;
 import com.coinbase.exchange.api.payments.PaymentType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
  *
  * This endpoint requires the "transfer" permission.
  */
-@Service
+@Component
 public class PaymentProxy {
 
 	@Autowired

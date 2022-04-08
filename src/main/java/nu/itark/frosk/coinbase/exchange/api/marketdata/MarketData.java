@@ -5,6 +5,7 @@ import java.util.List;
 /**
  * Created by robevansuk on 09/02/2017.
  */
+@Deprecated
 public class MarketData {
 
     private Long sequence;

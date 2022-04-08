@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.changedetection.LimitOrderImbalance;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.Candle;
 import nu.itark.frosk.strategies.stats.ADF;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -21,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -33,24 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @Import({IntegrationTestConfiguration.class})
-@Slf4j
+@SpringBootTest
 public class TestJProductProxy extends BaseIntegrationTest {
-
-	static String productId = "BTC-USD";
-//	static String LEVEL_1 = "1";
-//	static String LEVEL_2 = "2";
-	
-	/* Fiat EURO
-	BTC/EUR
-	BCH/EUR
-	ETH/EUR
-	ETC/EUR
-	LTC/EUR
-	XLM/EUR
-	XRP/EUR
-	ZRX/EUR
-	*/
-
 
     @Autowired
     ProductProxy productProxy;
@@ -98,7 +82,7 @@ public class TestJProductProxy extends BaseIntegrationTest {
 
     void print(Candles candles) {
         candles.getCandleList().forEach(candle -> {
-            log.info(ReflectionToStringBuilder.toString(candle, ToStringStyle.SHORT_PREFIX_STYLE));
+            System.out.println(ReflectionToStringBuilder.toString(candle, ToStringStyle.SHORT_PREFIX_STYLE));
         });
     }
 

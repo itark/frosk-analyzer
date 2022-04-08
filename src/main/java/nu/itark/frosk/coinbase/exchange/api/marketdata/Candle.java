@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import lombok.Data;
 
 @Data
+@Deprecated
 public class Candle {
 
 	//TODO fel form, se curl i noter

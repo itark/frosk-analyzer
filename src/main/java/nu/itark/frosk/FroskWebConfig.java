@@ -26,7 +26,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@Configuration
+//@Configuration
 public class FroskWebConfig implements WebMvcConfigurer {
 
 	@Override

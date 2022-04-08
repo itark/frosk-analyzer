@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Data
 @JsonDeserialize(using = HistoricRate.HistoricRateDeserializer.class)
+@Deprecated
 public class HistoricRate {
 
 	private final long time;

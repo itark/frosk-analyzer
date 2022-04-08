@@ -8,6 +8,7 @@ import org.joda.time.DateTime;
 import lombok.Data;
 
 @Data
+@Deprecated
 public class Ticker {
 
     Long trade_id;

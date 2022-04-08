@@ -10,6 +10,7 @@ import org.springframework.util.Assert;
 import nu.itark.frosk.coinbase.exchange.api.exchange.GdaxExchange;
 
 //@Service
+@Deprecated
 public class MarketDataService {
 
     @Autowired

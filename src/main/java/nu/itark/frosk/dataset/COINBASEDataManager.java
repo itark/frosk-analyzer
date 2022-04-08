@@ -95,7 +95,7 @@ public class COINBASEDataManager {
     private List<SecurityPrice> getDataSet(Iterable<Security> securities) throws IOException {
         log.info("getDataSet(Iterable<Security> names)");
         List<SecurityPrice> sp = new ArrayList<>();
-        Map<Long, List<Candle>> currencyCandlesMap = getCandles(securities);
+        Map<Long, List<Candle>> currencyCandlesMap = getCandles(securities, Granularity.ONE_DAY);
 
         currencyCandlesMap.forEach((sec_id, candleList) -> {
             candleList.forEach(row -> {
@@ -125,7 +125,7 @@ public class COINBASEDataManager {
     *         time=2021-09-18T00:00:00Z
     *         volume=818.92870287
     */
-    private Map<Long, List<Candle>> getCandles(Iterable<Security> securities) throws IOException {
+    private Map<Long, List<Candle>> getCandles(Iterable<Security> securities, Granularity granularity) throws IOException {
         log.info("getCurrencies(Iterable<Security> securities");
         Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
         Instant endTime = Instant.now();
@@ -148,8 +148,7 @@ public class COINBASEDataManager {
                 startTime=  startTime.minus(300, ChronoUnit.DAYS);
             }
             log.info("Retrieving history for " + security.getName() + " startTime " + startTime);
-            Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, Granularity.ONE_DAY );
-            //Candles candles = productProxy.getCandles("BTC-EUR", startTime,endTime, Granularity.ONE_HOUR );
+            Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
 
             candlesMap.put(security.getId(), candles.getCandleList());
         });

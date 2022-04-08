@@ -1,6 +1,7 @@
 package nu.itark.frosk;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import nu.itark.frosk.analysis.StrategyAnalysis;
@@ -15,7 +16,7 @@ import nu.itark.frosk.repo.SecurityRepository;
  * There could be only one...
  * 
  */
-@Service
+@Component
 public class HighLander {
 
 	@Autowired
