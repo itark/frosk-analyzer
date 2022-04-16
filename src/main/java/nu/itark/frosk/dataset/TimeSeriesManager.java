@@ -22,8 +22,6 @@ public class TimeSeriesManager {
 	@Autowired
 	SecurityPriceRepository securityRepository;	
 	
-
-	
 	/**
 	 * Calculate number of weekdays
 	 * 
@@ -47,8 +45,6 @@ public class TimeSeriesManager {
 	public static LocalDate getStartDate() {
 //		return LocalDate.of(yearsToDownload, 1, 1);
 		return LocalDate.of(startYear, 1, 1);
-		
-		
 	}
 
 	public static LocalDate getEndDate() {

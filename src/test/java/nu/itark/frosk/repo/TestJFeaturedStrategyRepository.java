@@ -19,7 +19,7 @@ public class TestJFeaturedStrategyRepository {
 
 	
 	@Autowired
-	FeaturedStrategyRepository fsRepo;
+	FeaturedStrategyRepository featuredStrategyRepository;
 
 	@Autowired
 	TradesRepository tradesRepo;	
@@ -87,10 +87,10 @@ public class TestJFeaturedStrategyRepository {
 
 	@Test
 	public void testFindByNameAndSecurityName() {
-		logger.info("count="+fsRepo.count());	
+		logger.info("count="+ featuredStrategyRepository.count());
 		
 //		List<FeaturedStrategy> fsList = fsRepo.findByNameAndSecurityName("RSI2Strategy", "SAND.ST");
-		FeaturedStrategy fs = fsRepo.findByNameAndSecurityName("RSI2Strategy", "SAND.ST");
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName("RSI2Strategy", "SAND.ST");
 		
 		
 //		fsList.forEach(fs -> logger.info("sec="+fs.getSecurityName()+", ld="+fs.getLatestTrade()));
@@ -99,7 +99,7 @@ public class TestJFeaturedStrategyRepository {
 	
 	@Test
 	public void testFindByNameAndMore() {
-	List<FeaturedStrategy> fsList = fsRepo.findByNameOrderByTotalProfitDesc("RSI2Strategy");	
+	List<FeaturedStrategy> fsList = featuredStrategyRepository.findByNameOrderByTotalProfitDesc("RSI2Strategy");
 	}
 //	
 	@Test
@@ -107,7 +107,7 @@ public class TestJFeaturedStrategyRepository {
 		List<FeaturedStrategy> returnList = new ArrayList<>();
 		DataSet dataset = dsRepo.findByName("OSCAR");
 		dataset.getSecurities().forEach(sec -> {
-			FeaturedStrategy fs = fsRepo.findByNameAndSecurityName("RSI2Strategy", secRepo.findByName("SAND.ST").getName());
+			FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName("RSI2Strategy", secRepo.findByName("SAND.ST").getName());
 			logger.info("fs="+fs);
 			returnList.add(fs);
 		});
@@ -129,7 +129,7 @@ public class TestJFeaturedStrategyRepository {
 	@Test
 	public void testFindByName() {
 	
-	List<FeaturedStrategy> fsList = fsRepo.findByName("RSI2Strategy");
+	List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName("RSI2Strategy");
 	assertNotNull(fsList);
 
 	fsList.forEach(fs -> logger.info("sec="+fs.getSecurityName()+", tr size="+fs.getTrades().size()));
@@ -144,7 +144,7 @@ public class TestJFeaturedStrategyRepository {
 	public void testManyToOne() {
 	
 		tradesRepo.deleteAllInBatch();
-		fsRepo.deleteAllInBatch();
+		featuredStrategyRepository.deleteAllInBatch();
 		
 		
 		
@@ -169,7 +169,7 @@ public class TestJFeaturedStrategyRepository {
 				totalProfitVsButAndHold, period, latestTrade);		
 		
 		
-		FeaturedStrategy featuredStrategyREs =	fsRepo.saveAndFlush(featuredStrategy);
+		FeaturedStrategy featuredStrategyREs =	featuredStrategyRepository.saveAndFlush(featuredStrategy);
 
 		logger.info("featuredStrategyREs id="+featuredStrategyREs.getId());
 		
@@ -192,6 +192,19 @@ public class TestJFeaturedStrategyRepository {
 		
 		
 	}
-	
-	
+
+
+	@Test
+	public void testFindByOpenTrade() {
+		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByOpenTrade("BTC-EUR");
+
+		fsList.forEach(fs ->{
+			System.out.println("fs.getName():"+fs.getName() + "fs.getSecurityName():"+fs.getSecurityName());
+			fs.getTrades().forEach(t-> {
+				System.out.println("**t.getType:"+t.getType());
+			});
+		});
+
+	}
+
 }

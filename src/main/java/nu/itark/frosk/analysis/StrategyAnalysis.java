@@ -2,23 +2,14 @@ package nu.itark.frosk.analysis;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 import nu.itark.frosk.dataset.IndicatorValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.ta4j.core.Bar;
-import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
-import org.ta4j.core.TimeSeriesManager;
-import org.ta4j.core.Trade;
-import org.ta4j.core.TradingRecord;
+import org.ta4j.core.*;
 import org.ta4j.core.analysis.criteria.AverageProfitCriterion;
 import org.ta4j.core.analysis.criteria.AverageProfitableTradesCriterion;
 import org.ta4j.core.analysis.criteria.BuyAndHoldCriterion;
@@ -31,7 +22,6 @@ import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
 import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
 
 import nu.itark.frosk.model.FeaturedStrategy;
-import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
@@ -56,10 +46,10 @@ public class StrategyAnalysis {
 	TimeSeriesService timeSeriesService;
 	
 	@Autowired
-	FeaturedStrategyRepository fsRepo;
+	FeaturedStrategyRepository featuredStrategyRepository;
 	
 	@Autowired
-	TradesRepository tradesRepo;
+	TradesRepository tradesRepository;
 	
 	@Autowired
 	StrategyIndicatorValueRepository indicatorValueRepo;
@@ -133,35 +123,32 @@ public class StrategyAnalysis {
 			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			trades = tradingRecord.getTrades();
-
 //			logger.info(trades.size()+" trades found.");
-
 			if (series.getBarData().isEmpty()){
 				//abort
 				return;
 			}
-			
 			Set<StrategyTrade> strategyTradeList = new HashSet<StrategyTrade>();
 			StrategyTrade strategyTrade = null;
-			
+
 			for (Trade trade : trades) {
 				Bar barEntry = series.getBar(trade.getEntry().getIndex());
 //		      	logger.info(series.getName()+"::barEntry="+barEntry.getDateName());
 				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
-				strategyTrade = new StrategyTrade(buyDate,"Buy",BigDecimal.valueOf(barEntry.getMinPrice().doubleValue()));
+				String entryType = trade.getEntry().getType().name();
+				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getMinPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 
 				Bar barExit = series.getBar(trade.getExit().getIndex());
 //			   	logger.info(series.getName()+"::barExit="+barExit.getDateName());
 				Date sellDate = Date.from(barExit.getEndTime().toInstant());
-				strategyTrade = new StrategyTrade(sellDate,"Sell",BigDecimal.valueOf(barExit.getMinPrice().doubleValue()));
+				String exitType = trade.getExit().getType().name();
+				strategyTrade = new StrategyTrade(sellDate,exitType,BigDecimal.valueOf(barExit.getMinPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
-
 				latestTradeDate = Date.from(barExit.getEndTime().toInstant());
-
 			}
 
-			fs = fsRepo.findByNameAndSecurityName(strategy, series.getName());			
+			fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, series.getName());
 			if (fs == null) {  //=new run
 				fs = new FeaturedStrategy();
 				fs.setName(strategy);
@@ -188,20 +175,24 @@ public class StrategyAnalysis {
 				fs.setRewardRiskRatio(new BigDecimal(rewardRiskRatio).setScale(2, BigDecimal.ROUND_DOWN));
 			}
 			double buyAndHold = new BuyAndHoldCriterion().calculate(series, tradingRecord).doubleValue();
-			fs.setBuyAndHold(new BigDecimal(buyAndHold).setScale(2, BigDecimal.ROUND_DOWN ));
-
+			if (Double.isFinite(buyAndHold)) {
+				fs.setBuyAndHold(new BigDecimal(buyAndHold).setScale(2, BigDecimal.ROUND_DOWN));
+			}
 			double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new TotalProfitCriterion()).calculate(series, tradingRecord).doubleValue();
-			fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
+
+			if (Double.isFinite(totalProfitVsButAndHold)) {
+				fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
+			}
 			fs.setTotalTransactionCost(
 					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
 
-			FeaturedStrategy fsRes =fsRepo.saveAndFlush(fs);
+			FeaturedStrategy fsRes = featuredStrategyRepository.saveAndFlush(fs);
 			//Trades
-			List<StrategyTrade>  existSt = tradesRepo.findByFeaturedStrategyId(fsRes.getId());
+			List<StrategyTrade>  existSt = tradesRepository.findByFeaturedStrategyId(fsRes.getId());
 			if (existSt.isEmpty()) {
 				strategyTradeList.forEach(st -> {
 					st.setFeaturedStrategy(fsRes);
-					tradesRepo.saveAndFlush(st);
+					tradesRepository.saveAndFlush(st);
 				});
 			}
 		}
@@ -301,6 +292,38 @@ public class StrategyAnalysis {
 	}
 
 
+	public List<StrategyTrade> getOpenTrades(String name) {
+		List<StrategyTrade> strategyTradeListList = new ArrayList<>();
+		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(name);
+			fsList.forEach(featuredStrategy -> {
+				final List<StrategyTrade> byFeaturedStrategy = tradesRepository.findByFeaturedStrategy(featuredStrategy);
+				if (byFeaturedStrategy.isEmpty()) return;
+				StrategyTrade latestTrade = Collections.max(byFeaturedStrategy, Comparator.comparing(StrategyTrade::getDate));
+				if (latestTrade.getType().equals(Order.OrderType.BUY.name())) {
+					strategyTradeListList.add(latestTrade);
+				}
+			});
+		return strategyTradeListList;
+	}
+
+	public List<StrategyTrade> getOpenTrades() {
+		List<StrategyTrade> strategyTradeListList = new ArrayList<>();
+		List<FeaturedStrategy> fsList = featuredStrategyRepository.findAll();
+		fsList.forEach(featuredStrategy -> {
+			final List<StrategyTrade> byFeaturedStrategy = tradesRepository.findByFeaturedStrategy(featuredStrategy);
+			if (byFeaturedStrategy.isEmpty()) return;
+			StrategyTrade latestTrade = Collections.max(byFeaturedStrategy, Comparator.comparing(StrategyTrade::getDate));
+			if (latestTrade.getType().equals(Order.OrderType.BUY.name())) {
+				strategyTradeListList.add(latestTrade);
+			}
+		});
+		return strategyTradeListList;
+	}
+
+	public List<StrategyTrade> getTrades(String security, String strategy){
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security);
+		return tradesRepository.findByFeaturedStrategy(fs);
+	}
 
 //	public List<RNNPrices> getRNNPrices( String indiceName, Database database) {
 //		List<RNNPrices> rnnPrices = new ArrayList<RNNPrices>();

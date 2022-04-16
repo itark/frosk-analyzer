@@ -3,6 +3,7 @@ package nu.itark.frosk.repo;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import nu.itark.frosk.model.FeaturedStrategy;
@@ -13,6 +14,7 @@ public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrate
 	List<FeaturedStrategy> findByNameOrderByTotalProfitDesc(String name);
 	FeaturedStrategy findByNameAndSecurityName(String name, String securityName);
 	FeaturedStrategy findTopBySecurityNameOrderByLatestTradeDesc(String security);
-//	List<FeaturedStrategy> findByNameAndDataSet(String name, DataSet dataset);
-	
+	@Query("SELECT fs FROM FeaturedStrategy fs, StrategyTrade st WHERE fs.securityName = ?1 AND st.type = 'BUY'")
+	List<FeaturedStrategy> findByOpenTrade(String securityName);
+
 }

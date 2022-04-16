@@ -34,14 +34,17 @@ public class TestJStrategies {
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("KINV-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
-		TimeSeries timeSeries = timeSeriesService.getDataSet("MAV.ST");
-//		TimeSeries timeSeries = timeSeriesService.getDataSetFromCoinbase("BTC-EUR");
+		//TimeSeries timeSeries = timeSeriesService.getDataSet("MAV.ST");
+		TimeSeries timeSeries = timeSeriesService.getDataSetFromCoinbase("BTC-EUR");
 
 //		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
 //		run(rsi.buildStrategy(),timeSeries);
 		
-		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
-		run(mm.buildStrategy(),timeSeries);
+//		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
+//		run(mm.buildStrategy(),timeSeries);
+
+		SimpleMovingMomentumStrategy smm =  new SimpleMovingMomentumStrategy(timeSeries);
+		run(smm.buildStrategy(),timeSeries);
 
 //		GlobalExtremaStrategy ge1 = new GlobalExtremaStrategy(timeSeries);
 //		run(ge1.buildStrategy(),timeSeries);
@@ -99,7 +102,11 @@ public class TestJStrategies {
 		TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Trade> trades = tradingRecord.getTrades();
-		
+
+		boolean currentTradeIsOpened = tradingRecord.getCurrentTrade().isOpened();
+
+		System.out.println("currentTradeIsOpened:"+currentTradeIsOpened);
+
 		NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
 
 

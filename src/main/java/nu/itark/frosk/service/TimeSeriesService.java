@@ -113,8 +113,9 @@ public class TimeSeriesService  {
 		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(productId).withNumTypeOf(PrecisionNum.class).build();
 
 		//TODO ser över tiden
-		Instant startTime = Instant.now().minus(400, ChronoUnit.DAYS);
-		Instant endTime = Instant.now().minus(100, ChronoUnit.DAYS);
+		Instant startTime = Instant.now().minus(300, ChronoUnit.DAYS);
+		Instant endTime = startTime.plus(6, ChronoUnit.DAYS);
+	//	Instant endTime = Instant.now();
 
 		System.out.println("startTime:"+startTime);
 		System.out.println("endTime"+endTime);

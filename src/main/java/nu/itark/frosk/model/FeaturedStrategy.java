@@ -16,6 +16,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * This class holds all significant strategies and it values.
@@ -23,7 +25,8 @@ import lombok.Data;
  * @author fredrikmoller
  *
  */
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "featured_strategy")
 public class FeaturedStrategy { 

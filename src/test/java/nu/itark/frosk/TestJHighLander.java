@@ -1,5 +1,6 @@
 package nu.itark.frosk;
 
+import nu.itark.frosk.dataset.Database;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,24 +11,22 @@ public class TestJHighLander {
 	@Autowired
 	HighLander highLander;
 	
-	
 	@Test
-	public void runInstall() {
-		highLander.runInstall();
+	public void runInstallCoinbase() {
+		highLander.runInstall(Database.COINBASE);
 		
 	}
 
 	@Test
-	public void runCleanInstall() {
-		highLander.runCleanInstall();
+	public void runCleanInstallCoinbase() {
+		highLander.runCleanInstall(Database.COINBASE);
 		
 	}	
 	
 	@Test
 	public void runClean() {
 		highLander.runClean();
-		
-	}	
+	}
 	
 	
 }

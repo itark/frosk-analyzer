@@ -1,5 +1,7 @@
 package nu.itark.frosk;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import nu.itark.frosk.repo.SecurityRepository;
  * 
  */
 @Component
+@Slf4j
 public class HighLander {
 
 	@Autowired
@@ -41,25 +44,26 @@ public class HighLander {
 	 * Full setup, addition
 	 * 
 	 */
-	public void runInstall() {
+	public void runInstall(Database database) {
 		addDataSetAndSecurities();
 		//addSecurityPricesFromYahoo();
 		addSecurityPricesFromCoinbase();
 		runAllStrategies();
-		
+		printOpenTrades();
 	}
+
 
 	/**
 	 * Full setup, from scratch
 	 * Kill them all before.
 	 * 
 	 */
-	public void runCleanInstall() {
+	public void runCleanInstall(Database database) {
 		dataSetRepo.deleteAllInBatch();
 		securityRepo.deleteAllInBatch();
 		securityPriceRepo.deleteAllInBatch();
 		
-		runInstall();
+		runInstall(database);
 		
 	}	
 	
@@ -99,7 +103,12 @@ public class HighLander {
 	 */
 	private void runAllStrategies() {
 		strategyAnalysis.run(null, null);
+	}
 
+	private void printOpenTrades() {
+		strategyAnalysis.getOpenTrades().forEach(strategyTrade -> {
+			log.info("strategyTrade:"+ ReflectionToStringBuilder.toString(strategyTrade));
+		});
 	}
 
 	

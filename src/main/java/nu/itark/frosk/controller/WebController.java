@@ -107,11 +107,11 @@ public class WebController {
 	@ResponseBody
 	public String runHighlander(Map<String, Object> model) {
 		Logger logger = Logger.getLogger(WebController.class.getName());
-		logger.log(Level.INFO, "highlander");
+		logger.log(Level.INFO, "highlander - COINBASE");
 		
-		highLander.runCleanInstall();
+		highLander.runCleanInstall(Database.COINBASE);
 		
-		return "Highlander executed";	
+		return "Highlander - COINBASE executed";
 	}
 	
 	

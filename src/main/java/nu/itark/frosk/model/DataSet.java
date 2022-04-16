@@ -15,8 +15,11 @@ import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "data_set")
 public class DataSet  {

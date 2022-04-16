@@ -13,8 +13,11 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "security_price", uniqueConstraints={@UniqueConstraint(columnNames={"security_id", "timestamp"})})
 public class SecurityPrice implements Serializable {

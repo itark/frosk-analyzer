@@ -1,13 +1,16 @@
 package nu.itark.frosk.analysis;
 
+import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.service.TimeSeriesService;
 import nu.itark.frosk.strategies.MovingMomentumStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
+import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
 
 @SpringBootTest
@@ -22,8 +25,8 @@ public class TestJStrategyAnalysis {
 	
 
 	@Test
-	public final void runMM() {
-		logger.info("MM="+MovingMomentumStrategy.class.getSimpleName());
+	public final void runSMM() {
+		logger.info("MM="+ SimpleMovingMomentumStrategy.class.getSimpleName());
 		Long sec_id = ts.getSecurityId("ERIC-B.ST");
 //		Long sec_id = ts.getSecurityId("SSAB-B.ST");
 //		Long sec_id = ts.getSecurityId("ATCO-B.ST");
@@ -52,20 +55,28 @@ public class TestJStrategyAnalysis {
 	public final void runAll() {
 		logger.info("All");
 		strategyAnalysis.run(null, null);
-
 //		list.forEach(dto -> logger.info("dto="+ReflectionToStringBuilder.toString(dto)));
 		
-	}		
-	
+	}
+
 	@Test
-	public final void testDateOutput(){
-		Date latestTradeDate;
-//		latestTradeDate = Date.from(barEntry.getEndTime().toInstant());
-		latestTradeDate = new Date();
-		
-		logger.info("latestTradeDate="+latestTradeDate);
-		
-	} 
-	
-	
+	public final void testOpenTradesOne(){
+		final List<StrategyTrade> openTrades = strategyAnalysis.getOpenTrades("RSI2Strategy");
+		openTrades.forEach(System.out::println);
+	}
+
+	@Test
+	public final void testOpenTradesAll(){
+		final List<StrategyTrade> openTrades = strategyAnalysis.getOpenTrades();
+	}
+
+	@Test
+	public final void testOpenTradesAll2(){
+		List<String> strategies = StrategiesMap.buildStrategiesMap();
+		strategies.forEach(s -> {
+			final List<StrategyTrade> openTrades = strategyAnalysis.getOpenTrades(s);
+			openTrades.forEach(System.out::println);
+		});
+	}
+
 }

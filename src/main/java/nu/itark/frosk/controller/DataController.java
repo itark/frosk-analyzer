@@ -7,9 +7,12 @@ import java.util.stream.Collectors;
 
 import nu.itark.frosk.dataset.IndicatorValue;
 import nu.itark.frosk.dataset.Trade;
+import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.StrategyTrade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
+import org.ta4j.core.Order;
 import org.ta4j.core.TimeSeries;
 
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
@@ -175,10 +178,31 @@ public class DataController {
 		return getTrades(security, strategy);
 	}
 
+	/**
+	 * @Example  http://localhost:8080/frosk-analyzer/opentrades
+	 * @return
+	 */
+	@RequestMapping(path="/opentrades", method=RequestMethod.GET)
+	public List<Trade> getOpenTrades(){
+		logger.info("/opentrades");
+		return getOpenTradees();
+	}
+
+	private List<Trade> getOpenTradees() {
+		List<Trade> trades = new ArrayList<Trade>();
+		strategyAnalysis.getOpenTrades().forEach(trade -> {
+			Trade tradee = new Trade();
+			tradee.setDate(trade.getDate().toInstant().toEpochMilli());
+			tradee.setPrice(trade.getPrice().longValue());
+			tradee.setType(trade.getType());
+			trades.add(tradee);
+		});
+		return trades;
+	}
+
 	private  List<Trade> getTrades(String security, String strategy){
 		List<Trade> trades = new ArrayList<Trade>();
-		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security );
-		tradesRepository.findByFeaturedStrategy(fs).forEach(trade -> {
+		strategyAnalysis.getTrades(security,strategy).forEach(trade -> {
 			Trade tradee = new Trade();
 			tradee.setDate(trade.getDate().toInstant().toEpochMilli());
 			tradee.setPrice(trade.getPrice().longValue());

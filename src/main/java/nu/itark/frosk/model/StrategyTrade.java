@@ -17,8 +17,11 @@ import javax.persistence.TemporalType;
 import javax.persistence.UniqueConstraint;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "strategy_trade", uniqueConstraints={@UniqueConstraint(columnNames={"date", "type", "featured_strategy_id"})})
 public class StrategyTrade {
