@@ -5,11 +5,11 @@ import nu.itark.frosk.service.TimeSeriesService;
 import nu.itark.frosk.strategies.MovingMomentumStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -60,21 +60,37 @@ public class TestJStrategyAnalysis {
 	}
 
 	@Test
-	public final void testOpenTradesOne(){
-		final List<StrategyTrade> openTrades = strategyAnalysis.getOpenTrades("RSI2Strategy");
-		openTrades.forEach(System.out::println);
+	public final void testLongTradesOne(){
+		final List<StrategyTrade> longTrades = strategyAnalysis.getLongTradesAllStrategies(SimpleMovingMomentumStrategy.class.getSimpleName());
+		System.out.println("longTrades.size():"+longTrades.size());
+		longTrades.forEach(st-> {
+			System.out.println("StrategyTrade:" + ReflectionToStringBuilder.toString(st));
+		});
 	}
 
 	@Test
-	public final void testOpenTradesAll(){
-		final List<StrategyTrade> openTrades = strategyAnalysis.getOpenTrades();
+	public final void testShortTradesOne(){
+		final List<StrategyTrade> shortTrades = strategyAnalysis.getShortTrades(SimpleMovingMomentumStrategy.class.getSimpleName());
+		System.out.println("shortTrades.size():"+shortTrades.size());
+		shortTrades.forEach(st-> {
+			System.out.println("StrategyTrade:" + ReflectionToStringBuilder.toString(st));
+		});
+	}
+
+	@Test
+	public final void testOpenTradesAll() {
+		final List<StrategyTrade> openTrades = strategyAnalysis.getLongTradesAllStrategies();
+		System.out.println("openTrades:" + openTrades.size());
+		openTrades.forEach(st-> {
+			System.out.println("StrategyTrade:" + ReflectionToStringBuilder.toString(st));
+		});
 	}
 
 	@Test
 	public final void testOpenTradesAll2(){
 		List<String> strategies = StrategiesMap.buildStrategiesMap();
 		strategies.forEach(s -> {
-			final List<StrategyTrade> openTrades = strategyAnalysis.getOpenTrades(s);
+			final List<StrategyTrade> openTrades = strategyAnalysis.getLongTradesAllStrategies(s);
 			openTrades.forEach(System.out::println);
 		});
 	}

@@ -10,6 +10,7 @@ import java.util.Date;
 
 @Data
 public class Trade {
+    private String securityName; //härledd ifrån TimeSeries getName.
     private long date;
     private long price;
     private String type;

@@ -3,16 +3,13 @@ package nu.itark.frosk.controller;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import nu.itark.frosk.dataset.IndicatorValue;
 import nu.itark.frosk.dataset.Trade;
-import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.StrategyTrade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
-import org.ta4j.core.Order;
 import org.ta4j.core.TimeSeries;
 
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
@@ -23,7 +20,6 @@ import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
-import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.TimeSeriesService;
 
@@ -179,37 +175,47 @@ public class DataController {
 	}
 
 	/**
-	 * @Example  http://localhost:8080/frosk-analyzer/opentrades
-	 * @return
+	 * @Example  http://localhost:8080/frosk-analyzer/longtrades
 	 */
-	@RequestMapping(path="/opentrades", method=RequestMethod.GET)
-	public List<Trade> getOpenTrades(){
-		logger.info("/opentrades");
-		return getOpenTradees();
+	@GetMapping(value= "/longtrades")
+	public List<Trade> longTrades(){
+		logger.info("/longtrades");
+		return getLongTrades();
 	}
 
-	private List<Trade> getOpenTradees() {
-		List<Trade> trades = new ArrayList<Trade>();
-		strategyAnalysis.getOpenTrades().forEach(trade -> {
-			Trade tradee = new Trade();
-			tradee.setDate(trade.getDate().toInstant().toEpochMilli());
-			tradee.setPrice(trade.getPrice().longValue());
-			tradee.setType(trade.getType());
-			trades.add(tradee);
-		});
-		return trades;
+	/**
+	 * @Example  http://localhost:8080/frosk-analyzer/shorttrades
+	 */
+	@GetMapping(value= "/shorttrades")
+	public List<Trade> shortTrades(){
+		logger.info("/shorttrades");
+		return getShortTrades();
+	}
+
+	private List<Trade> getLongTrades() {
+		return convert(strategyAnalysis.getLongTradesAllStrategies());
+	}
+
+	private List<Trade> getShortTrades() {
+		return convert(strategyAnalysis.getShortTradesAllStrategies());
 	}
 
 	private  List<Trade> getTrades(String security, String strategy){
+		return convert(strategyAnalysis.getTrades(security,strategy));
+	}
+
+	private List<Trade> convert(List<StrategyTrade> tradeList) {
 		List<Trade> trades = new ArrayList<Trade>();
-		strategyAnalysis.getTrades(security,strategy).forEach(trade -> {
+		tradeList.forEach(trade -> {
 			Trade tradee = new Trade();
 			tradee.setDate(trade.getDate().toInstant().toEpochMilli());
 			tradee.setPrice(trade.getPrice().longValue());
 			tradee.setType(trade.getType());
+			tradee.setSecurityName(trade.getFeaturedStrategy().getSecurityName());
 			trades.add(tradee);
 		});
 		return trades;
 	}
-	
+
+
 }

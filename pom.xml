@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>nu.itark.frosk</groupId>
 	<artifactId>frosk-analyzer</artifactId>
-	<version>0.0.8</version>
+	<version>0.0.9</version>
 
 	<name>frosk-analyzer</name>
 	<description>Frosk is the thing, holding backend and UI</description>
@@ -94,20 +94,6 @@
 	      </exclusions>
 	    </dependency>
 
-<!--
-		<dependency>
-		    <groupId>com.fasterxml.jackson.module</groupId>
-		    <artifactId>jackson-module-parameter-names</artifactId>
-		</dependency>
-		<dependency>
-		    <groupId>com.fasterxml.jackson.datatype</groupId>
-		    <artifactId>jackson-datatype-jdk8</artifactId>
-		</dependency>
-		<dependency>
-		    <groupId>com.fasterxml.jackson.datatype</groupId>
-		    <artifactId>jackson-datatype-jsr310</artifactId>
-		</dependency>
--->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

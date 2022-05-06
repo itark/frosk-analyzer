@@ -49,16 +49,8 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  * @see //stockcharts.com/school/doku.php?id=chart_school:trading_strategies:rsi2
  */
 public class RSI2Strategy implements IIndicatorValue {
-
-	Logger logger = Logger.getLogger(RSI2Strategy.class.getName());
-
-	RSIIndicator rsi = null;
-	TimeSeries series = null;
-
-//	SortedSet<StrategyIndicatorValue> indicatorValues = new TreeSet<>(
-//			Comparator.comparing(StrategyIndicatorValue::getDate));
-
-//	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();
+	private RSIIndicator rsi = null;
+	private TimeSeries series = null;
 
 	public RSI2Strategy(TimeSeries series) {
 		this.series = series;

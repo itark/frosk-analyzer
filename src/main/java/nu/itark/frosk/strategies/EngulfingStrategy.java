@@ -30,7 +30,10 @@ import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
 import org.ta4j.core.indicators.candles.BearishEngulfingIndicator;
 import org.ta4j.core.indicators.candles.BullishEngulfingIndicator;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.trading.rules.BooleanIndicatorRule;
+import org.ta4j.core.trading.rules.StopGainRule;
+import org.ta4j.core.trading.rules.StopLossRule;
 
 import java.util.List;
 
@@ -53,11 +56,16 @@ public class EngulfingStrategy  {
             throw new IllegalArgumentException("Series cannot be null");
         }
 
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         BullishEngulfingIndicator  bullish = new BullishEngulfingIndicator(series);
         BearishEngulfingIndicator  bearish = new BearishEngulfingIndicator(series);
         
         Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
         Rule exitRule = new BooleanIndicatorRule(bearish); // Bear trend
+
+/*        Rule exitRule = new BooleanIndicatorRule(bearish)
+                .or(new StopLossRule(closePrice, 2))
+                .or(new StopGainRule(closePrice,2));*/
 
         Strategy strategy = new BaseStrategy("EngulfingStrategy", entryRule, exitRule);
         return strategy;

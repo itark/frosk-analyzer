@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DataManager;
@@ -49,7 +48,7 @@ public class HighLander {
 		//addSecurityPricesFromYahoo();
 		addSecurityPricesFromCoinbase();
 		runAllStrategies();
-		printOpenTrades();
+		printLongTrades();
 	}
 
 
@@ -105,8 +104,8 @@ public class HighLander {
 		strategyAnalysis.run(null, null);
 	}
 
-	private void printOpenTrades() {
-		strategyAnalysis.getOpenTrades().forEach(strategyTrade -> {
+	private void printLongTrades() {
+		strategyAnalysis.getLongTradesAllStrategies().forEach(strategyTrade -> {
 			log.info("strategyTrade:"+ ReflectionToStringBuilder.toString(strategyTrade));
 		});
 	}

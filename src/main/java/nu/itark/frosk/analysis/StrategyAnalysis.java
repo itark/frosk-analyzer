@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.strategies.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -27,13 +28,7 @@ import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.TimeSeriesService;
-import nu.itark.frosk.strategies.CCICorrectionStrategy;
-import nu.itark.frosk.strategies.EngulfingStrategy;
-import nu.itark.frosk.strategies.GlobalExtremaStrategy;
-import nu.itark.frosk.strategies.HaramiStrategy;
-import nu.itark.frosk.strategies.MovingMomentumStrategy;
-import nu.itark.frosk.strategies.RSI2Strategy;
-import nu.itark.frosk.strategies.ThreeBlackWhiteStrategy;
+
 /**
  * This class diplays analysis criterion values after running a trading strategy
  * over a time series.
@@ -199,84 +194,62 @@ public class StrategyAnalysis {
 
 	}
 
-	//TODO implement IndicatorValue
 	public List<IndicatorValue> getIndicatorValues(String strategy, TimeSeries series) {
-//		logger.info("getIndicatorValues("+strategy+", "+series.getName()+")");
-
-		Strategy strategyToRun = null;
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
-			strategyToRun = strategyReguested.buildStrategy();
 			return strategyReguested.getIndicatorValues();
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
 			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
 			return strategyReguested.getIndicatorValues();
 		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
 			GlobalExtremaStrategy strategyReguested = new GlobalExtremaStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();
 			return strategyReguested.getIndicatorValues();
 		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
 			CCICorrectionStrategy strategyReguested = new CCICorrectionStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
-			EngulfingStrategy strategyReguested = new EngulfingStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
-		} else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
-			HaramiStrategy strategyReguested = new HaramiStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
-		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
-			ThreeBlackWhiteStrategy strategyReguested = new ThreeBlackWhiteStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();
 			return strategyReguested.getIndicatorValues();
 		}
-		
-		if (strategyToRun == null) {
-			throw new RuntimeException("strategyToRun is null");
-		}		
+		/*
+		else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
+			EngulfingStrategy strategyReguested = new EngulfingStrategy(series);
+			return strategyReguested.getIndicatorValues();
+		}
+		*/
+		/*
+		else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
+			HaramiStrategy strategyReguested = new HaramiStrategy(series);
+			return strategyReguested.getIndicatorValues();
+		}*/
+		else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
+			ThreeBlackWhiteStrategy strategyReguested = new ThreeBlackWhiteStrategy(series);
+			return strategyReguested.getIndicatorValues();
+		} else {
+			throw new RuntimeException("Strategy not found!, strategy="+strategy);
+		}
 
-		return null;
-		
 	}
 	
-	
 	public Strategy getStrategyToRun(String strategy,  TimeSeries series) {
-//		logger.info("getStrategyToRun("+strategy+", "+series.getName());
-		Strategy strategyToRun = null;
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
-			RSI2Strategy strategyReguested = new RSI2Strategy(series);
-			strategyToRun = strategyReguested.buildStrategy();
+			return new RSI2Strategy(series).buildStrategy();
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
-			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();	
+			return new MovingMomentumStrategy(series).buildStrategy();
+		} else if (strategy.equals(SimpleMovingMomentumStrategy.class.getSimpleName())) {
+			return new SimpleMovingMomentumStrategy(series).buildStrategy();
 		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
-			GlobalExtremaStrategy strategyReguested = new GlobalExtremaStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
+			return new GlobalExtremaStrategy(series).buildStrategy();
 		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
-			CCICorrectionStrategy strategyReguested = new CCICorrectionStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
+			return new CCICorrectionStrategy(series).buildStrategy();
 		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
-			EngulfingStrategy strategyReguested = new EngulfingStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
+			return new EngulfingStrategy(series).buildStrategy();
 		} else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
-			HaramiStrategy strategyReguested = new HaramiStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
+			return new HaramiStrategy(series).buildStrategy();
 		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
-			ThreeBlackWhiteStrategy strategyReguested = new ThreeBlackWhiteStrategy(series);
-			strategyToRun = strategyReguested.buildStrategy();		
+			return new ThreeBlackWhiteStrategy(series).buildStrategy();
 		}
-		
 		else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
-		
-		if (strategyToRun == null) {
-			throw new RuntimeException("strategyToRun is null");
-		}
 
-		
-		return strategyToRun;
 	}
 	
 	private String getPeriod(TimeSeries series) {
@@ -292,28 +265,33 @@ public class StrategyAnalysis {
 	}
 
 
-	public List<StrategyTrade> getOpenTrades(String name) {
-		List<StrategyTrade> strategyTradeListList = new ArrayList<>();
-		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(name);
-			fsList.forEach(featuredStrategy -> {
-				final List<StrategyTrade> byFeaturedStrategy = tradesRepository.findByFeaturedStrategy(featuredStrategy);
-				if (byFeaturedStrategy.isEmpty()) return;
-				StrategyTrade latestTrade = Collections.max(byFeaturedStrategy, Comparator.comparing(StrategyTrade::getDate));
-				if (latestTrade.getType().equals(Order.OrderType.BUY.name())) {
-					strategyTradeListList.add(latestTrade);
-				}
-			});
-		return strategyTradeListList;
+	public List<StrategyTrade> getLongTradesAllStrategies(String strategyName) {
+		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(strategyName);
+		return getTradesForStrategies(fsList, Order.OrderType.BUY);
 	}
 
-	public List<StrategyTrade> getOpenTrades() {
-		List<StrategyTrade> strategyTradeListList = new ArrayList<>();
+	public List<StrategyTrade> getShortTrades(String strategyName) {
+		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(strategyName);
+		return getTradesForStrategies(fsList, Order.OrderType.SELL);
+	}
+
+	public List<StrategyTrade> getLongTradesAllStrategies() {
 		List<FeaturedStrategy> fsList = featuredStrategyRepository.findAll();
+		return getTradesForStrategies(fsList, Order.OrderType.BUY);
+	}
+
+	public List<StrategyTrade> getShortTradesAllStrategies() {
+		List<FeaturedStrategy> fsList = featuredStrategyRepository.findAll();
+		return getTradesForStrategies(fsList, Order.OrderType.SELL);
+	}
+
+	private List<StrategyTrade> getTradesForStrategies(List<FeaturedStrategy> fsList, Order.OrderType orderType) {
+		List<StrategyTrade> strategyTradeListList = new ArrayList<>();
 		fsList.forEach(featuredStrategy -> {
 			final List<StrategyTrade> byFeaturedStrategy = tradesRepository.findByFeaturedStrategy(featuredStrategy);
 			if (byFeaturedStrategy.isEmpty()) return;
 			StrategyTrade latestTrade = Collections.max(byFeaturedStrategy, Comparator.comparing(StrategyTrade::getDate));
-			if (latestTrade.getType().equals(Order.OrderType.BUY.name())) {
+			if (latestTrade.getType().equals(orderType.name())) {
 				strategyTradeListList.add(latestTrade);
 			}
 		});

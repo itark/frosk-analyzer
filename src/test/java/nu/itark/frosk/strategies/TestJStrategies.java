@@ -31,11 +31,13 @@ public class TestJStrategies {
 	
 	@Test
 	public void runAllSingleDataSet() {
+		String productId = "WLUNA-EUR";  //BTC-EUR, BCH-EUR, AAVE-EUR, ETC-EUR
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("KINV-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
 		//TimeSeries timeSeries = timeSeriesService.getDataSet("MAV.ST");
-		TimeSeries timeSeries = timeSeriesService.getDataSetFromCoinbase("BTC-EUR");
+		//TimeSeries timeSeries = timeSeriesService.getDataSetFromCoinbase(productId);
+		TimeSeries timeSeries = timeSeriesService.getDataSet(productId);
 
 //		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
 //		run(rsi.buildStrategy(),timeSeries);
@@ -43,8 +45,8 @@ public class TestJStrategies {
 //		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
 //		run(mm.buildStrategy(),timeSeries);
 
-		SimpleMovingMomentumStrategy smm =  new SimpleMovingMomentumStrategy(timeSeries);
-		run(smm.buildStrategy(),timeSeries);
+//		SimpleMovingMomentumStrategy smm =  new SimpleMovingMomentumStrategy(timeSeries);
+//		run(smm.buildStrategy(),timeSeries);
 
 //		GlobalExtremaStrategy ge1 = new GlobalExtremaStrategy(timeSeries);
 //		run(ge1.buildStrategy(),timeSeries);
@@ -58,8 +60,8 @@ public class TestJStrategies {
 //		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
 //		run(cci.buildStrategy(),timeSeries);
 		
-//		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
-//		run(eng.buildStrategy(),timeSeries);
+		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
+		run(eng.buildStrategy(),timeSeries);
 		
 //		HaramiStrategy harami = new HaramiStrategy(timeSeries);
 //		run(harami.buildStrategy(),timeSeries);	
@@ -103,11 +105,8 @@ public class TestJStrategies {
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Trade> trades = tradingRecord.getTrades();
 
-		boolean currentTradeIsOpened = tradingRecord.getCurrentTrade().isOpened();
-
-		System.out.println("currentTradeIsOpened:"+currentTradeIsOpened);
-
-		NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
+//		boolean currentTradeIsOpened = tradingRecord.getCurrentTrade().isOpened();
+//		System.out.println("currentTradeIsOpened:"+currentTradeIsOpened);
 
 
 		for (Trade trade : trades) {

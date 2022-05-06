@@ -14,3 +14,7 @@
 .gradle/5.1.1/gc.properties
 
 .gradle/buildOutputCleanup/
+
+src/test/resources/non-commit-data.txt
+
+src/test/resources/non-commit.txt

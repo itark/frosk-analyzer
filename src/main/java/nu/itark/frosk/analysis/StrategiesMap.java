@@ -5,16 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import nu.itark.frosk.strategies.*;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
-
-import nu.itark.frosk.strategies.CCICorrectionStrategy;
-import nu.itark.frosk.strategies.EngulfingStrategy;
-import nu.itark.frosk.strategies.GlobalExtremaStrategy;
-import nu.itark.frosk.strategies.HaramiStrategy;
-import nu.itark.frosk.strategies.MovingMomentumStrategy;
-import nu.itark.frosk.strategies.RSI2Strategy;
-import nu.itark.frosk.strategies.ThreeBlackWhiteStrategy;
 
 public class StrategiesMap {
 
@@ -42,8 +35,6 @@ public class StrategiesMap {
 		ThreeBlackWhiteStrategy threeStrat = new ThreeBlackWhiteStrategy(series);
 		strategies.put(threeStrat.buildStrategy(), ThreeBlackWhiteStrategy.class.getSimpleName());			
 		
-		
-		
 		return strategies;
 	}
 	
@@ -51,16 +42,13 @@ public class StrategiesMap {
 		List<String> strategies = new ArrayList<String>();
 		strategies.add(RSI2Strategy.class.getSimpleName());
 		strategies.add(MovingMomentumStrategy.class.getSimpleName());
+		strategies.add(SimpleMovingMomentumStrategy.class.getSimpleName());
 		strategies.add(GlobalExtremaStrategy.class.getSimpleName());
 		strategies.add(CCICorrectionStrategy.class.getSimpleName());
-		
 		strategies.add(EngulfingStrategy.class.getSimpleName());
 		strategies.add(HaramiStrategy.class.getSimpleName());
 		strategies.add(ThreeBlackWhiteStrategy.class.getSimpleName());
-	
 		return strategies;
 	}	
-	
-	
-	
+
 }
