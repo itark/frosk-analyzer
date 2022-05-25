@@ -18,13 +18,9 @@ import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
 
 @Controller
-//@RequestMapping("/frosk-analyzer")
 public class WebController {
 	Logger logger = Logger.getLogger(WebController.class.getName());
 
-//	@Autowired
-//	BITFINEXDataManager bitfinexManager;	
-	
 	@Autowired
 	DataManager dataManager;		
 
@@ -34,13 +30,10 @@ public class WebController {
 	@Autowired
 	HighLander highLander;
 
-	//@RequestMapping("/")
 	@GetMapping({"/"})
-	//@RequestMapping(value="/", method={RequestMethod.GET, RequestMethod.POST})
 	public String welcome2(Map<String, Object> model) {
 		return "index";	
-	
-	}	
+	}
 	
 	@RequestMapping("/strategies")
 	public String strategies(Map<String, Object> model) {
@@ -62,7 +55,6 @@ public class WebController {
 		return "rsi_lab";	
 	}		
 	
-	//@RequestMapping("/ma")
 	@GetMapping({"/ma"})
 	public String ma(Map<String, Object> model) {
 		return "ma";	
