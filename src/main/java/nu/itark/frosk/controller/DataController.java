@@ -3,10 +3,14 @@ package nu.itark.frosk.controller;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import nu.itark.frosk.dataset.DateManager;
 import nu.itark.frosk.dataset.IndicatorValue;
 import nu.itark.frosk.dataset.Trade;
 import nu.itark.frosk.model.StrategyTrade;
+import nu.itark.frosk.util.DateTimeManager;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
@@ -75,6 +79,12 @@ public class DataController {
 		} else {
 			datasetet.getSecurities().forEach(security -> {
 				FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security.getName());
+/*
+				if (!"BTC-EUR".equals(fs.getSecurityName())) {
+					logger.info("fs.getSecurityName():"+fs.getSecurityName());
+					return;
+				}
+*/
 				if(Objects.isNull(fs)){
 					logger.log(Level.WARNING, "Kunde inte hitta FeaturedStrategy för "+strategy+" och "+security.getName()+". Kolla ditt data. Kanske inte kört runStrategy");
 					return;
@@ -84,7 +94,8 @@ public class DataController {
 			});			
 		}
 
-		return returnList;
+		return returnList.stream().sorted(Comparator.comparing(FeaturedStrategyDTO::getName)).collect(Collectors.toList());
+	//	return returnList;
 	}
 
 
@@ -208,10 +219,13 @@ public class DataController {
 		List<Trade> trades = new ArrayList<Trade>();
 		tradeList.forEach(trade -> {
 			Trade tradee = new Trade();
+			tradee.setId(trade.getId());
 			tradee.setDate(trade.getDate().toInstant().toEpochMilli());
+			tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd HH:mm:ss"));
 			tradee.setPrice(trade.getPrice().longValue());
 			tradee.setType(trade.getType());
 			tradee.setSecurityName(trade.getFeaturedStrategy().getSecurityName());
+			tradee.setStrategy(trade.getFeaturedStrategy().getName());
 			trades.add(tradee);
 		});
 		return trades;

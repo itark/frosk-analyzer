@@ -1,5 +1,6 @@
 package nu.itark.frosk.analysis;
 
+import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.service.TimeSeriesService;
 import nu.itark.frosk.strategies.MovingMomentumStrategy;
@@ -13,7 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.util.List;
 import java.util.logging.Logger;
 
-@SpringBootTest
+@SpringBootTest(classes = {FroskApplication.class})
 public class TestJStrategyAnalysis {
 	Logger logger = Logger.getLogger(TestJStrategyAnalysis.class.getName());
 	
@@ -27,11 +28,11 @@ public class TestJStrategyAnalysis {
 	@Test
 	public final void runSMM() {
 		logger.info("MM="+ SimpleMovingMomentumStrategy.class.getSimpleName());
-		Long sec_id = ts.getSecurityId("ERIC-B.ST");
+		Long sec_id = ts.getSecurityId("BTC-EUR");
 //		Long sec_id = ts.getSecurityId("SSAB-B.ST");
 //		Long sec_id = ts.getSecurityId("ATCO-B.ST");
 //		Long sec_id = ts.getSecurityId("VOLV-B.ST");
-		strategyAnalysis.run(MovingMomentumStrategy.class.getSimpleName(), sec_id);
+		strategyAnalysis.run(SimpleMovingMomentumStrategy.class.getSimpleName(), sec_id);
 
 //		list.forEach(dto -> logger.info("dto="+ReflectionToStringBuilder.toString(dto)));
 		

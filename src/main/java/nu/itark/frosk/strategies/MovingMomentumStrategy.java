@@ -136,43 +136,6 @@ public class MovingMomentumStrategy implements IIndicatorValue {
 		return new BaseStrategy("MovingMomentumStrategy", entryRule, exitRule);
 	}
 
-
-    
-    private void setIndicatorValues(EMAIndicator indicator, String name) {
-    	IndicatorValue iv = null;
- 		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
-			long value =  indicator.getValue(i).longValue();
- 			iv = new IndicatorValue(date,value, name);
- 			indicatorValues.add(iv);
- 		}
- 	}
-
-	private void setIndicatorValues(MACDIndicator indicator, String name) {
-		IndicatorValue iv = null;
-		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
-			long value =  indicator.getValue(i).longValue();
-			iv = new IndicatorValue(date,value, name);
-			indicatorValues.add(iv);
-		}
-	}
-
-	@SneakyThrows
-	private void setIndicatorValues(StochasticOscillatorKIndicator indicator, String name) {
-		IndicatorValue iv = null;
-		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
-			try {
-				long value =  indicator.getValue(i).longValue();
-				iv = new IndicatorValue(date,value, name);
-				indicatorValues.add(iv);
-			} catch (UnsupportedOperationException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-    
     @Override
 	public List<IndicatorValue> getIndicatorValues() {
 		return indicatorValues;

@@ -118,7 +118,6 @@ public class StrategyAnalysis {
 			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			trades = tradingRecord.getTrades();
-//			logger.info(trades.size()+" trades found.");
 			if (series.getBarData().isEmpty()){
 				//abort
 				return;
@@ -128,19 +127,26 @@ public class StrategyAnalysis {
 
 			for (Trade trade : trades) {
 				Bar barEntry = series.getBar(trade.getEntry().getIndex());
-//		      	logger.info(series.getName()+"::barEntry="+barEntry.getDateName());
 				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
 				String entryType = trade.getEntry().getType().name();
 				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getMinPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 
 				Bar barExit = series.getBar(trade.getExit().getIndex());
-//			   	logger.info(series.getName()+"::barExit="+barExit.getDateName());
 				Date sellDate = Date.from(barExit.getEndTime().toInstant());
 				String exitType = trade.getExit().getType().name();
 				strategyTrade = new StrategyTrade(sellDate,exitType,BigDecimal.valueOf(barExit.getMinPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 				latestTradeDate = Date.from(barExit.getEndTime().toInstant());
+			}
+
+			//If open
+			if (tradingRecord.getCurrentTrade().isOpened()) {
+				Bar barEntry = series.getBar(tradingRecord.getCurrentTrade().getEntry().getIndex());
+				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
+				String entryType = tradingRecord.getCurrentTrade().getEntry().getType().name();
+				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getMinPrice().doubleValue()));
+				strategyTradeList.add(strategyTrade);
 			}
 
 			fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, series.getName());

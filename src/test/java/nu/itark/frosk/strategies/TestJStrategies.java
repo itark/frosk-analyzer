@@ -6,6 +6,7 @@ import nu.itark.frosk.service.TimeSeriesService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.ta4j.core.*;
 import org.ta4j.core.analysis.criteria.NumberOfBarsCriterion;
 import org.ta4j.core.analysis.criteria.NumberOfTradesCriterion;
@@ -31,7 +32,7 @@ public class TestJStrategies {
 	
 	@Test
 	public void runAllSingleDataSet() {
-		String productId = "WLUNA-EUR";  //BTC-EUR, BCH-EUR, AAVE-EUR, ETC-EUR
+		String productId = "BTRST-EUR";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR, BTRST-EUR
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("KINV-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
@@ -60,8 +61,13 @@ public class TestJStrategies {
 //		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
 //		run(cci.buildStrategy(),timeSeries);
 		
-		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
-		run(eng.buildStrategy(),timeSeries);
+//		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
+//		run(eng.buildStrategy(),timeSeries);
+
+
+		SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(timeSeries);
+		run(simpleMa.buildStrategy(),timeSeries);
+
 		
 //		HaramiStrategy harami = new HaramiStrategy(timeSeries);
 //		run(harami.buildStrategy(),timeSeries);	
@@ -86,44 +92,49 @@ public class TestJStrategies {
 //			ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(ts);
 //			run(three.buildStrategy(),ts);		
 			
-			ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(ts);
-			run(cd.buildStrategy(),ts);			
-			
-			
+//			ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(ts);
+//			run(cd.buildStrategy(),ts);
+
+			SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(ts);
+			run(simpleMa.buildStrategy(),ts);
+
 			
 		});
-		//RSI2
-//		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
-//		run(rsi.buildStrategy(),timeSeries);
-		
+
 	}	
 	
 	
 	public final void run(Strategy strategy, TimeSeries timeSeries) {
-		logger.info("******"+strategy.getName()+"******");
+		logger.info("****** "+strategy.getName()+ ", "+timeSeries.getName()+" *******");
 		TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Trade> trades = tradingRecord.getTrades();
 
-//		boolean currentTradeIsOpened = tradingRecord.getCurrentTrade().isOpened();
-//		System.out.println("currentTradeIsOpened:"+currentTradeIsOpened);
+		if (trades.isEmpty()) return;
 
+		if (tradingRecord.getCurrentTrade().isOpened()) {
+			System.out.println(timeSeries.getName() + " IS OPEN!!!!");
+			Bar currentEntry = timeSeries.getBar(tradingRecord.getCurrentTrade().getEntry().getIndex());
+			System.out.println(timeSeries.getName() + "::currentEntry=" + currentEntry.getSimpleDateName());
+			Bar currentExit = timeSeries.getBar(tradingRecord.getCurrentTrade().getExit().getIndex());
+			System.out.println(timeSeries.getName() + "::currentExit=" + currentExit.getSimpleDateName());
+			Bar barEntry = timeSeries.getBar(tradingRecord.getLastTrade().getEntry().getIndex());
+			System.out.println(timeSeries.getName() + "OPEN barEntry=" + barEntry.getSimpleDateName());
+		}
 
 		for (Trade trade : trades) {
 			Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
-			logger.info(timeSeries.getName() + "::barEntry=" + barEntry.getDateName());
+			System.out.println(timeSeries.getName() + "::barEntry=" + barEntry.getSimpleDateName());
 			Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
-			logger.info(timeSeries.getName() + "::barExit=" + barExit.getDateName());
+			System.out.println(timeSeries.getName() + "::barExit=" + barExit.getSimpleDateName());
 			Num closePriceBuy = barEntry.getClosePrice();
 			Num closePriceSell = barExit.getClosePrice();
-			Num profit = closePriceSell.minus(closePriceBuy);
-
-			logger.info("profit=" + profit);
-
+			//Num profit = closePriceSell.minus(closePriceBuy);
+			Num profit2 = closePriceSell.dividedBy(closePriceBuy);
+			System.out.println("profit2(%)=" + percent(profit2.doubleValue()));
 		}
 
-		
-	      // Total profit
+		// Total profit
         TotalProfitCriterion totalProfit = new TotalProfitCriterion();
         logger.info("********Total profit: " + percent(totalProfit.calculate(timeSeries, tradingRecord).doubleValue())+ "********");
         

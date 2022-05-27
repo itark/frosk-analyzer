@@ -73,15 +73,6 @@ public class SimpleMovingMomentumStrategy implements IIndicatorValue {
         return new BaseStrategy("SimpleMovingMomentumStrategy", entryRule, exitRule);
     }
 
-    private void setIndicatorValues(EMAIndicator indicator, String name) {
-        IndicatorValue iv = null;
-        for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-            long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
-            long value = indicator.getValue(i).longValue();
-            iv = new IndicatorValue(date, value, name);
-            indicatorValues.add(iv);
-        }
-    }
 
     @Override
     public List<IndicatorValue> getIndicatorValues() {
