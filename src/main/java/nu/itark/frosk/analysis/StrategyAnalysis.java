@@ -63,7 +63,7 @@ public class StrategyAnalysis {
 	public void run(String strategy, Long security_id) throws DataIntegrityViolationException {
 		logger.info("run("+strategy+", "+security_id+")");
 	
-		if (strategy == null && security_id == null) {
+		if (Objects.isNull(strategy)  && Objects.isNull(security_id)) {
 			List<String> strategies = StrategiesMap.buildStrategiesMap();
 			strategies.forEach(strategyName -> {
 				try {
@@ -75,7 +75,7 @@ public class StrategyAnalysis {
 			});
 			
 		} 
-		else if (strategy != null && security_id == null) {
+		else if (Objects.nonNull(strategy) && Objects.isNull(security_id)) {
 			try {
 				runStrategy(strategy, timeSeriesService.getDataSet());
 			} catch (Exception e) {
@@ -83,11 +83,11 @@ public class StrategyAnalysis {
 				throw e;
 			}
 		} 
-		else if (strategy != null && security_id != null) {
+		else if (Objects.nonNull(strategy) && security_id != null) {
 			List<TimeSeries> timeSeriesList = new ArrayList<TimeSeries>();
 			TimeSeries timeSeries = timeSeriesService.getDataSet(security_id);
 			//Sanity check
-			if (timeSeries == null || timeSeries.isEmpty()) {
+			if (Objects.isNull(timeSeries) || timeSeries.isEmpty()) {
 				throw new RuntimeException("Timeseries is null or empty. Download security prices.");
 			}
 			timeSeriesList.add(timeSeries);
@@ -147,6 +147,7 @@ public class StrategyAnalysis {
 				String entryType = tradingRecord.getCurrentTrade().getEntry().getType().name();
 				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getMinPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
+				latestTradeDate = Date.from(barEntry.getEndTime().toInstant());
 			}
 
 			fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, series.getName());
@@ -154,8 +155,8 @@ public class StrategyAnalysis {
 				fs = new FeaturedStrategy();
 				fs.setName(strategy);
 				fs.setSecurityName(series.getName());
-			} 
-			
+			}
+
 			fs.setPeriod(getPeriod(series));
 			fs.setLatestTrade(latestTradeDate);
 			totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord).doubleValue();
@@ -190,14 +191,17 @@ public class StrategyAnalysis {
 			FeaturedStrategy fsRes = featuredStrategyRepository.saveAndFlush(fs);
 			//Trades
 			List<StrategyTrade>  existSt = tradesRepository.findByFeaturedStrategyId(fsRes.getId());
-			if (existSt.isEmpty()) {
-				strategyTradeList.forEach(st -> {
-					st.setFeaturedStrategy(fsRes);
-					tradesRepository.saveAndFlush(st);
+			if (!existSt.isEmpty()) {
+				existSt.forEach(st -> {
+					tradesRepository.delete(st);
+					//tradesRepository.saveAndFlush(st);
 				});
 			}
+			strategyTradeList.forEach(st -> {
+				st.setFeaturedStrategy(fsRes);
+				tradesRepository.saveAndFlush(st);
+			});
 		}
-
 	}
 
 	public List<IndicatorValue> getIndicatorValues(String strategy, TimeSeries series) {
@@ -270,7 +274,7 @@ public class StrategyAnalysis {
     return sb.toString();
 	}
 
-
+/*
 	public List<StrategyTrade> getLongTradesAllStrategies(String strategyName) {
 		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(strategyName);
 		return getTradesForStrategies(fsList, Order.OrderType.BUY);
@@ -308,7 +312,7 @@ public class StrategyAnalysis {
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security);
 		return tradesRepository.findByFeaturedStrategy(fs);
 	}
-
+*/
 //	public List<RNNPrices> getRNNPrices( String indiceName, Database database) {
 //		List<RNNPrices> rnnPrices = new ArrayList<RNNPrices>();
 //		RNNPrices rnnPrice;

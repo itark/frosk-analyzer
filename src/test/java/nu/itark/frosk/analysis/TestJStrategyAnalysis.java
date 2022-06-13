@@ -27,11 +27,7 @@ public class TestJStrategyAnalysis {
 
 	@Test
 	public final void runSMM() {
-		logger.info("MM="+ SimpleMovingMomentumStrategy.class.getSimpleName());
-		Long sec_id = ts.getSecurityId("BTC-EUR");
-//		Long sec_id = ts.getSecurityId("SSAB-B.ST");
-//		Long sec_id = ts.getSecurityId("ATCO-B.ST");
-//		Long sec_id = ts.getSecurityId("VOLV-B.ST");
+		Long sec_id = ts.getSecurityId("BTRST-EUR"); //"BTRST-EUR","BTC-EUR"
 		strategyAnalysis.run(SimpleMovingMomentumStrategy.class.getSimpleName(), sec_id);
 
 //		list.forEach(dto -> logger.info("dto="+ReflectionToStringBuilder.toString(dto)));
@@ -60,40 +56,6 @@ public class TestJStrategyAnalysis {
 		
 	}
 
-	@Test
-	public final void testLongTradesOne(){
-		final List<StrategyTrade> longTrades = strategyAnalysis.getLongTradesAllStrategies(SimpleMovingMomentumStrategy.class.getSimpleName());
-		System.out.println("longTrades.size():"+longTrades.size());
-		longTrades.forEach(st-> {
-			System.out.println("StrategyTrade:" + ReflectionToStringBuilder.toString(st));
-		});
-	}
 
-	@Test
-	public final void testShortTradesOne(){
-		final List<StrategyTrade> shortTrades = strategyAnalysis.getShortTrades(SimpleMovingMomentumStrategy.class.getSimpleName());
-		System.out.println("shortTrades.size():"+shortTrades.size());
-		shortTrades.forEach(st-> {
-			System.out.println("StrategyTrade:" + ReflectionToStringBuilder.toString(st));
-		});
-	}
-
-	@Test
-	public final void testOpenTradesAll() {
-		final List<StrategyTrade> openTrades = strategyAnalysis.getLongTradesAllStrategies();
-		System.out.println("openTrades:" + openTrades.size());
-		openTrades.forEach(st-> {
-			System.out.println("StrategyTrade:" + ReflectionToStringBuilder.toString(st));
-		});
-	}
-
-	@Test
-	public final void testOpenTradesAll2(){
-		List<String> strategies = StrategiesMap.buildStrategiesMap();
-		strategies.forEach(s -> {
-			final List<StrategyTrade> openTrades = strategyAnalysis.getLongTradesAllStrategies(s);
-			openTrades.forEach(System.out::println);
-		});
-	}
 
 }

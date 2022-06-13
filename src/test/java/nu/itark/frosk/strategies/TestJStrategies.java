@@ -3,22 +3,17 @@ package nu.itark.frosk.strategies;
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.service.TimeSeriesService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.ta4j.core.*;
-import org.ta4j.core.analysis.criteria.NumberOfBarsCriterion;
-import org.ta4j.core.analysis.criteria.NumberOfTradesCriterion;
-import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
-import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
+import org.ta4j.core.analysis.criteria.*;
 import org.ta4j.core.num.Num;
 
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 @SpringBootTest(classes = {FroskApplication.class})
@@ -28,8 +23,19 @@ public class TestJStrategies {
 
 	@Autowired
 	TimeSeriesService timeSeriesService;
-	
-	
+
+	Formatter fmt = new Formatter();
+
+	@BeforeEach
+	public void addFormat() {
+		fmt.format("%20s %15s %15s %15s %15s %15s\n","Strategy",
+													"Security",
+													"Total profit",
+													"Number of bars",
+													"Number of trades",
+													"Profitable trades ratio");
+	}
+
 	@Test
 	public void runAllSingleDataSet() {
 		String productId = "BTRST-EUR";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR, BTRST-EUR
@@ -39,6 +45,9 @@ public class TestJStrategies {
 		//TimeSeries timeSeries = timeSeriesService.getDataSet("MAV.ST");
 		//TimeSeries timeSeries = timeSeriesService.getDataSetFromCoinbase(productId);
 		TimeSeries timeSeries = timeSeriesService.getDataSet(productId);
+
+//		VWAPStrategy vwap = new VWAPStrategy(timeSeries);
+//		run(vwap.buildStrategy(),timeSeries);
 
 //		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
 //		run(rsi.buildStrategy(),timeSeries);
@@ -61,14 +70,9 @@ public class TestJStrategies {
 //		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
 //		run(cci.buildStrategy(),timeSeries);
 		
-//		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
-//		run(eng.buildStrategy(),timeSeries);
+		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
+		run(eng.buildStrategy(),timeSeries);
 
-
-		SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(timeSeries);
-		run(simpleMa.buildStrategy(),timeSeries);
-
-		
 //		HaramiStrategy harami = new HaramiStrategy(timeSeries);
 //		run(harami.buildStrategy(),timeSeries);	
 	
@@ -77,8 +81,11 @@ public class TestJStrategies {
 
 //		ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(timeSeries);
 //		run(cd.buildStrategy(),timeSeries);
-		
-		
+
+
+//		SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(timeSeries);
+// 		run(simpleMa.buildStrategy(),timeSeries);
+
 	}
 
 	
@@ -102,10 +109,9 @@ public class TestJStrategies {
 		});
 
 	}	
-	
-	
-	public final void run(Strategy strategy, TimeSeries timeSeries) {
-		logger.info("****** "+strategy.getName()+ ", "+timeSeries.getName()+" *******");
+
+	void run(Strategy strategy, TimeSeries timeSeries) {
+		//logger.info("****** "+strategy.getName()+ ", "+timeSeries.getName()+" *******");
 		TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Trade> trades = tradingRecord.getTrades();
@@ -116,48 +122,50 @@ public class TestJStrategies {
 			System.out.println(timeSeries.getName() + " IS OPEN!!!!");
 			Bar currentEntry = timeSeries.getBar(tradingRecord.getCurrentTrade().getEntry().getIndex());
 			System.out.println(timeSeries.getName() + "::currentEntry=" + currentEntry.getSimpleDateName());
-			Bar currentExit = timeSeries.getBar(tradingRecord.getCurrentTrade().getExit().getIndex());
-			System.out.println(timeSeries.getName() + "::currentExit=" + currentExit.getSimpleDateName());
-			Bar barEntry = timeSeries.getBar(tradingRecord.getLastTrade().getEntry().getIndex());
-			System.out.println(timeSeries.getName() + "OPEN barEntry=" + barEntry.getSimpleDateName());
 		}
 
 		for (Trade trade : trades) {
 			Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
-			System.out.println(timeSeries.getName() + "::barEntry=" + barEntry.getSimpleDateName());
 			Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
-			System.out.println(timeSeries.getName() + "::barExit=" + barExit.getSimpleDateName());
 			Num closePriceBuy = barEntry.getClosePrice();
 			Num closePriceSell = barExit.getClosePrice();
-			//Num profit = closePriceSell.minus(closePriceBuy);
 			Num profit2 = closePriceSell.dividedBy(closePriceBuy);
-			System.out.println("profit2(%)=" + percent(profit2.doubleValue()));
+			//System.out.println("profit2(%)=" + percent(profit2.doubleValue()));
 		}
 
 		// Total profit
         TotalProfitCriterion totalProfit = new TotalProfitCriterion();
-        logger.info("********Total profit: " + percent(totalProfit.calculate(timeSeries, tradingRecord).doubleValue())+ "********");
+       // logger.info("********Total profit: " + percent(totalProfit.calculate(timeSeries, tradingRecord).doubleValue())+ "********");
         
         // Number of bars
-        logger.info("Number of bars: " + new NumberOfBarsCriterion().calculate(timeSeries, tradingRecord));
+       // logger.info("Number of bars: " + new NumberOfBarsCriterion().calculate(timeSeries, tradingRecord));
         // Average profit (per bar)
 //        logger.info("Average profit (per bar): " + percent(new AverageProfitCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
         // Number of trades
-        logger.info("Number of trades: " + new NumberOfTradesCriterion().calculate(timeSeries, tradingRecord));
+        //logger.info("Number of trades: " + new NumberOfTradesCriterion().calculate(timeSeries, tradingRecord));
         // Profitable trades ratio
-//        logger.info("Profitable trades ratio: " + percent(new AverageProfitableTradesCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+        //logger.info("Profitable trades ratio: " + percent(new AverageProfitableTradesCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
         // Maximum drawdown
-//        logger.info("Maximum drawdown: " + percent(new MaximumDrawdownCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+        //logger.info("Maximum drawdown: " + percent(new MaximumDrawdownCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
         // Reward-risk ratio
-//        logger.info("Reward-risk ratio: " + new RewardRiskRatioCriterion().calculate(timeSeries, tradingRecord));
+        //logger.info("Reward-risk ratio: " + new RewardRiskRatioCriterion().calculate(timeSeries, tradingRecord));
         // Total transaction cost
-//        logger.info("Total transaction cost (from $1000): " + new LinearTransactionCostCriterion(1000, 0.005).calculate(timeSeries, tradingRecord));
+        //logger.info("Total transaction cost (from $1000): " + new LinearTransactionCostCriterion(1000, 0.005).calculate(timeSeries, tradingRecord));
         // Buy-and-hold
 //        logger.info("Buy-and-hold: " + percent(new BuyAndHoldCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
         // Total profit vs buy-and-hold
-        logger.info("Custom strategy profit vs buy-and-hold strategy profit: " + percent(new VersusBuyAndHoldCriterion(totalProfit).calculate(timeSeries, tradingRecord).doubleValue()));		
-		
-		
+        //logger.info("Custom strategy profit vs buy-and-hold strategy profit: " + percent(new VersusBuyAndHoldCriterion(totalProfit).calculate(timeSeries, tradingRecord).doubleValue()));
+
+
+		fmt.format("%20s %14s %14s %14s %14s %17s\n", strategy.getName().replace("Strategy", "")
+											,timeSeries.getName(),
+											percent(totalProfit.calculate(timeSeries, tradingRecord).doubleValue()),
+											new NumberOfBarsCriterion().calculate(timeSeries, tradingRecord),
+											new NumberOfTradesCriterion().calculate(timeSeries, tradingRecord),
+											percent(new AverageProfitableTradesCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+
+		System.out.println(fmt);
+
 	}
 	
 	@Test
@@ -177,7 +185,7 @@ public class TestJStrategies {
 			String name = entry.getValue();
 			TradingRecord tradingRecord = timeSeriesManager.run(strategy);
 			double profit = profitCriterion.calculate(timeSeries, tradingRecord).doubleValue();
-			System.out.println("\tProfit for " + name + ": " + profit);
+			System.out.println("\tProfit(%) for " + name + ": " + percent(profit));
 		}
 		Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
 		System.out.println("\t\t--> Best strategy: " + strategies.get(bestStrategy) + "\n");
@@ -189,13 +197,17 @@ public class TestJStrategies {
 	@Test
 	public void chooseBestForAllSecurities() {
 		NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
-		double highestProfit = 0;
-		String highestProfitName = "";
-		String highestProfitNameStrategy = "";
+		double highestProfitProfit = 0;
+		String highestProfitNameProfit = "";
+		String highestProfitNameStrategyProfit = "";
+
+		double highestProfitNrTrade = 0;
+		String highestProfitNameNrTrade = "";
+		String highestProfitNameStrategyNrTrade = "";
+
 		List<TimeSeries> timeSeriesList = timeSeriesService.getDataSet();
 		// The analysis criterion
 		AnalysisCriterion profitCriterion = new TotalProfitCriterion();
-
 		// The analysis criterion
 		AnalysisCriterion nrOfTradesCriterion = new NumberOfTradesCriterion();		
 		
@@ -206,46 +218,40 @@ public class TestJStrategies {
 				Strategy strategy = entry.getKey();
 				String name = entry.getValue();
 				TradingRecord tradingRecord = timeSeriesManager.run(strategy);
-				double profit = profitCriterion.calculate(timeSeries, tradingRecord).doubleValue();
-				if (profit > highestProfit) {
-					highestProfit = profit;
-					highestProfitName = timeSeries.getName();
-					highestProfitNameStrategy = strategy.getName();
+				double profitProfit = profitCriterion.calculate(timeSeries, tradingRecord).doubleValue();
+				if (profitProfit > highestProfitProfit) {
+					highestProfitProfit = profitProfit;
+					highestProfitNameProfit = timeSeries.getName();
+					highestProfitNameStrategyProfit = strategy.getName();
 				}
-				
-				
-//				double profit = nrOfTradesCriterion.calculate(timeSeries, tradingRecord).doubleValue();
-//				if (profit > highestProfit) {
-//					highestProfit = profit;
-//					highestProfitName = timeSeries.getName();
-//					highestProfitNameStrategy = strategy.getName();
-//				}				
-				
-				
-				
-//				System.out.println(
-//						"\tProfit for strategy: " + name + " and security :" + timeSeries.getName() + " = " + profit);
+				double profitNrTrade = nrOfTradesCriterion.calculate(timeSeries, tradingRecord).doubleValue();
+				if (profitNrTrade > highestProfitNrTrade) {
+					highestProfitNrTrade = profitNrTrade;
+					highestProfitNameNrTrade = timeSeries.getName();
+					highestProfitNameStrategyNrTrade = strategy.getName();
+				}
+/*
+				System.out.println(
+						"\tProfit(Profit) for strategy: " + name + " and security :" + timeSeries.getName() + " = " + profitProfit);
+				System.out.println(
+						"\tProfit(NrTrade) for strategy: " + name + " and security :" + timeSeries.getName() + " = " + profitNrTrade);
+*/
 			}
 			Strategy bestProfitStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
 			System.out.println("\t\t--> Best strategy(profit criteria) for : "+timeSeries.getName()+" = " + strategies.get(bestProfitStrategy));
-			 double highestProfitPercentage = (highestProfit - 1 );  //TODO minus
-			System.out.println("\t\t--> HighestProfit Name: " + highestProfitName + " profit: " + format.format(highestProfitPercentage));
-			System.out.println("\t\t--> Strategy: " + highestProfitNameStrategy + "\n");
+			double highestProfitPercentageProfit = (highestProfitProfit - 1 );
+			System.out.println("\t\t--> HighestProfit Name: " + highestProfitNameProfit + " profit.format: " + format.format(highestProfitPercentageProfit));
+			System.out.println("\t\t--> HighestProfit Name: " + highestProfitNameProfit + " profit%: " + percent(highestProfitProfit));
+			System.out.println("\t\t--> Strategy: " + highestProfitNameStrategyProfit + "\n");
 
-//			Strategy bestNrOfTradesStrategy = nrOfTradesCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
-//			System.out.println("\t\t--> Best strategy(nr of trades) for : "+timeSeries.getName()+" = " + strategies.get(bestNrOfTradesStrategy));
-//			 double highestProfitPercentage = (highestProfit - 1 );  //TODO minus
-//			System.out.println("\t\t--> HighestProfit Name: " + highestProfitName + " profit: " + format.format(highestProfitPercentage));
-//			System.out.println("\t\t--> Strategy: " + highestProfitNameStrategy + "\n");
-
-		
-		
-		
+			Strategy bestNrOfTradesStrategy = nrOfTradesCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
+			System.out.println("\t\t--> Best strategy(nr of trades) for : "+timeSeries.getName()+" = " + strategies.get(bestNrOfTradesStrategy));
+			double highestProfitPercentageNrTrade = (highestProfitNrTrade - 1 );
+			System.out.println("\t\t--> HighestProfit Name: " + highestProfitNameNrTrade + " profit.format: " + format.format(highestProfitPercentageNrTrade));
+			System.out.println("\t\t--> HighestProfit Name: " + highestProfitNameNrTrade + " profit%: " + percent(highestProfitNrTrade));
+			System.out.println("\t\t--> Strategy: " + highestProfitNameStrategyNrTrade + "\n");
 		}
 
-		
-		
-		
 	}	
 	
 	
@@ -264,11 +270,15 @@ public class TestJStrategies {
 		 String xxx = format.format(xx);
 		 
 		 System.out.println("xxx="+xxx);
+
+		System.out.println("yyy="+percent(x));
+
+
 		
 	}
 	
 	private String percent(double value) {
-		NumberFormat format = NumberFormat.getPercentInstance();
+		NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
 		format.setMinimumFractionDigits(1);
 
 		double raw = (value - 1);

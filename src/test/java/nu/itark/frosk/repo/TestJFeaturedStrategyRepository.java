@@ -1,6 +1,8 @@
 package nu.itark.frosk.repo;
 
 import nu.itark.frosk.model.*;
+import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -60,48 +62,20 @@ public class TestJFeaturedStrategyRepository {
 				numberofTrades, profitableTradesRatio, maxDD, rewardRiskRatio, totalTransactionCost, buyAndHold,
 				totalProfitVsButAndHold, period, latestTrade);		
 		
-//		Security security = securityRepo.findByName("SAND.ST");
-		
-//		Assert.assertNotNull(security);
-		
-//		logger.info("security="+security);
-//		dataSet.getSecurities().add(security);
-		
-		Security security = secRepo.findByName("ABB.ST");
-//		logger.info("security="+security);
-
-		
-//		Security security = secRepo.getOne(new Long(2166050));
-//		
-//		
-//		
-//		
-//		featuredStrategy.setSecurity(security);
-//		
-//		FeaturedStrategy featuredStrategyREs =	fsRepo.save(featuredStrategy);
-		
-		
-	}	
+	}
 	
-	
-
 	@Test
 	public void testFindByNameAndSecurityName() {
 		logger.info("count="+ featuredStrategyRepository.count());
-		
-//		List<FeaturedStrategy> fsList = fsRepo.findByNameAndSecurityName("RSI2Strategy", "SAND.ST");
-		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName("RSI2Strategy", "SAND.ST");
-		
-		
-//		fsList.forEach(fs -> logger.info("sec="+fs.getSecurityName()+", ld="+fs.getLatestTrade()));
-
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName("SimpleMovingMomentumStrategy", "BTRST-EUR");
+		logger.info("fs"+ ReflectionToStringBuilder.toString(fs));
 	}
 	
 	@Test
 	public void testFindByNameAndMore() {
 	List<FeaturedStrategy> fsList = featuredStrategyRepository.findByNameOrderByTotalProfitDesc("RSI2Strategy");
 	}
-//	
+
 	@Test
 	public void testFindByNameAndDataset() {
 		List<FeaturedStrategy> returnList = new ArrayList<>();
@@ -124,20 +98,16 @@ public class TestJFeaturedStrategyRepository {
 		
 		
 	}
-	
-	
+
+
 	@Test
 	public void testFindByName() {
-	
-	List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName("RSI2Strategy");
-	assertNotNull(fsList);
 
-	fsList.forEach(fs -> logger.info("sec="+fs.getSecurityName()+", tr size="+fs.getTrades().size()));
-	
-	
-//	logger.info("fs size"+fs.size());
-	
-	
+		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName("RSI2Strategy");
+		assertNotNull(fsList);
+
+		fsList.forEach(fs -> logger.info("sec=" + fs.getSecurityName() + ", tr size=" + fs.getTrades().size()));
+
 	}
 	
 	@Test

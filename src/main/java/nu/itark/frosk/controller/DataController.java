@@ -9,6 +9,7 @@ import nu.itark.frosk.dataset.DateManager;
 import nu.itark.frosk.dataset.IndicatorValue;
 import nu.itark.frosk.dataset.Trade;
 import nu.itark.frosk.model.StrategyTrade;
+import nu.itark.frosk.strategies.filter.StrategyFilter;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ public class DataController {
 
 	@Autowired
 	StrategyAnalysis strategyAnalysis;
+
+	@Autowired
+	StrategyFilter strategyFilter;
 
 	//  curl localhost:8080/actuator/health
 
@@ -204,32 +208,15 @@ public class DataController {
 	}
 
 	private List<Trade> getLongTrades() {
-		return convert(strategyAnalysis.getLongTradesAllStrategies());
+		return strategyFilter.getLongTradesAllStrategies();
 	}
 
 	private List<Trade> getShortTrades() {
-		return convert(strategyAnalysis.getShortTradesAllStrategies());
+		return strategyFilter.getShortTradesAllStrategies();
 	}
 
 	private  List<Trade> getTrades(String security, String strategy){
-		return convert(strategyAnalysis.getTrades(security,strategy));
+		return strategyFilter.getTrades(security,strategy);
 	}
-
-	private List<Trade> convert(List<StrategyTrade> tradeList) {
-		List<Trade> trades = new ArrayList<Trade>();
-		tradeList.forEach(trade -> {
-			Trade tradee = new Trade();
-			tradee.setId(trade.getId());
-			tradee.setDate(trade.getDate().toInstant().toEpochMilli());
-			tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd HH:mm:ss"));
-			tradee.setPrice(trade.getPrice().longValue());
-			tradee.setType(trade.getType());
-			tradee.setSecurityName(trade.getFeaturedStrategy().getSecurityName());
-			tradee.setStrategy(trade.getFeaturedStrategy().getName());
-			trades.add(tradee);
-		});
-		return trades;
-	}
-
 
 }

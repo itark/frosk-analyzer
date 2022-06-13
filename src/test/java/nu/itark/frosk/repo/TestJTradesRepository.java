@@ -28,4 +28,13 @@ public class TestJTradesRepository {
 	}
 
 
+	@Test
+	public final void testTrades() {
+		List<StrategyTrade> strategyTrade = tradesRepository.findTopByType(Order.OrderType.BUY.name());
+		for (StrategyTrade trade : strategyTrade) {
+			log.info("trade:"+ ReflectionToStringBuilder.toString(trade));
+		}
+	}
+
+
 }

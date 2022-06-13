@@ -1,6 +1,7 @@
 package nu.itark.frosk;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.strategies.filter.StrategyFilter;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -38,6 +39,9 @@ public class HighLander {
 	
 	@Autowired
 	StrategyAnalysis strategyAnalysis;
+
+	@Autowired
+	StrategyFilter strategyFilter;
 	
 	/**
 	 * Full setup, addition
@@ -105,7 +109,7 @@ public class HighLander {
 	}
 
 	private void printLongTrades() {
-		strategyAnalysis.getLongTradesAllStrategies().forEach(strategyTrade -> {
+		strategyFilter.getLongTradesAllStrategies().forEach(strategyTrade -> {
 			log.info("strategyTrade:"+ ReflectionToStringBuilder.toString(strategyTrade));
 		});
 	}

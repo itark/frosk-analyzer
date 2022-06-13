@@ -45,12 +45,10 @@ public class TestJEngulfingStrategy {
 
     @Test
     public final void run() throws Exception {
-
-		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");      
+		TimeSeries timeSeries = timeSeriesService.getDataSet("BTRST-EUR");
 		EngulfingStrategy strat = new EngulfingStrategy(timeSeries);
         
         Strategy strategy = strat.buildStrategy();
-//        strat.getIndicatorValues().size()
         TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Trade> trades = tradingRecord.getTrades();     
@@ -63,20 +61,6 @@ public class TestJEngulfingStrategy {
             Num closePriceBuy = barEntry.getClosePrice();
             Num closePriceSell = barExit.getClosePrice();
             Num profit = closePriceSell.minus(closePriceBuy);
-            
-//            if (trade.isOpened()) {
-//            	logger.info("isOpened():barEntry.getDateName()"+barEntry.getDateName());
-//            }
-//            
-//            if (trade.isNew()) {
-//            	logger.info("isNew():barEntry.getDateName()"+barEntry.getDateName());
-//            }
-//            
-//            if (trade.isClosed()) {
-//            	logger.info("isClose():barExit.getDateName()"+barExit.getDateName());
-//            } else {
-//            	logger.info("isNOTCLOSED():barEntry.getDateName()"+barEntry.getDateName());
-//            }
             
             logger.info("profit="+profit);
             
