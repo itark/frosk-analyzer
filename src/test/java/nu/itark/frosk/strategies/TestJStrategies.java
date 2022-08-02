@@ -1,5 +1,6 @@
 package nu.itark.frosk.strategies;
 
+import net.bytebuddy.asm.Advice;
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.service.TimeSeriesService;
@@ -10,11 +11,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.ta4j.core.*;
 import org.ta4j.core.analysis.criteria.*;
+import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
+import org.ta4j.core.num.PrecisionNum;
 
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @SpringBootTest(classes = {FroskApplication.class})
 public class TestJStrategies {
@@ -24,12 +28,14 @@ public class TestJStrategies {
 	@Autowired
 	TimeSeriesService timeSeriesService;
 
-	Formatter fmt = new Formatter();
+	Formatter fmt;
 
 	@BeforeEach
 	public void addFormat() {
-		fmt.format("%20s %15s %15s %15s %15s %15s\n","Strategy",
+		fmt = new Formatter();
+		fmt.format("%25s %15s %15s  %15s %15s %15s %15s\n","Strategy",
 													"Security",
+													"Open",
 													"Total profit",
 													"Number of bars",
 													"Number of trades",
@@ -38,7 +44,9 @@ public class TestJStrategies {
 
 	@Test
 	public void runAllSingleDataSet() {
+		List<ReturnObject> resultMap = new ArrayList<>();
 		String productId = "BTRST-EUR";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR, BTRST-EUR
+		addFormat();
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("SSAB-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("KINV-B.ST");
 //		TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
@@ -70,102 +78,115 @@ public class TestJStrategies {
 //		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
 //		run(cci.buildStrategy(),timeSeries);
 		
+/*
 		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
 		run(eng.buildStrategy(),timeSeries);
+*/
 
 //		HaramiStrategy harami = new HaramiStrategy(timeSeries);
 //		run(harami.buildStrategy(),timeSeries);	
 	
-//		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
-//		run(three.buildStrategy(),timeSeries);
+/*
+		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
+		resultMap.add(run(three.buildStrategy(),timeSeries));
 
-//		ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(timeSeries);
-//		run(cd.buildStrategy(),timeSeries);
+		ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(timeSeries);
+		resultMap.add(run(cd.buildStrategy(),timeSeries));
+*/
 
+		SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(timeSeries);
+		resultMap.add(run(simpleMa.buildStrategy(),timeSeries));
 
-//		SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(timeSeries);
-// 		run(simpleMa.buildStrategy(),timeSeries);
+		printResult(resultMap);
 
 	}
 
 	
 	@Test
 	public void runAllDataSetList() {
+		List<ReturnObject> resultMap = new ArrayList<>();
 		List<TimeSeries> timeSeriesList=   timeSeriesService.getDataSet();
 		timeSeriesList.forEach(ts -> {
 //			RSI2Strategy rsi = new RSI2Strategy(ts);
-//			run(rsi.buildStrategy(),ts);
-			
-//			ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(ts);
-//			run(three.buildStrategy(),ts);		
-			
-//			ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(ts);
-//			run(cd.buildStrategy(),ts);
+//			resultMap.add(run(rsi.buildStrategy(), ts));
+
+/*
+			ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(ts);
+			resultMap.add(run(three.buildStrategy(), ts));
+*/
+
+//			EngulfingStrategy eng = new EngulfingStrategy(ts);
+//			resultMap.add(run(eng.buildStrategy(), ts));
+
+/*
+			ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(ts);
+			resultMap.add(run(cd.buildStrategy(), ts));
+*/
 
 			SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(ts);
-			run(simpleMa.buildStrategy(),ts);
+			resultMap.add(run(simpleMa.buildStrategy(), ts));
 
-			
 		});
 
-	}	
+		printResult(resultMap);
+	}
 
-	void run(Strategy strategy, TimeSeries timeSeries) {
+	private void printResult(List<ReturnObject> resultMap) {
+		addFormat();
+		List<Num> totalProfitAcc= new ArrayList<>();
+		resultMap.forEach(ro -> {
+			TimeSeries timeSeries;
+			TradingRecord tradingRecord;
+			Strategy strategy;
+			if (Objects.nonNull(ro)) {
+				timeSeries = ro.seriesManager.getTimeSeries();
+				tradingRecord = ro.tradingRecord;
+				strategy = ro.strategy;
+				Num totalProfit = (new TotalProfitCriterion().calculate(timeSeries, tradingRecord));
+				totalProfitAcc.add(totalProfit);
+				fmt.format("%25s %14s %14s %14s %14s %14s %17s", strategy.getName().replace("Strategy", "")
+						,timeSeries.getName(),
+						tradingRecord.getCurrentTrade().isOpened() ? "X":"",
+						percent(totalProfit.doubleValue()),
+						new NumberOfBarsCriterion().calculate(timeSeries, tradingRecord),
+						new NumberOfTradesCriterion().calculate(timeSeries, tradingRecord),
+						percent(new AverageProfitableTradesCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+				System.out.println(fmt);
+				fmt = new Formatter();
+			}
+		});
+
+		Double averageProfit = totalProfitAcc.stream()
+				.map(p -> p.doubleValue())
+				.collect(Collectors.averagingDouble(Double::doubleValue));
+		System.out.println("Average on all TotalProfit:"+percent(averageProfit));
+	}
+
+	ReturnObject run(Strategy strategy, TimeSeries timeSeries) {
 		//logger.info("****** "+strategy.getName()+ ", "+timeSeries.getName()+" *******");
 		TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Trade> trades = tradingRecord.getTrades();
+		ReturnObject returnObject = new ReturnObject(strategy,seriesManager, tradingRecord);
 
-		if (trades.isEmpty()) return;
-
-		if (tradingRecord.getCurrentTrade().isOpened()) {
-			System.out.println(timeSeries.getName() + " IS OPEN!!!!");
-			Bar currentEntry = timeSeries.getBar(tradingRecord.getCurrentTrade().getEntry().getIndex());
-			System.out.println(timeSeries.getName() + "::currentEntry=" + currentEntry.getSimpleDateName());
+		if (trades.isEmpty()) {
+			return null;
 		}
 
-		for (Trade trade : trades) {
-			Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
-			Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
-			Num closePriceBuy = barEntry.getClosePrice();
-			Num closePriceSell = barExit.getClosePrice();
-			Num profit2 = closePriceSell.dividedBy(closePriceBuy);
-			//System.out.println("profit2(%)=" + percent(profit2.doubleValue()));
-		}
-
-		// Total profit
-        TotalProfitCriterion totalProfit = new TotalProfitCriterion();
-       // logger.info("********Total profit: " + percent(totalProfit.calculate(timeSeries, tradingRecord).doubleValue())+ "********");
-        
-        // Number of bars
-       // logger.info("Number of bars: " + new NumberOfBarsCriterion().calculate(timeSeries, tradingRecord));
-        // Average profit (per bar)
-//        logger.info("Average profit (per bar): " + percent(new AverageProfitCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
-        // Number of trades
-        //logger.info("Number of trades: " + new NumberOfTradesCriterion().calculate(timeSeries, tradingRecord));
-        // Profitable trades ratio
-        //logger.info("Profitable trades ratio: " + percent(new AverageProfitableTradesCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
-        // Maximum drawdown
-        //logger.info("Maximum drawdown: " + percent(new MaximumDrawdownCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
-        // Reward-risk ratio
-        //logger.info("Reward-risk ratio: " + new RewardRiskRatioCriterion().calculate(timeSeries, tradingRecord));
-        // Total transaction cost
-        //logger.info("Total transaction cost (from $1000): " + new LinearTransactionCostCriterion(1000, 0.005).calculate(timeSeries, tradingRecord));
-        // Buy-and-hold
-//        logger.info("Buy-and-hold: " + percent(new BuyAndHoldCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
-        // Total profit vs buy-and-hold
-        //logger.info("Custom strategy profit vs buy-and-hold strategy profit: " + percent(new VersusBuyAndHoldCriterion(totalProfit).calculate(timeSeries, tradingRecord).doubleValue()));
+		return returnObject;
+	}
 
 
-		fmt.format("%20s %14s %14s %14s %14s %17s\n", strategy.getName().replace("Strategy", "")
-											,timeSeries.getName(),
-											percent(totalProfit.calculate(timeSeries, tradingRecord).doubleValue()),
-											new NumberOfBarsCriterion().calculate(timeSeries, tradingRecord),
-											new NumberOfTradesCriterion().calculate(timeSeries, tradingRecord),
-											percent(new AverageProfitableTradesCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+	class ReturnObject {
+		Strategy strategy;
+		TimeSeriesManager seriesManager;
+		TradingRecord tradingRecord;
 
-		System.out.println(fmt);
-
+		public ReturnObject(Strategy strategy, TimeSeriesManager seriesManager, TradingRecord tradingRecord){
+			this.strategy = strategy;
+			this.seriesManager = seriesManager;
+			this.tradingRecord = tradingRecord;
+		};
 	}
 	
 	@Test
@@ -254,36 +275,44 @@ public class TestJStrategies {
 
 	}	
 	
-	
-	@Test
-	public void percent() {
-		double x = 1.0699432892249527;
-		
-		System.out.println("x="+x);
-		
-		 double xx = (x - 1 ); 
-		 
-		 System.out.println("xx="+xx);
-		 
-		 NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
-		
-		 String xxx = format.format(xx);
-		 
-		 System.out.println("xxx="+xxx);
-
-		System.out.println("yyy="+percent(x));
-
-
-		
-	}
-	
 	private String percent(double value) {
 		NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
 		format.setMinimumFractionDigits(1);
+		//double raw = (value > 1) : (value - 1): null;
+		double raw;
+		if (value > 1) {
+			raw = value -1;
+		} else {
+			raw = value;
+		}
 
-		double raw = (value - 1);
 
 		return format.format(raw);
 	}
-	
+
+
+	// logger.info("********Total profit: " + percent(totalProfit.calculate(timeSeries, tradingRecord).doubleValue())+ "********");
+
+	// Number of bars
+	// logger.info("Number of bars: " + new NumberOfBarsCriterion().calculate(timeSeries, tradingRecord));
+	// Average profit (per bar)
+//        logger.info("Average profit (per bar): " + percent(new AverageProfitCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+	// Number of trades
+	//logger.info("Number of trades: " + new NumberOfTradesCriterion().calculate(timeSeries, tradingRecord));
+	// Profitable trades ratio
+	//logger.info("Profitable trades ratio: " + percent(new AverageProfitableTradesCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+	// Maximum drawdown
+	//logger.info("Maximum drawdown: " + percent(new MaximumDrawdownCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+	// Reward-risk ratio
+	//logger.info("Reward-risk ratio: " + new RewardRiskRatioCriterion().calculate(timeSeries, tradingRecord));
+	// Total transaction cost
+	//logger.info("Total transaction cost (from $1000): " + new LinearTransactionCostCriterion(1000, 0.005).calculate(timeSeries, tradingRecord));
+	// Buy-and-hold
+//        logger.info("Buy-and-hold: " + percent(new BuyAndHoldCriterion().calculate(timeSeries, tradingRecord).doubleValue()));
+	// Total profit vs buy-and-hold
+	//logger.info("Custom strategy profit vs buy-and-hold strategy profit: " + percent(new VersusBuyAndHoldCriterion(totalProfit).calculate(timeSeries, tradingRecord).doubleValue()));
+
+
+
+
 }

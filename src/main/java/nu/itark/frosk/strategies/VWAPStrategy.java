@@ -67,11 +67,6 @@ public class VWAPStrategy implements IIndicatorValue {
                 .or(new StopLossRule(closePrice, 2))
                 .or(new StopGainRule(closePrice,2));
 
-/*
-		Rule exitRule = new UnderIndicatorRule(shortEma, longEma)
-				.or(new StopLossRule(closePrice, 2))
-				.or(new StopGainRule(closePrice,2));
-*/
         return new BaseStrategy("SimpleMovingMomentumStrategy", entryRule, exitRule);
     }
 

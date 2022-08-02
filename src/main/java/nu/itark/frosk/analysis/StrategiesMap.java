@@ -33,8 +33,11 @@ public class StrategiesMap {
 		strategies.put(haramisStrat.buildStrategy(), HaramiStrategy.class.getSimpleName());				
 		
 		ThreeBlackWhiteStrategy threeStrat = new ThreeBlackWhiteStrategy(series);
-		strategies.put(threeStrat.buildStrategy(), ThreeBlackWhiteStrategy.class.getSimpleName());			
-		
+		strategies.put(threeStrat.buildStrategy(), ThreeBlackWhiteStrategy.class.getSimpleName());
+
+		SimpleMovingMomentumStrategy simpleManStrat = new SimpleMovingMomentumStrategy(series);
+		strategies.put(simpleManStrat.buildStrategy(), SimpleMovingMomentumStrategy.class.getSimpleName());
+
 		return strategies;
 	}
 	

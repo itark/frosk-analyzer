@@ -22,21 +22,21 @@
  */
 package nu.itark.frosk.strategies;
 
-import lombok.SneakyThrows;
 import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TimeSeries;
 import org.ta4j.core.indicators.EMAIndicator;
-import org.ta4j.core.indicators.MACDIndicator;
-import org.ta4j.core.indicators.StochasticOscillatorKIndicator;
+import org.ta4j.core.indicators.ParabolicSarIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.num.PrecisionNum;
+import org.ta4j.core.trading.rules.IsFallingRule;
+import org.ta4j.core.trading.rules.IsRisingRule;
 import org.ta4j.core.trading.rules.OverIndicatorRule;
-import org.ta4j.core.trading.rules.UnderIndicatorRule;
+import org.ta4j.core.trading.rules.TrailingStopLossRule;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 
 public class SimpleMovingMomentumStrategy implements IIndicatorValue {
@@ -60,16 +60,16 @@ public class SimpleMovingMomentumStrategy implements IIndicatorValue {
         longEma = new EMAIndicator(closePrice, 20);
         setIndicatorValues(longEma, "longEma");
 
-        // Entry rule
-        Rule entryRule = new OverIndicatorRule(shortEma, longEma); // Trend
-        // Exit rule
-        Rule exitRule = new UnderIndicatorRule(shortEma, longEma); // Trend
+        ParabolicSarIndicator parabolicSarIndicator = new ParabolicSarIndicator(series);
+        IsRisingRule isRisingRule = new IsRisingRule(parabolicSarIndicator, 1);
+        IsFallingRule isFallingRule = new IsFallingRule(parabolicSarIndicator, 1);
 
-/*
-		Rule exitRule = new UnderIndicatorRule(shortEma, longEma)
-				.or(new StopLossRule(closePrice, 2))
-				.or(new StopGainRule(closePrice,2));
-*/
+        Rule entryRule = new OverIndicatorRule(shortEma, longEma) //Bullish trend
+                .and(isRisingRule);
+
+        Rule exitRule = isFallingRule
+               .or(new TrailingStopLossRule(closePrice, PrecisionNum.valueOf(2)));
+
         return new BaseStrategy("SimpleMovingMomentumStrategy", entryRule, exitRule);
     }
 
