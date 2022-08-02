@@ -23,12 +23,12 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.analysis.StrategiesMap;
-import nu.itark.frosk.service.TimeSeriesService;
+import nu.itark.frosk.service.BarSeriesService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
-import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
+import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -50,7 +50,7 @@ public class WalkForward {
 	
 	 
 	 @Autowired
-	 TimeSeriesService timeSeriesService;
+	 BarSeriesService timeSeriesService;
 	
 	
     /**
@@ -59,7 +59,7 @@ public class WalkForward {
      * @param splitDuration the duration between 2 splits
      * @return a list of begin indexes after split
      */
-    public static List<Integer> getSplitBeginIndexes(TimeSeries series, Duration splitDuration) {
+    public static List<Integer> getSplitBeginIndexes(BarSeries series, Duration splitDuration) {
         ArrayList<Integer> beginIndexes = new ArrayList<>();
 
         int beginIndex = series.getBeginIndex();
@@ -99,9 +99,9 @@ public class WalkForward {
      * @param series the time series to get a sub-series of
      * @param beginIndex the begin index (inclusive) of the time series
      * @param duration the duration of the time series
-     * @return a constrained {@link TimeSeries time series} which is a sub-set of the current series
+     * @return a constrained {@link BarSeries time series} which is a sub-set of the current series
      */
-    public static TimeSeries subseries(TimeSeries series, int beginIndex, Duration duration) {
+    public static BarSeries subseries(BarSeries series, int beginIndex, Duration duration) {
 
         // Calculating the sub-series interval
         ZonedDateTime beginInterval = series.getBar(beginIndex).getEndTime();
@@ -134,8 +134,8 @@ public class WalkForward {
      * @param sliceDuration the duration of each sub-series
      * @return a list of sub-series
      */
-    public static List<TimeSeries> splitSeries(TimeSeries series, Duration splitDuration, Duration sliceDuration) {
-        ArrayList<TimeSeries> subseries = new ArrayList<>();
+    public static List<BarSeries> splitSeries(BarSeries series, Duration splitDuration, Duration sliceDuration) {
+        ArrayList<BarSeries> subseries = new ArrayList<>();
         if (splitDuration != null && !splitDuration.isZero()
                 && sliceDuration != null && !sliceDuration.isZero()) {
 
@@ -150,23 +150,22 @@ public class WalkForward {
     @Test
     public final void run() throws Exception {
         // Splitting the series into slices
-    	TimeSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");      
+    	BarSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
         
 //        List<TimeSeries> subseries = splitSeries(timeSeries, Duration.ofHours(6), Duration.ofDays(7));
-        List<TimeSeries> subseries = splitSeries(timeSeries, Duration.ofDays(12), Duration.ofDays(30));
+        List<BarSeries> subseries = splitSeries(timeSeries, Duration.ofDays(12), Duration.ofDays(30));
 
-        
         
         // Building the map of strategies
         Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 
         // The analysis criterion
-        AnalysisCriterion profitCriterion = new TotalProfitCriterion();
+        AnalysisCriterion profitCriterion = new NetProfitCriterion();
 
-        for (TimeSeries slice : subseries) {
+        for (BarSeries slice : subseries) {
             // For each sub-series...
 //            System.out.println("Sub-series: " + slice.getSeriesPeriodDescription());
-            TimeSeriesManager sliceManager = new TimeSeriesManager(slice);
+            BarSeriesManager sliceManager = new BarSeriesManager(slice);
             for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
                 Strategy strategy = entry.getKey();
                 String name = entry.getValue();

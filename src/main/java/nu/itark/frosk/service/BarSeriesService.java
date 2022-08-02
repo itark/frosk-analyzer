@@ -17,22 +17,19 @@ import com.coinbase.exchange.model.Granularity;
 import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-import org.ta4j.core.BaseTimeSeries;
-import org.ta4j.core.TimeSeries;
-import org.ta4j.core.num.PrecisionNum;
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.BaseBarSeriesBuilder;
+import org.ta4j.core.num.DecimalNum;
 
-import nu.itark.frosk.coinbase.exchange.api.marketdata.HistoricRate;
-import nu.itark.frosk.crypto.coinbase.MarketDataProxy;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
-import nu.itark.frosk.util.DateTimeManager;
+import org.ta4j.core.num.DoubleNum;
 
 @Component
-public class TimeSeriesService  {
-	Logger logger = Logger.getLogger(TimeSeriesService.class.getName());
+public class BarSeriesService  {
+	Logger logger = Logger.getLogger(BarSeriesService.class.getName());
 	
 	@Autowired
 	SecurityPriceRepository securityPriceRepository;	
@@ -46,17 +43,17 @@ public class TimeSeriesService  {
 	/**
 	 * Retrive from {@linkplain SecurityPriceRepository}
 	 * 
-	 * @return List<TimeSeries> for alla securities in database
+	 * @return List<BarSeries> for alla securities in database
 	 */
-	public List<TimeSeries> getDataSet() {
+	public List<BarSeries> getDataSet() {
 		Iterable<Security> spList = securityRepository.findAll();  
-		List<TimeSeries> timeSeries = new ArrayList<TimeSeries>();
+		List<BarSeries> BarSeries = new ArrayList<BarSeries>();
 		
 		spList.forEach(sp -> {
-			timeSeries.add(getDataSet( getSecurityId(sp.getName())  ));
+			BarSeries.add(getDataSet( getSecurityId(sp.getName())  ));
 		});
 		
-		return timeSeries;
+		return BarSeries;
 		
 	}	
 
@@ -69,9 +66,9 @@ public class TimeSeriesService  {
 	 * Return TimesSeries bases on name in Security.
 	 * 
 	 * @param  {@linkplain Security}
-	 * @return TimeSeries
+	 * @return BarSeries
 	 */
-	public TimeSeries getDataSet(String securityName) {
+	public BarSeries getDataSet(String securityName) {
 		return  getDataSet( getSecurityId(securityName)  );
 	}
 	
@@ -79,16 +76,16 @@ public class TimeSeriesService  {
 	 * Return TimesSeries bases on id in Security.
 	 * 
 	 * @param security_id in {@linkplain Security}
-	 * @return TimeSeries
+	 * @return BarSeries
 	 */
-	public TimeSeries getDataSet(Long security_id) {
+	public BarSeries getDataSet(Long security_id) {
 		Optional<Security> security = securityRepository.findById(security_id);
 		//Sanity check
 		if (security == null){
 			throw new RuntimeException("Security is null");
 		}
 
-		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(security.get().getName()).withNumTypeOf(PrecisionNum.class).build();
+		BarSeries series = new BaseBarSeriesBuilder().withName(security.get().getName()).withNumTypeOf(DoubleNum.class).build();
 		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityIdOrderByTimestamp(security.get().getId()); 
 		
 		securityPrices.forEach(row -> {
@@ -107,10 +104,10 @@ public class TimeSeriesService  {
 	 * NOTE: start and end hardcoded,granularity set to fifteen minutes
 	 * 
 	 * @param productId 
-	 * @return TimeSeries
+	 * @return BarSeries
 	 */
-	public TimeSeries getDataSetFromCoinbase(String productId) {
-		TimeSeries series = new BaseTimeSeries.SeriesBuilder().withName(productId).withNumTypeOf(PrecisionNum.class).build();
+	public BarSeries getDataSetFromCoinbase(String productId) {
+		BarSeries series = new BaseBarSeriesBuilder().withName(productId).withNumTypeOf(DecimalNum.class).build();
 
 		//TODO ser över tiden
 		Instant startTime = Instant.now().minus(300, ChronoUnit.DAYS);

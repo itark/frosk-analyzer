@@ -7,11 +7,11 @@ import java.util.Map;
 
 import nu.itark.frosk.strategies.*;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 
 public class StrategiesMap {
 
-	public static Map<Strategy, String> buildStrategiesMap(TimeSeries series) {
+	public static Map<Strategy, String> buildStrategiesMap(BarSeries series) {
 		HashMap<Strategy, String> strategies = new HashMap<>();
 		RSI2Strategy rsiStrat = new RSI2Strategy(series);
 		strategies.put(rsiStrat.buildStrategy(), RSI2Strategy.class.getSimpleName());
@@ -52,6 +52,22 @@ public class StrategiesMap {
 		strategies.add(HaramiStrategy.class.getSimpleName());
 		strategies.add(ThreeBlackWhiteStrategy.class.getSimpleName());
 		return strategies;
-	}	
+	}
+
+	public static List<Strategy> getStrategies(BarSeries series) {
+		List<Strategy> strategies = new ArrayList<Strategy>();
+		strategies.add(new RSI2Strategy(series).buildStrategy());
+		strategies.add(new MovingMomentumStrategy(series).buildStrategy());
+		strategies.add(new SimpleMovingMomentumStrategy(series).buildStrategy());
+		strategies.add(new GlobalExtremaStrategy(series).buildStrategy());
+		strategies.add(new CCICorrectionStrategy(series).buildStrategy());
+		strategies.add(new EngulfingStrategy(series).buildStrategy());
+		strategies.add(new HaramiStrategy(series).buildStrategy());
+		strategies.add(new ThreeBlackWhiteStrategy(series).buildStrategy());
+		strategies.add(new ADXStrategy().buildStrategy(series));
+		return strategies;
+	}
+
+
 
 }

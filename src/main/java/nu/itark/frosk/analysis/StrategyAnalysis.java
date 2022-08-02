@@ -6,28 +6,23 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
-import org.ta4j.core.analysis.criteria.AverageProfitCriterion;
-import org.ta4j.core.analysis.criteria.AverageProfitableTradesCriterion;
-import org.ta4j.core.analysis.criteria.BuyAndHoldCriterion;
-import org.ta4j.core.analysis.criteria.LinearTransactionCostCriterion;
-import org.ta4j.core.analysis.criteria.MaximumDrawdownCriterion;
-import org.ta4j.core.analysis.criteria.NumberOfBarsCriterion;
-import org.ta4j.core.analysis.criteria.NumberOfTradesCriterion;
-import org.ta4j.core.analysis.criteria.RewardRiskRatioCriterion;
-import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
-import org.ta4j.core.analysis.criteria.VersusBuyAndHoldCriterion;
+import org.ta4j.core.analysis.criteria.*;
+
 
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
-import nu.itark.frosk.service.TimeSeriesService;
+import nu.itark.frosk.service.BarSeriesService;
+import org.ta4j.core.analysis.criteria.pnl.AverageProfitCriterion;
+import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
 
 /**
  * This class diplays analysis criterion values after running a trading strategy
@@ -38,7 +33,7 @@ public class StrategyAnalysis {
 	Logger logger = Logger.getLogger(StrategyAnalysis.class.getName());
 	
 	@Autowired
-	TimeSeriesService timeSeriesService;
+	BarSeriesService barSeriesService;
 	
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;
@@ -67,7 +62,7 @@ public class StrategyAnalysis {
 			List<String> strategies = StrategiesMap.buildStrategiesMap();
 			strategies.forEach(strategyName -> {
 				try {
-					runStrategy(strategyName, timeSeriesService.getDataSet());
+					runStrategy(strategyName, barSeriesService.getDataSet());
 				} catch (DataIntegrityViolationException e) {
 					logger.severe("Error runStrategy on strategyName="+ strategyName);
 					throw e;
@@ -77,22 +72,22 @@ public class StrategyAnalysis {
 		} 
 		else if (Objects.nonNull(strategy) && Objects.isNull(security_id)) {
 			try {
-				runStrategy(strategy, timeSeriesService.getDataSet());
+				runStrategy(strategy, barSeriesService.getDataSet());
 			} catch (Exception e) {
 				logger.severe("Error runStrategy on strategy="+ strategy);
 				throw e;
 			}
 		} 
 		else if (Objects.nonNull(strategy) && security_id != null) {
-			List<TimeSeries> timeSeriesList = new ArrayList<TimeSeries>();
-			TimeSeries timeSeries = timeSeriesService.getDataSet(security_id);
+			List<BarSeries> BarSeriesList = new ArrayList<BarSeries>();
+			BarSeries BarSeries = barSeriesService.getDataSet(security_id);
 			//Sanity check
-			if (Objects.isNull(timeSeries) || timeSeries.isEmpty()) {
-				throw new RuntimeException("Timeseries is null or empty. Download security prices.");
+			if (Objects.isNull(BarSeries) || BarSeries.isEmpty()) {
+				throw new RuntimeException("BarSeries is null or empty. Download security prices.");
 			}
-			timeSeriesList.add(timeSeries);
+			BarSeriesList.add(BarSeries);
 			try {
-				runStrategy(strategy, timeSeriesList);
+				runStrategy(strategy, BarSeriesList);
 			} catch (Exception e) {
 				logger.severe("Error runStrategy on strategy="+ strategy+ " and security_id="+security_id);
 				throw e;
@@ -104,20 +99,21 @@ public class StrategyAnalysis {
 		
 	}
 	
-	private void runStrategy(String strategy, List<TimeSeries> timeSeriesList) throws DataIntegrityViolationException{
+	private void runStrategy(String strategy, List<BarSeries> BarSeriesList) throws DataIntegrityViolationException{
 		FeaturedStrategy fs = null;
-		List<Trade> trades = null;
+		List<Position> positions = null;
         double totalProfit ;
         double totalProfitPercentage;
         Date latestTradeDate= null;
         Strategy strategyToRun = null;
         
-		for (TimeSeries series : timeSeriesList) {
+		for (BarSeries series : BarSeriesList) {
 			logger.info("runStrategy("+strategy+", "+series.getName()+")");
 			strategyToRun = getStrategyToRun(strategy, series);
-			TimeSeriesManager seriesManager = new TimeSeriesManager(series);
+			BarSeriesManager seriesManager = new BarSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
-			trades = tradingRecord.getTrades();
+			//positions = tradingRecord.getTrades();
+			positions = tradingRecord.getPositions();
 			if (series.getBarData().isEmpty()){
 				//abort
 				return;
@@ -125,27 +121,27 @@ public class StrategyAnalysis {
 			Set<StrategyTrade> strategyTradeList = new HashSet<StrategyTrade>();
 			StrategyTrade strategyTrade = null;
 
-			for (Trade trade : trades) {
+			for (Position trade : positions) {
 				Bar barEntry = series.getBar(trade.getEntry().getIndex());
 				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
 				String entryType = trade.getEntry().getType().name();
-				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getMinPrice().doubleValue()));
+				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getLowPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 
 				Bar barExit = series.getBar(trade.getExit().getIndex());
 				Date sellDate = Date.from(barExit.getEndTime().toInstant());
 				String exitType = trade.getExit().getType().name();
-				strategyTrade = new StrategyTrade(sellDate,exitType,BigDecimal.valueOf(barExit.getMinPrice().doubleValue()));
+				strategyTrade = new StrategyTrade(sellDate,exitType,BigDecimal.valueOf(barExit.getLowPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 				latestTradeDate = Date.from(barExit.getEndTime().toInstant());
 			}
 
 			//If open
-			if (tradingRecord.getCurrentTrade().isOpened()) {
-				Bar barEntry = series.getBar(tradingRecord.getCurrentTrade().getEntry().getIndex());
+			if (tradingRecord.getCurrentPosition().isOpened()) {
+				Bar barEntry = series.getBar(tradingRecord.getCurrentPosition().getEntry().getIndex());
 				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
-				String entryType = tradingRecord.getCurrentTrade().getEntry().getType().name();
-				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getMinPrice().doubleValue()));
+				String entryType = tradingRecord.getCurrentPosition().getEntry().getType().name();
+				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getLowPrice().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 				latestTradeDate = Date.from(barEntry.getEndTime().toInstant());
 			}
@@ -159,28 +155,30 @@ public class StrategyAnalysis {
 
 			fs.setPeriod(getPeriod(series));
 			fs.setLatestTrade(latestTradeDate);
-			totalProfit = new TotalProfitCriterion().calculate(series, tradingRecord).doubleValue();
+			totalProfit = new NetProfitCriterion().calculate(series, tradingRecord).doubleValue();
 			totalProfitPercentage = (totalProfit - 1) * 100;
 			fs.setTotalProfit(new BigDecimal(totalProfitPercentage).setScale(2, BigDecimal.ROUND_DOWN));
 			fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
 			double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
-			fs.setNumberofTrades(new BigDecimal(new NumberOfTradesCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
-			double profitableTradesRatio = new AverageProfitableTradesCriterion().calculate(series, tradingRecord).doubleValue();
+			fs.setNumberofTrades(new BigDecimal(new NumberOfPositionsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
+			double profitableTradesRatio = new WinningPositionsRatioCriterion().calculate(series, tradingRecord).doubleValue();
 			if (!Double.isNaN(profitableTradesRatio)) {
 				fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, BigDecimal.ROUND_DOWN));
 			}
 			double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, BigDecimal.ROUND_DOWN));
-			double rewardRiskRatio = new RewardRiskRatioCriterion().calculate(series, tradingRecord).doubleValue();
+/*
+			double rewardRiskRatio = new ValueAtRiskCriterion(2D).calculate(series, tradingRecord).doubleValue();
 			if (Double.isFinite(rewardRiskRatio)) {
 				fs.setRewardRiskRatio(new BigDecimal(rewardRiskRatio).setScale(2, BigDecimal.ROUND_DOWN));
 			}
-			double buyAndHold = new BuyAndHoldCriterion().calculate(series, tradingRecord).doubleValue();
+*/
+			double buyAndHold = new BuyAndHoldReturnCriterion().calculate(series, tradingRecord).doubleValue();
 			if (Double.isFinite(buyAndHold)) {
 				fs.setBuyAndHold(new BigDecimal(buyAndHold).setScale(2, BigDecimal.ROUND_DOWN));
 			}
-			double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new TotalProfitCriterion()).calculate(series, tradingRecord).doubleValue();
+			double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new NetProfitCriterion()).calculate(series, tradingRecord).doubleValue();
 
 			if (Double.isFinite(totalProfitVsButAndHold)) {
 				fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
@@ -204,7 +202,7 @@ public class StrategyAnalysis {
 		}
 	}
 
-	public List<IndicatorValue> getIndicatorValues(String strategy, TimeSeries series) {
+	public List<IndicatorValue> getIndicatorValues(String strategy, BarSeries series) {
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
 			return strategyReguested.getIndicatorValues();
@@ -238,7 +236,7 @@ public class StrategyAnalysis {
 
 	}
 	
-	public Strategy getStrategyToRun(String strategy,  TimeSeries series) {
+	public Strategy getStrategyToRun(String strategy,  BarSeries series) {
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			return new RSI2Strategy(series).buildStrategy();
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
@@ -262,7 +260,7 @@ public class StrategyAnalysis {
 
 	}
 	
-	private String getPeriod(TimeSeries series) {
+	private String getPeriod(BarSeries series) {
 	StringBuilder sb = new StringBuilder();
     if (!series.getBarData().isEmpty()) {
         Bar firstBar = series.getFirstBar();

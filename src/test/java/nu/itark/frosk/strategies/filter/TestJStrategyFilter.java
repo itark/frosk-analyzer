@@ -23,22 +23,14 @@
 package nu.itark.frosk.strategies.filter;
 
 import nu.itark.frosk.analysis.StrategiesMap;
-import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.dataset.Trade;
-import nu.itark.frosk.model.StrategyTrade;
-import nu.itark.frosk.service.TimeSeriesService;
-import nu.itark.frosk.strategies.RSI2Strategy;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.ta4j.core.*;
-import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
-import org.ta4j.core.num.Num;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 
 /**

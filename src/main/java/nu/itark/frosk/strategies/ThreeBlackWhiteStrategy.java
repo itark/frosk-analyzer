@@ -30,11 +30,11 @@ import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.candles.ThreeBlackCrowsIndicator;
 import org.ta4j.core.indicators.candles.ThreeWhiteSoldiersIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.trading.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.BooleanIndicatorRule;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
 
@@ -46,11 +46,11 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  */
 public class ThreeBlackWhiteStrategy implements IIndicatorValue {
 
-	TimeSeries series = null;
+	BarSeries series = null;
 	
 //	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();
 	   
-	public ThreeBlackWhiteStrategy(TimeSeries series) {
+	public ThreeBlackWhiteStrategy(BarSeries series) {
 		this.series = series;
 	}	
 	
@@ -76,11 +76,11 @@ public class ThreeBlackWhiteStrategy implements IIndicatorValue {
         return strategy;
     }
     
-    private void setIndicatorValues(ClosePriceIndicator indicator, TimeSeries series, String name) {
+    private void setIndicatorValues(ClosePriceIndicator indicator, BarSeries series, String name) {
 		IndicatorValue iv = null;
-		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
-			long value =  indicator.getTimeSeries().getBar(i).getClosePrice().longValue();
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			long value =  indicator.getBarSeries().getBar(i).getClosePrice().longValue();
 			iv = new IndicatorValue(date,value, name);
 			indicatorValues.add(iv);
 		}

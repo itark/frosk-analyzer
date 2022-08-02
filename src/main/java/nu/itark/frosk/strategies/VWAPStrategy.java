@@ -26,21 +26,21 @@ import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.volume.VWAPIndicator;
-import org.ta4j.core.trading.rules.*;
+import org.ta4j.core.rules.*;
 
 import java.util.List;
 
 
 public class VWAPStrategy implements IIndicatorValue {
-    TimeSeries series = null;
+    BarSeries series = null;
     EMAIndicator shortEma, longEma = null;
     VWAPIndicator vwap;
 
-    public VWAPStrategy(TimeSeries series) {
+    public VWAPStrategy(BarSeries series) {
         this.series = series;
     }
 

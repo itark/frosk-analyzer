@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>nu.itark.frosk</groupId>
 	<artifactId>frosk-analyzer</artifactId>
-	<version>0.0.9</version>
+	<version>0.1.0</version>
 
 	<name>frosk-analyzer</name>
 	<description>Frosk is the thing, holding backend and UI</description>
@@ -123,7 +123,7 @@
 		<dependency>
 		  <groupId>org.ta4j</groupId>
 		  <artifactId>ta4j-core</artifactId>
-		  <version>0.12</version>
+		  <version>0.14</version>
 		</dependency>
 
 	    <dependency>

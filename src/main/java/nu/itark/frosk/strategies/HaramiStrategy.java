@@ -25,10 +25,10 @@ package nu.itark.frosk.strategies;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.candles.BearishHaramiIndicator;
 import org.ta4j.core.indicators.candles.BullishHaramiIndicator;
-import org.ta4j.core.trading.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.BooleanIndicatorRule;
 
 /**
  * Bearish Harami pattern indicator.
@@ -38,9 +38,9 @@ import org.ta4j.core.trading.rules.BooleanIndicatorRule;
  */
 public class HaramiStrategy {
 
-	TimeSeries series = null;
+	BarSeries series = null;
 	   
-	public HaramiStrategy(TimeSeries series) {
+	public HaramiStrategy(BarSeries series) {
 		this.series = series;
 	}	
 	

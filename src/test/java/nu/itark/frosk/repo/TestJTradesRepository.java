@@ -7,7 +7,8 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.ta4j.core.Order;
+import org.ta4j.core.Trade;
+
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -21,7 +22,7 @@ public class TestJTradesRepository {
 	
 	@Test
 	public final void testOpenTrades() {
-		List<StrategyTrade> strategyTrade = tradesRepository.findTopByType(Order.OrderType.BUY.name());
+		List<StrategyTrade> strategyTrade = tradesRepository.findTopByType(Trade.TradeType.BUY.name());
 		for (StrategyTrade trade : strategyTrade) {
 			log.info("trade:"+ ReflectionToStringBuilder.toString(trade));
 		}
@@ -30,7 +31,7 @@ public class TestJTradesRepository {
 
 	@Test
 	public final void testTrades() {
-		List<StrategyTrade> strategyTrade = tradesRepository.findTopByType(Order.OrderType.BUY.name());
+		List<StrategyTrade> strategyTrade = tradesRepository.findTopByType(Trade.TradeType.BUY.name());
 		for (StrategyTrade trade : strategyTrade) {
 			log.info("trade:"+ ReflectionToStringBuilder.toString(trade));
 		}

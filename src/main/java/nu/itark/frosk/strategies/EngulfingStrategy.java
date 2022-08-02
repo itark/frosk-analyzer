@@ -27,13 +27,13 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.candles.BearishEngulfingIndicator;
 import org.ta4j.core.indicators.candles.BullishEngulfingIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.trading.rules.BooleanIndicatorRule;
-import org.ta4j.core.trading.rules.StopGainRule;
-import org.ta4j.core.trading.rules.StopLossRule;
+import org.ta4j.core.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.StopGainRule;
+import org.ta4j.core.rules.StopLossRule;
 
 import java.util.List;
 
@@ -42,9 +42,9 @@ import java.util.List;
  */
 public class EngulfingStrategy  {
 
-	TimeSeries series = null;
+	BarSeries series = null;
 	   
-	public EngulfingStrategy(TimeSeries series) {
+	public EngulfingStrategy(BarSeries series) {
 		this.series = series;
 	}	
 	

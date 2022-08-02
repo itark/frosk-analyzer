@@ -3,19 +3,19 @@ package nu.itark.frosk.strategies;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.ConvergenceDivergenceIndicator;
 import org.ta4j.core.indicators.helpers.ConvergenceDivergenceIndicator.ConvergenceDivergenceType;
 import org.ta4j.core.indicators.helpers.VolumeIndicator;
-import org.ta4j.core.trading.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.BooleanIndicatorRule;
 
 public class ConvergenceDivergenceStrategy {
 
 	
-	TimeSeries series = null;
+	BarSeries series = null;
 	   
-	public ConvergenceDivergenceStrategy(TimeSeries series) {
+	public ConvergenceDivergenceStrategy(BarSeries series) {
 		this.series = series;
 	}		
 

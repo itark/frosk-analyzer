@@ -2,7 +2,7 @@ package nu.itark.frosk.analysis;
 
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.model.StrategyTrade;
-import nu.itark.frosk.service.TimeSeriesService;
+import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.MovingMomentumStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
@@ -22,7 +22,7 @@ public class TestJStrategyAnalysis {
 	StrategyAnalysis strategyAnalysis;
 	
 	@Autowired
-	private TimeSeriesService ts;
+	private BarSeriesService ts;
 	
 
 	@Test

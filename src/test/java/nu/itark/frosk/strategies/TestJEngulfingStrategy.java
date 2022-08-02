@@ -23,12 +23,13 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.dataset.TestJYahooDataManager;
-import nu.itark.frosk.service.TimeSeriesService;
+import nu.itark.frosk.service.BarSeriesService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
-import org.ta4j.core.analysis.criteria.TotalProfitCriterion;
+import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
+import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
 import org.ta4j.core.num.Num;
 
 import java.util.List;
@@ -40,20 +41,19 @@ public class TestJEngulfingStrategy {
 	Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
 	 
 	 @Autowired
-	 TimeSeriesService timeSeriesService;
+	 BarSeriesService barSeriesService;
 	 
 
     @Test
     public final void run() throws Exception {
-		TimeSeries timeSeries = timeSeriesService.getDataSet("BTRST-EUR");
+		BarSeries timeSeries = barSeriesService.getDataSet("BTRST-EUR");
 		EngulfingStrategy strat = new EngulfingStrategy(timeSeries);
-        
         Strategy strategy = strat.buildStrategy();
-        TimeSeriesManager seriesManager = new TimeSeriesManager(timeSeries);
+        BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
-        List<Trade> trades = tradingRecord.getTrades();     
+        List<Position> positions = tradingRecord.getPositions();
      
-        for (Trade trade : trades) {
+        for (Position trade : positions) {
         	Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
         	logger.info(timeSeries.getName()+"::barEntry="+barEntry.getDateName());
         	Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
@@ -66,11 +66,11 @@ public class TestJEngulfingStrategy {
             
         }
         
-        logger.info("Number of trades for the strategy: " + tradingRecord.getTradeCount());
+        logger.info("Number of positions for the strategy: " + tradingRecord.getPositionCount());
 
         // Analysis
-        logger.info("Total profit for the strategy: " + new TotalProfitCriterion().calculate(timeSeries, tradingRecord));
-        double totalProfit = new TotalProfitCriterion().calculate(timeSeries, tradingRecord).doubleValue();
+        logger.info("Total profit for the strategy: " + new NetProfitCriterion().calculate(timeSeries, tradingRecord));
+        double totalProfit = new GrossReturnCriterion().calculate(timeSeries, tradingRecord).doubleValue();
         double totalProfitPercentage = (totalProfit - 1 ) *100;  //TODO minus
         logger.info("Total profit for the strategy (%): "+ totalProfitPercentage);
     }

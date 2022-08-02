@@ -147,10 +147,13 @@ public class COINBASEDataManager {
             } else {
                 startTime=  startTime.minus(300, ChronoUnit.DAYS);
             }
-            log.info("Retrieving history for " + security.getName() + " startTime " + startTime);
-            Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
-
-            candlesMap.put(security.getId(), candles.getCandleList());
+            log.info("Retrieving candles for " + security.getName() + " startTime " + startTime);
+            try {
+                Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
+                candlesMap.put(security.getId(), candles.getCandleList());
+            } catch (Exception e) {
+                log.error("Could not get candles for:"+security.getName()+", continue...");
+            }
         });
         return candlesMap;
     }

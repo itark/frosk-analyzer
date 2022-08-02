@@ -15,7 +15,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.analysis.StrategiesMap;
@@ -26,10 +26,9 @@ import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.TradesRepository;
-import nu.itark.frosk.service.TimeSeriesService;
+import nu.itark.frosk.service.BarSeriesService;
 
 @RestController
-//@RequestMapping("/frosk-analyzer")
 public class DataController {
 	Logger logger = Logger.getLogger(DataController.class.getName());
 
@@ -43,7 +42,7 @@ public class DataController {
 	DataSetRepository datasetRepository;		
 	
 	@Autowired
-	TimeSeriesService timeSeriesService;	
+	BarSeriesService timeSeriesService;	
 
 	@Autowired
 	StrategyAnalysis strategyAnalysis;
@@ -141,7 +140,7 @@ public class DataController {
 		logger.info("/dailyPrices...security=" + security);
 		DailyPrice dailyPrices = null;
 		List<DailyPrice> dpList = new ArrayList<DailyPrice>();
-		TimeSeries timeSeries = timeSeriesService.getDataSet(security);
+		BarSeries timeSeries = timeSeriesService.getDataSet(security);
 		for (int i = 0; i < timeSeries.getBarCount(); i++) {
 			Bar bar = timeSeries.getBar(i);
 			dailyPrices = new DailyPrice(bar);
@@ -170,7 +169,7 @@ public class DataController {
 	@RequestMapping(path="/indicatorValues", method=RequestMethod.GET)
 	public List<IndicatorValue> getIndicatorValues(@RequestParam("security") String security, @RequestParam("strategy") String strategy){
 		logger.info("/indicatorValues?security="+security+"&strategy="+strategy);
-		TimeSeries timeSeries = timeSeriesService.getDataSet(security);
+		BarSeries timeSeries = timeSeriesService.getDataSet(security);
 		strategyAnalysis.run(strategy, timeSeriesService.getSecurityId(security));
 		List<IndicatorValue> indicatorsValues = strategyAnalysis.getIndicatorValues(strategy, timeSeries);
 
