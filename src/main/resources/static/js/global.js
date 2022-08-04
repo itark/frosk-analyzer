@@ -17,7 +17,7 @@ function renderTable(dataset, divId) {
 	    	destroy: true,
 	    	"sAjaxSource": "featuredStrategies/"+strategy+"/"+dataset,
 			"sAjaxDataProp": "",
-			"order": [[ 0, "desc" ]],
+			"order": [[ 2, "desc" ]],
 			"aoColumns": [
 				  { "mData": "name"},
 				  { "mData": "securityName"},

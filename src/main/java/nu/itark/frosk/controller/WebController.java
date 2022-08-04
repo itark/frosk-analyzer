@@ -60,6 +60,11 @@ public class WebController {
 		return "ma";	
 	}
 
+	@GetMapping({"/sma"})
+	public String sma(Map<String, Object> model) {
+		return "sma";
+	}
+
 	@GetMapping({"/engulfing"})
 	public String engulfing(Map<String, Object> model) {
 		return "engulfing";

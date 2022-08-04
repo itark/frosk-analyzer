@@ -32,13 +32,9 @@ import org.ta4j.core.indicators.ParabolicSarIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.DoubleNum;
-import org.ta4j.core.rules.IsFallingRule;
-import org.ta4j.core.rules.IsRisingRule;
-import org.ta4j.core.rules.OverIndicatorRule;
-import org.ta4j.core.rules.TrailingStopLossRule;
+import org.ta4j.core.rules.*;
 
 import java.util.List;
-
 
 public class SimpleMovingMomentumStrategy implements IIndicatorValue {
     BarSeries series = null;
@@ -54,21 +50,18 @@ public class SimpleMovingMomentumStrategy implements IIndicatorValue {
         }
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-
         shortEma = new EMAIndicator(closePrice, 10);
-
-        longEma = new EMAIndicator(closePrice, 50);
-
-
+        longEma = new EMAIndicator(closePrice, 20);
         ParabolicSarIndicator parabolicSarIndicator = new ParabolicSarIndicator(series);
         IsRisingRule isRisingRule = new IsRisingRule(parabolicSarIndicator, 1);
         IsFallingRule isFallingRule = new IsFallingRule(parabolicSarIndicator, 1);
 
-        Rule entryRule = new OverIndicatorRule(shortEma, longEma) //Bullish trend
+        Rule entryRule = new OverIndicatorRule(shortEma, longEma)
                 .and(isRisingRule);
 
         Rule exitRule = isFallingRule
-              .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(3)));
+             //  .or(new StopGainRule(closePrice, DoubleNum.valueOf(3)));
+              .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
 
 /*
         //For ui

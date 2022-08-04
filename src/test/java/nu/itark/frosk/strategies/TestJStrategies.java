@@ -13,6 +13,7 @@ import org.ta4j.core.analysis.criteria.pnl.GrossProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
 import org.ta4j.core.analysis.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.num.NaN;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.reports.TradingStatement;
 
@@ -50,7 +51,7 @@ public class TestJStrategies {
 	@Test
 	public void runAllSingleDataSet() {
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "BTC-EUR";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR, BTRST-EUR
+		String productId = "BTC-EUR";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR, BTRST-EUR, SPELL-USDT
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId);
 
@@ -94,20 +95,19 @@ public class TestJStrategies {
 		resultMap.add(run(cd.buildStrategy(),timeSeries));
 */
 
-/*
 		SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(timeSeries);
 		resultMap.add(run(simpleMa.buildStrategy(),timeSeries));
-*/
 
+/*
 		ADXStrategy adx = new ADXStrategy();
 		resultMap.add(run(adx.buildStrategy(timeSeries),timeSeries));
+*/
 
 
 		printResult(resultMap);
 
 	}
 
-	
 	@Test
 	public void runAllDataSetList() {
 		List<ReturnObject> resultMap = new ArrayList<>();
@@ -129,18 +129,15 @@ public class TestJStrategies {
 			resultMap.add(run(cd.buildStrategy(), ts));
 */
 
-/*
 			SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(ts);
 			resultMap.add(run(simpleMa.buildStrategy(), ts));
-*/
 
+/*
 			ADXStrategy adx = new ADXStrategy();
 			resultMap.add(run(adx.buildStrategy(ts), ts));
-
-
+*/
 
 		});
-
 		printResult(resultMap);
 
 	}
@@ -159,18 +156,16 @@ public class TestJStrategies {
 		Bar barExit = series.getBar(position.getExit().getIndex());
 		System.out.println(series.getName()+"::barExit="+barExit.getDateName());
 		System.out.println(series.getName()+"::barExit.getClosePrice="+ barExit.getClosePrice());
-		double delta = barExit.getClosePrice().minus(barEntry.getClosePrice()).doubleValue();
-		System.out.println("delta(position): " + delta);
 		System.out.println("Gross return(position): " + position.getGrossReturn());
 		System.out.println("Gross profit(position): " + position.getGrossProfit());
 	}
 
 	// Total return Xtra
 	GrossProfitCriterion totalprofit = new GrossProfitCriterion();
-        System.out.println("Total profit: " + percent(totalprofit.calculate(series, tradingRecord).doubleValue()));
+        System.out.println("Total profit: " + totalprofit.calculate(series, tradingRecord).doubleValue());
 	// Total profit
 	GrossReturnCriterion totalReturn = new GrossReturnCriterion();
-        System.out.println("Total return: " + percent(totalReturn.calculate(series, tradingRecord).doubleValue()));
+        System.out.println("Total return: " + totalReturn.calculate(series, tradingRecord).doubleValue());
 	// Number of bars
         System.out.println("Number of bars: " + new NumberOfBarsCriterion().calculate(series, tradingRecord));
 	// Average profit (per bar)
@@ -197,12 +192,13 @@ public class TestJStrategies {
 }
 
 
-
-
 	private void printResult(List<ReturnObject> resultMap) {
+		List<ReturnObject> resultMapOrdered = resultMap.stream()
+				.sorted(Comparator.nullsLast(Comparator.comparing(ReturnObject::getSecurityName)))
+				.collect(Collectors.toList());
 		addFormat();
 		List<Num> totalProfitAcc= new ArrayList<>();
-		resultMap.forEach(ro -> {
+		resultMapOrdered.forEach(ro -> {
 			BarSeries barSeries;
 			TradingRecord tradingRecord;
 			Strategy strategy;
@@ -210,14 +206,17 @@ public class TestJStrategies {
 				barSeries = ro.seriesManager.getBarSeries();
 				tradingRecord = ro.tradingRecord;
 				strategy = ro.strategy;
-				Num totalProfit = (new GrossReturnCriterion().calculate(barSeries, tradingRecord));
-				totalProfitAcc.add(totalProfit);
+				//Num totalProfit = (new GrossReturnCriterion().calculate(barSeries, tradingRecord));
+				Num totalProfit = (new ProfitLossPercentageCriterion().calculate(barSeries, tradingRecord));
+				if (!totalProfit.isNaN()) {
+					totalProfitAcc.add(totalProfit);
+				}
 				fmt.format("%-25s %-15s %-15s %-15s %-15s %-15s %-15s %-20s %-30s", strategy.getName().replace("Strategy", "")
 						,barSeries.getName(),
 						barSeries.getFirstBar().getBeginTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
 						barSeries.getLastBar().getEndTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
 						tradingRecord.getCurrentPosition().isOpened() ? getDateByIndex(barSeries, tradingRecord.getCurrentPosition().getEntry().getIndex()) : "",
-						percent(totalProfit.doubleValue()),
+						totalProfit,
 						new NumberOfBarsCriterion().calculate(barSeries, tradingRecord),
 						new NumberOfPositionsCriterion().calculate(barSeries, tradingRecord),
 						percent(new WinningPositionsRatioCriterion().calculate(barSeries, tradingRecord).doubleValue()));
@@ -229,16 +228,10 @@ public class TestJStrategies {
 		Double averageProfit = totalProfitAcc.stream()
 				.map(p -> p.doubleValue())
 				.collect(Collectors.averagingDouble(Double::doubleValue));
-		System.out.println("Average on all TotalProfit:"+percent(averageProfit));
+		System.out.println("Average on all TotalProfit:"+averageProfit);
 	}
-
-	private String getDateByIndex(BarSeries barSeries, int idx) {
-		return barSeries.getBar(idx).getBeginTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-	}
-
 
 	ReturnObject run(Strategy strategy, BarSeries timeSeries) {
-		//logger.info("****** "+strategy.getName()+ ", "+timeSeries.getName()+" *******");
 		BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Position> trades = tradingRecord.getPositions();
@@ -251,12 +244,9 @@ public class TestJStrategies {
 		return returnObject;
 	}
 
-
-
-	
 	@Test
 	public void chooseBestForSecurity() {
-		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR");
+		BarSeries timeSeries = barSeriesService.getDataSet("DIA-EUR");
 		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 		// The analysis criterion
 		AnalysisCriterion profitCriterion = new GrossReturnCriterion();
@@ -277,25 +267,24 @@ public class TestJStrategies {
 
 	@Test
 	public void chooseBestForSecurity2() {
-		BarSeries barSeries = barSeriesService.getDataSet("BTC-EUR");
-		//Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(barSeries);
+		BarSeries barSeries = barSeriesService.getDataSet("ETC-EUR");
 		List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
-		// The analysis criterion
 		AnalysisCriterion profitCriterion = new GrossReturnCriterion();
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
-
 		BacktestExecutor backtestExecutor = new BacktestExecutor(barSeries);
 		final List<TradingStatement> tradingStatements = backtestExecutor.execute(strategies, DoubleNum.valueOf(50), Trade.TradeType.BUY);
 
 		for (TradingStatement tradingStatement : tradingStatements) {
-			System.out.println("******* Strategy: "+tradingStatement.getStrategy().getName()+" ********");
-			System.out.println(tradingStatement.getPerformanceReport().getTotalProfitLossPercentage().getDelegate());
+			System.out.println(tradingStatement.getStrategy().getName() +":"+ tradingStatement.getPerformanceReport().getTotalProfitLossPercentage().getDelegate() + "%");
 		}
+
+		Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
+		System.out.println("\t\t--> Best strategy: " + bestStrategy.getName() + "\n");
+
 
 	}
 
-	//TODO review
-	//@Test
+	@Test
 	public void chooseBestForAllSecurities() {
 		double highestProfitProfit = 0;
 		String highestProfitNameProfit = "";
@@ -363,16 +352,31 @@ public class TestJStrategies {
 		return format.format(raw);
 	}
 
+
+	private String percent(Num n) {
+		return !n.isNaN() ? percent(n.doubleValue()) : "N_a_N";
+	}
+
+	private String getDateByIndex(BarSeries barSeries, int idx) {
+		return barSeries.getBar(idx).getBeginTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+	}
+
 	class ReturnObject {
 		Strategy strategy;
 		BarSeriesManager seriesManager;
 		TradingRecord tradingRecord;
+		String securityName = null;
 
 		public ReturnObject(Strategy strategy, BarSeriesManager seriesManager, TradingRecord tradingRecord){
 			this.strategy = strategy;
 			this.seriesManager = seriesManager;
 			this.tradingRecord = tradingRecord;
+			this.securityName = seriesManager.getBarSeries().getName();
 		};
+
+		public String getSecurityName() {
+			return securityName;
+		}
 	}
 
 }

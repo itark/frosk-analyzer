@@ -52,6 +52,7 @@ canvas {
 	        <li class="dropdown">
 	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Strategies <span class="caret"></span></a>
 	          <ul class="dropdown-menu">
+	          	<li><a href="sma">Simple Moving Momentum</a></li>
 	            <li><a href="ma">Moving Momentum</a></li>
 	            <li><a href="rsi">Relative Strenght Index-2</a></li>
 	            <li><a href="engulfing">Engulfing</a></li>

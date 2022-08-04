@@ -1,10 +1,11 @@
-package nu.itark.frosk.crypto.coinbase;
+package nu.itark.frosk.repo.coinbase;
 
 import com.coinbase.exchange.model.Candles;
 import com.coinbase.exchange.model.Granularity;
 import com.coinbase.exchange.model.Product;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
+import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.junit.jupiter.api.Test;

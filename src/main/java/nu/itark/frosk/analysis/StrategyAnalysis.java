@@ -22,6 +22,7 @@ import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import org.ta4j.core.analysis.criteria.pnl.AverageProfitCriterion;
+import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
 import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
 
 /**
@@ -155,9 +156,9 @@ public class StrategyAnalysis {
 
 			fs.setPeriod(getPeriod(series));
 			fs.setLatestTrade(latestTradeDate);
-			totalProfit = new NetProfitCriterion().calculate(series, tradingRecord).doubleValue();
-			totalProfitPercentage = (totalProfit - 1) * 100;
-			fs.setTotalProfit(new BigDecimal(totalProfitPercentage).setScale(2, BigDecimal.ROUND_DOWN));
+			totalProfit = new GrossReturnCriterion().calculate(series, tradingRecord).doubleValue();
+			//totalProfitPercentage = (totalProfit - 1) * 100;
+			fs.setTotalProfit(new BigDecimal(totalProfit).setScale(2, BigDecimal.ROUND_DOWN));
 			fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
 			double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));

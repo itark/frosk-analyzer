@@ -1,12 +1,15 @@
 package nu.itark.frosk.analysis;
 
 import nu.itark.frosk.FroskApplication;
+import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
+import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.MovingMomentumStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,15 +26,20 @@ public class TestJStrategyAnalysis {
 	
 	@Autowired
 	private BarSeriesService ts;
+
+	@Autowired
+	FeaturedStrategyRepository featuredStrategyRepository;
 	
 
 	@Test
 	public final void runSMM() {
-		Long sec_id = ts.getSecurityId("BTRST-EUR"); //"BTRST-EUR","BTC-EUR"
+		Long sec_id = ts.getSecurityId("DIA-EUR"); //"BTRST-EUR","BTC-EUR"
 		strategyAnalysis.run(SimpleMovingMomentumStrategy.class.getSimpleName(), sec_id);
 
-//		list.forEach(dto -> logger.info("dto="+ReflectionToStringBuilder.toString(dto)));
-		
+		//Verify
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(SimpleMovingMomentumStrategy.class.getSimpleName(), "DIA-EUR");
+		logger.info("fs="+ReflectionToStringBuilder.toString(fs, ToStringStyle.MULTI_LINE_STYLE));
+
 	}	
 	
 	@Test

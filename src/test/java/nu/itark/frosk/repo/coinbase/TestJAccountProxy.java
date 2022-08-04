@@ -1,4 +1,4 @@
-package nu.itark.frosk.crypto.coinbase;
+package nu.itark.frosk.repo.coinbase;
 
 import com.coinbase.exchange.api.accounts.Account;
 import com.coinbase.exchange.model.Candles;
@@ -6,6 +6,7 @@ import com.coinbase.exchange.model.Granularity;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
+import nu.itark.frosk.crypto.coinbase.AccountProxy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.junit.jupiter.api.Test;

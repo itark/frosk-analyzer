@@ -65,6 +65,7 @@ public class DataController {
 		logger.info("strategy="+strategy+", dataset="+dataset);
 		List<FeaturedStrategyDTO> returnList = new ArrayList<>();
 
+
 		DataSet datasetet = datasetRepository.findByName(dataset);
 		if(Objects.isNull(datasetet)){
 			logger.log(Level.WARNING, "Kunde inte hitta Dataset för :"+dataset+ " kolla ditt data.");

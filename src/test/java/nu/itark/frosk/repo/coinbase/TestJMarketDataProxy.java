@@ -1,4 +1,4 @@
-package nu.itark.frosk.crypto.coinbase;
+package nu.itark.frosk.repo.coinbase;
 
 import java.util.List;
 
@@ -10,6 +10,7 @@ import com.coinbase.exchange.api.products.ProductService;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
 import nu.itark.frosk.coinbase.exchange.api.marketdata.HistoricRate;
+import nu.itark.frosk.crypto.coinbase.MarketDataProxy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package nu.itark.frosk.crypto.coinbase;
+package nu.itark.frosk.repo.coinbase;
 
 import java.io.IOException;
 
