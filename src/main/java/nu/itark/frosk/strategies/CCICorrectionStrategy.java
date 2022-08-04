@@ -27,11 +27,11 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.CCIIndicator;
 import org.ta4j.core.num.Num;
-import org.ta4j.core.trading.rules.OverIndicatorRule;
-import org.ta4j.core.trading.rules.UnderIndicatorRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -44,9 +44,9 @@ import java.util.List;
  */
 public class CCICorrectionStrategy implements IIndicatorValue {
 
-	TimeSeries series = null;
+	BarSeries series = null;
 	   
-	public CCICorrectionStrategy(TimeSeries series) {
+	public CCICorrectionStrategy(BarSeries series) {
 		this.series = series;
 	}	
 	
@@ -78,10 +78,10 @@ public class CCICorrectionStrategy implements IIndicatorValue {
         return strategy;
     }
 
-    private void setIndicatorValues(CCIIndicator indicator, TimeSeries series, String name) {
+    private void setIndicatorValues(CCIIndicator indicator, BarSeries series, String name) {
         IndicatorValue iv = null;
-        for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-            long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+        for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+            long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
             long value =  indicator.getValue(i).longValue();
             iv = new IndicatorValue(date,value, name);
             indicatorValues.add(iv);

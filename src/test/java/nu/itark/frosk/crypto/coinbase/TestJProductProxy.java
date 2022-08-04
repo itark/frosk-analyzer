@@ -1,22 +1,12 @@
 package nu.itark.frosk.crypto.coinbase;
 
-import com.coinbase.exchange.api.marketdata.MarketData;
-import com.coinbase.exchange.api.marketdata.MarketDataService;
-import com.coinbase.exchange.api.marketdata.OrderItem;
-import com.coinbase.exchange.api.marketdata.Trade;
-import com.coinbase.exchange.api.products.ProductService;
 import com.coinbase.exchange.model.Candles;
 import com.coinbase.exchange.model.Granularity;
 import com.coinbase.exchange.model.Product;
-import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.changedetection.LimitOrderImbalance;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
-import nu.itark.frosk.strategies.stats.ADF;
-import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +17,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @Import({IntegrationTestConfiguration.class})

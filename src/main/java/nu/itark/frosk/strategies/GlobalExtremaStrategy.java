@@ -23,21 +23,15 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.dataset.IndicatorValue;
-import nu.itark.frosk.model.StrategyIndicatorValue;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
-import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.indicators.helpers.HighestValueIndicator;
-import org.ta4j.core.indicators.helpers.LowestValueIndicator;
-import org.ta4j.core.indicators.helpers.MaxPriceIndicator;
-import org.ta4j.core.indicators.helpers.MinPriceIndicator;
-import org.ta4j.core.indicators.helpers.MultiplierIndicator;
-import org.ta4j.core.trading.rules.OverIndicatorRule;
-import org.ta4j.core.trading.rules.StopGainRule;
-import org.ta4j.core.trading.rules.StopLossRule;
-import org.ta4j.core.trading.rules.UnderIndicatorRule;
+import org.ta4j.core.indicators.helpers.*;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.StopGainRule;
+import org.ta4j.core.rules.StopLossRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.util.List;
 
@@ -49,14 +43,13 @@ public class GlobalExtremaStrategy implements IIndicatorValue {
     // We assume that there were at least one trade every 5 minutes during the whole week
     private static final int NB_TICKS_PER_WEEK = 12 * 24 * 7;
 
-	TimeSeries series = null;
+	BarSeries series = null;
    
-	public GlobalExtremaStrategy(TimeSeries series) {
+	public GlobalExtremaStrategy(BarSeries series) {
 		this.series = series;
 	}	
     
     /**
-     * @param series a time series
      * @return a global extrema strategy
      */
     public Strategy buildStrategy() {
@@ -67,18 +60,18 @@ public class GlobalExtremaStrategy implements IIndicatorValue {
         ClosePriceIndicator closePrices = new ClosePriceIndicator(series);
 
         // Getting the max price over the past week
-        MaxPriceIndicator maxPrices = new MaxPriceIndicator(series);
+        HighPriceIndicator maxPrices = new HighPriceIndicator(series);
         HighestValueIndicator weekMaxPrice = new HighestValueIndicator(maxPrices, NB_TICKS_PER_WEEK);
         // Getting the min price over the past week
-        MinPriceIndicator minPrices = new MinPriceIndicator(series);
+        LowPriceIndicator minPrices = new LowPriceIndicator(series);
         LowestValueIndicator weekMinPrice = new LowestValueIndicator(minPrices, NB_TICKS_PER_WEEK);
 
         // Going long if the close price goes below the min price
-        MultiplierIndicator downWeek = new MultiplierIndicator(weekMinPrice, 1.004);
+        TransformIndicator downWeek = TransformIndicator.plus(weekMinPrice, 1.004);
         Rule buyingRule = new UnderIndicatorRule(closePrices, downWeek);
 
         // Going short if the close price goes above the max price
-        MultiplierIndicator upWeek = new MultiplierIndicator(weekMaxPrice, 0.996);
+        TransformIndicator upWeek = TransformIndicator.plus(weekMaxPrice, 0.996);
 
         Rule sellingRule = new OverIndicatorRule(closePrices, upWeek);
 
@@ -93,18 +86,18 @@ public class GlobalExtremaStrategy implements IIndicatorValue {
         ClosePriceIndicator closePrices = new ClosePriceIndicator(series);
 
         // Getting the max price over the past week
-        MaxPriceIndicator maxPrices = new MaxPriceIndicator(series);
+        HighPriceIndicator maxPrices = new HighPriceIndicator(series);
         HighestValueIndicator weekMaxPrice = new HighestValueIndicator(maxPrices, NB_TICKS_PER_WEEK);
         // Getting the min price over the past week
-        MinPriceIndicator minPrices = new MinPriceIndicator(series);
+        LowPriceIndicator minPrices = new LowPriceIndicator(series);
         LowestValueIndicator weekMinPrice = new LowestValueIndicator(minPrices, NB_TICKS_PER_WEEK);
 
         // Going long if the close price goes below the min price
-        MultiplierIndicator downWeek = new MultiplierIndicator(weekMinPrice, 1.004);
+        TransformIndicator downWeek = TransformIndicator.plus(weekMinPrice, 1.004);
         Rule buyingRule = new UnderIndicatorRule(closePrices, downWeek);
 
         // Going short if the close price goes above the max price
-        MultiplierIndicator upWeek = new MultiplierIndicator(weekMaxPrice, 0.996);
+        TransformIndicator upWeek = TransformIndicator.plus(weekMaxPrice, 0.996);
 
         Rule sellingRule = new OverIndicatorRule(closePrices, upWeek)
         		.or(new StopLossRule(  closePrices, series.numOf(lossPercentage)));
@@ -120,18 +113,18 @@ public class GlobalExtremaStrategy implements IIndicatorValue {
         ClosePriceIndicator closePrices = new ClosePriceIndicator(series);
 
         // Getting the max price over the past week
-        MaxPriceIndicator maxPrices = new MaxPriceIndicator(series);
+        HighPriceIndicator maxPrices = new HighPriceIndicator(series);
         HighestValueIndicator weekMaxPrice = new HighestValueIndicator(maxPrices, NB_TICKS_PER_WEEK);
         // Getting the min price over the past week
-        MinPriceIndicator minPrices = new MinPriceIndicator(series);
+        LowPriceIndicator minPrices = new LowPriceIndicator(series);
         LowestValueIndicator weekMinPrice = new LowestValueIndicator(minPrices, NB_TICKS_PER_WEEK);
 
         // Going long if the close price goes below the min price
-        MultiplierIndicator downWeek = new MultiplierIndicator(weekMinPrice, 1.004);
+        TransformIndicator downWeek = TransformIndicator.plus(weekMinPrice, 1.004);
         Rule buyingRule = new UnderIndicatorRule(closePrices, downWeek);
 
         // Going short if the close price goes above the max price
-        MultiplierIndicator upWeek = new MultiplierIndicator(weekMaxPrice, 0.996);
+        TransformIndicator upWeek = TransformIndicator.plus(weekMaxPrice, 0.996);
 
         Rule sellingRule = new OverIndicatorRule(closePrices, upWeek)
         		.or(new StopLossRule( closePrices, series.numOf(lossPercentage)))

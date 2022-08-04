@@ -8,7 +8,6 @@ import nu.itark.frosk.repo.TradesRepository;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.ta4j.core.Order;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,22 +24,22 @@ public class StrategyFilter {
 
     public List<Trade> getLongTradesAllStrategies(String strategyName) {
         List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(strategyName);
-        return convert(getTradesForStrategies(fsList, Order.OrderType.BUY));
+        return convert(getTradesForStrategies(fsList, org.ta4j.core.Trade.TradeType.BUY));
     }
 
     public List<Trade> getShortTrades(String strategyName) {
         List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(strategyName);
-        return convert(getTradesForStrategies(fsList, Order.OrderType.SELL));
+        return convert(getTradesForStrategies(fsList, org.ta4j.core.Trade.TradeType.SELL));
     }
 
     public List<Trade> getLongTradesAllStrategies() {
         List<FeaturedStrategy> fsList = featuredStrategyRepository.findAll();
-        return convert(getTradesForStrategies(fsList, Order.OrderType.BUY));
+        return convert(getTradesForStrategies(fsList, org.ta4j.core.Trade.TradeType.BUY));
     }
 
     public List<Trade> getShortTradesAllStrategies() {
         List<FeaturedStrategy> fsList = featuredStrategyRepository.findAll();
-        return convert(getTradesForStrategies(fsList, Order.OrderType.SELL));
+        return convert(getTradesForStrategies(fsList, org.ta4j.core.Trade.TradeType.SELL));
     }
 
     public List<Trade> getTrades(String security, String strategy){
@@ -48,7 +47,7 @@ public class StrategyFilter {
         return convert(tradesRepository.findByFeaturedStrategy(fs));
     }
 
-    private List<StrategyTrade> getTradesForStrategies(List<FeaturedStrategy> fsList, Order.OrderType orderType) {
+    private List<StrategyTrade> getTradesForStrategies(List<FeaturedStrategy> fsList, org.ta4j.core.Trade.TradeType orderType) {
         List<StrategyTrade> strategyTradeListList = new ArrayList<>();
         fsList.forEach(featuredStrategy -> {
             final List<StrategyTrade> byFeaturedStrategy = tradesRepository.findByFeaturedStrategy(featuredStrategy);

@@ -7,8 +7,6 @@ import com.coinbase.exchange.security.Signature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import nu.itark.frosk.crypto.coinbase.ProductProxy;
-import nu.itark.frosk.service.TimeSeriesService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.context.annotation.Bean;

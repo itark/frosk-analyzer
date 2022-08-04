@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 
 import java.time.*;
 import java.util.List;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class TestJTimeSeriesService extends BaseIntegrationTest {
 
 	@Autowired
-	private TimeSeriesService ts;
+	private BarSeriesService ts;
 
 	
 	@Test
@@ -35,7 +35,7 @@ public class TestJTimeSeriesService extends BaseIntegrationTest {
 	
 	@Test
 	public void testGetDataSet() throws Exception {
-		List<TimeSeries> sec = ts.getDataSet();
+		List<BarSeries> sec = ts.getDataSet();
 		assertNotNull(sec);
 		
 //		System.out.println("size="+sec.getBarCount());
@@ -47,7 +47,7 @@ public class TestJTimeSeriesService extends BaseIntegrationTest {
 	public void testGetDataSetSecurity() throws Exception {
 		Long sec_id = ts.getSecurityId("ERIC-B.ST");
 		System.out.println("sec_id="+sec_id);
-		TimeSeries sec = ts.getDataSet(sec_id );
+		BarSeries sec = ts.getDataSet(sec_id );
 //		assertNotNull(sec);
 		
 //		System.out.println("size="+sec.getBarCount());
@@ -57,7 +57,7 @@ public class TestJTimeSeriesService extends BaseIntegrationTest {
 	@Test
 	public void testGetCandlesFromCoinbase() {
 
-	TimeSeries timeSeries = ts.getDataSetFromCoinbase("BTC-EUR");
+	BarSeries timeSeries = ts.getDataSetFromCoinbase("BTC-EUR");
 
 	System.out.println("barCount="+timeSeries.getBarCount());
 

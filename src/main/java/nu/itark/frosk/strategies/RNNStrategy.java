@@ -27,14 +27,14 @@ import org.slf4j.LoggerFactory;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.trading.rules.CrossedDownIndicatorRule;
-import org.ta4j.core.trading.rules.CrossedUpIndicatorRule;
-import org.ta4j.core.trading.rules.OverIndicatorRule;
-import org.ta4j.core.trading.rules.UnderIndicatorRule;
+import org.ta4j.core.rules.CrossedDownIndicatorRule;
+import org.ta4j.core.rules.CrossedUpIndicatorRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 //TODO  !!! Now a copy of RSI2
 public class RNNStrategy {
@@ -43,7 +43,7 @@ public class RNNStrategy {
 
 	 
 		RSIIndicator rsi = null;
-		TimeSeries series = null;
+		BarSeries series = null;
 	 
 		/**
 	     * @param series a time series

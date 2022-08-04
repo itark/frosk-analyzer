@@ -31,14 +31,14 @@ import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.trading.rules.CrossedDownIndicatorRule;
-import org.ta4j.core.trading.rules.CrossedUpIndicatorRule;
-import org.ta4j.core.trading.rules.OverIndicatorRule;
-import org.ta4j.core.trading.rules.UnderIndicatorRule;
+import org.ta4j.core.rules.CrossedDownIndicatorRule;
+import org.ta4j.core.rules.CrossedUpIndicatorRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
 
@@ -50,9 +50,9 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  */
 public class RSI2Strategy implements IIndicatorValue {
 	private RSIIndicator rsi = null;
-	private TimeSeries series = null;
+	private BarSeries series = null;
 
-	public RSI2Strategy(TimeSeries series) {
+	public RSI2Strategy(BarSeries series) {
 		this.series = series;
 	}
 
@@ -89,8 +89,8 @@ public class RSI2Strategy implements IIndicatorValue {
 
     private void setIndicatorValues(SMAIndicator indicator, String name) {
 		IndicatorValue iv;
-		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
 			long value =  indicator.getValue(i).longValue();
 			iv = new IndicatorValue(date,value, name);
 			indicatorValues.add(iv);
@@ -99,8 +99,8 @@ public class RSI2Strategy implements IIndicatorValue {
 
 	private void setIndicatorValues(RSIIndicator indicator, String name) {
 		IndicatorValue iv;
-		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
 			long value =  indicator.getValue(i).longValue();
 			iv = new IndicatorValue(date,value, name);
 			indicatorValues.add(iv);

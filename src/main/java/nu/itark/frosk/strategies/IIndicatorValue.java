@@ -15,8 +15,8 @@ public interface IIndicatorValue {
 
 	default void setIndicatorValues(MACDIndicator indicator, String name) {
 		IndicatorValue iv = null;
-		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
 			if (indicator.getValue(i).isNaN()) continue;
 			long value =  indicator.getValue(i).longValue();
 			iv = new IndicatorValue(date,value, name);
@@ -26,8 +26,8 @@ public interface IIndicatorValue {
 
 	default void setIndicatorValues(StochasticOscillatorKIndicator indicator, String name) {
 		IndicatorValue iv = null;
-		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
 			if (indicator.getValue(i).isNaN()) continue;
 			long value =  indicator.getValue(i).longValue();
 			iv = new IndicatorValue(date,value, name);
@@ -37,8 +37,8 @@ public interface IIndicatorValue {
 
 	default void setIndicatorValues(EMAIndicator indicator, String name) {
 		IndicatorValue iv = null;
-		for (int i = 0; i < indicator.getTimeSeries().getBarCount(); i++) {
-			long date = indicator.getTimeSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
 			if (indicator.getValue(i).isNaN()) continue;
 			long value =  indicator.getValue(i).longValue();
 			iv = new IndicatorValue(date,value, name);

@@ -20,8 +20,8 @@ public class DailyPrice {
 	public DailyPrice(Bar bar) {
 		this.setDate(bar.getEndTime().toInstant().toEpochMilli());
 		this.setOpen(bar.getOpenPrice().longValue());
-		this.setHigh(bar.getMaxPrice().longValue());
-		this.setLow(bar.getMinPrice().longValue());
+		this.setHigh(bar.getHighPrice().longValue());
+		this.setLow(bar.getLowPrice().longValue());
 		this.setValue(bar.getClosePrice().longValue());
 		this.setVolume(bar.getVolume().longValue());
 	}

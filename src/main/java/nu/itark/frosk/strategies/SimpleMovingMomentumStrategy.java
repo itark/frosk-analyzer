@@ -26,24 +26,25 @@ import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.TimeSeries;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.ParabolicSarIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.num.PrecisionNum;
-import org.ta4j.core.trading.rules.IsFallingRule;
-import org.ta4j.core.trading.rules.IsRisingRule;
-import org.ta4j.core.trading.rules.OverIndicatorRule;
-import org.ta4j.core.trading.rules.TrailingStopLossRule;
+import org.ta4j.core.num.DecimalNum;
+import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.rules.IsFallingRule;
+import org.ta4j.core.rules.IsRisingRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.TrailingStopLossRule;
 
 import java.util.List;
 
 
 public class SimpleMovingMomentumStrategy implements IIndicatorValue {
-    TimeSeries series = null;
+    BarSeries series = null;
     EMAIndicator shortEma, longEma = null;
 
-    public SimpleMovingMomentumStrategy(TimeSeries series) {
+    public SimpleMovingMomentumStrategy(BarSeries series) {
         this.series = series;
     }
 
@@ -55,10 +56,9 @@ public class SimpleMovingMomentumStrategy implements IIndicatorValue {
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
 
         shortEma = new EMAIndicator(closePrice, 10);
-        setIndicatorValues(shortEma, "shortEma");
 
-        longEma = new EMAIndicator(closePrice, 20);
-        setIndicatorValues(longEma, "longEma");
+        longEma = new EMAIndicator(closePrice, 50);
+
 
         ParabolicSarIndicator parabolicSarIndicator = new ParabolicSarIndicator(series);
         IsRisingRule isRisingRule = new IsRisingRule(parabolicSarIndicator, 1);
@@ -68,7 +68,13 @@ public class SimpleMovingMomentumStrategy implements IIndicatorValue {
                 .and(isRisingRule);
 
         Rule exitRule = isFallingRule
-               .or(new TrailingStopLossRule(closePrice, PrecisionNum.valueOf(2)));
+              .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(3)));
+
+/*
+        //For ui
+        setIndicatorValues(shortEma, "shortEma");
+        setIndicatorValues(longEma, "longEma");
+*/
 
         return new BaseStrategy("SimpleMovingMomentumStrategy", entryRule, exitRule);
     }
