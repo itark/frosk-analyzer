@@ -9,21 +9,21 @@ import lombok.Data;
 @Data
 public class DailyPrice {
 
-	private long date;
+	private long time;
 	private long open;
 	private long high;
 	private long low;
-	private long value;
-	private long volume;
+	private long close;
+	private long value;  //volume, for TradingView Histogram
 	private String trade;
 
 	public DailyPrice(Bar bar) {
-		this.setDate(bar.getEndTime().toInstant().toEpochMilli());
+		this.setTime(bar.getEndTime().toInstant().toEpochMilli());
 		this.setOpen(bar.getOpenPrice().longValue());
 		this.setHigh(bar.getHighPrice().longValue());
 		this.setLow(bar.getLowPrice().longValue());
-		this.setValue(bar.getClosePrice().longValue());
-		this.setVolume(bar.getVolume().longValue());
+		this.setClose(bar.getClosePrice().longValue());
+		this.setValue(bar.getVolume().longValue());
 	}
 
 }

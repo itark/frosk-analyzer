@@ -5,22 +5,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import nu.itark.frosk.dataset.DateManager;
-import nu.itark.frosk.dataset.IndicatorValue;
-import nu.itark.frosk.dataset.Trade;
-import nu.itark.frosk.model.StrategyTrade;
+import nu.itark.frosk.analysis.*;
+import nu.itark.frosk.dataset.*;
+import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
-import nu.itark.frosk.util.DateTimeManager;
-import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
 
-import nu.itark.frosk.analysis.FeaturedStrategyDTO;
-import nu.itark.frosk.analysis.StrategiesMap;
-import nu.itark.frosk.analysis.StrategyAnalysis;
-import nu.itark.frosk.dataset.DailyPrice;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.DataSetRepository;
@@ -35,8 +28,6 @@ public class DataController {
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;	
 
-	@Autowired
-	TradesRepository tradesRepository;		
 
 	@Autowired
 	DataSetRepository datasetRepository;		
@@ -49,6 +40,9 @@ public class DataController {
 
 	@Autowired
 	StrategyFilter strategyFilter;
+
+	@Autowired
+	SecurityMetaDataManager securityMetaDataManager;
 
 	//  curl localhost:8080/actuator/health
 
@@ -130,9 +124,40 @@ public class DataController {
 
 		return dto;
 	}
-	
+
 	/**
-	 * @Example  http://localhost:8080/frosk-analyzer/dailyPrices?security=BOL.ST
+	 * @Example  http://localhost:8080/frosk-analyzer/prices?security=BTC-EUR
+	 *
+	 * @return
+	 */
+	@RequestMapping(path="/prices", method=RequestMethod.GET)
+	public List<DailyPrice> getPrices(@RequestParam("security") String security) {
+		logger.info("/prices...security=" + security);
+		DailyPrice dailyPrices = null;
+		SecurityDTO frosk = null;
+		List<DailyPrice> dpList = new ArrayList<DailyPrice>();
+		BarSeries timeSeries = timeSeriesService.getDataSet(security);
+		for (int i = 0; i < timeSeries.getBarCount(); i++) {
+			Bar bar = timeSeries.getBar(i);
+			dailyPrices = new DailyPrice(bar);
+			dpList.add(dailyPrices);
+		}
+		return dpList;
+	}
+
+	/**
+	 * @Example  http://localhost:8080/frosk-analyzer/metadata
+	 *
+	 * @return
+	 */
+	@RequestMapping(path="/metadata", method=RequestMethod.GET)
+	public List<SecurityDTO> getMetaData() {
+		logger.info("/metadata");
+		return securityMetaDataManager.getSecurityMetaData();
+	}
+
+	/**
+	 * @Example  http://localhost:8080/frosk-analyzer/dailyPrices?security=BTC-EUR&strategy=MovingMomentumStrategy
 	 * 
 	 * @return
 	 */
@@ -156,7 +181,7 @@ public class DataController {
 		List<DailyPrice> dpListTrades = new ArrayList<>();
 		for (Trade trade : getTrades(security, strategy)) {
 			dpList.stream()
-					.filter(dp -> dp.getDate() == trade.getDate())
+					.filter(dp -> dp.getTime() == trade.getDate())
 					.forEach(dp -> dp.setTrade(trade.getType()));
 			logger.info("trade:" + trade);
 		}

@@ -105,13 +105,16 @@ public class BarSeriesService  {
 	 * 
 	 * @param productId 
 	 * @return BarSeries
+	 *
+	 * OBS endast 10 dagar för gammalt data
+	 *
 	 */
 	public BarSeries getDataSetFromCoinbase(String productId) {
 		BarSeries series = new BaseBarSeriesBuilder().withName(productId).withNumTypeOf(DecimalNum.class).build();
 
 		//TODO ser över tiden
 		Instant startTime = Instant.now().minus(300, ChronoUnit.DAYS);
-		Instant endTime = startTime.plus(6, ChronoUnit.DAYS);
+		Instant endTime = startTime.plus(10, ChronoUnit.DAYS);
 	//	Instant endTime = Instant.now();
 
 		System.out.println("startTime:"+startTime);

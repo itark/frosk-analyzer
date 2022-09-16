@@ -9,11 +9,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
+import org.ta4j.core.Position;
+import org.ta4j.core.num.DecimalNum;
+import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.num.Num;
 
 import java.time.*;
+import java.time.temporal.TemporalAdjusters;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import static java.util.stream.Collectors.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
@@ -61,10 +70,51 @@ public class TestJTimeSeriesService extends BaseIntegrationTest {
 
 	System.out.println("barCount="+timeSeries.getBarCount());
 
+		Map<ZonedDateTime, List<Bar>> byYear = timeSeries.getBarData().stream()
+				.collect(groupingBy(d -> d.getBeginTime().withMonth(1).withDayOfMonth(1)));
+
+		Double byYearAvg = timeSeries.getBarData().stream()
+				.collect(averagingDouble(b -> (b.getOpenPrice().minus(b.getClosePrice()).doubleValue())));
+
+		Num pnlOverTime = DecimalNum.valueOf(0);
+
+
+		for (Bar bar: timeSeries.getBarData().subList(1, 10) ){
+			Num profit = bar.getClosePrice().minus(bar.getOpenPrice());
+			Num pnlPercent = profit.dividedBy(bar.getOpenPrice()).multipliedBy(timeSeries.numOf(100));
+			pnlOverTime = pnlOverTime.plus(pnlPercent);
+		}
+
+		System.out.println(pnlOverTime);
+
+
+/*
+		Map<BlogPostType, Double> averageLikesPerType = posts.stream()
+				.collect(groupingBy(BlogPost::getType, averagingInt(BlogPost::getLikes)));
+
+*/
+
+		Map<ZonedDateTime, List<Bar>> byMonth = timeSeries.getBarData().stream()
+				.collect(groupingBy(d -> d.getBeginTime().withDayOfMonth(1)));
+		Map<ZonedDateTime, List<Bar>> byWeek =  timeSeries.getBarData().stream()
+				.collect(groupingBy(d -> d.getBeginTime().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))));
 	assertNotNull(timeSeries);
 
-
 	}
+
+	public Num calculate(BarSeries series, Position position) {
+		if (position.isClosed()) {
+			Num entryPrice = position.getEntry().getValue();
+			Num pnl = position.getProfit().dividedBy(entryPrice).multipliedBy(series.numOf(100));
+			return pnl;
+		} else {
+			return series.numOf(0);
+		}
+	}
+
+
+
+
 	
 	@Test
 	public void testDatessss(){
