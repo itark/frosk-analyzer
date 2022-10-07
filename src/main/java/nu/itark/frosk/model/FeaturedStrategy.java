@@ -18,6 +18,7 @@ import javax.persistence.TemporalType;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.OrderBy;
 
 /**
  * This class holds all significant strategies and it values.
@@ -82,6 +83,7 @@ public class FeaturedStrategy {
 	private Set<StrategyTrade> trades;
 
 	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
+	@OrderBy(clause = "date")
 	private Set<StrategyIndicatorValue> indicatorValues;	
 	
 	public FeaturedStrategy () {}

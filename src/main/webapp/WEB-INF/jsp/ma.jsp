@@ -63,9 +63,6 @@
                                     <span class="caret"></span>
                                 </button>
                                 <ul class="dropdown-menu pull-right" role="menu">
-                                    <li><a href ="#" onclick="renderTable('INDEX','chart-div');">INDEX</a></li>
-                                    <li><a href="#" onclick="renderTable('OMX30','chart-div');">OMX30</a></li>
-                                    <li><a href ="#" onclick="renderTable('OSCAR','chart-div');">OSCAR</a></li>
                                     <li><a href ="#" onclick="renderTable('COINBASE','chart-div');">COINBASE</a></li>
                                 </ul>
                             </div>

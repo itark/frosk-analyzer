@@ -1,54 +1,91 @@
 package nu.itark.frosk.strategies;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import nu.itark.frosk.model.StrategyIndicatorValue;
+import org.ta4j.core.indicators.*;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.core.joran.spi.JoranException;
-import lombok.SneakyThrows;
-import nu.itark.frosk.dataset.IndicatorValue;
-import org.slf4j.LoggerFactory;
-import org.ta4j.core.indicators.EMAIndicator;
-import org.ta4j.core.indicators.MACDIndicator;
-import org.ta4j.core.indicators.StochasticOscillatorKIndicator;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public interface IIndicatorValue {
-	List<IndicatorValue> indicatorValues = new ArrayList<>();
-	List<IndicatorValue> getIndicatorValues();
+	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();
+	List<StrategyIndicatorValue> getIndicatorValues();
 
 	default void setIndicatorValues(MACDIndicator indicator, String name) {
-		IndicatorValue iv = null;
+		StrategyIndicatorValue iv = null;
 		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
-			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			Date date = Date.from(indicator.getBarSeries().getBar(i).getEndTime().toInstant());
 			if (indicator.getValue(i).isNaN()) continue;
-			long value =  indicator.getValue(i).longValue();
-			iv = new IndicatorValue(date,value, name);
+			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
+			iv = new StrategyIndicatorValue(date,value, name);
 			indicatorValues.add(iv);
 		}
 	}
 
 	default void setIndicatorValues(StochasticOscillatorKIndicator indicator, String name) {
-		IndicatorValue iv = null;
+		StrategyIndicatorValue iv = null;
 		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
-			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			Date date = Date.from(indicator.getBarSeries().getBar(i).getEndTime().toInstant());
 			if (indicator.getValue(i).isNaN()) continue;
-			long value =  indicator.getValue(i).longValue();
-			iv = new IndicatorValue(date,value, name);
+			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
+			iv = new StrategyIndicatorValue(date,value, name);
 			indicatorValues.add(iv);
 		}
 	}
 
 	default void setIndicatorValues(EMAIndicator indicator, String name) {
-		IndicatorValue iv = null;
+		StrategyIndicatorValue iv = null;
 		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
-			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
+			Date date = Date.from(indicator.getBarSeries().getBar(i).getEndTime().toInstant());
 			if (indicator.getValue(i).isNaN()) continue;
-			long value =  indicator.getValue(i).longValue();
-			iv = new IndicatorValue(date,value, name);
+			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
+			iv = new StrategyIndicatorValue(date,value, name);
+			indicatorValues.add(iv);
+		}
+	}
+
+	default void setIndicatorValues(SMAIndicator indicator, String name) {
+		StrategyIndicatorValue iv = null;
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			Date date = Date.from(indicator.getBarSeries().getBar(i).getEndTime().toInstant());
+			if (indicator.getValue(i).isNaN()) continue;
+			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
+			iv = new StrategyIndicatorValue(date,value, name);
+			indicatorValues.add(iv);
+		}
+	}
+
+	default void setIndicatorValues(ClosePriceIndicator indicator, String name) {
+		StrategyIndicatorValue iv = null;
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			Date date = Date.from(indicator.getBarSeries().getBar(i).getEndTime().toInstant());
+			if (indicator.getValue(i).isNaN()) continue;
+			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
+			iv = new StrategyIndicatorValue(date,value, name);
+			indicatorValues.add(iv);
+		}
+	}
+
+	default void setIndicatorValues(CCIIndicator indicator, String name) {
+		StrategyIndicatorValue iv = null;
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			Date date = Date.from(indicator.getBarSeries().getBar(i).getEndTime().toInstant());
+			if (indicator.getValue(i).isNaN()) continue;
+			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
+			iv = new StrategyIndicatorValue(date,value, name);
+			indicatorValues.add(iv);
+		}
+	}
+
+	default void setIndicatorValues(RSIIndicator indicator, String name) {
+		StrategyIndicatorValue iv = null;
+		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
+			Date date = Date.from(indicator.getBarSeries().getBar(i).getEndTime().toInstant());
+			if (indicator.getValue(i).isNaN()) continue;
+			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
+			iv = new StrategyIndicatorValue(date,value, name);
 			indicatorValues.add(iv);
 		}
 	}

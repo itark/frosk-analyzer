@@ -22,12 +22,8 @@
  */
 package nu.itark.frosk.strategies;
 
-import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
 
-import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -57,6 +53,7 @@ public class RSI2Strategy implements IIndicatorValue {
 	}
 
     public Strategy buildStrategy() {
+		indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
@@ -87,28 +84,8 @@ public class RSI2Strategy implements IIndicatorValue {
     }
 
 
-    private void setIndicatorValues(SMAIndicator indicator, String name) {
-		IndicatorValue iv;
-		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
-			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
-			long value =  indicator.getValue(i).longValue();
-			iv = new IndicatorValue(date,value, name);
-			indicatorValues.add(iv);
-		}
- 	}
-
-	private void setIndicatorValues(RSIIndicator indicator, String name) {
-		IndicatorValue iv;
-		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
-			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
-			long value =  indicator.getValue(i).longValue();
-			iv = new IndicatorValue(date,value, name);
-			indicatorValues.add(iv);
-		}
-	}
-
-    @Override
-	public List<IndicatorValue> getIndicatorValues() {
+	@Override
+	public List<StrategyIndicatorValue> getIndicatorValues() {
 		return indicatorValues;
 	}
 

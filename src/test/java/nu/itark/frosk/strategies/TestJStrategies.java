@@ -51,9 +51,9 @@ public class TestJStrategies {
 	@Test
 	public void runAllSingleDataSet() {
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "BTC-EUR";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR, BTRST-EUR, SPELL-USDT
+		String productId = "WLUNA-USDT";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
 		addFormat();
-		BarSeries timeSeries = barSeriesService.getDataSet(productId);
+		BarSeries timeSeries = barSeriesService.getDataSet(productId, false);
 
 //		VWAPStrategy vwap = new VWAPStrategy(timeSeries);
 //		run(vwap.buildStrategy(),timeSeries);
@@ -144,7 +144,7 @@ public class TestJStrategies {
 
 	@Test
 	public void runOneSingleDataSet2() {
-	BarSeries series = barSeriesService.getDataSet("BTC-EUR");
+	BarSeries series = barSeriesService.getDataSet("WLUNA-USDT", false);
 	Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
 	BarSeriesManager seriesManager = new BarSeriesManager(series);
 	TradingRecord tradingRecord = seriesManager.run(strategy);
@@ -166,6 +166,10 @@ public class TestJStrategies {
 	// Total profit
 	GrossReturnCriterion totalReturn = new GrossReturnCriterion();
         System.out.println("Total return: " + totalReturn.calculate(series, tradingRecord).doubleValue());
+
+	ProfitLossPercentageCriterion totalPercentage = new ProfitLossPercentageCriterion();
+		System.out.println("Total percentage: " + totalPercentage.calculate(series, tradingRecord).doubleValue());
+
 	// Number of bars
         System.out.println("Number of bars: " + new NumberOfBarsCriterion().calculate(series, tradingRecord));
 	// Average profit (per bar)
@@ -246,7 +250,7 @@ public class TestJStrategies {
 
 	@Test
 	public void chooseBestForSecurity() {
-		BarSeries timeSeries = barSeriesService.getDataSet("DIA-EUR");
+		BarSeries timeSeries = barSeriesService.getDataSet("DIA-EUR", false);
 		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 		// The analysis criterion
 		AnalysisCriterion profitCriterion = new GrossReturnCriterion();
@@ -267,7 +271,7 @@ public class TestJStrategies {
 
 	@Test
 	public void chooseBestForSecurity2() {
-		BarSeries barSeries = barSeriesService.getDataSet("ETC-EUR");
+		BarSeries barSeries = barSeriesService.getDataSet("ETC-EUR", false);
 		List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
 		AnalysisCriterion profitCriterion = new GrossReturnCriterion();
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);

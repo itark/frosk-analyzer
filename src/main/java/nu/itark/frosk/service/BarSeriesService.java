@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import com.coinbase.exchange.model.Candle;
 import com.coinbase.exchange.model.Candles;
 import com.coinbase.exchange.model.Granularity;
+import lombok.Data;
 import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -62,16 +63,37 @@ public class BarSeriesService  {
 		return securityRepository.findByName(securityName).getId();
 	}
 	
-	/**
+/*
+	*/
+/**
 	 * Return TimesSeries bases on name in Security.
 	 * 
 	 * @param  {@linkplain Security}
 	 * @return BarSeries
-	 */
+	 *//*
+
 	public BarSeries getDataSet(String securityName) {
 		return  getDataSet( getSecurityId(securityName)  );
 	}
-	
+*/
+
+
+	/**
+	 * Return TimesSeries bases on name in Security.
+	 *
+	 * @param  {@linkplain Security}
+	 * @param  api, true if retrieving data direcly from coinbase api.
+	 * @return BarSeries
+	 */
+	public BarSeries getDataSet(String securityName, boolean api) {
+		if (api) {
+			return getDataSetFromCoinbase(securityName);
+		} else {
+			return  getDataSet( getSecurityId(securityName)  );
+		}
+	}
+
+
 	/**
 	 * Return TimesSeries bases on id in Security.
 	 * 
@@ -101,26 +123,14 @@ public class BarSeriesService  {
 	/**
 	 * Return TimesSeries bases on productId in Coinbase.
 	 * 
-	 * NOTE: start and end hardcoded,granularity set to fifteen minutes
-	 * 
-	 * @param productId 
+	 * @param productId
 	 * @return BarSeries
-	 *
-	 * OBS endast 10 dagar för gammalt data
 	 *
 	 */
 	public BarSeries getDataSetFromCoinbase(String productId) {
 		BarSeries series = new BaseBarSeriesBuilder().withName(productId).withNumTypeOf(DecimalNum.class).build();
 
-		//TODO ser över tiden
-		Instant startTime = Instant.now().minus(300, ChronoUnit.DAYS);
-		Instant endTime = startTime.plus(10, ChronoUnit.DAYS);
-	//	Instant endTime = Instant.now();
-
-		System.out.println("startTime:"+startTime);
-		System.out.println("endTime"+endTime);
-
-  		Candles candles = productProxy.getCandles(productId, startTime,endTime, Granularity.ONE_DAY );
+  		Candles candles = productProxy.getCandles(productId, SelectionCriteria.startTime,SelectionCriteria.endTime, SelectionCriteria.granularity );
 
 		List<Candle> sortedList = candles.getCandleList()
 				.stream()
@@ -134,6 +144,12 @@ public class BarSeriesService  {
 
 		return series;
 
+	}
+
+	public static class SelectionCriteria {
+		private static Instant startTime = Instant.now().minus(300, ChronoUnit.DAYS);
+		private static Instant endTime = Instant.now();
+		private static Granularity granularity = Granularity.ONE_DAY;
 	}
 
 	

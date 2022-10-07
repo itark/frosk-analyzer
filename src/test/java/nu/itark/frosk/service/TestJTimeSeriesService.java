@@ -1,12 +1,14 @@
 package nu.itark.frosk.service;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.FroskStartupApplicationListener;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.ta4j.core.Bar;
@@ -16,6 +18,9 @@ import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.*;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Iterator;
@@ -66,39 +71,13 @@ public class TestJTimeSeriesService extends BaseIntegrationTest {
 	@Test
 	public void testGetCandlesFromCoinbase() {
 
-	BarSeries timeSeries = ts.getDataSetFromCoinbase("BTC-EUR");
+		BarSeries timeSeries = ts.getDataSetFromCoinbase("NCT-EUR");
+		ZonedDateTime lastEndTime = timeSeries.getLastBar().getEndTime();
 
-	System.out.println("barCount="+timeSeries.getBarCount());
-
-		Map<ZonedDateTime, List<Bar>> byYear = timeSeries.getBarData().stream()
-				.collect(groupingBy(d -> d.getBeginTime().withMonth(1).withDayOfMonth(1)));
-
-		Double byYearAvg = timeSeries.getBarData().stream()
-				.collect(averagingDouble(b -> (b.getOpenPrice().minus(b.getClosePrice()).doubleValue())));
-
-		Num pnlOverTime = DecimalNum.valueOf(0);
+		Bar lastbar = timeSeries.getLastBar();
 
 
-		for (Bar bar: timeSeries.getBarData().subList(1, 10) ){
-			Num profit = bar.getClosePrice().minus(bar.getOpenPrice());
-			Num pnlPercent = profit.dividedBy(bar.getOpenPrice()).multipliedBy(timeSeries.numOf(100));
-			pnlOverTime = pnlOverTime.plus(pnlPercent);
-		}
-
-		System.out.println(pnlOverTime);
-
-
-/*
-		Map<BlogPostType, Double> averageLikesPerType = posts.stream()
-				.collect(groupingBy(BlogPost::getType, averagingInt(BlogPost::getLikes)));
-
-*/
-
-		Map<ZonedDateTime, List<Bar>> byMonth = timeSeries.getBarData().stream()
-				.collect(groupingBy(d -> d.getBeginTime().withDayOfMonth(1)));
-		Map<ZonedDateTime, List<Bar>> byWeek =  timeSeries.getBarData().stream()
-				.collect(groupingBy(d -> d.getBeginTime().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))));
-	assertNotNull(timeSeries);
+		System.out.println("kalle");
 
 	}
 
@@ -113,9 +92,6 @@ public class TestJTimeSeriesService extends BaseIntegrationTest {
 	}
 
 
-
-
-	
 	@Test
 	public void testDatessss(){
 		
@@ -149,11 +125,24 @@ public class TestJTimeSeriesService extends BaseIntegrationTest {
 		
 		System.out.println("date3="+date3);
 		
-		
-		
+
 	}
-	
-	
-	
+
+
+	@Test
+	public void testBigDecimal(){
+
+		BigDecimal big = new BigDecimal(0.123456789);
+		System.out.println("big="+big);
+		BigDecimal big2 = big.round(MathContext.DECIMAL32);
+		System.out.println("big2="+big2);
+		BigDecimal big3 =big.round(new MathContext(2, RoundingMode.HALF_EVEN));
+		System.out.println("big3="+big3);
+		BigDecimal big4 = big.setScale(2, RoundingMode.HALF_EVEN);
+		System.out.println("big4="+big4);
+
+
+
+	}
 	
 }

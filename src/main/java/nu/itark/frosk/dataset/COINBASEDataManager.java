@@ -26,7 +26,10 @@ import java.util.*;
 public class COINBASEDataManager {
 
     @Value("${frosk.download.years}")
-    public int years;
+    public int noOfYears;
+
+    @Value("${frosk.download.candles}")
+    public int nrOfCandles;
 
     @Autowired
     SecurityPriceRepository securityPriceRepository;
@@ -43,9 +46,6 @@ public class COINBASEDataManager {
     public void syncronize() {
         log.info("sync="+Database.COINBASE.toString());
         Iterable<Security> securities = securityRepository.findByDatabase(Database.COINBASE.toString());
-
-        securities.forEach(sec -> log.info("to be syncronized, NAME="+ sec.getName()));
-
         List<SecurityPrice> spList;
         try {
             spList = getDataSet(securities);
@@ -58,7 +58,8 @@ public class COINBASEDataManager {
             try {
                 securityPriceRepository.save(sp);
             } catch (DataIntegrityViolationException e) {
-                log.error("Delivered duplicates on sp.getSecurityId(): "+ sp.getSecurityId()+ ", continues....");
+                final Optional<Security> byId = securityRepository.findById(sp.getSecurityId());
+                log.error("Delivered duplicates on : "+ byId.get().getName() + ", continues....");
                 //sort of ok, continue
             }
         });
@@ -93,7 +94,6 @@ public class COINBASEDataManager {
     }
 
     private List<SecurityPrice> getDataSet(Iterable<Security> securities) throws IOException {
-        log.info("getDataSet(Iterable<Security> names)");
         List<SecurityPrice> sp = new ArrayList<>();
         Map<Long, List<Candle>> currencyCandlesMap = getCandles(securities, Granularity.ONE_DAY);
 
@@ -126,7 +126,6 @@ public class COINBASEDataManager {
     *         volume=818.92870287
     */
     private Map<Long, List<Candle>> getCandles(Iterable<Security> securities, Granularity granularity) throws IOException {
-        log.info("getCurrencies(Iterable<Security> securities");
         Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
         Instant endTime = Instant.now();
 
@@ -134,20 +133,20 @@ public class COINBASEDataManager {
             Instant startTime = Instant.now();
             SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
             if (Objects.nonNull(topSp)) {
-                log.info("Last timestamp {} for security.getName(): {}",topSp.getTimestamp(),security.getName());
                 Date lastDate = topSp.getTimestamp();
                 if (lastDate.toInstant().isBefore(startTime)) {
-                    log.info("lastDate.toInstant() {}, startTime {}", lastDate.toInstant(), startTime);
                     startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
+                    if (DateUtils.isSameInstant(Date.from(startTime),lastDate )){
+                        return;
+                    }
                 } else {
                     startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
                     startTime = startTime.plus(1, ChronoUnit.DAYS);
-                    log.info("Not today, startTime set to:" + startTime);
                 }
             } else {
-                startTime=  startTime.minus(300, ChronoUnit.DAYS);
+                startTime=  startTime.minus(nrOfCandles, ChronoUnit.DAYS);
             }
-            log.info("Retrieving candles for " + security.getName() + " startTime " + startTime);
+           // log.info("Retrieving candles for " + security.getName() + " startTime " + startTime);
             try {
                 Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
                 candlesMap.put(security.getId(), candles.getCandleList());

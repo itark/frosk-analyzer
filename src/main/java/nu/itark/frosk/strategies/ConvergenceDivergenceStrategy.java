@@ -1,5 +1,6 @@
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -10,7 +11,9 @@ import org.ta4j.core.indicators.helpers.ConvergenceDivergenceIndicator.Convergen
 import org.ta4j.core.indicators.helpers.VolumeIndicator;
 import org.ta4j.core.rules.BooleanIndicatorRule;
 
-public class ConvergenceDivergenceStrategy {
+import java.util.List;
+
+public class ConvergenceDivergenceStrategy implements IIndicatorValue {
 
 	
 	BarSeries series = null;
@@ -39,8 +42,11 @@ public class ConvergenceDivergenceStrategy {
         
         Strategy strategy = new BaseStrategy("ConvergenceDivergenceStrategy", entryRule, exitRule);
         return strategy;
-    }	
-	
-	
+    }
+
+    @Override
+    public List<StrategyIndicatorValue> getIndicatorValues() {
+        return indicatorValues;
+    }
 	
 }

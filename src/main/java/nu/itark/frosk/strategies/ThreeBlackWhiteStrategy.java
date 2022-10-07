@@ -22,11 +22,8 @@
  */
 package nu.itark.frosk.strategies;
 
-import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 
-import nu.itark.frosk.dataset.IndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -45,11 +42,7 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  *     http://www.investopedia.com/terms/t/three_black_crows.asp</a>
  */
 public class ThreeBlackWhiteStrategy implements IIndicatorValue {
-
 	BarSeries series = null;
-	
-//	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();
-	   
 	public ThreeBlackWhiteStrategy(BarSeries series) {
 		this.series = series;
 	}	
@@ -58,13 +51,14 @@ public class ThreeBlackWhiteStrategy implements IIndicatorValue {
      * @return a CCI correction strategy
      */
     public Strategy buildStrategy() {
+		indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
   
-        setIndicatorValues(closePrice, series, "closePrice");     
+        setIndicatorValues(closePrice, "closePrice");
         
         ThreeWhiteSoldiersIndicator  bullish = new ThreeWhiteSoldiersIndicator(series, 100,series.numOf(5));
         ThreeBlackCrowsIndicator  bearish = new ThreeBlackCrowsIndicator(series, 100, 5);
@@ -75,20 +69,10 @@ public class ThreeBlackWhiteStrategy implements IIndicatorValue {
         Strategy strategy = new BaseStrategy("ThreeBlackWhiteStrategy", entryRule, exitRule);
         return strategy;
     }
-    
-    private void setIndicatorValues(ClosePriceIndicator indicator, BarSeries series, String name) {
-		IndicatorValue iv = null;
-		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
-			long date = indicator.getBarSeries().getBar(i).getEndTime().toInstant().toEpochMilli();
-			long value =  indicator.getBarSeries().getBar(i).getClosePrice().longValue();
-			iv = new IndicatorValue(date,value, name);
-			indicatorValues.add(iv);
-		}
- 	} 
 
 	@Override
-	public List<IndicatorValue> getIndicatorValues() {
+	public List<StrategyIndicatorValue> getIndicatorValues() {
 		return indicatorValues;
-	}	    
+	}
 
 }

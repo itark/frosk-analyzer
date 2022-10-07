@@ -49,10 +49,9 @@ public class HighLander {
 	 */
 	public void runInstall(Database database) {
 		addDataSetAndSecurities();
-		//addSecurityPricesFromYahoo();
 		addSecurityPricesFromCoinbase();
 		runAllStrategies();
-		printLongTrades();
+		//printLongTrades();
 	}
 
 

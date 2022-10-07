@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
 
-import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,6 @@ import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
-import nu.itark.frosk.service.BarSeriesService;
 import org.ta4j.core.analysis.criteria.pnl.AverageProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
 import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
@@ -200,12 +199,30 @@ public class StrategyAnalysis {
 				st.setFeaturedStrategy(fsRes);
 				tradesRepository.saveAndFlush(st);
 			});
+
+			List<StrategyIndicatorValue>  existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.getId());
+			if (!existIv.isEmpty()) {
+				existIv.forEach(iv -> {
+					indicatorValueRepo.delete(iv);
+				});
+			}
+
+			getIndicatorValues(strategy, null).forEach(iv-> {
+				iv.setFeaturedStrategy(fsRes);
+				indicatorValueRepo.save(iv);
+			});
+
+			logger.info("EXIT runStrategy("+strategy+", "+series.getName()+")");
+
 		}
 	}
 
-	public List<IndicatorValue> getIndicatorValues(String strategy, BarSeries series) {
+	public List<StrategyIndicatorValue> getIndicatorValues(String strategy, BarSeries series) {
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
+			return strategyReguested.getIndicatorValues();
+		} else if (strategy.equals(SimpleMovingMomentumStrategy.class.getSimpleName())) {
+			SimpleMovingMomentumStrategy strategyReguested = new SimpleMovingMomentumStrategy(series);
 			return strategyReguested.getIndicatorValues();
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
 			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
@@ -216,19 +233,13 @@ public class StrategyAnalysis {
 		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
 			CCICorrectionStrategy strategyReguested = new CCICorrectionStrategy(series);
 			return strategyReguested.getIndicatorValues();
-		}
-		/*
-		else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
+		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
 			EngulfingStrategy strategyReguested = new EngulfingStrategy(series);
 			return strategyReguested.getIndicatorValues();
-		}
-		*/
-		/*
-		else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
+		} else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
 			HaramiStrategy strategyReguested = new HaramiStrategy(series);
 			return strategyReguested.getIndicatorValues();
-		}*/
-		else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
+		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
 			ThreeBlackWhiteStrategy strategyReguested = new ThreeBlackWhiteStrategy(series);
 			return strategyReguested.getIndicatorValues();
 		} else {
@@ -272,61 +283,5 @@ public class StrategyAnalysis {
     }
     return sb.toString();
 	}
-
-/*
-	public List<StrategyTrade> getLongTradesAllStrategies(String strategyName) {
-		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(strategyName);
-		return getTradesForStrategies(fsList, Order.OrderType.BUY);
-	}
-
-	public List<StrategyTrade> getShortTrades(String strategyName) {
-		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(strategyName);
-		return getTradesForStrategies(fsList, Order.OrderType.SELL);
-	}
-
-	public List<StrategyTrade> getLongTradesAllStrategies() {
-		List<FeaturedStrategy> fsList = featuredStrategyRepository.findAll();
-		return getTradesForStrategies(fsList, Order.OrderType.BUY);
-	}
-
-	public List<StrategyTrade> getShortTradesAllStrategies() {
-		List<FeaturedStrategy> fsList = featuredStrategyRepository.findAll();
-		return getTradesForStrategies(fsList, Order.OrderType.SELL);
-	}
-
-	private List<StrategyTrade> getTradesForStrategies(List<FeaturedStrategy> fsList, Order.OrderType orderType) {
-		List<StrategyTrade> strategyTradeListList = new ArrayList<>();
-		fsList.forEach(featuredStrategy -> {
-			final List<StrategyTrade> byFeaturedStrategy = tradesRepository.findByFeaturedStrategy(featuredStrategy);
-			if (byFeaturedStrategy.isEmpty()) return;
-			StrategyTrade latestTrade = Collections.max(byFeaturedStrategy, Comparator.comparing(StrategyTrade::getDate));
-			if (latestTrade.getType().equals(orderType.name())) {
-				strategyTradeListList.add(latestTrade);
-			}
-		});
-		return strategyTradeListList;
-	}
-
-	public List<StrategyTrade> getTrades(String security, String strategy){
-		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security);
-		return tradesRepository.findByFeaturedStrategy(fs);
-	}
-*/
-//	public List<RNNPrices> getRNNPrices( String indiceName, Database database) {
-//		List<RNNPrices> rnnPrices = new ArrayList<RNNPrices>();
-//		RNNPrices rnnPrice;
-//		pricePrediction.run();
-//		double[] predicts = pricePrediction.getPredicts();
-//		double[] actuals =pricePrediction.getActuals();
-//
-//		for (int i = 0; i < predicts.length; i++) {
-//			rnnPrice = new RNNPrices();
-//			rnnPrice.setPredicts(predicts[i]);
-//			rnnPrice.setActuals(actuals[i]);
-//			rnnPrices.add(rnnPrice);
-//		}
-//		
-//		return rnnPrices;
-//	}
 
 }

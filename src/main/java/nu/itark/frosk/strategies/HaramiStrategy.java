@@ -22,6 +22,7 @@
  */
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -30,13 +31,15 @@ import org.ta4j.core.indicators.candles.BearishHaramiIndicator;
 import org.ta4j.core.indicators.candles.BullishHaramiIndicator;
 import org.ta4j.core.rules.BooleanIndicatorRule;
 
+import java.util.List;
+
 /**
  * Bearish Harami pattern indicator.
  * </p>
  * @see <a href="http://www.investopedia.com/terms/b/bullishharami.asp">
  *     http://www.investopedia.com/terms/b/bullishharami.asp</a>
  */
-public class HaramiStrategy {
+public class HaramiStrategy implements IIndicatorValue {
 
 	BarSeries series = null;
 	   
@@ -48,6 +51,7 @@ public class HaramiStrategy {
      * @return a CCI correction strategy
      */
     public Strategy buildStrategy() {
+        indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
@@ -62,4 +66,8 @@ public class HaramiStrategy {
         return strategy;
     }
 
+    @Override
+    public List<StrategyIndicatorValue> getIndicatorValues() {
+        return indicatorValues;
+    }
 }

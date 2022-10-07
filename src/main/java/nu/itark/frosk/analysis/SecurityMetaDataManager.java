@@ -49,36 +49,28 @@ public class SecurityMetaDataManager {
     }
 
     private void addMetaData(SecurityDTO securityDTO) {
-
         securityDTO.setOneDayPercent(getBarPercent(securityDTO.getName(),1));
         securityDTO.setOneWeekPercent(getBarPercent(securityDTO.getName(),7));
-
+        securityDTO.setOneMonthPercent(getBarPercent(securityDTO.getName(),30));
+        securityDTO.setThreeMonthPercent(getBarPercent(securityDTO.getName(),90));
+        securityDTO.setSixMonthPercent(getBarPercent(securityDTO.getName(),180));
     }
 
-    private BigDecimal getBarPercent(String securityName, int nrOfBars) {
-        BarSeries timeSeries = timeSeriesService.getDataSet(securityName);
+    protected BigDecimal getBarPercent(String securityName, int nrOfBars) {
+        BarSeries timeSeries = timeSeriesService.getDataSet(securityName, false);
         //Sanitycheck
         if (timeSeries.getBarCount() <= nrOfBars) {
             return null;
         }
-
-        System.out.println("barcount:" + timeSeries.getBarCount());
-        Num pnlPercent = DoubleNum.valueOf(0);
-        Bar fBar = timeSeries.getFirstBar();
-        // System.out.println("fBar="+fBar);
-        Bar eBar = (timeSeries.getBar(nrOfBars));
-        // System.out.println("eBar="+eBar);
-        Num profit = timeSeries.getFirstBar().getClosePrice().minus(timeSeries.getBar(nrOfBars).getOpenPrice());
-        pnlPercent = profit.dividedBy(timeSeries.getBar(nrOfBars).getOpenPrice()).multipliedBy(timeSeries.numOf(100));
-
-        System.out.println("pnl=" + pnlPercent);
-        if (pnlPercent.isNaN()) {
+        Num entryOpen = timeSeries.getBar((timeSeries.getBarCount()-1) - nrOfBars).getOpenPrice();
+        Num exitOpen = timeSeries.getLastBar().getOpenPrice();
+        Num grossProfit = exitOpen.minus(entryOpen);
+        Num pnl = grossProfit.dividedBy(entryOpen);
+        if (pnl.isNaN()) {
             return null;
         } else {
-            return BigDecimal.valueOf(pnlPercent.doubleValue()).round(new MathContext(2));
+            return BigDecimal.valueOf(pnl.doubleValue()).round(new MathContext(2));
         }
-
-
     }
 
 }

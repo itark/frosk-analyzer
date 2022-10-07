@@ -55,7 +55,6 @@ canvas {
 	          	<li><a href="sma">Simple Moving Momentum</a></li>
 	            <li><a href="ma">Moving Momentum</a></li>
 	            <li><a href="rsi">Relative Strenght Index-2</a></li>
-	            <li><a href="engulfing">Engulfing</a></li>
 	            <li role="separator" class="divider"></li>
 	            <li><a href="all">All</a></li>
 	            <li role="separator" class="divider"></li>

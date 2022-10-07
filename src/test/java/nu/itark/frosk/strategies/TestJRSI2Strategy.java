@@ -55,7 +55,7 @@ public class TestJRSI2Strategy {
     @Test
     public final void run() throws Exception {
 
-		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR");
+		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false);
 		RSI2Strategy strat = new RSI2Strategy(timeSeries);
         
         Strategy strategy = strat.buildStrategy();

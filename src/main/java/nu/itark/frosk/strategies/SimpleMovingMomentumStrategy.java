@@ -22,7 +22,7 @@
  */
 package nu.itark.frosk.strategies;
 
-import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -30,7 +30,6 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.ParabolicSarIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.rules.*;
 
@@ -45,6 +44,7 @@ public class SimpleMovingMomentumStrategy implements IIndicatorValue {
     }
 
     public Strategy buildStrategy() {
+        indicatorValues.clear();
         if (this.series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
@@ -56,27 +56,30 @@ public class SimpleMovingMomentumStrategy implements IIndicatorValue {
         IsRisingRule isRisingRule = new IsRisingRule(parabolicSarIndicator, 1);
         IsFallingRule isFallingRule = new IsFallingRule(parabolicSarIndicator, 1);
 
+/*
         Rule entryRule = new OverIndicatorRule(shortEma, longEma)
                 .and(isRisingRule);
 
         Rule exitRule = isFallingRule
              //  .or(new StopGainRule(closePrice, DoubleNum.valueOf(3)));
               .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
+*/
 
-/*
+        Rule entryRule = new OverIndicatorRule(shortEma, longEma);
+        Rule exitRule = new UnderIndicatorRule(shortEma, longEma);
+
         //For ui
         setIndicatorValues(shortEma, "shortEma");
         setIndicatorValues(longEma, "longEma");
-*/
 
         return new BaseStrategy("SimpleMovingMomentumStrategy", entryRule, exitRule);
     }
 
-
     @Override
-    public List<IndicatorValue> getIndicatorValues() {
+    public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
     }
+
 
 
 }

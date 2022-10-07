@@ -23,7 +23,7 @@
 package nu.itark.frosk.strategies.filter;
 
 import nu.itark.frosk.analysis.StrategiesMap;
-import nu.itark.frosk.dataset.Trade;
+import nu.itark.frosk.analysis.TradeDTO;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ public class TestJStrategyFilter {
 	 
     @Test
     public final void testLongTradesOne(){
-        final List<Trade> longTrades = strategyFilter.getLongTradesAllStrategies(SimpleMovingMomentumStrategy.class.getSimpleName());
+        final List<TradeDTO> longTrades = strategyFilter.getLongTradesAllStrategies(SimpleMovingMomentumStrategy.class.getSimpleName());
         System.out.println("longTrades.size():"+longTrades.size());
         longTrades.forEach(st-> {
             System.out.println("Trade:" + ReflectionToStringBuilder.toString(st));
@@ -56,7 +56,7 @@ public class TestJStrategyFilter {
 
     @Test
     public final void testShortTradesOne(){
-        final List<Trade> shortTrades = strategyFilter.getShortTrades(SimpleMovingMomentumStrategy.class.getSimpleName());
+        final List<TradeDTO> shortTrades = strategyFilter.getShortTrades(SimpleMovingMomentumStrategy.class.getSimpleName());
         System.out.println("shortTrades.size():"+shortTrades.size());
         shortTrades.forEach(st-> {
             System.out.println("Trade:" + ReflectionToStringBuilder.toString(st));
@@ -65,7 +65,7 @@ public class TestJStrategyFilter {
 
     @Test
     public final void testOpenTradesAll() {
-        final List<Trade> openTrades = strategyFilter.getLongTradesAllStrategies();
+        final List<TradeDTO> openTrades = strategyFilter.getLongTradesAllStrategies();
         System.out.println("openTrades:" + openTrades.size());
         openTrades.forEach(st-> {
             System.out.println("StrategyTrade:" + ReflectionToStringBuilder.toString(st));
@@ -76,7 +76,7 @@ public class TestJStrategyFilter {
     public final void testOpenTradesAll2(){
         List<String> strategies = StrategiesMap.buildStrategiesMap();
         strategies.forEach(s -> {
-            final List<Trade> openTrades = strategyFilter.getLongTradesAllStrategies(s);
+            final List<TradeDTO> openTrades = strategyFilter.getLongTradesAllStrategies(s);
             openTrades.forEach(System.out::println);
         });
     }

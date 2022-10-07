@@ -22,7 +22,7 @@
  */
 package nu.itark.frosk.strategies;
 
-import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
@@ -53,6 +53,7 @@ public class GlobalExtremaStrategy implements IIndicatorValue {
      * @return a global extrema strategy
      */
     public Strategy buildStrategy() {
+        indicatorValues.clear();
         if (this.series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
@@ -133,9 +134,9 @@ public class GlobalExtremaStrategy implements IIndicatorValue {
         return new BaseStrategy("GlobalExtremaStrategy", buyingRule, sellingRule);
     }
 
-
     @Override
-    public List<IndicatorValue> getIndicatorValues() {
+    public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
     }
+
 }

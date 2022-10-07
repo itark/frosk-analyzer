@@ -150,7 +150,7 @@ public class WalkForward {
     @Test
     public final void run() throws Exception {
         // Splitting the series into slices
-    	BarSeries timeSeries = timeSeriesService.getDataSet("BOL.ST");
+    	BarSeries timeSeries = timeSeriesService.getDataSet("BOL.ST", false);
         
 //        List<TimeSeries> subseries = splitSeries(timeSeries, Duration.ofHours(6), Duration.ofDays(7));
         List<BarSeries> subseries = splitSeries(timeSeries, Duration.ofDays(12), Duration.ofDays(30));

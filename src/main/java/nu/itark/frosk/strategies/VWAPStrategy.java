@@ -22,7 +22,7 @@
  */
 package nu.itark.frosk.strategies;
 
-import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -45,6 +45,7 @@ public class VWAPStrategy implements IIndicatorValue {
     }
 
     public Strategy buildStrategy() {
+        indicatorValues.clear();
         if (this.series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
@@ -70,11 +71,11 @@ public class VWAPStrategy implements IIndicatorValue {
         return new BaseStrategy("SimpleMovingMomentumStrategy", entryRule, exitRule);
     }
 
-
     @Override
-    public List<IndicatorValue> getIndicatorValues() {
+    public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
     }
+
 
 
 }

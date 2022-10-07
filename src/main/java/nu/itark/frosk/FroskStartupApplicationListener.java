@@ -15,25 +15,10 @@ import org.springframework.stereotype.Component;
 public class FroskStartupApplicationListener implements ApplicationListener<ContextRefreshedEvent> {
 
     @Autowired
-    DataSetHelper dataSetHelper;
-
-    @Autowired
-    DataManager dataManager;
-
-    @Autowired
-    StrategyAnalysis strategyAnalysis;
+    HighLander highLander;
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-
-/*
-        dataSetHelper.addDatasetSecuritiesForCoinBase();
-        dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
-        strategyAnalysis.run(null, null);
-*/
-
-
-        System.out.println("OBS, StartUp disabled!");
-
+        highLander.runInstall(Database.COINBASE);
     }
 }

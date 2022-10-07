@@ -22,7 +22,6 @@
  */
 package nu.itark.frosk.strategies;
 
-import nu.itark.frosk.dataset.IndicatorValue;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
@@ -32,15 +31,13 @@ import org.ta4j.core.indicators.candles.BearishEngulfingIndicator;
 import org.ta4j.core.indicators.candles.BullishEngulfingIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.rules.BooleanIndicatorRule;
-import org.ta4j.core.rules.StopGainRule;
-import org.ta4j.core.rules.StopLossRule;
 
 import java.util.List;
 
 /**
 * https://www.investopedia.com/terms/b/bearishengulfingp.asp
  */
-public class EngulfingStrategy  {
+public class EngulfingStrategy implements IIndicatorValue {
 
 	BarSeries series = null;
 	   
@@ -52,6 +49,7 @@ public class EngulfingStrategy  {
      * @return a CCI correction strategy
      */
     public Strategy buildStrategy() {
+        indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
@@ -67,8 +65,14 @@ public class EngulfingStrategy  {
                 .or(new StopLossRule(closePrice, 2))
                 .or(new StopGainRule(closePrice,2));*/
 
+        setIndicatorValues(closePrice,"closePrice");
+
         Strategy strategy = new BaseStrategy("EngulfingStrategy", entryRule, exitRule);
         return strategy;
     }
 
+    @Override
+    public List<StrategyIndicatorValue> getIndicatorValues() {
+        return indicatorValues;
+    }
 }

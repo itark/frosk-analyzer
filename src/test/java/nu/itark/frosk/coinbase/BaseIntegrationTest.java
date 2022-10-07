@@ -1,8 +1,10 @@
 package nu.itark.frosk.coinbase;
 
 import com.coinbase.exchange.api.exchange.CoinbaseExchange;
+import nu.itark.frosk.FroskStartupApplicationListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,4 +22,7 @@ public abstract class BaseIntegrationTest {
 
     @Autowired
     public CoinbaseExchange exchange;
+
+    @MockBean
+    private FroskStartupApplicationListener applicationStartup;
 }

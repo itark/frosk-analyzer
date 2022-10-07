@@ -22,6 +22,7 @@
  */
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.BarSeriesService;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 @SpringBootTest
-public class TestJEngulfingStrategy {
+public class TestJEngulfingStrategy extends BaseIntegrationTest {
 
 	Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
 	 
@@ -46,7 +47,7 @@ public class TestJEngulfingStrategy {
 
     @Test
     public final void run() throws Exception {
-		BarSeries timeSeries = barSeriesService.getDataSet("BTRST-EUR");
+		BarSeries timeSeries = barSeriesService.getDataSet("BTRST-EUR", false);
 		EngulfingStrategy strat = new EngulfingStrategy(timeSeries);
         Strategy strategy = strat.buildStrategy();
         BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);

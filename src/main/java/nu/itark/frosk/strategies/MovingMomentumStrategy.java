@@ -22,14 +22,9 @@
  */
 package nu.itark.frosk.strategies;
 
-import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
-import lombok.SneakyThrows;
-import nu.itark.frosk.dataset.IndicatorValue;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -63,6 +58,7 @@ public class MovingMomentumStrategy implements IIndicatorValue {
 	}	
 
 	public Strategy buildStrategy() {
+		indicatorValues.clear();
         if (this.series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
@@ -136,10 +132,10 @@ public class MovingMomentumStrategy implements IIndicatorValue {
 		return new BaseStrategy("MovingMomentumStrategy", entryRule, exitRule);
 	}
 
-    @Override
-	public List<IndicatorValue> getIndicatorValues() {
+
+	@Override
+	public List<StrategyIndicatorValue> getIndicatorValues() {
 		return indicatorValues;
-	}    
-    
+	}
     
 }

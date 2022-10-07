@@ -91,10 +91,10 @@ public class DataSetHelper {
 		for (Product product: productProxy.getProductsForQuoteCurrency("EUR")) {
 			Security security = securityRepository.findByName(product.getId());
 			if (Objects.nonNull(security) ) {
-				logger.info("Security="+security.getName()+ " exist in database:" + database);
+				//logger.info("Security="+security.getName()+ " exist in database:" + database);
 				checkIfAddToDataset(datasetName, dataset, security);
 			} else {
-				logger.info("Security name::"+product.getId()+" to be inserted::");
+				//logger.info("Security name::"+product.getId()+" to be inserted::");
 				security = securityRepository.saveAndFlush(new Security(product.getId(), product.getDisplay_name(), database));
 				checkIfAddToDataset(datasetName, dataset, security);
 			}
@@ -103,10 +103,10 @@ public class DataSetHelper {
 		for (Product product: productProxy.getProductsForQuoteCurrency("USDT")) {
 			Security security = securityRepository.findByName(product.getId());
 			if (Objects.nonNull(security) ) {
-				logger.info("Security="+security.getName()+ " exist in database:" + database);
+				//logger.info("Security="+security.getName()+ " exist in database:" + database);
 				checkIfAddToDataset(datasetName, dataset, security);
 			} else {
-				logger.info("Security name::"+product.getId()+" to be inserted::");
+				//logger.info("Security name::"+product.getId()+" to be inserted::");
 				security = securityRepository.saveAndFlush(new Security(product.getId(), product.getDisplay_name(), database));
 				checkIfAddToDataset(datasetName, dataset, security);
 			}

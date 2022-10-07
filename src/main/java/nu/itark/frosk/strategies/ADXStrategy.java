@@ -23,7 +23,7 @@
  */
 package nu.itark.frosk.strategies;
 
-import nu.itark.frosk.dataset.IndicatorValue;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
@@ -54,6 +54,7 @@ public class ADXStrategy implements IIndicatorValue {
      * @return an adx indicator based strategy
      */
     public static Strategy buildStrategy(BarSeries series) {
+        indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
@@ -79,7 +80,8 @@ public class ADXStrategy implements IIndicatorValue {
         return new BaseStrategy("ADX", entryRule, exitRule, adxBarCount);
     }
 
-    public List<IndicatorValue> getIndicatorValues() {
+    @Override
+    public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
     }
 }

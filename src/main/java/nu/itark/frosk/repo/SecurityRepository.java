@@ -10,7 +10,6 @@ import nu.itark.frosk.model.Security;
 @Repository
 public interface SecurityRepository extends JpaRepository<Security, Long>{
 	Security findByName(String name);
-//	Optional<Security> findById(Long id);
 	List<Security> findByDatabase(String database);
 	boolean existsByName(String name);
 	
