@@ -61,10 +61,10 @@ public class RSI2Strategy implements IIndicatorValue {
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
 		setIndicatorValues(shortSma, "shortSma");
+
         SMAIndicator longSma = new SMAIndicator(closePrice, 200);
         setIndicatorValues(longSma, "longSma");
 
-        // or selling opportunities within the bigger trend.
         rsi = new RSIIndicator(closePrice, 2);
 		setIndicatorValues(rsi, "rsi");
 
@@ -82,7 +82,6 @@ public class RSI2Strategy implements IIndicatorValue {
 
         return new BaseStrategy("RSI2Strategy", entryRule, exitRule);
     }
-
 
 	@Override
 	public List<StrategyIndicatorValue> getIndicatorValues() {

@@ -2,6 +2,7 @@ package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.analysis.StrategiesMap;
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @SpringBootTest(classes = {FroskApplication.class})
-public class TestJStrategies {
+public class TestJStrategies extends BaseIntegrationTest {
 
 	Logger logger = Logger.getLogger(TestJStrategies.class.getName());
 
@@ -51,7 +52,7 @@ public class TestJStrategies {
 	@Test
 	public void runAllSingleDataSet() {
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "WLUNA-USDT";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
+		String productId = "BTC-EUR";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false);
 
@@ -144,7 +145,7 @@ public class TestJStrategies {
 
 	@Test
 	public void runOneSingleDataSet2() {
-	BarSeries series = barSeriesService.getDataSet("WLUNA-USDT", false);
+	BarSeries series = barSeriesService.getDataSet("BTC-EUR", false);
 	Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
 	BarSeriesManager seriesManager = new BarSeriesManager(series);
 	TradingRecord tradingRecord = seriesManager.run(strategy);

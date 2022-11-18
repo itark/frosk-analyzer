@@ -17,9 +17,9 @@ import nu.itark.frosk.model.StrategyTrade;
  */
 @Data
 public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
-
 	private String name;
 	private String securityName;
+	private String icon;
 	private BigDecimal totalProfit; // Total profit
 	private Integer numberOfTicks; // Number of ticks
 	private BigDecimal averageTickProfit; // Average profit (per tick)
@@ -35,8 +35,9 @@ public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
 
 	private String period;
 	private String latestTrade;
+	private String isOpen;
 	private Set<TradeDTO> trades = Collections.EMPTY_SET;
-	private List<IndicatorValueDTO> indicatorValues = Collections.EMPTY_LIST ;
+	private List<IndicatorValueDTO> indicatorValues = Collections.EMPTY_LIST;
 
 	@Override
 	public int compareTo(FeaturedStrategyDTO o) {

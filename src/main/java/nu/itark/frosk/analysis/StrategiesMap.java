@@ -38,6 +38,9 @@ public class StrategiesMap {
 		SimpleMovingMomentumStrategy simpleManStrat = new SimpleMovingMomentumStrategy(series);
 		strategies.put(simpleManStrat.buildStrategy(), SimpleMovingMomentumStrategy.class.getSimpleName());
 
+		VWAPStrategy wvapStrat = new VWAPStrategy(series);
+		strategies.put(wvapStrat.buildStrategy(), VWAPStrategy.class.getSimpleName());
+
 		return strategies;
 	}
 	

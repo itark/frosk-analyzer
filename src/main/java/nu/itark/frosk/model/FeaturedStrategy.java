@@ -78,6 +78,9 @@ public class FeaturedStrategy {
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "latest_trade")
 	private Date latestTrade;
+
+	@Column(name = "open", columnDefinition="BOOLEAN DEFAULT false")
+	private boolean isOpen = false;
 	
 	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
 	private Set<StrategyTrade> trades;
@@ -90,7 +93,8 @@ public class FeaturedStrategy {
 
 	public FeaturedStrategy(String name,String securityName, BigDecimal totalProfit, Integer numberOfTicks,
 			BigDecimal averageTickProfit, Integer numberofTrades, BigDecimal profitableTradesRatio, BigDecimal maxDD,
-			BigDecimal rewardRiskRatio, BigDecimal totalTransactionCost, BigDecimal buyAndHold, BigDecimal totalProfitVsButAndHold, String period, Date latestTrade ) {
+			BigDecimal rewardRiskRatio, BigDecimal totalTransactionCost, BigDecimal buyAndHold, BigDecimal totalProfitVsButAndHold, String period, Date latestTrade,
+			boolean	isOpen) {
 		this.name = name;
 		this.securityName = securityName;
 		this.totalProfit = totalProfit;
@@ -105,7 +109,7 @@ public class FeaturedStrategy {
 		this.totalProfitVsButAndHold = totalProfitVsButAndHold;
 		this.period = period;
 		this.latestTrade = latestTrade;
+		this.isOpen = isOpen;
+	}
 
-	}	
-	
 }

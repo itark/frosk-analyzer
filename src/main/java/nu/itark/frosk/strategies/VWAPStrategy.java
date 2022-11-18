@@ -51,13 +51,6 @@ public class VWAPStrategy implements IIndicatorValue {
         }
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-
-        shortEma = new EMAIndicator(closePrice, 10);
-        setIndicatorValues(shortEma, "shortEma");
-
-        longEma = new EMAIndicator(closePrice, 20);
-        setIndicatorValues(longEma, "longEma");
-
         vwap = new VWAPIndicator(series,1);
 
         // Entry rule
@@ -68,7 +61,7 @@ public class VWAPStrategy implements IIndicatorValue {
                 .or(new StopLossRule(closePrice, 2))
                 .or(new StopGainRule(closePrice,2));
 
-        return new BaseStrategy("SimpleMovingMomentumStrategy", entryRule, exitRule);
+        return new BaseStrategy("VWAPStrategy", entryRule, exitRule);
     }
 
     @Override

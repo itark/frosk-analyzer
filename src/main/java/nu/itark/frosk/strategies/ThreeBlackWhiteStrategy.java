@@ -57,7 +57,6 @@ public class ThreeBlackWhiteStrategy implements IIndicatorValue {
         }
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-  
         setIndicatorValues(closePrice, "closePrice");
         
         ThreeWhiteSoldiersIndicator  bullish = new ThreeWhiteSoldiersIndicator(series, 100,series.numOf(5));

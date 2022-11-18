@@ -52,25 +52,27 @@ public class SimpleMovingMomentumStrategy implements IIndicatorValue {
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         shortEma = new EMAIndicator(closePrice, 10);
         longEma = new EMAIndicator(closePrice, 20);
-        ParabolicSarIndicator parabolicSarIndicator = new ParabolicSarIndicator(series);
-        IsRisingRule isRisingRule = new IsRisingRule(parabolicSarIndicator, 1);
-        IsFallingRule isFallingRule = new IsFallingRule(parabolicSarIndicator, 1);
+        ParabolicSarIndicator pSar = new ParabolicSarIndicator(series);
+        IsRisingRule isRisingRule = new IsRisingRule(pSar, 1);
+        IsFallingRule isFallingRule = new IsFallingRule(pSar, 1);
 
-/*
         Rule entryRule = new OverIndicatorRule(shortEma, longEma)
                 .and(isRisingRule);
-
         Rule exitRule = isFallingRule
              //  .or(new StopGainRule(closePrice, DoubleNum.valueOf(3)));
               .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
-*/
 
-        Rule entryRule = new OverIndicatorRule(shortEma, longEma);
+
+/*        Rule entryRule = new OverIndicatorRule(shortEma, longEma);
         Rule exitRule = new UnderIndicatorRule(shortEma, longEma);
 
-        //For ui
+        Rule exitRule = isFallingRule
+                //  .or(new StopGainRule(closePrice, DoubleNum.valueOf(3)));
+                .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));*/
+
         setIndicatorValues(shortEma, "shortEma");
         setIndicatorValues(longEma, "longEma");
+        setIndicatorValues(pSar, "pSar");
 
         return new BaseStrategy("SimpleMovingMomentumStrategy", entryRule, exitRule);
     }

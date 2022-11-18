@@ -1,18 +1,13 @@
 package nu.itark.frosk;
 
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.strategies.filter.StrategyFilter;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import nu.itark.frosk.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
-import nu.itark.frosk.repo.DataSetRepository;
-import nu.itark.frosk.repo.FeaturedStrategyRepository;
-import nu.itark.frosk.repo.SecurityPriceRepository;
-import nu.itark.frosk.repo.SecurityRepository;
 
 /**
  * There could be only one...
@@ -26,23 +21,26 @@ public class HighLander {
 	DataManager dataManager;
 	
 	@Autowired
-	DataSetRepository dataSetRepo;
+	DataSetRepository dataSetRepository;
 	
 	@Autowired
-	SecurityRepository securityRepo;
+	SecurityRepository securityRepository;
 	
 	@Autowired
-	SecurityPriceRepository securityPriceRepo;
+	SecurityPriceRepository securityPriceRepository;
 	
 	@Autowired
-	FeaturedStrategyRepository strategyRepo;
-	
+	FeaturedStrategyRepository featuredStrategyRepository;
+
+	@Autowired
+	TradesRepository tradesRepository;
+
+	@Autowired
+	StrategyIndicatorValueRepository strategyIndicatorValueRepository;
+
 	@Autowired
 	StrategyAnalysis strategyAnalysis;
 
-	@Autowired
-	StrategyFilter strategyFilter;
-	
 	/**
 	 * Full setup, addition
 	 * 
@@ -51,9 +49,7 @@ public class HighLander {
 		addDataSetAndSecurities();
 		addSecurityPricesFromCoinbase();
 		runAllStrategies();
-		//printLongTrades();
 	}
-
 
 	/**
 	 * Full setup, from scratch
@@ -61,26 +57,22 @@ public class HighLander {
 	 * 
 	 */
 	public void runCleanInstall(Database database) {
-		dataSetRepo.deleteAllInBatch();
-		securityRepo.deleteAllInBatch();
-		securityPriceRepo.deleteAllInBatch();
-		
+		runClean();
 		runInstall(database);
-		
-	}	
+	}
 	
 	/**
 	 * Be aware this will kill them all...
 	 * 
 	 */
 	public void runClean() {
-		dataSetRepo.deleteAllInBatch();
-		securityRepo.deleteAllInBatch();
-		securityPriceRepo.deleteAllInBatch();
-		strategyRepo.deleteAllInBatch();
-		
-	}		
-	
+		dataSetRepository.deleteAllInBatch();
+		securityRepository.deleteAllInBatch();
+		securityPriceRepository.deleteAllInBatch();
+		strategyIndicatorValueRepository.deleteAllInBatch();
+		tradesRepository.deleteAllInBatch();
+		featuredStrategyRepository.deleteAllInBatch();
+	}
 	
 	/**
 	 * Insert or add DataSet and its securities defined in csv-file.
@@ -105,12 +97,6 @@ public class HighLander {
 	 */
 	private void runAllStrategies() {
 		strategyAnalysis.run(null, null);
-	}
-
-	private void printLongTrades() {
-		strategyFilter.getLongTradesAllStrategies().forEach(strategyTrade -> {
-			log.info("strategyTrade:"+ ReflectionToStringBuilder.toString(strategyTrade));
-		});
 	}
 
 	

@@ -44,6 +44,19 @@ public class DataController {
     @Autowired
     SecurityMetaDataManager securityMetaDataManager;
 
+
+    /**
+     * @return
+     * @Example curl -XGET http://localhost:8080/frosk-analyzer/featuredStrategies
+     * <p>
+     * curl -XGET http://localhost:8080/frosk-analyzer/featuredStrategies
+     */
+    @RequestMapping(path = "/featuredStrategies", method = RequestMethod.GET)
+    public List<FeaturedStrategyDTO> getFeaturedStrategies() {
+        return securityMetaDataManager.getFeaturedStrategies();
+    }
+
+
     /**
      * @return
      * @Example curl -XGET http://localhost:8080/frosk-analyzer/featuredStrategies/MovingMomentumStrategy/COINBASE
@@ -143,8 +156,6 @@ public class DataController {
             dailyPrices = new DailyPriceDTO(bar);
             dpList.add(dailyPrices);
         }
-        //decorateWithTrades(dpList,security,strategy);
-
         return dpList;
     }
 
@@ -168,13 +179,10 @@ public class DataController {
         logger.info("/indicatorValues?security=" + security + "&strategy=" + strategy);
         List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
         strategyAnalysis.run(strategy, timeSeriesService.getSecurityId(security));
-
         final FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategy, security);
-
         featuredStrategy.getIndicatorValues().forEach(siv -> {
             indicatorValues.add(new IndicatorValueDTO(siv.getDate(),siv.getValue(), siv.getIndicator()));
         });
-
         return indicatorValues;
     }
 
@@ -209,9 +217,11 @@ public class DataController {
     }
 
 	private FeaturedStrategyDTO getDTO(FeaturedStrategy fs) {
-		FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
+        FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
+        if (Objects.isNull(fs)) {
+            return dto;
+        }
         List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
-
 		dto.setName(fs.getName());
 		dto.setSecurityName(fs.getSecurityName());
 		dto.setTotalProfit(fs.getTotalProfit());

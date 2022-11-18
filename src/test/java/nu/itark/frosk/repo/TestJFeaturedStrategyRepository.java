@@ -60,7 +60,7 @@ public class TestJFeaturedStrategyRepository {
 		
 		FeaturedStrategy featuredStrategy = new FeaturedStrategy(name, securityName, totalProfit, numberOfTicks, averageTickProfit,
 				numberofTrades, profitableTradesRatio, maxDD, rewardRiskRatio, totalTransactionCost, buyAndHold,
-				totalProfitVsButAndHold, period, latestTrade);		
+				totalProfitVsButAndHold, period, latestTrade, false);
 		
 	}
 	
@@ -136,7 +136,7 @@ public class TestJFeaturedStrategyRepository {
 		
 		FeaturedStrategy featuredStrategy = new FeaturedStrategy(name, securityName, totalProfit, numberOfTicks, averageTickProfit,
 				numberofTrades, profitableTradesRatio, maxDD, rewardRiskRatio, totalTransactionCost, buyAndHold,
-				totalProfitVsButAndHold, period, latestTrade);		
+				totalProfitVsButAndHold, period, latestTrade, false);
 		
 		
 		FeaturedStrategy featuredStrategyREs =	featuredStrategyRepository.saveAndFlush(featuredStrategy);

@@ -23,6 +23,7 @@ import nu.itark.frosk.repo.TradesRepository;
 import org.ta4j.core.analysis.criteria.pnl.AverageProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
 import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
+import org.ta4j.core.analysis.criteria.pnl.ProfitLossPercentageCriterion;
 
 /**
  * This class diplays analysis criterion values after running a trading strategy
@@ -112,7 +113,6 @@ public class StrategyAnalysis {
 			strategyToRun = getStrategyToRun(strategy, series);
 			BarSeriesManager seriesManager = new BarSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
-			//positions = tradingRecord.getTrades();
 			positions = tradingRecord.getPositions();
 			if (series.getBarData().isEmpty()){
 				//abort
@@ -156,7 +156,7 @@ public class StrategyAnalysis {
 			fs.setPeriod(getPeriod(series));
 			fs.setLatestTrade(latestTradeDate);
 			totalProfit = new GrossReturnCriterion().calculate(series, tradingRecord).doubleValue();
-			//totalProfitPercentage = (totalProfit - 1) * 100;
+			//totalProfit = new ProfitLossPercentageCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setTotalProfit(new BigDecimal(totalProfit).setScale(2, BigDecimal.ROUND_DOWN));
 			fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
 			double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord).doubleValue();
@@ -185,6 +185,7 @@ public class StrategyAnalysis {
 			}
 			fs.setTotalTransactionCost(
 					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
+			fs.setOpen(tradingRecord.getCurrentPosition().isOpened());
 
 			FeaturedStrategy fsRes = featuredStrategyRepository.saveAndFlush(fs);
 			//Trades
