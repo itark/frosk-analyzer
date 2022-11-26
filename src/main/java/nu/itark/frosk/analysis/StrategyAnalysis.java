@@ -24,6 +24,7 @@ import org.ta4j.core.analysis.criteria.pnl.AverageProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
 import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.ProfitLossPercentageCriterion;
+import org.ta4j.core.num.Num;
 
 /**
  * This class diplays analysis criterion values after running a trading strategy
@@ -113,25 +114,34 @@ public class StrategyAnalysis {
 			strategyToRun = getStrategyToRun(strategy, series);
 			BarSeriesManager seriesManager = new BarSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
-			positions = tradingRecord.getPositions();
 			if (series.getBarData().isEmpty()){
-				//abort
 				return;
 			}
 			Set<StrategyTrade> strategyTradeList = new HashSet<StrategyTrade>();
 			StrategyTrade strategyTrade = null;
 
-			for (Position trade : positions) {
-				Bar barEntry = series.getBar(trade.getEntry().getIndex());
+			for (Position position : tradingRecord.getPositions()) {
+				//Entry
+				Bar barEntry = series.getBar(position.getEntry().getIndex());
 				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
-				String entryType = trade.getEntry().getType().name();
-				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getLowPrice().doubleValue()));
+				String entryType = position.getEntry().getType().name();
+				strategyTrade = new StrategyTrade(	buyDate,
+													entryType,
+													BigDecimal.valueOf(position.getEntry().getValue().doubleValue()),
+													null,
+													null);
 				strategyTradeList.add(strategyTrade);
-
-				Bar barExit = series.getBar(trade.getExit().getIndex());
+				// Exit
+				Bar barExit = series.getBar(position.getExit().getIndex());
 				Date sellDate = Date.from(barExit.getEndTime().toInstant());
-				String exitType = trade.getExit().getType().name();
-				strategyTrade = new StrategyTrade(sellDate,exitType,BigDecimal.valueOf(barExit.getLowPrice().doubleValue()));
+				String exitType = position.getExit().getType().name();
+				Num pnl = position.getProfit().dividedBy(position.getEntry().getValue()).multipliedBy(series.numOf(100));
+				//logger.info("pnl="+pnl.doubleValue());
+				strategyTrade = new StrategyTrade(	sellDate,
+													exitType,
+													BigDecimal.valueOf(position.getExit().getValue().doubleValue()),
+													BigDecimal.valueOf(position.getProfit().doubleValue()),
+													BigDecimal.valueOf(pnl.doubleValue()));
 				strategyTradeList.add(strategyTrade);
 				latestTradeDate = Date.from(barExit.getEndTime().toInstant());
 			}
@@ -141,9 +151,13 @@ public class StrategyAnalysis {
 				Bar barEntry = series.getBar(tradingRecord.getCurrentPosition().getEntry().getIndex());
 				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
 				String entryType = tradingRecord.getCurrentPosition().getEntry().getType().name();
-				strategyTrade = new StrategyTrade(buyDate,entryType,BigDecimal.valueOf(barEntry.getLowPrice().doubleValue()));
+				strategyTrade = new StrategyTrade(	buyDate,
+													entryType,
+													BigDecimal.valueOf(tradingRecord.getCurrentPosition().getEntry().getValue().doubleValue()),
+													null,
+													null);
 				strategyTradeList.add(strategyTrade);
-				latestTradeDate = Date.from(barEntry.getEndTime().toInstant());
+				latestTradeDate = Date.from(barEntry.getBeginTime().toInstant());
 			}
 
 			fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, series.getName());
@@ -155,8 +169,7 @@ public class StrategyAnalysis {
 
 			fs.setPeriod(getPeriod(series));
 			fs.setLatestTrade(latestTradeDate);
-			totalProfit = new GrossReturnCriterion().calculate(series, tradingRecord).doubleValue();
-			//totalProfit = new ProfitLossPercentageCriterion().calculate(series, tradingRecord).doubleValue();
+			totalProfit = new ProfitLossPercentageCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setTotalProfit(new BigDecimal(totalProfit).setScale(2, BigDecimal.ROUND_DOWN));
 			fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
 			double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord).doubleValue();
@@ -168,12 +181,6 @@ public class StrategyAnalysis {
 			}
 			double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, BigDecimal.ROUND_DOWN));
-/*
-			double rewardRiskRatio = new ValueAtRiskCriterion(2D).calculate(series, tradingRecord).doubleValue();
-			if (Double.isFinite(rewardRiskRatio)) {
-				fs.setRewardRiskRatio(new BigDecimal(rewardRiskRatio).setScale(2, BigDecimal.ROUND_DOWN));
-			}
-*/
 			double buyAndHold = new BuyAndHoldReturnCriterion().calculate(series, tradingRecord).doubleValue();
 			if (Double.isFinite(buyAndHold)) {
 				fs.setBuyAndHold(new BigDecimal(buyAndHold).setScale(2, BigDecimal.ROUND_DOWN));

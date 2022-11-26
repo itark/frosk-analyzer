@@ -157,8 +157,13 @@ public class TestJStrategies extends BaseIntegrationTest {
 		Bar barExit = series.getBar(position.getExit().getIndex());
 		System.out.println(series.getName()+"::barExit="+barExit.getDateName());
 		System.out.println(series.getName()+"::barExit.getClosePrice="+ barExit.getClosePrice());
+		System.out.println("profit(position): " + position.getProfit());
 		System.out.println("Gross return(position): " + position.getGrossReturn());
 		System.out.println("Gross profit(position): " + position.getGrossProfit());
+
+		Num pnl = barExit.getClosePrice().dividedBy(barEntry.getClosePrice()).multipliedBy(series.numOf(100));
+		System.out.println("P/L: " + pnl.doubleValue());
+
 	}
 
 	// Total return Xtra

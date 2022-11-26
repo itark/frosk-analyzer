@@ -9,6 +9,7 @@ import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
+import org.apache.commons.lang3.ThreadUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -117,17 +120,54 @@ public class COINBASEDataManager {
         return sp;
     }
 
-    /*
-    *        close=41233.35
-    *         high=41650.96
-    *         low=40143.18
-    *         open=40352.85
-    *         time=2021-09-18T00:00:00Z
-    *         volume=818.92870287
-    */
     private Map<Long, List<Candle>> getCandles(Iterable<Security> securities, Granularity granularity) throws IOException {
         Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
         Instant endTime = Instant.now();
+        int count = 0;
+        final Iterator<Security> securityIterator = securities.iterator();
+
+        Security security = null;
+        //ThreadUtils.sleep(Duration.ofSeconds(12));
+        LocalDateTime twoSecondsLater = LocalDateTime.now().plusSeconds(2);
+        while (securityIterator.hasNext()) {
+            security = securityIterator.next();
+            Instant startTime = Instant.now();
+            SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
+            if (Objects.nonNull(topSp)) {
+                Date lastDate = topSp.getTimestamp();
+                if (lastDate.toInstant().isBefore(startTime)) {
+                    startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
+                    if (DateUtils.isSameInstant(Date.from(startTime),lastDate )){
+                        continue;
+                    }
+                } else {
+                    startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
+                    startTime = startTime.plus(1, ChronoUnit.DAYS);
+                }
+            } else {
+                startTime=  startTime.minus(nrOfCandles, ChronoUnit.DAYS);
+            }
+            try {
+                //https://docs.cloud.coinbase.com/exchange/docs/rest-rate-limits
+                Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
+                while (LocalDateTime.now().isAfter(twoSecondsLater)) {
+                    ThreadUtils.sleep(Duration.ofSeconds(2));
+                    twoSecondsLater = LocalDateTime.now().plusSeconds(2);
+                }
+                candlesMap.put(security.getId(), candles.getCandleList());
+            } catch (Exception e) {
+                log.error("Could not get candles for:"+security.getName()+", continue...");
+            }
+
+
+        }
+        return candlesMap;
+    }
+
+    private Map<Long, List<Candle>> getCandlesORG(Iterable<Security> securities, Granularity granularity) throws IOException {
+        Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
+        Instant endTime = Instant.now();
+        int count = 0;
 
         securities.forEach((security) -> {
             Instant startTime = Instant.now();
@@ -146,7 +186,7 @@ public class COINBASEDataManager {
             } else {
                 startTime=  startTime.minus(nrOfCandles, ChronoUnit.DAYS);
             }
-           // log.info("Retrieving candles for " + security.getName() + " startTime " + startTime);
+            // log.info("Retrieving candles for " + security.getName() + " startTime " + startTime);
             try {
                 Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
                 candlesMap.put(security.getId(), candles.getCandleList());
@@ -156,4 +196,8 @@ public class COINBASEDataManager {
         });
         return candlesMap;
     }
+
+
+
+
 }

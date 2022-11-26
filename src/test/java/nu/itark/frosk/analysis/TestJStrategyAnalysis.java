@@ -31,13 +31,21 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Test
 	public final void runSMM() {
-		Long sec_id = ts.getSecurityId("DIA-EUR"); //"BTRST-EUR","BTC-EUR"
+		Long sec_id = ts.getSecurityId("BTC-EUR"); //"BTRST-EUR","BTC-EUR"
 		strategyAnalysis.run(SimpleMovingMomentumStrategy.class.getSimpleName(), sec_id);
 	//	strategyAnalysis.run(RSI2Strategy.class.getSimpleName(), sec_id);
 
 		//Verify
-		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(SimpleMovingMomentumStrategy.class.getSimpleName(), "DIA-EUR");
-		logger.info("fs="+ReflectionToStringBuilder.toString(fs, ToStringStyle.MULTI_LINE_STYLE));
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(SimpleMovingMomentumStrategy.class.getSimpleName(), "BTC-EUR");
+		//logger.info("fs="+ReflectionToStringBuilder.toString(fs, ToStringStyle.MULTI_LINE_STYLE));
+
+		fs.getTrades().forEach(t-> {
+			System.out.println(ReflectionToStringBuilder.toString(t));
+		});
+
+
+		//logger.info("trades="+ReflectionToStringBuilder.toString(fs.getTrades(), ToStringStyle.MULTI_LINE_STYLE));
+
 
 	}	
 	

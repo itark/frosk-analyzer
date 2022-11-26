@@ -2,6 +2,8 @@ package nu.itark.frosk.analysis;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class TradeDTO {
     private long id;
@@ -9,6 +11,8 @@ public class TradeDTO {
     private String strategy;
     private long date;
     private String dateReadable;
-    private long price;
+    private BigDecimal price;
+    private BigDecimal grossProfit;
+    private BigDecimal pnl;
     private String type;
 }

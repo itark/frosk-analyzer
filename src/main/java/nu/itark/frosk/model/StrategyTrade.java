@@ -35,8 +35,14 @@ public class StrategyTrade {
 	private Date date;
 	
 	@Column(name = "price")
-	private BigDecimal price;	
-	
+	private BigDecimal price;
+
+	@Column(name = "gross_profit")
+	private BigDecimal grossProfit;
+
+	@Column(name = "pnl")
+	private BigDecimal pnl;
+
 	@Column(name = "type")
 	private String type;
 	
@@ -46,9 +52,11 @@ public class StrategyTrade {
 
     protected StrategyTrade(){}
     
-    public StrategyTrade(Date date, String type, BigDecimal price){
+    public StrategyTrade(Date date, String type, BigDecimal price, BigDecimal grossProfit, BigDecimal pnl){
     	this.date = date;
     	this.price = price;
+		this.grossProfit = grossProfit;
+		this.pnl = pnl;
     	this.type = type;
     }
     

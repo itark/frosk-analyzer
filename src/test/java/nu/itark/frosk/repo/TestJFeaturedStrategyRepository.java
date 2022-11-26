@@ -144,10 +144,10 @@ public class TestJFeaturedStrategyRepository {
 		logger.info("featuredStrategyREs id="+featuredStrategyREs.getId());
 		
 		// save trade
-		StrategyTrade trades = new StrategyTrade(new Date(), "X", new BigDecimal(23));
+		StrategyTrade trades = new StrategyTrade(new Date(), "X", new BigDecimal(23),new BigDecimal(23),new BigDecimal(23));
 		trades.setFeaturedStrategy(featuredStrategyREs);
 
-		StrategyTrade trades2 = new StrategyTrade(new Date(), "Y", new BigDecimal(23));
+		StrategyTrade trades2 = new StrategyTrade(new Date(), "Y", new BigDecimal(23),new BigDecimal(23),new BigDecimal(23));
 		trades2.setFeaturedStrategy(featuredStrategyREs);
 
 		// save indicatorvalues

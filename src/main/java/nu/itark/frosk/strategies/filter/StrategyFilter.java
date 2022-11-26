@@ -9,6 +9,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -67,10 +68,7 @@ public class StrategyFilter {
             tradee.setId(trade.getId());
             tradee.setDate(trade.getDate().toInstant().toEpochMilli());
             tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd"));
-/*
-            tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd HH:mm:ss"));
-*/
-            tradee.setPrice(trade.getPrice().longValue());
+            tradee.setPrice(BigDecimal.valueOf(trade.getPrice().doubleValue()));
             tradee.setType(trade.getType());
             tradee.setSecurityName(trade.getFeaturedStrategy().getSecurityName());
             tradee.setStrategy(trade.getFeaturedStrategy().getName());

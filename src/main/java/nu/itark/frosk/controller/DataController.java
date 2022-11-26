@@ -67,9 +67,7 @@ public class DataController {
     public List<FeaturedStrategyDTO> getFeaturedStrategies(@PathVariable("strategy") String strategy, @PathVariable("dataset") String dataset) {
         logger.info("strategy=" + strategy + ", dataset=" + dataset);
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
-
         DataSet datasetet = datasetRepository.findByName(dataset);
-
         if (Objects.isNull(datasetet)) {
             logger.log(Level.WARNING, "Kunde inte hitta Dataset för :" + dataset + " kolla ditt data.");
             throw new RuntimeException("Kunde inte hitta Dataset för :" + dataset + " kolla ditt data.");
@@ -80,24 +78,17 @@ public class DataController {
             strategies.forEach(strategyName -> {
                 datasetet.getSecurities().forEach(security -> {
                     FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, security.getName());
-                    returnList.add(getDTO(fs));
+                    returnList.add(securityMetaDataManager.getDTO(fs));
                 });
             });
         } else {
             datasetet.getSecurities().forEach(security -> {
                 FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security.getName());
-/*
-				if (!"BTC-EUR".equals(fs.getSecurityName())) {
-					logger.info("fs.getSecurityName():"+fs.getSecurityName());
-					return;
-				}
-*/
                 if (Objects.isNull(fs)) {
                     logger.log(Level.WARNING, "Kunde inte hitta FeaturedStrategy för " + strategy + " och " + security.getName() + ". Kolla ditt data. Kanske inte kört runStrategy");
                     return;
-                    //throw new RuntimeException("Kunde inte hitta FeaturedStrategy för "+strategy+" och "+security.getName()+". Kolla ditt data. Kanske inte kört runStrategy");
                 }
-                returnList.add(getDTO(fs));
+                returnList.add(securityMetaDataManager.getDTO(fs));
             });
         }
 
@@ -121,7 +112,7 @@ public class DataController {
         DailyPriceDTO dailyPrices = null;
         SecurityDTO frosk = null;
         List<DailyPriceDTO> dpList = new ArrayList<DailyPriceDTO>();
-        BarSeries timeSeries = timeSeriesService.getDataSet(security, true);
+        BarSeries timeSeries = timeSeriesService.getDataSet(security, false);
         for (int i = 0; i < timeSeries.getBarCount(); i++) {
             Bar bar = timeSeries.getBar(i);
             dailyPrices = new DailyPriceDTO(bar);
@@ -167,7 +158,7 @@ public class DataController {
     public FeaturedStrategyDTO getFeaturedStrategy(@RequestParam("security") String security, @RequestParam("strategy") String strategy) {
         logger.info("/featuredStrategy?security=" + security + "&strategy=" + strategy);
         final FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategy, security);
-        return getDTO(featuredStrategy);
+        return securityMetaDataManager.getDTO(featuredStrategy);
     }
 
     /**
@@ -214,59 +205,6 @@ public class DataController {
     public List<TradeDTO> shortTrades() {
         logger.info("/shorttrades");
         return getShortTrades();
-    }
-
-	private FeaturedStrategyDTO getDTO(FeaturedStrategy fs) {
-        FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
-        if (Objects.isNull(fs)) {
-            return dto;
-        }
-        List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
-		dto.setName(fs.getName());
-		dto.setSecurityName(fs.getSecurityName());
-		dto.setTotalProfit(fs.getTotalProfit());
-		dto.setNumberOfTicks(fs.getNumberOfTicks());
-		dto.setAverageTickProfit(fs.getAverageTickProfit());
-		if (Objects.nonNull(fs.getProfitableTradesRatio())) {
-			dto.setProfitableTradesRatio(fs.getProfitableTradesRatio().toPlainString());
-		} else {
-			dto.setProfitableTradesRatio("empty");
-		}
-		dto.setMaxDD(fs.getMaxDD());
-		dto.setRewardRiskRatio(fs.getRewardRiskRatio());
-		dto.setTotalTranactionCost(fs.getTotalTransactionCost());
-		dto.setBuyAndHold(fs.getBuyAndHold());
-		dto.setTotalProfitVsButAndHold(fs.getTotalProfitVsButAndHold());
-		dto.setPeriod(fs.getPeriod());
-		if (Objects.nonNull(fs.getLatestTrade())) {
-			dto.setLatestTrade(fs.getLatestTrade().toString());
-		} else {
-			dto.setLatestTrade("empty");
-		}
-		dto.setNumberofTrades(fs.getNumberofTrades());
-        fs.getIndicatorValues().forEach(siv -> {
-            indicatorValues.add(new IndicatorValueDTO(siv.getDate(),siv.getValue(), siv.getIndicator()));
-        });
-        dto.setIndicatorValues(indicatorValues);
-        dto.setTrades(convert(fs.getTrades()));
-
-		return dto;
-	}
-
-    private Set<TradeDTO> convert(Set<StrategyTrade> tradeList) {
-        Set<TradeDTO> trades = new HashSet<TradeDTO>();
-        tradeList.forEach(trade -> {
-            TradeDTO tradee = new TradeDTO();
-            tradee.setId(trade.getId());
-            tradee.setDate(trade.getDate().toInstant().toEpochMilli());
-            tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd"));
-            tradee.setPrice(trade.getPrice().longValue());
-            tradee.setType(trade.getType());
-            tradee.setSecurityName(trade.getFeaturedStrategy().getSecurityName());
-            tradee.setStrategy(trade.getFeaturedStrategy().getName());
-            trades.add(tradee);
-        });
-        return trades;
     }
 
     private List<TradeDTO> getLongTrades() {

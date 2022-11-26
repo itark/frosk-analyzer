@@ -1,12 +1,15 @@
 package nu.itark.frosk.analysis;
 
 import com.coinbase.exchange.model.Granularity;
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
+import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.Bar;
@@ -26,6 +29,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summarizingInt;
 
 @Component
+@Slf4j
 public class SecurityMetaDataManager {
 
     @Autowired
@@ -47,12 +51,25 @@ public class SecurityMetaDataManager {
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
         DataSet dataset = datasetRepository.findByName(Database.COINBASE.name());
         List<String> strategies = StrategiesMap.buildStrategiesMap();
+
+        log.info("strategies:{}",strategies.size());
+        log.info("dataset.getSecurities():{}",dataset.getSecurities().size());
+        log.info("featuredStrategyRepository.findAll().size():{}",featuredStrategyRepository.findAll().size());
+
+/*
         strategies.forEach(strategyName -> {
             dataset.getSecurities().forEach(security -> {
                 FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, security.getName());
                 returnList.add(getDTO(fs));
             });
         });
+*/
+        featuredStrategyRepository.findAll().forEach(fs->{
+                returnList.add(getDTO(fs));
+        });
+
+        log.info("returnList.size():{}",returnList.size());
+
         return returnList;
     }
 
@@ -94,7 +111,7 @@ public class SecurityMetaDataManager {
         }
     }
 
-    private FeaturedStrategyDTO getDTO(FeaturedStrategy fs) {
+    public FeaturedStrategyDTO getDTO(FeaturedStrategy fs) {
         FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
         if (Objects.isNull(fs)) {
             return dto;
@@ -124,10 +141,35 @@ public class SecurityMetaDataManager {
         }
         dto.setIsOpen(String.valueOf(fs.isOpen()));
         dto.setNumberofTrades(fs.getNumberofTrades());
+        fs.getIndicatorValues().forEach(siv -> {
+            indicatorValues.add(new IndicatorValueDTO(siv.getDate(),siv.getValue(), siv.getIndicator()));
+        });
+        dto.setIndicatorValues(indicatorValues);
+        dto.setTrades(convert(fs.getTrades()));
 
         return dto;
     }
 
-
+    private Set<TradeDTO> convert(Set<StrategyTrade> tradeList) {
+        Set<TradeDTO> trades = new HashSet<TradeDTO>();
+        tradeList.forEach(trade -> {
+            TradeDTO tradee = new TradeDTO();
+            tradee.setId(trade.getId());
+            tradee.setDate(trade.getDate().toInstant().toEpochMilli());
+            tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd"));
+            tradee.setPrice(BigDecimal.valueOf(trade.getPrice().doubleValue()));
+            tradee.setType(trade.getType());
+            tradee.setSecurityName(trade.getFeaturedStrategy().getSecurityName());
+            tradee.setStrategy(trade.getFeaturedStrategy().getName());
+            if (Objects.nonNull(trade.getGrossProfit())) {
+                tradee.setGrossProfit(BigDecimal.valueOf(trade.getGrossProfit().doubleValue()));
+            }
+            if (Objects.nonNull(trade.getPnl())) {
+                tradee.setPnl(BigDecimal.valueOf(trade.getPnl().doubleValue()));
+            }
+            trades.add(tradee);
+        });
+        return trades;
+    }
 
 }
