@@ -14,12 +14,10 @@ import org.ta4j.core.analysis.criteria.pnl.GrossProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
 import org.ta4j.core.analysis.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.num.DoubleNum;
-import org.ta4j.core.num.NaN;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.reports.TradingStatement;
 
 import java.text.NumberFormat;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
@@ -152,17 +150,19 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	for (Position position : tradingRecord.getPositions()) {
 		Bar barEntry = series.getBar(position.getEntry().getIndex());
-		System.out.println(series.getName()+"::barEntry="+barEntry.getEndTime());
-		System.out.println(series.getName()+"::barEntry.getClosePrice="+ barEntry.getClosePrice());
+		//System.out.println(series.getName()+"::barEntry="+barEntry.getEndTime());
+		//System.out.println(series.getName()+"::barEntry.getClosePrice="+ barEntry.getClosePrice());
 		Bar barExit = series.getBar(position.getExit().getIndex());
+/*
 		System.out.println(series.getName()+"::barExit="+barExit.getDateName());
 		System.out.println(series.getName()+"::barExit.getClosePrice="+ barExit.getClosePrice());
 		System.out.println("profit(position): " + position.getProfit());
 		System.out.println("Gross return(position): " + position.getGrossReturn());
 		System.out.println("Gross profit(position): " + position.getGrossProfit());
+*/
 
 		Num pnl = barExit.getClosePrice().dividedBy(barEntry.getClosePrice()).multipliedBy(series.numOf(100));
-		System.out.println("P/L: " + pnl.doubleValue());
+		//System.out.println("P/L: " + pnl.doubleValue());
 
 	}
 
@@ -256,7 +256,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void chooseBestForSecurity() {
-		BarSeries timeSeries = barSeriesService.getDataSet("DIA-EUR", false);
+		BarSeries timeSeries = barSeriesService.getDataSet("ETC-EUR", false);
 		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 		// The analysis criterion
 		AnalysisCriterion profitCriterion = new GrossReturnCriterion();
@@ -283,13 +283,18 @@ public class TestJStrategies extends BaseIntegrationTest {
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
 		BacktestExecutor backtestExecutor = new BacktestExecutor(barSeries);
 		final List<TradingStatement> tradingStatements = backtestExecutor.execute(strategies, DoubleNum.valueOf(50), Trade.TradeType.BUY);
-
 		for (TradingStatement tradingStatement : tradingStatements) {
 			System.out.println(tradingStatement.getStrategy().getName() +":"+ tradingStatement.getPerformanceReport().getTotalProfitLossPercentage().getDelegate() + "%");
 		}
-
 		Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
 		System.out.println("\t\t--> Best strategy: " + bestStrategy.getName() + "\n");
+		Optional<TradingStatement> bestTradingStatement = tradingStatements.stream()
+				.filter(s -> s.getStrategy().getName().equals(bestStrategy.getName())).findFirst();
+		if (bestTradingStatement.isPresent()) {
+			System.out.println("best:"+bestTradingStatement.get().getPerformanceReport().getTotalProfitLossPercentage());
+		} else {
+			System.err.println("no match:"+bestStrategy);
+		}
 
 
 	}

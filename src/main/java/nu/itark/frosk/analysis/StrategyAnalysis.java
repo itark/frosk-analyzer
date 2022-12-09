@@ -6,8 +6,12 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.model.StrategyPerformance;
+import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.*;
+import nu.itark.frosk.util.DateTimeManager;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -22,9 +26,10 @@ import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
 import org.ta4j.core.analysis.criteria.pnl.AverageProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
-import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.ProfitLossPercentageCriterion;
+import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
+import org.ta4j.core.reports.TradingStatement;
 
 /**
  * This class diplays analysis criterion values after running a trading strategy
@@ -45,6 +50,9 @@ public class StrategyAnalysis {
 	
 	@Autowired
 	StrategyIndicatorValueRepository indicatorValueRepo;
+
+	@Autowired
+	StrategyPerformanceRepository strategyPerformanceRepository;
 	
 	/**
 	 * This is the thing !!
@@ -58,8 +66,6 @@ public class StrategyAnalysis {
 	 * @param security_id can be null
 	 */
 	public void run(String strategy, Long security_id) throws DataIntegrityViolationException {
-		logger.info("run("+strategy+", "+security_id+")");
-	
 		if (Objects.isNull(strategy)  && Objects.isNull(security_id)) {
 			List<String> strategies = StrategiesMap.buildStrategiesMap();
 			strategies.forEach(strategyName -> {
@@ -100,7 +106,12 @@ public class StrategyAnalysis {
 		}
 		
 	}
-	
+	public void runChooseBestStrategy() {
+		for (BarSeries series : barSeriesService.getDataSet()) {
+			setBestStrategy(series);
+		}
+	}
+
 	private void runStrategy(String strategy, List<BarSeries> BarSeriesList) throws DataIntegrityViolationException{
 		FeaturedStrategy fs = null;
 		List<Position> positions = null;
@@ -110,7 +121,7 @@ public class StrategyAnalysis {
         Strategy strategyToRun = null;
         
 		for (BarSeries series : BarSeriesList) {
-			logger.info("runStrategy("+strategy+", "+series.getName()+")");
+			//logger.info("runStrategy("+strategy+", "+series.getName()+")");
 			strategyToRun = getStrategyToRun(strategy, series);
 			BarSeriesManager seriesManager = new BarSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
@@ -181,51 +192,72 @@ public class StrategyAnalysis {
 			}
 			double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord).doubleValue();
 			fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, BigDecimal.ROUND_DOWN));
-			double buyAndHold = new BuyAndHoldReturnCriterion().calculate(series, tradingRecord).doubleValue();
-			if (Double.isFinite(buyAndHold)) {
-				fs.setBuyAndHold(new BigDecimal(buyAndHold).setScale(2, BigDecimal.ROUND_DOWN));
-			}
-			double totalProfitVsButAndHold = new VersusBuyAndHoldCriterion(new NetProfitCriterion()).calculate(series, tradingRecord).doubleValue();
-
-			if (Double.isFinite(totalProfitVsButAndHold)) {
-				fs.setTotalProfitVsButAndHold(new BigDecimal(totalProfitVsButAndHold).setScale(2, BigDecimal.ROUND_DOWN));
-			}
 			fs.setTotalTransactionCost(
 					new BigDecimal(new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue()));
 			fs.setOpen(tradingRecord.getCurrentPosition().isOpened());
 
 			FeaturedStrategy fsRes = featuredStrategyRepository.saveAndFlush(fs);
-			//Trades
-			List<StrategyTrade>  existSt = tradesRepository.findByFeaturedStrategyId(fsRes.getId());
-			if (!existSt.isEmpty()) {
-				existSt.forEach(st -> {
+			//StrategyTrade
+			List<StrategyTrade>  existingStrategyTrades = tradesRepository.findByFeaturedStrategyId(fsRes.getId());
+			if (!existingStrategyTrades.isEmpty()) {
+				existingStrategyTrades.forEach(st -> {
 					tradesRepository.delete(st);
-					//tradesRepository.saveAndFlush(st);
 				});
 			}
 			strategyTradeList.forEach(st -> {
 				st.setFeaturedStrategy(fsRes);
 				tradesRepository.saveAndFlush(st);
 			});
-
+			//StrategyIndicatorValue
 			List<StrategyIndicatorValue>  existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.getId());
 			if (!existIv.isEmpty()) {
 				existIv.forEach(iv -> {
 					indicatorValueRepo.delete(iv);
 				});
 			}
-
 			getIndicatorValues(strategy, null).forEach(iv-> {
 				iv.setFeaturedStrategy(fsRes);
 				indicatorValueRepo.save(iv);
 			});
 
-			logger.info("EXIT runStrategy("+strategy+", "+series.getName()+")");
+			//logger.info("EXIT runStrategy("+strategy+", "+series.getName()+")");
 
 		}
 	}
 
-	public List<StrategyIndicatorValue> getIndicatorValues(String strategy, BarSeries series) {
+	protected void setBestStrategy(BarSeries barSeries) {
+		if (barSeries.getBarData().isEmpty()){
+			return;
+		}
+		List<StrategyPerformance>  existSp = strategyPerformanceRepository.findBySecurityNameAndDate(barSeries.getName(),DateTimeManager.get(barSeries.getLastBar().getEndTime()));
+		if (!existSp.isEmpty()) {
+			existSp.forEach(sp -> {
+				strategyPerformanceRepository.delete(sp);
+			});
+		}
+		StrategyPerformance strategyPerformance = new StrategyPerformance();
+		strategyPerformance.setDate(DateTimeManager.get(barSeries.getLastBar().getEndTime()));
+		List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
+		AnalysisCriterion profitCriterion = new GrossReturnCriterion();
+		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
+		BacktestExecutor backtestExecutor = new BacktestExecutor(barSeries);
+		final List<TradingStatement> tradingStatements = backtestExecutor.execute(strategies, DoubleNum.valueOf(50), Trade.TradeType.BUY);
+		Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
+		strategyPerformance.setBestStrategy(bestStrategy.getName());
+		Optional<TradingStatement> bestTradingStatement = tradingStatements.stream()
+				.filter(s -> s.getStrategy().getName().equals(bestStrategy.getName())).findFirst();
+		double pnl = bestTradingStatement.get().getPerformanceReport().getTotalProfitLossPercentage().doubleValue();
+		strategyPerformance.setTotalProfitLoss(new BigDecimal(pnl).setScale(2, BigDecimal.ROUND_DOWN));
+		strategyPerformance.setSecurityName(barSeries.getName());
+		try {
+			strategyPerformanceRepository.saveAndFlush(strategyPerformance);
+		} catch (Exception e) {
+			logger.severe("\nStrategyPerformance entity:"+ ReflectionToStringBuilder.toString(strategyPerformance));
+			throw new RuntimeException(e);
+		}
+	}
+
+	private List<StrategyIndicatorValue> getIndicatorValues(String strategy, BarSeries series) {
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			RSI2Strategy strategyReguested = new RSI2Strategy(series);
 			return strategyReguested.getIndicatorValues();
@@ -256,7 +288,7 @@ public class StrategyAnalysis {
 
 	}
 	
-	public Strategy getStrategyToRun(String strategy,  BarSeries series) {
+	private Strategy getStrategyToRun(String strategy,  BarSeries series) {
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			return new RSI2Strategy(series).buildStrategy();
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {

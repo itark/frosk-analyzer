@@ -39,6 +39,9 @@ public class HighLander {
 	StrategyIndicatorValueRepository strategyIndicatorValueRepository;
 
 	@Autowired
+	StrategyPerformanceRepository strategyPerformanceRepository;
+
+	@Autowired
 	StrategyAnalysis strategyAnalysis;
 
 	/**
@@ -49,6 +52,7 @@ public class HighLander {
 		addDataSetAndSecurities();
 		addSecurityPricesFromCoinbase();
 		runAllStrategies();
+		runChooseBestStrategy();
 	}
 
 	/**
@@ -72,6 +76,7 @@ public class HighLander {
 		strategyIndicatorValueRepository.deleteAllInBatch();
 		tradesRepository.deleteAllInBatch();
 		featuredStrategyRepository.deleteAllInBatch();
+		strategyPerformanceRepository.deleteAllInBatch();
 	}
 	
 	/**
@@ -97,6 +102,10 @@ public class HighLander {
 	 */
 	private void runAllStrategies() {
 		strategyAnalysis.run(null, null);
+	}
+
+	private void runChooseBestStrategy() {
+		strategyAnalysis.runChooseBestStrategy();
 	}
 
 	

@@ -23,13 +23,8 @@ public class TestJSecurityMetaDataManager extends BaseIntegrationTest {
 
     @Test
     public void testBarPercent() {
-        BarSeries timeSeries = barSeriesService.getDataSetFromCoinbase("BTC-EUR");
- /*       securityMetaDataManager.getSecurityMetaData().forEach(s-> {
-            System.out.println("s="+s);
-        });
-*/
 
-        BigDecimal barPercent = securityMetaDataManager.getBarPercent("BTC-EUR", 1);
+        BigDecimal barPercent = securityMetaDataManager.getBarPercent("ERN-EUR", 3);
         System.out.println("barPercent="+barPercent);
 
     }

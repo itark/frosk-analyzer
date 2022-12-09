@@ -3,6 +3,7 @@ package nu.itark.frosk.util;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class DateTimeManager {
 
@@ -28,6 +29,10 @@ public class DateTimeManager {
 	public static String start(int days) {
 		ZonedDateTime startZdt = endZdt.minusDays(days);
 		return DateTimeFormatter.ISO_INSTANT.format(startZdt);
+	}
+
+	public static Date get(ZonedDateTime zdt) {
+		return Date.from(zdt.toInstant());
 	}
 
 }

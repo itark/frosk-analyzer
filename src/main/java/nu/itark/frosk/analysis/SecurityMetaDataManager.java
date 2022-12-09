@@ -12,11 +12,12 @@ import nu.itark.frosk.service.BarSeriesService;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.ta4j.core.Bar;
-import org.ta4j.core.BarSeries;
+import org.ta4j.core.*;
+import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
+import org.ta4j.core.reports.TradingStatement;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -41,7 +42,6 @@ public class SecurityMetaDataManager {
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
 
-
     /**
      * Gets all featured strategies, hence per all strategies and all securities.
      *
@@ -49,27 +49,9 @@ public class SecurityMetaDataManager {
      */
     public List<FeaturedStrategyDTO> getFeaturedStrategies() {
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
-        DataSet dataset = datasetRepository.findByName(Database.COINBASE.name());
-        List<String> strategies = StrategiesMap.buildStrategiesMap();
-
-        log.info("strategies:{}",strategies.size());
-        log.info("dataset.getSecurities():{}",dataset.getSecurities().size());
-        log.info("featuredStrategyRepository.findAll().size():{}",featuredStrategyRepository.findAll().size());
-
-/*
-        strategies.forEach(strategyName -> {
-            dataset.getSecurities().forEach(security -> {
-                FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, security.getName());
-                returnList.add(getDTO(fs));
-            });
-        });
-*/
         featuredStrategyRepository.findAll().forEach(fs->{
                 returnList.add(getDTO(fs));
         });
-
-        log.info("returnList.size():{}",returnList.size());
-
         return returnList;
     }
 
@@ -88,11 +70,21 @@ public class SecurityMetaDataManager {
 
     private void addMetaData(SecurityDTO securityDTO) {
         securityDTO.setOneDayPercent(getBarPercent(securityDTO.getName(),1));
-        securityDTO.setOneWeekPercent(getBarPercent(securityDTO.getName(),7));
-        securityDTO.setOneMonthPercent(getBarPercent(securityDTO.getName(),30));
-        securityDTO.setThreeMonthPercent(getBarPercent(securityDTO.getName(),90));
-        securityDTO.setSixMonthPercent(getBarPercent(securityDTO.getName(),180));
+        securityDTO.setOneWeekPercent(getBarPercent(securityDTO.getName(),6));
+        securityDTO.setOneMonthPercent(getBarPercent(securityDTO.getName(),29));
+        securityDTO.setThreeMonthPercent(getBarPercent(securityDTO.getName(),89));
+        securityDTO.setSixMonthPercent(getBarPercent(securityDTO.getName(),179));
+        securityDTO.setBestStrategy(getBestStrategy(securityDTO.getName()).getName());
     }
+
+    private Strategy getBestStrategy(String securityName)  {
+        BarSeries barSeries = timeSeriesService.getDataSet(securityName, false);
+        List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
+        AnalysisCriterion profitCriterion = new GrossReturnCriterion();
+        BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
+        return profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
+    }
+
 
     protected BigDecimal getBarPercent(String securityName, int nrOfBars) {
         BarSeries timeSeries = timeSeriesService.getDataSet(securityName, false);
@@ -100,10 +92,10 @@ public class SecurityMetaDataManager {
         if (timeSeries.getBarCount() <= nrOfBars) {
             return null;
         }
-        Num entryOpen = timeSeries.getBar((timeSeries.getBarCount()-1) - nrOfBars).getOpenPrice();
-        Num exitOpen = timeSeries.getLastBar().getOpenPrice();
-        Num grossProfit = exitOpen.minus(entryOpen);
-        Num pnl = grossProfit.dividedBy(entryOpen);
+        Num entryOpen = timeSeries.getBar((timeSeries.getBarCount()) - nrOfBars).getOpenPrice();
+        Num exitClose = timeSeries.getLastBar().getClosePrice();
+        Num grossProfit = exitClose.minus(entryOpen);
+        Num pnl = grossProfit.dividedBy(entryOpen).multipliedBy(timeSeries.numOf(100));
         if (pnl.isNaN()) {
             return null;
         } else {
@@ -129,10 +121,7 @@ public class SecurityMetaDataManager {
             dto.setProfitableTradesRatio("empty");
         }
         dto.setMaxDD(fs.getMaxDD());
-        dto.setRewardRiskRatio(fs.getRewardRiskRatio());
         dto.setTotalTranactionCost(fs.getTotalTransactionCost());
-        dto.setBuyAndHold(fs.getBuyAndHold());
-        dto.setTotalProfitVsButAndHold(fs.getTotalProfitVsButAndHold());
         dto.setPeriod(fs.getPeriod());
         if (Objects.nonNull(fs.getLatestTrade())) {
             dto.setLatestTrade(fs.getLatestTrade().toString());

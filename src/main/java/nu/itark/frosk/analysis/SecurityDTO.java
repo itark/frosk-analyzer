@@ -13,6 +13,8 @@ public class SecurityDTO {
     private BigDecimal threeMonthPercent;
     private BigDecimal sixMonthPercent;
 
+    private String bestStrategy;
+
     public SecurityDTO(String name)   {
         this.name = name;
     }

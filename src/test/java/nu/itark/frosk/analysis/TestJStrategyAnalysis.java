@@ -3,16 +3,20 @@ package nu.itark.frosk.analysis;
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.model.FeaturedStrategy;
+import nu.itark.frosk.model.StrategyPerformance;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.RSI2Strategy;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
+import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.ta4j.core.BarSeries;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 @SpringBootTest(classes = {FroskApplication.class})
@@ -21,9 +25,12 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 	
 	@Autowired
 	StrategyAnalysis strategyAnalysis;
-	
+
 	@Autowired
-	private BarSeriesService ts;
+	StrategyPerformanceRepository strategyPerformanceRepository;
+
+	@Autowired
+	private BarSeriesService barSeriesService;
 
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;
@@ -31,46 +38,45 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Test
 	public final void runSMM() {
-		Long sec_id = ts.getSecurityId("BTC-EUR"); //"BTRST-EUR","BTC-EUR"
+		Long sec_id = barSeriesService.getSecurityId("MASK-EUR"); //"BTRST-EUR","BTC-EUR"
 		strategyAnalysis.run(SimpleMovingMomentumStrategy.class.getSimpleName(), sec_id);
-	//	strategyAnalysis.run(RSI2Strategy.class.getSimpleName(), sec_id);
-
 		//Verify
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(SimpleMovingMomentumStrategy.class.getSimpleName(), "BTC-EUR");
-		//logger.info("fs="+ReflectionToStringBuilder.toString(fs, ToStringStyle.MULTI_LINE_STYLE));
 
 		fs.getTrades().forEach(t-> {
 			System.out.println(ReflectionToStringBuilder.toString(t));
 		});
 
-
-		//logger.info("trades="+ReflectionToStringBuilder.toString(fs.getTrades(), ToStringStyle.MULTI_LINE_STYLE));
-
-
 	}	
 	
 	@Test
-	public final void runRSI2() {
-		logger.info("RSI2="+RSI2Strategy.class.getSimpleName());
-//		Long sec_id = ts.getSecurityId("ERIC-B.ST");
-//		Long sec_id = ts.getSecurityId("SSAB-B.ST");
-//		Long sec_id = ts.getSecurityId("ATCO-B.ST");
-		Long sec_id = ts.getSecurityId("VOLV-B.ST");
-		System.out.println("sec_id="+sec_id);
+	public void runRSI2() {
+		Long sec_id = barSeriesService.getSecurityId("BTC-EUR");
 		strategyAnalysis.run(RSI2Strategy.class.getSimpleName(), sec_id);
-
-//		list.forEach(dto -> logger.info("dto="+ReflectionToStringBuilder.toString(dto)));
-		
-	}		
-
-	@Test
-	public final void runAll() {
-		logger.info("All");
-		strategyAnalysis.run(null, null);
-//		list.forEach(dto -> logger.info("dto="+ReflectionToStringBuilder.toString(dto)));
-		
 	}
 
+	@Test
+	public void runAll() {
+		logger.info("All");
+		strategyAnalysis.run(null, null);
+	}
+
+
+	@Test
+	public final void runSetBestStrategy() {
+		BarSeries barSeries = barSeriesService.getDataSet("BTC-EUR", false);
+
+		strategyPerformanceRepository.findAll().forEach(sp-> {
+			logger.info("test:sp="+ReflectionToStringBuilder.toString(sp));
+		});
+
+		strategyPerformanceRepository.findBySecurityNameAndDate(barSeries.getName(), DateTimeManager.get(barSeries.getLastBar().getEndTime())).forEach(sp-> {
+			logger.info("exist:sp="+ReflectionToStringBuilder.toString(sp));
+		});
+
+
+		//strategyAnalysis.setBestStrategy(barSeries);
+	}
 
 
 }

@@ -19,7 +19,8 @@ public class FroskStartupApplicationListener implements ApplicationListener<Cont
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        //highLander.runClean();
         highLander.runInstall(Database.COINBASE);
-       // highLander.runCleanInstall(Database.COINBASE);
+        //highLander.runCleanInstall(Database.COINBASE);
     }
 }
