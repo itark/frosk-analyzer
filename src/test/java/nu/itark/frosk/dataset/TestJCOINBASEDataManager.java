@@ -3,6 +3,7 @@ package nu.itark.frosk.dataset;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
+import nu.itark.frosk.util.DateTimeManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ public class TestJCOINBASEDataManager extends BaseIntegrationTest {
 
     @Test
     public void syncOne(){
-        coinbaseDataManager.syncronize("BTC-EUR");
+        coinbaseDataManager.syncronize("SHPING-EUR");
     }
 
     @Test
@@ -52,10 +53,18 @@ public class TestJCOINBASEDataManager extends BaseIntegrationTest {
         log.info("startTime set to:" + startTime);
 
 
-
-
     }
 
+    @Test
+    public void testInstansDate2() {
+
+        final String formatReturn = DateTimeManager.format(Instant.now());
+        log.info("formatReturn {}",formatReturn);
+
+        final Instant inst = DateTimeManager.truncatedToDays(Instant.now());
+        log.info("inst {}",inst);
+
+    }
 
 
 }

@@ -1,5 +1,8 @@
 package nu.itark.frosk.repo;
 
+import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.FroskApplication;
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.model.*;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -15,9 +18,9 @@ import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest
-public class TestJFeaturedStrategyRepository {
-	Logger logger = Logger.getLogger(TestJFeaturedStrategyRepository.class.getName());
+@Slf4j
+@SpringBootTest(classes = {FroskApplication.class})
+public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 
 	
 	@Autowired
@@ -66,9 +69,9 @@ public class TestJFeaturedStrategyRepository {
 	
 	@Test
 	public void testFindByNameAndSecurityName() {
-		logger.info("count="+ featuredStrategyRepository.count());
+		log.info("count="+ featuredStrategyRepository.count());
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName("SimpleMovingMomentumStrategy", "BTRST-EUR");
-		logger.info("fs"+ ReflectionToStringBuilder.toString(fs));
+		log.info("fs"+ ReflectionToStringBuilder.toString(fs));
 	}
 	
 	@Test
@@ -82,7 +85,7 @@ public class TestJFeaturedStrategyRepository {
 		DataSet dataset = dsRepo.findByName("OSCAR");
 		dataset.getSecurities().forEach(sec -> {
 			FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName("RSI2Strategy", secRepo.findByName("SAND.ST").getName());
-			logger.info("fs="+fs);
+			log.info("fs="+fs);
 			returnList.add(fs);
 		});
 
@@ -106,7 +109,7 @@ public class TestJFeaturedStrategyRepository {
 		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName("RSI2Strategy");
 		assertNotNull(fsList);
 
-		fsList.forEach(fs -> logger.info("sec=" + fs.getSecurityName() + ", tr size=" + fs.getTrades().size()));
+		fsList.forEach(fs -> log.info("sec=" + fs.getSecurityName() + ", tr size=" + fs.getTrades().size()));
 
 	}
 	
@@ -141,7 +144,7 @@ public class TestJFeaturedStrategyRepository {
 		
 		FeaturedStrategy featuredStrategyREs =	featuredStrategyRepository.saveAndFlush(featuredStrategy);
 
-		logger.info("featuredStrategyREs id="+featuredStrategyREs.getId());
+		log.info("featuredStrategyREs id="+featuredStrategyREs.getId());
 		
 		// save trade
 		StrategyTrade trades = new StrategyTrade(new Date(), "X", new BigDecimal(23),new BigDecimal(23),new BigDecimal(23));
@@ -169,12 +172,20 @@ public class TestJFeaturedStrategyRepository {
 		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByOpenTrade("BTC-EUR");
 
 		fsList.forEach(fs ->{
-			System.out.println("fs.getName():"+fs.getName() + "fs.getSecurityName():"+fs.getSecurityName());
+			log.info("fs.getName():"+fs.getName() + "fs.getSecurityName():"+fs.getSecurityName());
 			fs.getTrades().forEach(t-> {
-				System.out.println("**t.getType:"+t.getType());
+				log.info("**t.getType:"+t.getType());
 			});
 		});
 
+	}
+
+	@Test
+	public void testFindStrategies() {
+		List<TopStrategy> strategies = featuredStrategyRepository.findStrategies();
+		strategies.forEach(strategy ->{
+			System.out.println("strategy.getName():"+strategy.getName() + "strategy.getTotalProfit():"+strategy.getTotalProfit());
+		});
 	}
 
 }

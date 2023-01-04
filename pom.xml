@@ -10,10 +10,10 @@
 	</parent>
 	<groupId>nu.itark.frosk</groupId>
 	<artifactId>frosk-analyzer</artifactId>
-	<version>0.1.0</version>
+	<version>0.2.0</version>
 
 	<name>frosk-analyzer</name>
-	<description>Frosk is the thing, holding backend and UI</description>
+	<description>Frosk is the thing</description>
 
 	<properties>
 		<maven.test.skip>true</maven.test.skip>
@@ -265,15 +265,15 @@
 			<version>0.11.0</version>
 		</dependency>
 
-		<!--
-		<dependency>
-			<groupId>com.numericalmethod</groupId>
-			<artifactId>suanshu</artifactId>
-			<version>20120606-1.0-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/lib/suanshu-20120606-1.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		-->
+        <!--
+        <dependency>
+            <groupId>com.numericalmethod</groupId>
+            <artifactId>suanshu</artifactId>
+            <version>20120606-1.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/suanshu-20120606-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+        -->
 
 	</dependencies>
 

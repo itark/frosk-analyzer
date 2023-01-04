@@ -1,7 +1,17 @@
 package nu.itark.frosk.repo;
 
+import com.coinbase.exchange.model.Candle;
+import com.coinbase.exchange.model.Candles;
+import com.coinbase.exchange.model.Granularity;
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.FroskApplication;
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
+import nu.itark.frosk.crypto.coinbase.ProductProxy;
+import nu.itark.frosk.dataset.COINBASEDataManager;
+import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
+import org.apache.commons.collections.iterators.ArrayIterator;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,17 +24,75 @@ import java.io.IOException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.logging.Logger;
 
-@SpringBootTest(classes = FroskApplication.class)
-public class TestJSecurityPriceRepository {
-	Logger logger = Logger.getLogger(TestJSecurityPriceRepository.class.getName());
+@Slf4j
+@SpringBootTest(classes = {FroskApplication.class})
+public class TestJSecurityPriceRepository extends BaseIntegrationTest {
 
 	@Autowired
-	SecurityPriceRepository secRepo;
+	SecurityPriceRepository securityPriceRepository;
+
+	@Autowired
+	SecurityRepository securityRepository;
+
+	@Autowired
+	ProductProxy productProxy;
+
+	@Autowired
+	COINBASEDataManager coinbaseDataManager;
+
+
+	@Test
+	public void testForDecimalsInTable() throws IOException {
+		log.info("hello="+ ReflectionToStringBuilder.toString(securityRepository.findByName("SHPING-EUR")));
+
+		Security security = securityRepository.findByName("SHPING-EUR");
+
+		//logger.info("count="+secRepo.count());
+		SecurityPrice sp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
+		log.info("sp="+ ReflectionToStringBuilder.toString(sp));
+		securityPriceRepository.deleteAllInBatch(Arrays.asList(sp));
+
+/*
+		Instant startTime = Instant.now().minus(400, ChronoUnit.MINUTES);
+		Instant endTime = Instant.now().minus(100, ChronoUnit.MINUTES);
+		Candles candles = productProxy.getCandles("SHPING-EUR", startTime,endTime, Granularity.FIFTEEN_MIN );
+*/
+		List<Security> securities = Arrays.asList(security);
+
+		Map<Long, List<Candle>> currencyCandlesMap  = coinbaseDataManager.getCandles(securities,Granularity.ONE_DAY);
+
+		currencyCandlesMap.forEach((sec_id, candleList) -> {
+			candleList.forEach(row -> {
+				Date date = Date.from(row.getTime());
+				SecurityPrice securityPrice = null;
+				if (date != null && row.getOpen() != null && row.getHigh() != null && row.getLow() != null
+						&& row.getClose() != null && row.getVolume() != null) {
+					securityPrice = new SecurityPrice(sec_id,
+							date,
+							row.getOpen(),
+							row.getHigh(),
+							row.getLow(),
+							row.getClose(),
+							row.getVolume().longValue());
+					//sp.add(securityPrice);
+					log.info("\nsecurityPrice:"+ReflectionToStringBuilder.toString(securityPrice));
+					//securityPriceRepository.save(sp);
+
+				}
+			});
+		});
+
+		securityPriceRepository.findBySecurityIdOrderByTimestamp(security.getId()).forEach(o-> {
+			System.out.println("Saved SecurityPrice:"+ReflectionToStringBuilder.toString(o));
+		});
+
+	}
+
 	
 	@Test
 	public void testTestMultiples() throws IOException {	
@@ -40,17 +108,26 @@ public class TestJSecurityPriceRepository {
 
 	@Test
 	public void testfindTopBySecurityIdOrderByTimestampDesc() {
-		logger.info("count="+secRepo.count());	
+		log.info("count="+securityPriceRepository.count());
 		
-		SecurityPrice sp = secRepo.findTopBySecurityIdOrderByTimestampDesc(122113);
+		SecurityPrice sp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(10202802); //id=10202802,name=SHPING-EUR
 		
 		
-		logger.info("sp="+sp);
+		log.info("sp="+ ReflectionToStringBuilder.toString(sp));
 
-	}	
-	
-	
-	
+	}
+
+	@Test
+	public void testSecurityId() {
+		log.info("count="+securityPriceRepository.count());
+
+		SecurityPrice sp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(122113);
+
+
+		log.info("sp="+sp);
+
+	}
+
 	@Test
 	public void testHistory() throws IOException {
 		//BROKEN?

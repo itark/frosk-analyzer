@@ -49,11 +49,17 @@ import java.util.List;
  */
 public class ADXStrategy implements IIndicatorValue {
 
+    BarSeries series = null;
+
+    public ADXStrategy(BarSeries series) {
+        this.series = series;
+    }
+
     /**
      * @param series a bar series
      * @return an adx indicator based strategy
      */
-    public static Strategy buildStrategy(BarSeries series) {
+    public Strategy buildStrategy() {
         indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
@@ -61,13 +67,21 @@ public class ADXStrategy implements IIndicatorValue {
 
         final ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(series);
         final SMAIndicator smaIndicator = new SMAIndicator(closePriceIndicator, 50);
+        setIndicatorValues(smaIndicator, "shortEma");
+
+        //TODO add indivcatorvalues
 
         final int adxBarCount = 14;
         final ADXIndicator adxIndicator = new ADXIndicator(series, adxBarCount);
+        setIndicatorValues(adxIndicator, "adx");
         final OverIndicatorRule adxOver20Rule = new OverIndicatorRule(adxIndicator, 20);
 
         final PlusDIIndicator plusDIIndicator = new PlusDIIndicator(series, adxBarCount);
+        setIndicatorValues(plusDIIndicator, "plusDI");
         final MinusDIIndicator minusDIIndicator = new MinusDIIndicator(series, adxBarCount);
+
+        //Generisk
+        setIndicatorValues(minusDIIndicator, "minusDI");
 
         final Rule plusDICrossedUpMinusDI = new CrossedUpIndicatorRule(plusDIIndicator, minusDIIndicator);
         final Rule plusDICrossedDownMinusDI = new CrossedDownIndicatorRule(plusDIIndicator, minusDIIndicator);
@@ -77,7 +91,7 @@ public class ADXStrategy implements IIndicatorValue {
         final UnderIndicatorRule closePriceUnderSma = new UnderIndicatorRule(closePriceIndicator, smaIndicator);
         final Rule exitRule = adxOver20Rule.and(plusDICrossedDownMinusDI).and(closePriceUnderSma);
 
-        return new BaseStrategy("ADX", entryRule, exitRule, adxBarCount);
+        return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule, adxBarCount);
     }
 
     @Override

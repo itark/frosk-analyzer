@@ -67,7 +67,7 @@ public class EngulfingStrategy implements IIndicatorValue {
 
         setIndicatorValues(closePrice,"closePrice");
 
-        Strategy strategy = new BaseStrategy("EngulfingStrategy", entryRule, exitRule);
+        Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;
     }
 

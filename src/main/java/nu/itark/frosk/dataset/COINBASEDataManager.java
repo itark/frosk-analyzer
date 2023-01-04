@@ -9,6 +9,7 @@ import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
+import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.ThreadUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,26 +129,31 @@ public class COINBASEDataManager {
         return sp;
     }
 
-    private Map<Long, List<Candle>> getCandlesNEW(Iterable<Security> securities, Granularity granularity) throws IOException {
+    public Map<Long, List<Candle>> getCandles(Iterable<Security> securities, Granularity granularity) throws IOException {
+        if (granularity.equals(Granularity.ONE_DAY) || granularity.equals(Granularity.FIFTEEN_MIN)) {
+        } else {
+            throw new RuntimeException("Granularity not supported!");
+        }
+
         Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
-        Instant endTime = Instant.now();
+        Instant endTime = DateTimeManager.truncatedToDays(Instant.now());
         int count = 0;
         final Iterator<Security> securityIterator = securities.iterator();
 
         Security security = null;
-        //ThreadUtils.sleep(Duration.ofSeconds(12));
-       // LocalDateTime twoSecondsLater = LocalDateTime.now().plusSeconds(2);
         while (securityIterator.hasNext()) {
             security = securityIterator.next();
-            Instant startTime = Instant.now();
+            Instant startTime = DateTimeManager.truncatedToDays(Instant.now());
             SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
             if (Objects.nonNull(topSp)) {
                 Date lastDate = topSp.getTimestamp();
+                if (DateUtils.isSameInstant(Date.from(startTime),lastDate )){
+                    continue;
+                }
                 if (lastDate.toInstant().isBefore(startTime)) {
                     startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
-                    if (DateUtils.isSameInstant(Date.from(startTime),lastDate )){
-                        continue;
-                    }
+                    startTime = startTime.plus(1, ChronoUnit.DAYS);
+
                 } else {
                     startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
                     startTime = startTime.plus(1, ChronoUnit.DAYS);
@@ -158,14 +164,7 @@ public class COINBASEDataManager {
             try {
                 //https://docs.cloud.coinbase.com/exchange/docs/rest-rate-limits
                 Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
-/*
-                while (LocalDateTime.now().isAfter(twoSecondsLater)) {
-                    ThreadUtils.sleep(Duration.ofSeconds(2));
-                    twoSecondsLater = LocalDateTime.now().plusSeconds(2);
-                }
-*/
                 ThreadUtils.sleep(Duration.ofMillis(1000));
-
                 candlesMap.put(security.getId(), candles.getCandleList());
             } catch (Exception e) {
                 log.error("Could not get candles for:"+security.getName()+", continue...");
@@ -176,13 +175,23 @@ public class COINBASEDataManager {
         return candlesMap;
     }
 
-    private Map<Long, List<Candle>> getCandles(Iterable<Security> securities, Granularity granularity) throws IOException {
+    private Map<Long, List<Candle>> getCandlesOLD(Iterable<Security> securities, Granularity granularity) throws IOException {
         Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
         Instant endTime = Instant.now();
 
+        if (granularity.equals(Granularity.ONE_DAY)) {
+            log.info("japp");
+            Instant startTime = DateTimeManager.truncatedToDays(Instant.now());
+        } else {
+            throw new RuntimeException("Granularity not supported!");
+        }
+
+
         securities.forEach(security -> {
-            Instant startTime = Instant.now();
+            //Instant startTime = Instant.now();
+            Instant startTime = DateTimeManager.truncatedToDays(Instant.now());
             SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
+
             if (Objects.nonNull(topSp)) {
                 Date lastDate = topSp.getTimestamp();
                 if (lastDate.toInstant().isBefore(startTime)) {
@@ -194,6 +203,7 @@ public class COINBASEDataManager {
             } else {
                 startTime=  startTime.minus(nrOfCandles, ChronoUnit.DAYS);
             }
+
             try {
                 Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
                 candlesMap.put(security.getId(), candles.getCandleList());

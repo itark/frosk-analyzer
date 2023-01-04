@@ -50,7 +50,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	@Test
 	public void runAllSingleDataSet() {
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "BTC-EUR";  //BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
+		String productId = "BTC-EUR";  //SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false);
 
@@ -83,8 +83,8 @@ public class TestJStrategies extends BaseIntegrationTest {
 		run(eng.buildStrategy(),timeSeries);
 */
 
-//		HaramiStrategy harami = new HaramiStrategy(timeSeries);
-//		run(harami.buildStrategy(),timeSeries);	
+		HaramiStrategy harami = new HaramiStrategy(timeSeries);
+		resultMap.add(run(harami.buildStrategy(),timeSeries));
 	
 /*
 		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
@@ -143,7 +143,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void runOneSingleDataSet2() {
-	BarSeries series = barSeriesService.getDataSet("BTC-EUR", false);
+	BarSeries series = barSeriesService.getDataSet("ALCX-USDT", false);
 	Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
 	BarSeriesManager seriesManager = new BarSeriesManager(series);
 	TradingRecord tradingRecord = seriesManager.run(strategy);
@@ -256,7 +256,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void chooseBestForSecurity() {
-		BarSeries timeSeries = barSeriesService.getDataSet("ETC-EUR", false);
+		BarSeries timeSeries = barSeriesService.getDataSet("ALCX-USDT", false);
 		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 		// The analysis criterion
 		AnalysisCriterion profitCriterion = new GrossReturnCriterion();

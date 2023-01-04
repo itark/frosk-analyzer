@@ -34,22 +34,21 @@ public class SecurityPrice implements Serializable {
 	@Column(name = "timestamp")
 	private Date timestamp;
 
-	@Column(name = "open")
+	@Column(name = "open",precision=12, scale=6)
 	private BigDecimal open;
 
-	@Column(name = "high")
+	@Column(name = "high",precision=12, scale=6)
 	private BigDecimal high;
 
-	@Column(name = "low")
-	private BigDecimal low;	
+	@Column(name = "low",precision=12, scale=6)
+	private BigDecimal low;
 
-	@Column(name = "close")
+	@Column(name = "close",precision=12, scale=6)
 	private BigDecimal close;	
 
 	@Column(name = "volume")
-	private Long volume; 
+	private Long volume;
 
-	
 	protected SecurityPrice() {
 	}
 

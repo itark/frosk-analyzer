@@ -121,7 +121,7 @@ public class StrategyAnalysis {
         Strategy strategyToRun = null;
         
 		for (BarSeries series : BarSeriesList) {
-			//logger.info("runStrategy("+strategy+", "+series.getName()+")");
+			logger.info("runStrategy("+strategy+", "+series.getName()+")");
 			strategyToRun = getStrategyToRun(strategy, series);
 			BarSeriesManager seriesManager = new BarSeriesManager(series);
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
@@ -148,6 +148,15 @@ public class StrategyAnalysis {
 				String exitType = position.getExit().getType().name();
 				Num pnl = position.getProfit().dividedBy(position.getEntry().getValue()).multipliedBy(series.numOf(100));
 				//logger.info("pnl="+pnl.doubleValue());
+				if (pnl.isNaN()) {
+					logger.info("series.getName()="+series.getName());
+					logger.info("position.getExit().getValue().doubleValue()="+position.getExit().getValue().doubleValue());
+					logger.info("position.getProfit().doubleValue()="+position.getProfit().doubleValue());
+					pnl = series.numOf(0);
+					logger.info("pnl="+pnl);
+
+				}
+
 				strategyTrade = new StrategyTrade(	sellDate,
 													exitType,
 													BigDecimal.valueOf(position.getExit().getValue().doubleValue()),
@@ -220,7 +229,7 @@ public class StrategyAnalysis {
 				indicatorValueRepo.save(iv);
 			});
 
-			//logger.info("EXIT runStrategy("+strategy+", "+series.getName()+")");
+			logger.info("EXIT runStrategy("+strategy+", "+series.getName()+")");
 
 		}
 	}
@@ -235,26 +244,32 @@ public class StrategyAnalysis {
 				strategyPerformanceRepository.delete(sp);
 			});
 		}
-		StrategyPerformance strategyPerformance = new StrategyPerformance();
-		strategyPerformance.setDate(DateTimeManager.get(barSeries.getLastBar().getEndTime()));
 		List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
 		AnalysisCriterion profitCriterion = new GrossReturnCriterion();
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
 		BacktestExecutor backtestExecutor = new BacktestExecutor(barSeries);
 		final List<TradingStatement> tradingStatements = backtestExecutor.execute(strategies, DoubleNum.valueOf(50), Trade.TradeType.BUY);
 		Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
+
+		StrategyPerformance strategyPerformance = new StrategyPerformance();
+		strategyPerformance.setDate(DateTimeManager.get(barSeries.getLastBar().getEndTime()));
 		strategyPerformance.setBestStrategy(bestStrategy.getName());
-		Optional<TradingStatement> bestTradingStatement = tradingStatements.stream()
-				.filter(s -> s.getStrategy().getName().equals(bestStrategy.getName())).findFirst();
-		double pnl = bestTradingStatement.get().getPerformanceReport().getTotalProfitLossPercentage().doubleValue();
-		strategyPerformance.setTotalProfitLoss(new BigDecimal(pnl).setScale(2, BigDecimal.ROUND_DOWN));
+		strategyPerformance.setTotalProfitLoss(getTotalPnL(tradingStatements, bestStrategy));
 		strategyPerformance.setSecurityName(barSeries.getName());
+
 		try {
 			strategyPerformanceRepository.saveAndFlush(strategyPerformance);
 		} catch (Exception e) {
 			logger.severe("\nStrategyPerformance entity:"+ ReflectionToStringBuilder.toString(strategyPerformance));
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static BigDecimal getTotalPnL(List<TradingStatement> tradingStatements, Strategy bestStrategy) {
+		Optional<TradingStatement> bestTradingStatement = tradingStatements.stream()
+				.filter(s -> s.getStrategy().getName().equals(bestStrategy.getName())).findFirst();
+		double pnl = bestTradingStatement.get().getPerformanceReport().getTotalProfitLossPercentage().doubleValue();
+		return new BigDecimal(pnl).setScale(2, BigDecimal.ROUND_DOWN);
 	}
 
 	private List<StrategyIndicatorValue> getIndicatorValues(String strategy, BarSeries series) {
@@ -282,6 +297,21 @@ public class StrategyAnalysis {
 		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
 			ThreeBlackWhiteStrategy strategyReguested = new ThreeBlackWhiteStrategy(series);
 			return strategyReguested.getIndicatorValues();
+		} else if (strategy.equals(ADXStrategy.class.getSimpleName())) {
+			ADXStrategy strategyReguested = new ADXStrategy(series);
+			return strategyReguested.getIndicatorValues();
+		} else if (strategy.equals(ConvergenceDivergenceStrategy.class.getSimpleName())) {
+			ConvergenceDivergenceStrategy strategyReguested = new ConvergenceDivergenceStrategy(series);
+			return strategyReguested.getIndicatorValues();
+		} else if (strategy.equals(VWAPStrategy.class.getSimpleName())) {
+			VWAPStrategy strategyReguested = new VWAPStrategy(series);
+			return strategyReguested.getIndicatorValues();
+		} else if (strategy.equals(RunawayGAPStrategy.class.getSimpleName())) {
+			RunawayGAPStrategy strategyReguested = new RunawayGAPStrategy(series);
+			return strategyReguested.getIndicatorValues();
+		} else if (strategy.equals(EMATenTwentyStrategy.class.getSimpleName())) {
+			EMATenTwentyStrategy strategyReguested = new EMATenTwentyStrategy(series);
+			return strategyReguested.getIndicatorValues();
 		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
@@ -305,8 +335,17 @@ public class StrategyAnalysis {
 			return new HaramiStrategy(series).buildStrategy();
 		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
 			return new ThreeBlackWhiteStrategy(series).buildStrategy();
-		}
-		else {
+		} else if (strategy.equals(ADXStrategy.class.getSimpleName())) {
+			return new ADXStrategy(series).buildStrategy();
+		} else if (strategy.equals(ConvergenceDivergenceStrategy.class.getSimpleName())) {
+			return new ConvergenceDivergenceStrategy(series).buildStrategy();
+		} else if (strategy.equals(VWAPStrategy.class.getSimpleName())) {
+			return new VWAPStrategy(series).buildStrategy();
+		} else if (strategy.equals(RunawayGAPStrategy.class.getSimpleName())) {
+			return new RunawayGAPStrategy(series).buildStrategy();
+		} else if (strategy.equals(EMATenTwentyStrategy.class.getSimpleName())) {
+			return new EMATenTwentyStrategy(series).buildStrategy();
+		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
 

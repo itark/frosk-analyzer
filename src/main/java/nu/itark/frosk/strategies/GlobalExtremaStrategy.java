@@ -76,7 +76,7 @@ public class GlobalExtremaStrategy implements IIndicatorValue {
 
         Rule sellingRule = new OverIndicatorRule(closePrices, upWeek);
 
-        return new BaseStrategy("GlobalExtremaStrategy", buyingRule, sellingRule);
+        return new BaseStrategy(this.getClass().getSimpleName(), buyingRule, sellingRule);
     }
 
     public Strategy buildStrategy(int lossPercentage) {

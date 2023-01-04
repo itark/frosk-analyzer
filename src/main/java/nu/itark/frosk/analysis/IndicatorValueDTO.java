@@ -24,7 +24,7 @@ public class IndicatorValueDTO {
 				.atZone(ZoneId.systemDefault())
 				.toLocalDateTime();
 		this.setTime(ldt.format( DateTimeFormatter.ISO_LOCAL_DATE));
-		this.value = value.setScale(2, RoundingMode.HALF_EVEN);
+		this.value = value.setScale(6, RoundingMode.HALF_EVEN);
 		this.name = name;
 	}
 

@@ -71,7 +71,7 @@ public class CCICorrectionStrategy implements IIndicatorValue {
         Rule exitRule = new UnderIndicatorRule(longCci, minus100) // Bear trend
                 .and(new OverIndicatorRule(shortCci, plus100)); // Signal
         
-        Strategy strategy = new BaseStrategy("CCICorrectionStrategy", entryRule, exitRule);
+        Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         strategy.setUnstablePeriod(5);
         return strategy;
     }

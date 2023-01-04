@@ -1,6 +1,5 @@
 package nu.itark.frosk.analysis;
 
-import com.coinbase.exchange.model.Granularity;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.DataSet;
@@ -12,22 +11,16 @@ import nu.itark.frosk.service.BarSeriesService;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.ta4j.core.*;
+import org.ta4j.core.AnalysisCriterion;
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.BarSeriesManager;
+import org.ta4j.core.Strategy;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
-import org.ta4j.core.num.DecimalNum;
-import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
-import org.ta4j.core.reports.TradingStatement;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.time.DayOfWeek;
-import java.time.ZonedDateTime;
-import java.time.temporal.TemporalAdjusters;
 import java.util.*;
-
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summarizingInt;
 
 @Component
 @Slf4j

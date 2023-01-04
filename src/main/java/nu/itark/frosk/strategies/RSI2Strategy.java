@@ -80,7 +80,7 @@ public class RSI2Strategy implements IIndicatorValue {
                 .and(new CrossedUpIndicatorRule(rsi, 95)) // Signal 1
                 .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
 
-        return new BaseStrategy("RSI2Strategy", entryRule, exitRule);
+        return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
 
 	@Override

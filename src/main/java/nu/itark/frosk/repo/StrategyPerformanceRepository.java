@@ -12,4 +12,7 @@ import java.util.List;
 @Repository
 public interface StrategyPerformanceRepository extends JpaRepository<StrategyPerformance, Long>{
     List<StrategyPerformance> findBySecurityNameAndDate(String securityName, Date date);
+    List<StrategyPerformance> findByBestStrategyOrderByTotalProfitLossDesc(String bestStrategy);
+    List<StrategyPerformance> findTop3ByOrderByTotalProfitLossDesc();
+
 }

@@ -23,51 +23,44 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.strategies.indicators.RunawayGAPIndicator;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.BarSeries;
-import org.ta4j.core.indicators.candles.BearishHaramiIndicator;
-import org.ta4j.core.indicators.candles.BullishHaramiIndicator;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.TrailingStopLossRule;
 
 import java.util.List;
 
 /**
- * Bearish Harami pattern indicator.
- * </p>
- * @see <a href="http://www.investopedia.com/terms/b/bullishharami.asp">
- *     http://www.investopedia.com/terms/b/bullishharami.asp</a>
+ * https://www.investopedia.com/terms/r/runawaygap.asp
  */
-public class HaramiStrategy implements IIndicatorValue {
-
+public class RunawayGAPStrategy implements IIndicatorValue {
 	BarSeries series = null;
-	   
-	public HaramiStrategy(BarSeries series) {
+	public RunawayGAPStrategy(BarSeries series) {
 		this.series = series;
 	}	
 	
-	/**
-     * @return a CCI correction strategy
-     */
     public Strategy buildStrategy() {
-        indicatorValues.clear();
+		indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
+         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
 
-        BullishHaramiIndicator  bullish = new BullishHaramiIndicator(series);
-        BearishHaramiIndicator  bearish = new BearishHaramiIndicator(series);
-        
-        Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
-        Rule exitRule = new BooleanIndicatorRule(bearish); // Bear trend
-        
+        RunawayGAPIndicator runawayGAPIndicator = new RunawayGAPIndicator(series);
+        Rule entryRule = new BooleanIndicatorRule(runawayGAPIndicator);
+        Rule exitRule = new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2));
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;
     }
 
-    @Override
-    public List<StrategyIndicatorValue> getIndicatorValues() {
-        return indicatorValues;
-    }
+	@Override
+	public List<StrategyIndicatorValue> getIndicatorValues() {
+		return indicatorValues;
+	}
+
 }

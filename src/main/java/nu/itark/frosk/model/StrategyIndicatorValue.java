@@ -37,7 +37,7 @@ public class StrategyIndicatorValue {
 	@Column(name = "indicator")
 	private String indicator;	
 	
-	@Column(name = "value")
+	@Column(name = "value", precision=12, scale=6)
 	private BigDecimal value;	
 	
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

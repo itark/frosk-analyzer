@@ -61,7 +61,7 @@ public class VWAPStrategy implements IIndicatorValue {
                 .or(new StopLossRule(closePrice, 2))
                 .or(new StopGainRule(closePrice,2));
 
-        return new BaseStrategy("VWAPStrategy", entryRule, exitRule);
+        return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
 
     @Override

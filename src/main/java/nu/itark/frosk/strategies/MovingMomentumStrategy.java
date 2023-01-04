@@ -92,7 +92,7 @@ public class MovingMomentumStrategy implements IIndicatorValue {
                 .and(new CrossedUpIndicatorRule(stochasticOscillK, 80)) // Signal 1
                 .and(new UnderIndicatorRule(macd, emaMacd)); // Signal 2
 
-        return new BaseStrategy("MovingMomentumStrategy", entryRule, exitRule);
+        return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
 
 	public Strategy buildStrategyORG() {

@@ -1,16 +1,19 @@
 package nu.itark.frosk.repo;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.FroskApplication;
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.model.Security;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.logging.Logger;
 
-//@SpringBootTest(classes = FroskApplication.class)
-@SpringBootTest
-public class TestJSecurityRepository {
+@Slf4j
+@SpringBootTest(classes = {FroskApplication.class})
+public class TestJSecurityRepository extends BaseIntegrationTest {
 	Logger logger = Logger.getLogger(TestJSecurityRepository.class.getName());
 
 	
@@ -32,7 +35,7 @@ public class TestJSecurityRepository {
 	@Test
 	public final void testFindByName() {
 		
-		logger.info("hello="+securityRepo.findByName("ABB.ST"));
+		logger.info("hello="+ ReflectionToStringBuilder.toString(securityRepo.findByName("SHPING-EUR")));
 	}	
 	
 	

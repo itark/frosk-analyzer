@@ -55,7 +55,8 @@ public class TestJProductProxy extends BaseIntegrationTest {
     public final void testGetCandlesFifthMin() {
         Instant startTime = Instant.now().minus(400, ChronoUnit.MINUTES);
         Instant endTime = Instant.now().minus(100, ChronoUnit.MINUTES);
-        Candles candles = productProxy.getCandles("BTC-EUR", startTime,endTime, Granularity.FIFTEEN_MIN );
+        Candles candles = productProxy.getCandles("SHPING-EUR", startTime,endTime, Granularity.FIFTEEN_MIN );
+
         print(candles);
     }
 

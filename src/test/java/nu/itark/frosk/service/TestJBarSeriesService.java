@@ -1,77 +1,68 @@
 package nu.itark.frosk.service;
 
-import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.FroskStartupApplicationListener;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
-import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Position;
-import org.ta4j.core.num.DecimalNum;
-import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.*;
-import java.time.temporal.TemporalAdjusters;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
-import static java.util.stream.Collectors.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 //@ExtendWith(SpringExtension.class)
 //@Import({IntegrationTestConfiguration.class})
 @SpringBootTest
-public class TestJTimeSeriesService extends BaseIntegrationTest {
+public class TestJBarSeriesService extends BaseIntegrationTest {
 
 	@Autowired
-	private BarSeriesService ts;
+	private BarSeriesService barSeriesService;
 
 	
 	@Test
 	public void testSecurityId() throws Exception {
-		Long sec_id = ts.getSecurityId("SAND.ST");
+		Long sec_id = barSeriesService.getSecurityId("BTC-EUR");
 		assertNotNull(sec_id);
 		
 	}	
 	
 	@Test
 	public void testGetDataSet() throws Exception {
-		List<BarSeries> sec = ts.getDataSet();
+		List<BarSeries> sec = barSeriesService.getDataSet();
 		assertNotNull(sec);
-		
-//		System.out.println("size="+sec.getBarCount());
-		
-	}		
+		System.out.println("size="+sec.size());
+
+		BarSeries barSeries = sec.stream()
+				.filter(s -> s.getName().equals("BTC-EUR"))
+				.findFirst()
+				.get();
+		assertNotNull(barSeries);
+
+	}
 
 	
 	@Test
 	public void testGetDataSetSecurity() throws Exception {
-		Long sec_id = ts.getSecurityId("ERIC-B.ST");
+		Long sec_id = barSeriesService.getSecurityId("BTC-EUR");
 		System.out.println("sec_id="+sec_id);
-		BarSeries sec = ts.getDataSet(sec_id );
-//		assertNotNull(sec);
-		
-//		System.out.println("size="+sec.getBarCount());
+		BarSeries sec = barSeriesService.getDataSet(sec_id );
+		assertNotNull(sec);
+		System.out.println("size="+sec.getBarCount());
 		
 	}	
 	
 	@Test
 	public void testGetCandlesFromCoinbase() {
 
-		BarSeries timeSeries = ts.getDataSetFromCoinbase("NCT-EUR");
+		BarSeries timeSeries = barSeriesService.getDataSetFromCoinbase("NCT-EUR");
 		ZonedDateTime lastEndTime = timeSeries.getLastBar().getEndTime();
 
 		Bar lastbar = timeSeries.getLastBar();

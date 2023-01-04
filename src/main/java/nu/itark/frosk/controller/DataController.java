@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.*;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
@@ -22,12 +23,12 @@ import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
 
 @RestController
+@Slf4j
 public class DataController {
-    Logger logger = Logger.getLogger(DataController.class.getName());
+   // Logger logger = Logger.getLogger(DataController.class.getName());
 
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
-
 
     @Autowired
     DataSetRepository datasetRepository;
@@ -44,6 +45,8 @@ public class DataController {
     @Autowired
     SecurityMetaDataManager securityMetaDataManager;
 
+    @Autowired
+    StrategyMetaDataManager strategyMetaDataManager;
 
     /**
      * @return
@@ -65,11 +68,11 @@ public class DataController {
      */
     @RequestMapping(path = "/featuredStrategies/{strategy}/{dataset}", method = RequestMethod.GET)
     public List<FeaturedStrategyDTO> getFeaturedStrategies(@PathVariable("strategy") String strategy, @PathVariable("dataset") String dataset) {
-        logger.info("strategy=" + strategy + ", dataset=" + dataset);
+        log.info("strategy=" + strategy + ", dataset=" + dataset);
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
         DataSet datasetet = datasetRepository.findByName(dataset);
         if (Objects.isNull(datasetet)) {
-            logger.log(Level.WARNING, "Kunde inte hitta Dataset för :" + dataset + " kolla ditt data.");
+            log.error("Kunde inte hitta Dataset för :" + dataset + " kolla ditt data.");
             throw new RuntimeException("Kunde inte hitta Dataset för :" + dataset + " kolla ditt data.");
         }
 
@@ -85,7 +88,7 @@ public class DataController {
             datasetet.getSecurities().forEach(security -> {
                 FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy, security.getName());
                 if (Objects.isNull(fs)) {
-                    logger.log(Level.WARNING, "Kunde inte hitta FeaturedStrategy för " + strategy + " och " + security.getName() + ". Kolla ditt data. Kanske inte kört runStrategy");
+                    log.info("Kunde inte hitta FeaturedStrategy för " + strategy + " och " + security.getName() + ". Kolla ditt data. Kanske inte kört runStrategy");
                     return;
                 }
                 returnList.add(securityMetaDataManager.getDTO(fs));
@@ -132,6 +135,20 @@ public class DataController {
     }
 
     /**
+     *
+     * @Example http://localhost:8080/frosk-analyzer/topStrategies
+     */
+    @RequestMapping(path = "/topStrategies", method = RequestMethod.GET)
+    public List<TopStrategyDTO> getTopStrategies() {
+        return strategyMetaDataManager.getTopStrategies().stream()
+                .map(dto -> TopStrategyDTO.builder()
+                        .name(dto.getName().replace("Strategy",""))
+                        .totalProfit(dto.getTotalProfit())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
      * @return
      * @Example http://localhost:8080/frosk-analyzer/dailyPrices?security=BTC-EUR&strategy=MovingMomentumStrategy
      */
@@ -156,7 +173,7 @@ public class DataController {
      */
     @RequestMapping(path = "/featuredStrategy", method = RequestMethod.GET)
     public FeaturedStrategyDTO getFeaturedStrategy(@RequestParam("security") String security, @RequestParam("strategy") String strategy) {
-       // logger.info("/featuredStrategy?security=" + security + "&strategy=" + strategy);
+        log.info("/featuredStrategy?security=" + security + "&strategy=" + strategy);
         final FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategy, security);
         return securityMetaDataManager.getDTO(featuredStrategy);
     }

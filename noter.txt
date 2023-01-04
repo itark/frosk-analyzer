@@ -66,3 +66,15 @@ Will F's sida: https://faithfull.me/change-detection-for-software-engineers-part
 
 2021: ws verkar inte funka, varken på Jetty eller Tomcat.
 
+
+MISC
+______
+
+select * from security
+where name = 'NU-EUR' -> 30
+
+select * from featured_strategy
+where security_Name = 'NU-EUR'
+
+SELECT * FROM STRATEGY_TRADE
+where featured_strategy_id = 351065

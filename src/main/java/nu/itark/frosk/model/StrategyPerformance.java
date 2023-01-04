@@ -16,6 +16,8 @@ import java.util.List;
 @Table(name = "strategy_performance", uniqueConstraints={@UniqueConstraint(columnNames={"date", "security_name", "best_strategy"})})
 public class StrategyPerformance {
 
+	//https://apexcharts.com/react-chart-demos/area-charts/spline/
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;

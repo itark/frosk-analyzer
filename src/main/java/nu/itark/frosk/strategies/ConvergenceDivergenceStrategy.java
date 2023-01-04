@@ -23,6 +23,7 @@ public class ConvergenceDivergenceStrategy implements IIndicatorValue {
 	}		
 
     public Strategy buildStrategy() {
+        indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
@@ -35,12 +36,11 @@ public class ConvergenceDivergenceStrategy implements IIndicatorValue {
         ConvergenceDivergenceIndicator.ConvergenceDivergenceType negDivType = ConvergenceDivergenceType.negativeDivergent;       		
         ConvergenceDivergenceIndicator posDiv = new ConvergenceDivergenceIndicator(closePrice,volume,timePeriod,posDivType,0.1,0.1);
         ConvergenceDivergenceIndicator negDiv = new ConvergenceDivergenceIndicator(closePrice,volume,timePeriod,negDivType,0.1,0.1);
-                		      		 
         Rule entryRule = new BooleanIndicatorRule(posDiv);
         Rule exitRule = new BooleanIndicatorRule(negDiv);    
         
         
-        Strategy strategy = new BaseStrategy("ConvergenceDivergenceStrategy", entryRule, exitRule);
+        Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;
     }
 

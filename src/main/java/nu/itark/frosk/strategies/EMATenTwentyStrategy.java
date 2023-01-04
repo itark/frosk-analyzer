@@ -22,29 +22,24 @@
  */
 package nu.itark.frosk.strategies;
 
-import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.BarSeries;
-import org.ta4j.core.indicators.ATRIndicator;
-import org.ta4j.core.indicators.ChandelierExitLongIndicator;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.ParabolicSarIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.rules.*;
 
 import java.util.List;
 
-@Slf4j
-public class SimpleMovingMomentumStrategy implements IIndicatorValue {
+public class EMATenTwentyStrategy implements IIndicatorValue {
     BarSeries series = null;
     EMAIndicator shortEma, longEma = null;
 
-    public SimpleMovingMomentumStrategy(BarSeries series) {
+    public EMATenTwentyStrategy(BarSeries series) {
         this.series = series;
     }
 
@@ -55,40 +50,13 @@ public class SimpleMovingMomentumStrategy implements IIndicatorValue {
         }
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-        OpenPriceIndicator openPrice = new OpenPriceIndicator(series);
-        shortEma = new EMAIndicator(openPrice, 10);
-        longEma = new EMAIndicator(openPrice, 20);
-/*
-        ParabolicSarIndicator pSar = new ParabolicSarIndicator(series);
-        IsRisingRule pSarIsRisingRule = new IsRisingRule(pSar, 1);
-        IsFallingRule pSarIsFallingRule = new IsFallingRule(pSar, 1);
-*/
-/*
-        Rule entryRuleX = new OverIndicatorRule(shortEma, longEma)
-                .and(pSarIsRisingRule);
-*/
-
-        IsRisingRule openPriceIsRisingRule = new IsRisingRule(openPrice, 2);
-
-        Rule entryRule = new CrossedUpIndicatorRule(shortEma, longEma)
-                .and(openPriceIsRisingRule);
-
-/*
-        Rule exitRule = pSarIsFallingRule
-             //  .or(new StopGainRule(closePrice, DoubleNum.valueOf(3)));
-              .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
-*/
-
-        ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series, 5, 2);
-        Rule exitRule = new UnderIndicatorRule(openPrice,cel)
-                .or(new StopLossRule(closePrice, 2))
-                .or(new StopGainRule(closePrice,2))
-                .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));;
-
-
+        shortEma = new EMAIndicator(closePrice, 10);
+        longEma = new EMAIndicator(closePrice, 20);
         setIndicatorValues(shortEma, "shortEma");
         setIndicatorValues(longEma, "longEma");
-       // setIndicatorValues(cel, "pSar");
+
+        Rule entryRule = new OverIndicatorRule(shortEma, longEma);
+        Rule exitRule = new UnderIndicatorRule(shortEma, longEma);
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

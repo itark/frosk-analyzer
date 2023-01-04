@@ -14,6 +14,7 @@ import java.util.Date;
  * @author fredrikmoller
  *
  */
+@Deprecated
 public class DateManager {
 
 	
@@ -44,6 +45,8 @@ public class DateManager {
 	}
 
 	/**
+	 *
+	 *
 	 * Ex. 2021-04-22T12:22:08.153596Z
 	 *
 	 * @param dateTime

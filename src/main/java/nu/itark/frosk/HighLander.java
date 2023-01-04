@@ -70,13 +70,13 @@ public class HighLander {
 	 * 
 	 */
 	public void runClean() {
-		dataSetRepository.deleteAllInBatch();
-		securityRepository.deleteAllInBatch();
-		securityPriceRepository.deleteAllInBatch();
-		strategyIndicatorValueRepository.deleteAllInBatch();
-		tradesRepository.deleteAllInBatch();
-		featuredStrategyRepository.deleteAllInBatch();
-		strategyPerformanceRepository.deleteAllInBatch();
+		dataSetRepository.deleteAll();
+		securityRepository.deleteAll();
+		securityPriceRepository.deleteAll();
+		strategyIndicatorValueRepository.deleteAll();
+		tradesRepository.deleteAll();
+		featuredStrategyRepository.deleteAll();
+		strategyPerformanceRepository.deleteAll();
 	}
 	
 	/**

@@ -38,7 +38,7 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Test
 	public final void runSMM() {
-		Long sec_id = barSeriesService.getSecurityId("MASK-EUR"); //"BTRST-EUR","BTC-EUR"
+		Long sec_id = barSeriesService.getSecurityId("BTC-EUR"); //"BTRST-EUR","BTC-EUR"
 		strategyAnalysis.run(SimpleMovingMomentumStrategy.class.getSimpleName(), sec_id);
 		//Verify
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(SimpleMovingMomentumStrategy.class.getSimpleName(), "BTC-EUR");
@@ -51,7 +51,7 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 	
 	@Test
 	public void runRSI2() {
-		Long sec_id = barSeriesService.getSecurityId("BTC-EUR");
+		Long sec_id = barSeriesService.getSecurityId("ALCX-USDT");
 		strategyAnalysis.run(RSI2Strategy.class.getSimpleName(), sec_id);
 	}
 
@@ -64,7 +64,7 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Test
 	public final void runSetBestStrategy() {
-		BarSeries barSeries = barSeriesService.getDataSet("BTC-EUR", false);
+		BarSeries barSeries = barSeriesService.getDataSet("ALCX-USDT", false);
 
 		strategyPerformanceRepository.findAll().forEach(sp-> {
 			logger.info("test:sp="+ReflectionToStringBuilder.toString(sp));
@@ -74,8 +74,17 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 			logger.info("exist:sp="+ReflectionToStringBuilder.toString(sp));
 		});
 
+		strategyAnalysis.setBestStrategy(barSeries);
+	}
 
-		//strategyAnalysis.setBestStrategy(barSeries);
+	@Test
+	public void testTopPerf() {
+		String bestStrategy = "SimpleMovingMomentumStrategy";  //SimpleMovingMomentumStrategy
+		strategyPerformanceRepository.findByBestStrategyOrderByTotalProfitLossDesc(bestStrategy).forEach(sp-> {
+			System.out.println("sp:"+ReflectionToStringBuilder.toString(sp));
+		});
+
+
 	}
 
 

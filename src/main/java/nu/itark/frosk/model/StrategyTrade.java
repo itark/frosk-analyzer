@@ -34,7 +34,7 @@ public class StrategyTrade {
 	@Column(name = "date")
 	private Date date;
 	
-	@Column(name = "price")
+	@Column(name = "price", precision=12, scale=6)
 	private BigDecimal price;
 
 	@Column(name = "gross_profit")

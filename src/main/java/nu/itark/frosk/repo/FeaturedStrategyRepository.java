@@ -16,5 +16,7 @@ public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrate
 	FeaturedStrategy findTopBySecurityNameOrderByLatestTradeDesc(String security);
 	@Query("SELECT fs FROM FeaturedStrategy fs, StrategyTrade st WHERE fs.securityName = ?1 AND st.type = 'BUY'")
 	List<FeaturedStrategy> findByOpenTrade(String securityName);
+	@Query("SELECT avg(totalProfit) as totalProfit, name as name FROM FeaturedStrategy GROUP BY name ORDER BY avg(totalProfit) DESC")
+	List<TopStrategy> findStrategies();
 
 }
