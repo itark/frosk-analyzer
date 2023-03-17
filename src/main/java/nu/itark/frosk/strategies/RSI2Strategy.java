@@ -44,12 +44,13 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  * <p>
  * @see //stockcharts.com/school/doku.php?id=chart_school:trading_strategies:rsi2
  */
-public class RSI2Strategy implements IIndicatorValue {
+public class RSI2Strategy extends AbstractStrategy implements IIndicatorValue {
 	private RSIIndicator rsi = null;
 	private BarSeries series = null;
 
 	public RSI2Strategy(BarSeries series) {
-		this.series = series;
+        super(series);
+        this.series = series;
 	}
 
     public Strategy buildStrategy() {
@@ -57,28 +58,28 @@ public class RSI2Strategy implements IIndicatorValue {
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
-
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
 		setIndicatorValues(shortSma, "shortSma");
-
         SMAIndicator longSma = new SMAIndicator(closePrice, 200);
         setIndicatorValues(longSma, "longSma");
-
         rsi = new RSIIndicator(closePrice, 2);
 		setIndicatorValues(rsi, "rsi");
-
         // Entry rule
         // The long-term trend is up when a security is above its 200-period SMA.
         Rule entryRule = new OverIndicatorRule(shortSma, longSma) // Trend
-               .and(new CrossedDownIndicatorRule(rsi, 5)) // Signal 1
+               .and(new CrossedDownIndicatorRule(rsi, 20)) // Signal 1
                 .and(new OverIndicatorRule(shortSma, closePrice)); // Signal 2
 
-        // Exit rule
-        // The long-term trend is down when a security is below its 200-period SMA.
-        Rule exitRule = new UnderIndicatorRule(shortSma, longSma) // Trend
-                .and(new CrossedUpIndicatorRule(rsi, 95)) // Signal 1
-                .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
+        Rule exitRule;
+        if (!inherentExitRule) {
+            // The long-term trend is down when a security is below its 200-period SMA.
+            exitRule = new UnderIndicatorRule(shortSma, longSma) // Trend
+                    .and(new CrossedUpIndicatorRule(rsi, 80)) // Signal 1
+                    .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
+        } else {
+            exitRule = exitRule();
+        }
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

@@ -22,10 +22,14 @@
  */
 package nu.itark.frosk.strategies.filter;
 
+import nu.itark.frosk.FroskApplication;
+import nu.itark.frosk.analysis.OpenFeaturedStrategyDTO;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.analysis.TradeDTO;
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,8 +43,8 @@ import java.util.List;
  * @see //stockcharts.com/school/doku.php?id=chart_school:trading_strategies:rsi2
  */
 
-@SpringBootTest
-public class TestJStrategyFilter {
+@SpringBootTest(classes = {FroskApplication.class})
+public class TestJStrategyFilter extends BaseIntegrationTest  {
 
     @Autowired
     StrategyFilter strategyFilter;
@@ -81,7 +85,14 @@ public class TestJStrategyFilter {
         });
     }
 
-
-
+    @Test
+    public void testSmartSignals() {
+        final List<OpenFeaturedStrategyDTO> openSmartSignals = strategyFilter.getOpenSmartSignals();
+        System.out.println("openSmartSignals.size"+openSmartSignals.size());
+        openSmartSignals.forEach(signal -> {
+            //System.out.println(signal.getLatestTrade() + ", " +signal.getSecurityName() + ", " +signal.getName() + ", "+signal.getTotalProfit() + ", "+signal.getProfitableTradesRatio() + ", "+signal.isOpen()+ ", "+signal.getNumberofTrades());
+            System.out.println("signal:" + ReflectionToStringBuilder.toString(signal, ToStringStyle.NO_CLASS_NAME_STYLE));
+        });
+    }
 
 }

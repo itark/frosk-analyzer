@@ -64,7 +64,7 @@ public class TestJProductProxy extends BaseIntegrationTest {
     public final void testGetCandlesOneDay2() {
         Instant startTime = Instant.now().minus(100, ChronoUnit.DAYS);
         Instant endTime = Instant.now();
-        Candles candles = productProxy.getCandles("BTC-EUR", startTime, endTime, Granularity.ONE_DAY);
+        Candles candles = productProxy.getCandles("BTC-EUR", startTime, endTime, Granularity.ONE_DAY);  //WLUNA-USDT7
         print(candles);
     }
 

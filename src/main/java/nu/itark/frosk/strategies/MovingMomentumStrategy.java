@@ -33,10 +33,7 @@ import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.MACDIndicator;
 import org.ta4j.core.indicators.StochasticOscillatorKIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.rules.CrossedDownIndicatorRule;
-import org.ta4j.core.rules.CrossedUpIndicatorRule;
-import org.ta4j.core.rules.OverIndicatorRule;
-import org.ta4j.core.rules.UnderIndicatorRule;
+import org.ta4j.core.rules.*;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
 
@@ -46,14 +43,13 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  * <p>
  * @see //stockcharts.com/help/doku.php?id=chart_school:trading_strategies:moving_momentum
  */
-public class MovingMomentumStrategy implements IIndicatorValue {
-	Logger logger = Logger.getLogger(MovingMomentumStrategy.class.getName()); 
-
+public class MovingMomentumStrategy extends AbstractStrategy implements IIndicatorValue {
 	BarSeries series = null;
 	MACDIndicator macd = null;
 	EMAIndicator shortEma, longEma = null;
 
 	public MovingMomentumStrategy(BarSeries series) {
+		super(series);
 		this.series = series;
 	}	
 
@@ -62,35 +58,33 @@ public class MovingMomentumStrategy implements IIndicatorValue {
         if (this.series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
-
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-        
         // The bias is bullish when the shorter-moving average moves above the longer moving average.
         // The bias is bearish when the shorter-moving average moves below the longer moving average.
         shortEma = new EMAIndicator(closePrice, 9); 
         setIndicatorValues(shortEma, "shortEma");
-        
         longEma = new EMAIndicator(closePrice, 26);
         setIndicatorValues(longEma, "longEma");
 
         StochasticOscillatorKIndicator stochasticOscillK = new StochasticOscillatorKIndicator(series, 14);
 		setIndicatorValues(stochasticOscillK, "stochasticOscillK");
-
         macd = new MACDIndicator(closePrice, 9, 26);
 		setIndicatorValues(macd, "macd");
-
         EMAIndicator emaMacd = new EMAIndicator(macd, 18);
 		setIndicatorValues(emaMacd, "emaMacd");
-        
         // Entry rule
         Rule entryRule = new OverIndicatorRule(shortEma, longEma) // Trend
                 .and(new CrossedDownIndicatorRule(stochasticOscillK, 20)) // Signal 1
                 .and(new OverIndicatorRule(macd, emaMacd)); // Signal 2
-        
-        // Exit rule
-        Rule exitRule = new UnderIndicatorRule(shortEma, longEma) // Trend
-                .and(new CrossedUpIndicatorRule(stochasticOscillK, 80)) // Signal 1
-                .and(new UnderIndicatorRule(macd, emaMacd)); // Signal 2
+
+		Rule exitRule;
+		if (!inherentExitRule) {
+			exitRule = new UnderIndicatorRule(shortEma, longEma) // Trend
+					.and(new CrossedUpIndicatorRule(stochasticOscillK, 80)) // Signal 1
+					.and(new UnderIndicatorRule(macd, emaMacd)); // Signal 2
+		} else {
+			exitRule = exitRule();
+		}
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

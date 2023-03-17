@@ -35,11 +35,12 @@ import org.ta4j.core.rules.*;
 
 import java.util.List;
 
-public class EMATenTwentyStrategy implements IIndicatorValue {
+public class EMATenTwentyStrategy extends AbstractStrategy implements IIndicatorValue {
     BarSeries series = null;
     EMAIndicator shortEma, longEma = null;
 
     public EMATenTwentyStrategy(BarSeries series) {
+        super(series);
         this.series = series;
     }
 
@@ -54,9 +55,13 @@ public class EMATenTwentyStrategy implements IIndicatorValue {
         longEma = new EMAIndicator(closePrice, 20);
         setIndicatorValues(shortEma, "shortEma");
         setIndicatorValues(longEma, "longEma");
-
         Rule entryRule = new OverIndicatorRule(shortEma, longEma);
-        Rule exitRule = new UnderIndicatorRule(shortEma, longEma);
+        Rule exitRule;
+        if (!inherentExitRule) {
+            exitRule = new UnderIndicatorRule(shortEma, longEma);
+        } else {
+            exitRule = exitRule();
+        }
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

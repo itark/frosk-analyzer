@@ -30,6 +30,7 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.candles.BearishHaramiIndicator;
 import org.ta4j.core.indicators.candles.BullishHaramiIndicator;
 import org.ta4j.core.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.OverIndicatorRule;
 
 import java.util.List;
 
@@ -39,12 +40,13 @@ import java.util.List;
  * @see <a href="http://www.investopedia.com/terms/b/bullishharami.asp">
  *     http://www.investopedia.com/terms/b/bullishharami.asp</a>
  */
-public class HaramiStrategy implements IIndicatorValue {
+public class HaramiStrategy extends AbstractStrategy implements IIndicatorValue {
 
 	BarSeries series = null;
 	   
 	public HaramiStrategy(BarSeries series) {
-		this.series = series;
+        super(series);
+        this.series = series;
 	}	
 	
 	/**
@@ -58,10 +60,15 @@ public class HaramiStrategy implements IIndicatorValue {
 
         BullishHaramiIndicator  bullish = new BullishHaramiIndicator(series);
         BearishHaramiIndicator  bearish = new BearishHaramiIndicator(series);
-        
         Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
-        Rule exitRule = new BooleanIndicatorRule(bearish); // Bear trend
-        
+
+        Rule exitRule;
+        if (!inherentExitRule) {
+            exitRule = new BooleanIndicatorRule(bearish); // Bear trend
+        } else {
+            exitRule = exitRule();
+        }
+
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;
     }

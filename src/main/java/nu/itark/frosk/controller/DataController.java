@@ -25,7 +25,6 @@ import nu.itark.frosk.service.BarSeriesService;
 @RestController
 @Slf4j
 public class DataController {
-   // Logger logger = Logger.getLogger(DataController.class.getName());
 
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
@@ -59,6 +58,10 @@ public class DataController {
         return securityMetaDataManager.getFeaturedStrategies();
     }
 
+    @RequestMapping(path = "/topFeaturedStrategies", method = RequestMethod.GET)
+    public List<FeaturedStrategyDTO> getTopFeaturedStrategies() {
+        return securityMetaDataManager.getTop10FeaturedStrategies();
+    }
 
     /**
      * @return
@@ -224,12 +227,21 @@ public class DataController {
         return getShortTrades();
     }
 
+    @GetMapping(value = "/smartSignals")
+    public List<OpenFeaturedStrategyDTO> openSmartSignals() {
+        return getOpenSmartSignals();
+    }
+
     private List<TradeDTO> getLongTrades() {
         return strategyFilter.getLongTradesAllStrategies();
     }
 
     private List<TradeDTO> getShortTrades() {
         return strategyFilter.getShortTradesAllStrategies();
+    }
+
+    private List<OpenFeaturedStrategyDTO> getOpenSmartSignals() {
+        return strategyFilter.getOpenSmartSignals();
     }
 
     private List<TradeDTO> getTrades(String security, String strategy) {

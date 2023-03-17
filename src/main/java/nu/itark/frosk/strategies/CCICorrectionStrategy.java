@@ -28,8 +28,13 @@ import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.CCIIndicator;
+import org.ta4j.core.indicators.ChandelierExitLongIndicator;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.StopLossRule;
+import org.ta4j.core.rules.TrailingStopLossRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.util.List;
@@ -39,12 +44,13 @@ import java.util.List;
  * <p>
  * @see ://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:cci_correction
  */
-public class CCICorrectionStrategy implements IIndicatorValue {
+public class CCICorrectionStrategy extends AbstractStrategy implements IIndicatorValue {
 
 	BarSeries series = null;
 	   
 	public CCICorrectionStrategy(BarSeries series) {
-		this.series = series;
+        super(series);
+        this.series = series;
 	}	
 	
 	/**
@@ -67,10 +73,15 @@ public class CCICorrectionStrategy implements IIndicatorValue {
         
         Rule entryRule = new OverIndicatorRule(longCci, plus100) // Bull trend
                 .and(new UnderIndicatorRule(shortCci, minus100)); // Signal
-        
-        Rule exitRule = new UnderIndicatorRule(longCci, minus100) // Bear trend
-                .and(new OverIndicatorRule(shortCci, plus100)); // Signal
-        
+
+        Rule exitRule;
+        if (!inherentExitRule) {
+            exitRule = new UnderIndicatorRule(longCci, minus100) // Bear trend
+                    .and(new OverIndicatorRule(shortCci, plus100)); // Signal
+        } else {
+            exitRule = exitRule();
+        }
+
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         strategy.setUnstablePeriod(5);
         return strategy;

@@ -28,15 +28,15 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
+import org.ta4j.core.indicators.ChandelierExitLongIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.adx.MinusDIIndicator;
 import org.ta4j.core.indicators.adx.PlusDIIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.rules.CrossedDownIndicatorRule;
-import org.ta4j.core.rules.CrossedUpIndicatorRule;
-import org.ta4j.core.rules.OverIndicatorRule;
-import org.ta4j.core.rules.UnderIndicatorRule;
+import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
+import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.rules.*;
 
 import java.util.List;
 
@@ -47,11 +47,12 @@ import java.util.List;
  *      "http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:average_directional_index_adx">
  *      http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:average_directional_index_adx</a>
  */
-public class ADXStrategy implements IIndicatorValue {
+public class ADXStrategy extends AbstractStrategy implements IIndicatorValue {
 
     BarSeries series = null;
 
     public ADXStrategy(BarSeries series) {
+        super(series);
         this.series = series;
     }
 
@@ -79,17 +80,20 @@ public class ADXStrategy implements IIndicatorValue {
         final PlusDIIndicator plusDIIndicator = new PlusDIIndicator(series, adxBarCount);
         setIndicatorValues(plusDIIndicator, "plusDI");
         final MinusDIIndicator minusDIIndicator = new MinusDIIndicator(series, adxBarCount);
-
-        //Generisk
         setIndicatorValues(minusDIIndicator, "minusDI");
 
         final Rule plusDICrossedUpMinusDI = new CrossedUpIndicatorRule(plusDIIndicator, minusDIIndicator);
         final Rule plusDICrossedDownMinusDI = new CrossedDownIndicatorRule(plusDIIndicator, minusDIIndicator);
         final OverIndicatorRule closePriceOverSma = new OverIndicatorRule(closePriceIndicator, smaIndicator);
         final Rule entryRule = adxOver20Rule.and(plusDICrossedUpMinusDI).and(closePriceOverSma);
-
         final UnderIndicatorRule closePriceUnderSma = new UnderIndicatorRule(closePriceIndicator, smaIndicator);
-        final Rule exitRule = adxOver20Rule.and(plusDICrossedDownMinusDI).and(closePriceUnderSma);
+
+        Rule exitRule;
+        if (!inherentExitRule) {
+            exitRule = adxOver20Rule.and(plusDICrossedDownMinusDI).and(closePriceUnderSma);
+        } else {
+            exitRule = exitRule();
+        }
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule, adxBarCount);
     }

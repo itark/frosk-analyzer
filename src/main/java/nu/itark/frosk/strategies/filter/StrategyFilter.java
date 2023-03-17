@@ -1,27 +1,57 @@
 package nu.itark.frosk.strategies.filter;
 
+import nu.itark.frosk.analysis.OpenFeaturedStrategyDTO;
+import nu.itark.frosk.analysis.SecurityMetaDataManager;
+import nu.itark.frosk.analysis.TopStrategyDTO;
 import nu.itark.frosk.analysis.TradeDTO;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.TopStrategy;
 import nu.itark.frosk.repo.TradesRepository;
+import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.math.MathContext;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 public class StrategyFilter {
-
     @Autowired
     TradesRepository tradesRepository;
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
+
+    @Autowired
+    SecurityMetaDataManager securityMetaDataManager;
+
+    public List<OpenFeaturedStrategyDTO> getOpenSmartSignals() {
+        List<OpenFeaturedStrategyDTO>  openFeaturedStrategyDTOList = new ArrayList<>();
+        BigDecimal aboveProfTradesRatio= new BigDecimal(0.5);
+        Integer aboveNrOfTrades= 10;
+        List<FeaturedStrategy> fsList = featuredStrategyRepository.findSmartSignals(aboveProfTradesRatio,aboveNrOfTrades);
+        OpenFeaturedStrategyDTO dto;
+        fsList.forEach(fs-> {
+            openFeaturedStrategyDTOList.add(getDTO(fs));
+        });
+        return openFeaturedStrategyDTOList;
+    }
+
+    public OpenFeaturedStrategyDTO getDTO(FeaturedStrategy fs) {
+        Long nrOfBars = DateTimeManager.nrOfDays(DateTimeManager.convertToLocalDateTime(fs.getLatestTrade()) ,
+                LocalDateTime.now());
+        return OpenFeaturedStrategyDTO.builder()
+                .name(fs.getName().replace("Strategy",""))
+                .securityName(fs.getSecurityName())
+                .latestTrade(DateFormatUtils.format(fs.getLatestTrade(), "yyyy-MM-dd"))
+                .totalProfit(securityMetaDataManager.getBarPercent(fs.getSecurityName(), nrOfBars.intValue()))
+                .build();
+    }
 
     public List<TradeDTO> getLongTradesAllStrategies(String strategyName) {
         List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName(strategyName);

@@ -27,7 +27,7 @@ import java.util.*;
 public class SecurityMetaDataManager {
 
     @Autowired
-    BarSeriesService timeSeriesService;
+    BarSeriesService barSeriesService;
 
     @Autowired
     DataSetRepository datasetRepository;
@@ -44,6 +44,14 @@ public class SecurityMetaDataManager {
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
         featuredStrategyRepository.findAll().forEach(fs->{
                 returnList.add(getDTO(fs));
+        });
+        return returnList;
+    }
+
+    public List<FeaturedStrategyDTO> getTop10FeaturedStrategies() {
+        List<FeaturedStrategyDTO> returnList = new ArrayList<>();
+        featuredStrategyRepository.findTop10ByOrderByTotalProfitDesc().forEach(fs->{
+            returnList.add(getDTO(fs));
         });
         return returnList;
     }
@@ -71,7 +79,7 @@ public class SecurityMetaDataManager {
     }
 
     private Strategy getBestStrategy(String securityName)  {
-        BarSeries barSeries = timeSeriesService.getDataSet(securityName, false);
+        BarSeries barSeries = barSeriesService.getDataSet(securityName, false);
         List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
         AnalysisCriterion profitCriterion = new GrossReturnCriterion();
         BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
@@ -79,8 +87,8 @@ public class SecurityMetaDataManager {
     }
 
 
-    protected BigDecimal getBarPercent(String securityName, int nrOfBars) {
-        BarSeries timeSeries = timeSeriesService.getDataSet(securityName, false);
+    public BigDecimal getBarPercent(String securityName, int nrOfBars) {
+        BarSeries timeSeries = barSeriesService.getDataSet(securityName, false);
         //Sanitycheck
         if (timeSeries.getBarCount() <= nrOfBars) {
             return null;
@@ -102,7 +110,7 @@ public class SecurityMetaDataManager {
             return dto;
         }
         List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
-        dto.setName(fs.getName());
+        dto.setName(fs.getName().replace("Strategy",""));
         dto.setSecurityName(fs.getSecurityName());
         dto.setIcon(IconManager.getIconUrl(fs.getSecurityName()));
         dto.setTotalProfit(fs.getTotalProfit());

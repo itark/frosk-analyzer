@@ -18,3 +18,5 @@
 src/test/resources/non-commit-data.txt
 
 src/test/resources/non-commit.txt
+
+logs/

@@ -31,18 +31,20 @@ import org.ta4j.core.indicators.candles.BearishEngulfingIndicator;
 import org.ta4j.core.indicators.candles.BullishEngulfingIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.util.List;
 
 /**
 * https://www.investopedia.com/terms/b/bearishengulfingp.asp
  */
-public class EngulfingStrategy implements IIndicatorValue {
+public class EngulfingStrategy extends AbstractStrategy implements IIndicatorValue {
 
 	BarSeries series = null;
 	   
 	public EngulfingStrategy(BarSeries series) {
-		this.series = series;
+        super(series);
+        this.series = series;
 	}	
 	
 	/**
@@ -55,17 +57,17 @@ public class EngulfingStrategy implements IIndicatorValue {
         }
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+        setIndicatorValues(closePrice,"closePrice");
         BullishEngulfingIndicator  bullish = new BullishEngulfingIndicator(series);
         BearishEngulfingIndicator  bearish = new BearishEngulfingIndicator(series);
-        
         Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
-        Rule exitRule = new BooleanIndicatorRule(bearish); // Bear trend
 
-/*        Rule exitRule = new BooleanIndicatorRule(bearish)
-                .or(new StopLossRule(closePrice, 2))
-                .or(new StopGainRule(closePrice,2));*/
-
-        setIndicatorValues(closePrice,"closePrice");
+        Rule exitRule;
+        if (!inherentExitRule) {
+            exitRule = new BooleanIndicatorRule(bearish); // Bear trend
+        } else {
+            exitRule = exitRule();
+        }
 
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;

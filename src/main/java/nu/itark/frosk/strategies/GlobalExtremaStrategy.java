@@ -28,17 +28,14 @@ import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.indicators.helpers.*;
-import org.ta4j.core.rules.OverIndicatorRule;
-import org.ta4j.core.rules.StopGainRule;
-import org.ta4j.core.rules.StopLossRule;
-import org.ta4j.core.rules.UnderIndicatorRule;
+import org.ta4j.core.rules.*;
 
 import java.util.List;
 
 /**
  * Strategies which compares current price to global extrema over a week.
  */
-public class GlobalExtremaStrategy implements IIndicatorValue {
+public class GlobalExtremaStrategy extends AbstractStrategy implements IIndicatorValue {
 
     // We assume that there were at least one trade every 5 minutes during the whole week
     private static final int NB_TICKS_PER_WEEK = 12 * 24 * 7;
@@ -46,7 +43,8 @@ public class GlobalExtremaStrategy implements IIndicatorValue {
 	BarSeries series = null;
    
 	public GlobalExtremaStrategy(BarSeries series) {
-		this.series = series;
+        super(series);
+        this.series = series;
 	}	
     
     /**
@@ -69,14 +67,20 @@ public class GlobalExtremaStrategy implements IIndicatorValue {
 
         // Going long if the close price goes below the min price
         TransformIndicator downWeek = TransformIndicator.plus(weekMinPrice, 1.004);
-        Rule buyingRule = new UnderIndicatorRule(closePrices, downWeek);
+        Rule entryRule = new UnderIndicatorRule(closePrices, downWeek);
 
         // Going short if the close price goes above the max price
         TransformIndicator upWeek = TransformIndicator.plus(weekMaxPrice, 0.996);
 
-        Rule sellingRule = new OverIndicatorRule(closePrices, upWeek);
+        Rule exitRule;
+        if (!inherentExitRule) {
+            exitRule = new OverIndicatorRule(closePrices, upWeek);
+        } else {
+            exitRule = exitRule();
+        }
 
-        return new BaseStrategy(this.getClass().getSimpleName(), buyingRule, sellingRule);
+
+        return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
 
     public Strategy buildStrategy(int lossPercentage) {

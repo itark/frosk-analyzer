@@ -107,6 +107,14 @@ public class COINBASEDataManager {
         log.info("1. {} candles to update",currencyCandlesMap.size());
 
         currencyCandlesMap.forEach((sec_id, candleList) -> {
+
+            if (candleList.isEmpty()) {
+                Security security = securityRepository.findById(sec_id).get();
+                log.info("Inga candles:{}",security.getName());
+                security.setActive(false);
+                securityRepository.saveAndFlush(security);
+            }
+
             candleList.forEach(row -> {
                 Date date = Date.from(row.getTime());
                 SecurityPrice securityPrice = null;

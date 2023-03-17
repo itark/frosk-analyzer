@@ -28,8 +28,8 @@ public class TestJCOINBASEDataManager extends BaseIntegrationTest {
 
     @Test
     public void syncOne(){
-        coinbaseDataManager.syncronize("SHPING-EUR");
-    }
+        coinbaseDataManager.syncronize("WLUNA-USDT");
+    }  //WLUNA-USDT
 
     @Test
     public void testInstansDate() {

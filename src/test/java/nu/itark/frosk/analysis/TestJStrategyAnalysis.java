@@ -7,6 +7,7 @@ import nu.itark.frosk.model.StrategyPerformance;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.strategies.ConvergenceDivergenceStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
 import nu.itark.frosk.util.DateTimeManager;
@@ -55,6 +56,13 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 		strategyAnalysis.run(RSI2Strategy.class.getSimpleName(), sec_id);
 	}
 
+
+	@Test
+	public void runCD() {
+		Long sec_id = barSeriesService.getSecurityId("SHPING-EUR");
+		strategyAnalysis.run(ConvergenceDivergenceStrategy.class.getSimpleName(), sec_id);
+	}
+
 	@Test
 	public void runAll() {
 		logger.info("All");
@@ -83,8 +91,14 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 		strategyPerformanceRepository.findByBestStrategyOrderByTotalProfitLossDesc(bestStrategy).forEach(sp-> {
 			System.out.println("sp:"+ReflectionToStringBuilder.toString(sp));
 		});
+	}
 
-
+	@Test
+	public void runBot() {
+		String strategy = "SimpleMovingMomentumStrategy";
+		String securityName = "ALCX-USDT"; // ALCX-USDT
+		BarSeries barSeries = barSeriesService.getDataSet(securityName, false);
+		strategyAnalysis.runBot(strategy,barSeries );
 	}
 
 

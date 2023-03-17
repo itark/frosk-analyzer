@@ -3,6 +3,7 @@ package nu.itark.frosk.util;
 import org.apache.commons.lang3.time.DateUtils;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -57,5 +58,14 @@ public class DateTimeManager {
 		return instant.truncatedTo(ChronoUnit.DAYS);
 	}
 
+	public static long nrOfDays(LocalDateTime from, LocalDateTime to ) {
+		return ChronoUnit.DAYS.between(from, to);
+	}
+
+	public static LocalDateTime convertToLocalDateTime(Date dateToConvert) {
+		return dateToConvert.toInstant()
+				.atZone(ZoneId.systemDefault())
+				.toLocalDateTime();
+	}
 
 }

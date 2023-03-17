@@ -115,32 +115,6 @@ public interface IIndicatorValue {
 		}
 	}
 
-/*
-	default void setIndicatorValues(PlusDIIndicator indicator, String name) {
-		StrategyIndicatorValue iv = null;
-		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
-			Date date = Date.from(indicator.getBarSeries().getBar(i).getEndTime().toInstant());
-			if (indicator.getValue(i).isNaN()) continue;
-			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
-			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
-		}
-	}
-*/
-
-/*
-	default void setIndicatorValues(MinusDIIndicator indicator, String name) {
-		StrategyIndicatorValue iv = null;
-		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {
-			Date date = Date.from(indicator.getBarSeries().getBar(i).getEndTime().toInstant());
-			if (indicator.getValue(i).isNaN()) continue;
-			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
-			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
-		}
-	}
-*/
-
 	default void setIndicatorValues(CachedIndicator<Num> indicator, String name) {
 		StrategyIndicatorValue iv = null;
 		for (int i = 0; i < indicator.getBarSeries().getBarCount(); i++) {

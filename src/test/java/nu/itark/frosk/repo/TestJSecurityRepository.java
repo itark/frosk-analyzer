@@ -9,36 +9,38 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 @Slf4j
 @SpringBootTest(classes = {FroskApplication.class})
 public class TestJSecurityRepository extends BaseIntegrationTest {
-	Logger logger = Logger.getLogger(TestJSecurityRepository.class.getName());
 
-	
 	@Autowired
 	SecurityRepository securityRepo;
 	
 	@Test
 	public final void testExist() {
-		
 		Security security = new Security("BITFINEX/BTCEUR","name", "BITFINEX");
-		
-		
 		boolean exist = securityRepo.existsByName(security.getName());
-		
-		
-		logger.info("exist="+exist);
+		log.info("exist="+exist);
 	}
 
 	@Test
 	public final void testFindByName() {
-		
-		logger.info("hello="+ ReflectionToStringBuilder.toString(securityRepo.findByName("SHPING-EUR")));
-	}	
-	
-	
+		log.info("hello="+ ReflectionToStringBuilder.toString(securityRepo.findByName("SHPING-EUR")));
+	}
+
+	@Test
+	public final void testFindByActive() {
+		List<Security> all = securityRepo.findAll();
+		log.info("all.size() {}",all.size());
+		List<Security> allActive = securityRepo.findAllByActive(true);
+		log.info("allActive.size() {}",allActive.size());
+
+	}
+
+
 //	@Test
 //	public void testFindBySEcurity() {
 //	Security security = securityRepo.findById(new Long(2418800));

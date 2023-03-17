@@ -237,28 +237,28 @@
 			<version>4.1</version>
 		</dependency>
 
-		<!-- /gdax-java/ ->  gradle api:publishToMavenLocal 	-->
+		<!-- /gdax-java/ ->  ./gradlew api:publishToMavenLocal 	-->
 		<dependency>
 			<groupId>com.coinbase.exchange</groupId>
 			<artifactId>api</artifactId>
 			<version>0.11.0</version>
 		</dependency>
 
-		<!-- /gdax-java/ ->  gradle model:publishToMavenLocal 	-->
+		<!-- /gdax-java/ ->  ./gradlew model:publishToMavenLocal 	-->
 		<dependency>
 			<groupId>com.coinbase.exchange</groupId>
 			<artifactId>model</artifactId>
 			<version>0.11.0</version>
 		</dependency>
 
-		<!-- /gdax-java/ ->  gradle security:publishToMavenLocal 	-->
+		<!-- /gdax-java/ ->  ./gradlew security:publishToMavenLocal 	-->
 		<dependency>
 			<groupId>com.coinbase.exchange</groupId>
 			<artifactId>security</artifactId>
 			<version>0.11.0</version>
 		</dependency>
 
-		<!-- /gdax-java/ ->  gradle websocketfeed:publishToMavenLocal 	-->
+		<!-- /gdax-java/ ->  ./gradlew websocketfeed:publishToMavenLocal 	-->
 		<dependency>
 			<groupId>com.coinbase.exchange</groupId>
 			<artifactId>websocketfeed</artifactId>

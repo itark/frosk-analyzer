@@ -34,6 +34,9 @@ public class Security {
 
 	@Column(name = "database")
 	private String database;
+
+	@Column(name = "active", columnDefinition="BOOLEAN DEFAULT true")
+	private boolean active = true;
 	
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "securities")
 	private List<DataSet> datasets = new ArrayList<>();	
@@ -45,6 +48,7 @@ public class Security {
 		this.name = name;
 		this.description = description;
 		this.database = database;
+		this.active = true;
 	}
 	
 }

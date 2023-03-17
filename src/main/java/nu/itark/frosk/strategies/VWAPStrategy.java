@@ -23,6 +23,7 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import org.hibernate.loader.plan.build.internal.AbstractEntityGraphVisitationStrategy;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -35,12 +36,13 @@ import org.ta4j.core.rules.*;
 import java.util.List;
 
 
-public class VWAPStrategy implements IIndicatorValue {
+public class VWAPStrategy extends AbstractStrategy implements IIndicatorValue {
     BarSeries series = null;
     EMAIndicator shortEma, longEma = null;
     VWAPIndicator vwap;
 
     public VWAPStrategy(BarSeries series) {
+        super(series);
         this.series = series;
     }
 
@@ -52,14 +54,17 @@ public class VWAPStrategy implements IIndicatorValue {
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         vwap = new VWAPIndicator(series,1);
-
         // Entry rule
         Rule entryRule = new OverIndicatorRule(closePrice,vwap ) ;
 
-        // Exit rule
-        Rule exitRule = new UnderIndicatorRule(closePrice,vwap) // Trend
-                .or(new StopLossRule(closePrice, 2))
-                .or(new StopGainRule(closePrice,2));
+        Rule exitRule;
+        if (!inherentExitRule) {
+            exitRule = new UnderIndicatorRule(closePrice,vwap) // Trend
+                    .or(new StopLossRule(closePrice, 2))
+                    .or(new StopGainRule(closePrice,2));
+        } else {
+            exitRule = exitRule();
+        }
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

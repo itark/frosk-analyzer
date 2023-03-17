@@ -31,8 +31,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
+import org.ta4j.core.analysis.criteria.pnl.GrossProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
 import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
+import org.ta4j.core.analysis.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.num.Num;
 
 import java.util.List;
@@ -44,18 +46,16 @@ public class TestJSimpleMovingMomentumStrategy extends BaseIntegrationTest  {
 
 	 @Autowired
 	 BarSeriesService barSeriesService;
-	 
 
     @Test
     public final void run() throws Exception {
-		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false);
+		BarSeries timeSeries = barSeriesService.getDataSet("BTC-USDT", false);
 		SimpleMovingMomentumStrategy strat = new SimpleMovingMomentumStrategy(timeSeries);
-        
         Strategy strategy = strat.buildStrategy();
         BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Position> positions = tradingRecord.getPositions();
-     
+
         for (Position position : positions) {
         	Bar barEntry = timeSeries.getBar(position.getEntry().getIndex());
         	log.info(timeSeries.getName()+"::barEntry="+barEntry.getDateName());
@@ -66,17 +66,15 @@ public class TestJSimpleMovingMomentumStrategy extends BaseIntegrationTest  {
             Num profit = closePriceSell.minus(closePriceBuy);
             
             if (position.isOpened()) {
-            	log.info("isOpened():barEntry.getDateName()"+barEntry.getDateName());
+            	log.info("isOpened():{}",barEntry.getDateName());
             }
-            
             if (position.isNew()) {
-            	log.info("isNew():barEntry.getDateName()"+barEntry.getDateName());
+            	log.info("isNew():{}",barEntry.getDateName());
             }
-            
             if (position.isClosed()) {
-            	log.info("isClose():barExit.getDateName()"+barExit.getDateName());
+            	log.info("isClose():{}",barExit.getDateName());
             } else {
-            	log.info("isNOTCLOSED():barEntry.getDateName()"+barEntry.getDateName());
+                log.info("!isClose():{}",barExit.getDateName());
             }
             
             log.info("profit="+profit);
@@ -86,10 +84,13 @@ public class TestJSimpleMovingMomentumStrategy extends BaseIntegrationTest  {
         log.info("Number of positions for the strategy: " + tradingRecord.getPositionCount());
 
         // Analysis
-        log.info("Total profit for the strategy: " + new NetProfitCriterion().calculate(timeSeries, tradingRecord));
-        double totalProfit = new GrossReturnCriterion().calculate(timeSeries, tradingRecord).doubleValue();
-        double totalProfitPercentage = (totalProfit - 1 ) *100;  //TODO minus
-        log.info("Total profit for the strategy (%): "+ totalProfitPercentage);
+        GrossReturnCriterion totalReturn = new GrossReturnCriterion();
+        System.out.println("Total return: " + totalReturn.calculate(timeSeries, tradingRecord).doubleValue());
+        ProfitLossPercentageCriterion totalPercentage = new ProfitLossPercentageCriterion();
+        System.out.println("Total percentage: " + totalPercentage.calculate(timeSeries, tradingRecord).doubleValue());
+
+
+
     }
 
 }

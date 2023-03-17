@@ -10,16 +10,19 @@ import org.ta4j.core.indicators.helpers.ConvergenceDivergenceIndicator;
 import org.ta4j.core.indicators.helpers.ConvergenceDivergenceIndicator.ConvergenceDivergenceType;
 import org.ta4j.core.indicators.helpers.VolumeIndicator;
 import org.ta4j.core.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.util.List;
 
-public class ConvergenceDivergenceStrategy implements IIndicatorValue {
+public class ConvergenceDivergenceStrategy extends AbstractStrategy implements IIndicatorValue {
 
 	
 	BarSeries series = null;
 	   
 	public ConvergenceDivergenceStrategy(BarSeries series) {
-		this.series = series;
+        super(series);
+        this.series = series;
 	}		
 
     public Strategy buildStrategy() {
@@ -37,9 +40,13 @@ public class ConvergenceDivergenceStrategy implements IIndicatorValue {
         ConvergenceDivergenceIndicator posDiv = new ConvergenceDivergenceIndicator(closePrice,volume,timePeriod,posDivType,0.1,0.1);
         ConvergenceDivergenceIndicator negDiv = new ConvergenceDivergenceIndicator(closePrice,volume,timePeriod,negDivType,0.1,0.1);
         Rule entryRule = new BooleanIndicatorRule(posDiv);
-        Rule exitRule = new BooleanIndicatorRule(negDiv);    
-        
-        
+        Rule exitRule;
+        if (!inherentExitRule) {
+            exitRule = new BooleanIndicatorRule(negDiv);
+        } else {
+            exitRule = exitRule();
+        }
+
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;
     }

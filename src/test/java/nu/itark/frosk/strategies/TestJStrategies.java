@@ -83,9 +83,11 @@ public class TestJStrategies extends BaseIntegrationTest {
 		run(eng.buildStrategy(),timeSeries);
 */
 
+/*
 		HaramiStrategy harami = new HaramiStrategy(timeSeries);
 		resultMap.add(run(harami.buildStrategy(),timeSeries));
-	
+*/
+
 /*
 		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
 		resultMap.add(run(three.buildStrategy(),timeSeries));
@@ -143,7 +145,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void runOneSingleDataSet2() {
-	BarSeries series = barSeriesService.getDataSet("ALCX-USDT", false);
+	BarSeries series = barSeriesService.getDataSet("BTC-EUR", false);
 	Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
 	BarSeriesManager seriesManager = new BarSeriesManager(series);
 	TradingRecord tradingRecord = seriesManager.run(strategy);

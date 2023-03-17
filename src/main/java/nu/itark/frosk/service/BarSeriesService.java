@@ -47,14 +47,15 @@ public class BarSeriesService  {
 	 * @return List<BarSeries> for alla securities in database
 	 */
 	public List<BarSeries> getDataSet() {
-		Iterable<Security> spList = securityRepository.findAll();  
-		List<BarSeries> BarSeries = new ArrayList<BarSeries>();
+		//Iterable<Security> spList = securityRepository.findAll();
+		Iterable<Security> spList = securityRepository.findAllByActive(true);
+		List<BarSeries> barSeries = new ArrayList<BarSeries>();
 		
 		spList.forEach(sp -> {
-			BarSeries.add(getDataSet( getSecurityId(sp.getName())  ));
+			barSeries.add(getDataSet( getSecurityId(sp.getName())  ));
 		});
 		
-		return BarSeries;
+		return barSeries;
 		
 	}	
 
@@ -63,23 +64,8 @@ public class BarSeriesService  {
 		return securityRepository.findByName(securityName).getId();
 	}
 	
-/*
-	*/
-/**
-	 * Return TimesSeries bases on name in Security.
-	 * 
-	 * @param  {@linkplain Security}
-	 * @return BarSeries
-	 *//*
-
-	public BarSeries getDataSet(String securityName) {
-		return  getDataSet( getSecurityId(securityName)  );
-	}
-*/
-
-
 	/**
-	 * Return TimesSeries bases on name in Security.
+	 * Return BarSeries bases on name in Security.
 	 *
 	 * @param  {@linkplain Security}
 	 * @param  api, true if retrieving data direcly from coinbase api.

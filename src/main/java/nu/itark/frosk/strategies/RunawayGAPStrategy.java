@@ -31,17 +31,20 @@ import org.ta4j.core.Strategy;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.rules.TrailingStopLossRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.util.List;
 
 /**
  * https://www.investopedia.com/terms/r/runawaygap.asp
  */
-public class RunawayGAPStrategy implements IIndicatorValue {
+public class RunawayGAPStrategy extends AbstractStrategy implements IIndicatorValue {
 	BarSeries series = null;
 	public RunawayGAPStrategy(BarSeries series) {
-		this.series = series;
+        super(series);
+        this.series = series;
 	}	
 	
     public Strategy buildStrategy() {
@@ -53,7 +56,15 @@ public class RunawayGAPStrategy implements IIndicatorValue {
 
         RunawayGAPIndicator runawayGAPIndicator = new RunawayGAPIndicator(series);
         Rule entryRule = new BooleanIndicatorRule(runawayGAPIndicator);
-        Rule exitRule = new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2));
+
+        Rule exitRule;
+        if (!inherentExitRule) {
+            exitRule = new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2));
+        } else {
+            exitRule = exitRule();
+        }
+
+
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;
     }
