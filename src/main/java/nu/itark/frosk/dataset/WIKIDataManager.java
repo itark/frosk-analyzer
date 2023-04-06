@@ -43,7 +43,7 @@ public class WIKIDataManager {
 	
 	public void syncronize() {
 		logger.info("sync="+Database.WIKI.toString());
-		Iterable<Security> securities = securityRepository.findByDatabase(Database.WIKI.toString()); 
+		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.WIKI.toString(), true);
 		
 		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
 		List<SecurityPrice> spList;

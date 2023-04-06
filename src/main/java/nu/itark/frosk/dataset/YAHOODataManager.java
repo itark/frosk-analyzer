@@ -57,7 +57,7 @@ public class YAHOODataManager  {
 	 */
 	public void syncronize() {
 		log.info("sync="+Database.YAHOO.toString());
-		Iterable<Security> securities = securityRepository.findByDatabase(Database.YAHOO.toString()); 
+		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.YAHOO.toString(), true);
 		
 		securities.forEach(sec -> log.info("NAME="+ sec.getName()));
 		

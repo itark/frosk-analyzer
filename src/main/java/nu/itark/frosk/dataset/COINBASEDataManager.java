@@ -49,9 +49,8 @@ public class COINBASEDataManager {
      */
     public void syncronize() {
         log.info("sync="+Database.COINBASE.toString());
-        //Iterable<Security> securities = securityRepository.findByDatabase(Database.COINBASE.toString());
-        List<Security> securities = securityRepository.findByDatabase(Database.COINBASE.toString());
-        log.info("About to sync {} securities",securities.size());
+        List<Security> securities = securityRepository.findByDatabaseAndActive(Database.COINBASE.toString(), true);
+        log.info("About to sync {} active securities",securities.size());
 
         List<SecurityPrice> spList;
         try {

@@ -40,7 +40,7 @@ public class FSEDataManager extends TimeSeriesManager {
 	
 	public void syncronize() {
 		logger.info("sync="+Database.FSE.toString());
-		Iterable<Security> securities = securityRepository.findByDatabase(Database.FSE.toString()); 
+		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.FSE.toString(), true);
 		
 		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
 		List<SecurityPrice> spList;

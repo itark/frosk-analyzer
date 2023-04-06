@@ -41,7 +41,7 @@ public class GDAXDataManager extends TimeSeriesManager {
 	
 	public void syncronize() {
 		logger.info("syncronize database="+Database.GDAX.toString());
-		Iterable<Security> securities = securityRepository.findByDatabase(Database.GDAX.toString()); 
+		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.GDAX.toString(), true);
 		
 		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
 		List<SecurityPrice> spList;

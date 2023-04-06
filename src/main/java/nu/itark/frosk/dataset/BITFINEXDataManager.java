@@ -49,7 +49,7 @@ public class BITFINEXDataManager extends TimeSeriesManager {
 		logger.info("sync="+Database.BITFINEX.toString());
 		long initCount = securityPriceRepository.count();
 		long count;
-		Iterable<Security> securities = securityRepository.findByDatabase(Database.BITFINEX.toString()); 
+		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.BITFINEX.toString(), true);
 		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
 
 		List<SecurityPrice> spList;
