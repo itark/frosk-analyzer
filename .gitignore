@@ -20,3 +20,5 @@ src/test/resources/non-commit-data.txt
 src/test/resources/non-commit.txt
 
 logs/
+
+no_check_in.txt

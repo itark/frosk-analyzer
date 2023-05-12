@@ -1,10 +1,9 @@
 package nu.itark.frosk.crypto.coinbase;
 
-import com.coinbase.exchange.api.payments.PaymentService;
-import com.coinbase.exchange.api.payments.PaymentType;
+import nu.itark.frosk.crypto.coinbase.api.payments.PaymentService;
+import nu.itark.frosk.crypto.coinbase.api.payments.PaymentType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 

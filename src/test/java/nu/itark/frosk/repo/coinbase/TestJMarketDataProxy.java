@@ -1,32 +1,25 @@
 package nu.itark.frosk.repo.coinbase;
 
-import java.util.List;
-
-import com.coinbase.exchange.api.marketdata.MarketData;
-import com.coinbase.exchange.api.marketdata.MarketDataService;
-import com.coinbase.exchange.api.marketdata.OrderItem;
-import com.coinbase.exchange.api.marketdata.Trade;
-import com.coinbase.exchange.api.products.ProductService;
+import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.changedetection.LimitOrderImbalance;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
-import nu.itark.frosk.coinbase.config.IntegrationTestConfiguration;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.HistoricRate;
 import nu.itark.frosk.crypto.coinbase.MarketDataProxy;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.MarketData;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.OrderItem;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.Trade;
+import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.changedetection.LimitOrderImbalance;
-import nu.itark.frosk.util.DateTimeManager;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
-@Import({IntegrationTestConfiguration.class})
 @Slf4j
 public class TestJMarketDataProxy extends BaseIntegrationTest {
 
@@ -62,7 +55,7 @@ public class TestJMarketDataProxy extends BaseIntegrationTest {
     public void testGetMarketDataOrderBook() {
     	MarketData marketData = marketDataProxy.getMarketDataOrderBook(productId, 1);
 //    		log.info("marketData="+ReflectionToStringBuilder.toString(marketData));
-    		List<com.coinbase.exchange.api.marketdata.OrderItem> asks = marketData.getAsks();
+    		List<OrderItem> asks = marketData.getAsks();
 //    		asks.forEach(ask -> System.out.println("ask="+ReflectionToStringBuilder.toString(ask, ToStringStyle.MULTI_LINE_STYLE)));
     		List<OrderItem> bids = marketData.getBids();
 //    		bids.forEach(bid -> System.out.println("bid="+ReflectionToStringBuilder.toString(bid, ToStringStyle.MULTI_LINE_STYLE)));

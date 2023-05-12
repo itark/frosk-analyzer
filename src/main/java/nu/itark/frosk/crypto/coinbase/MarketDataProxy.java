@@ -1,20 +1,19 @@
 package nu.itark.frosk.crypto.coinbase;
 
-import java.util.List;
-
-import com.coinbase.exchange.api.marketdata.MarketData;
-import com.coinbase.exchange.api.marketdata.MarketDataService;
-import com.coinbase.exchange.api.marketdata.Trade;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.MarketData;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.MarketDataService;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.Trade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 
 @Component
 public class MarketDataProxy {
 
 	@Autowired
-	MarketDataService marketDataService;
+    MarketDataService marketDataService;
 
     public MarketData getMarketDataOrderBook(String productId, int level) {
         return marketDataService.getMarketDataOrderBook(productId, level);

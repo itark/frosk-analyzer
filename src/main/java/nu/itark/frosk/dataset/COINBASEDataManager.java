@@ -1,10 +1,10 @@
 package nu.itark.frosk.dataset;
 
-import com.coinbase.exchange.model.Candle;
-import com.coinbase.exchange.model.Candles;
-import com.coinbase.exchange.model.Granularity;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.crypto.coinbase.ProductProxy;
+import nu.itark.frosk.crypto.coinbase.model.Candle;
+import nu.itark.frosk.crypto.coinbase.model.Candles;
+import nu.itark.frosk.crypto.coinbase.model.Granularity;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
@@ -21,7 +21,6 @@ import org.springframework.util.Assert;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 

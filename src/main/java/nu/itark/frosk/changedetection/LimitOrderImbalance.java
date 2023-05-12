@@ -1,17 +1,14 @@
 package nu.itark.frosk.changedetection;
 
+import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.MarketData;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.OrderItem;
+import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Queue;
-
-import com.coinbase.exchange.api.marketdata.MarketData;
-import com.coinbase.exchange.api.marketdata.OrderItem;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
-import org.springframework.stereotype.Service;
-
-import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderOpenOrderBookMessage;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderReceived;
 
 @Service
 @Slf4j

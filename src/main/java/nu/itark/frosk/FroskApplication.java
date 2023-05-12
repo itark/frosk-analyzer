@@ -1,32 +1,20 @@
 package nu.itark.frosk;
 
-import com.coinbase.exchange.api.accounts.AccountService;
-import com.coinbase.exchange.api.exchange.CoinbaseExchange;
-import com.coinbase.exchange.api.exchange.CoinbaseExchangeImpl;
-import com.coinbase.exchange.api.marketdata.MarketDataService;
-import com.coinbase.exchange.api.payments.PaymentService;
-import com.coinbase.exchange.api.products.ProductService;
-import com.coinbase.exchange.security.Signature;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.dataset.DataManager;
-import nu.itark.frosk.dataset.DataSetHelper;
-import nu.itark.frosk.dataset.Database;
-import org.springframework.beans.factory.annotation.Autowired;
+import nu.itark.frosk.crypto.coinbase.accounts.AccountService;
+import nu.itark.frosk.crypto.coinbase.advanced.Coinbase;
+import nu.itark.frosk.crypto.coinbase.advanced.CoinbaseImpl;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.MarketDataService;
+import nu.itark.frosk.crypto.coinbase.api.payments.PaymentService;
+import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
+import nu.itark.frosk.crypto.coinbase.security.Signature;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -44,22 +32,22 @@ public class FroskApplication {
 	}
 
     @Bean
-    public MarketDataService initmarketDataService(CoinbaseExchange exchange) {
+    public MarketDataService initmarketDataService(Coinbase exchange) {
         return new MarketDataService(exchange);
     }
 
     @Bean
-    public ProductService initproductService(CoinbaseExchange exchange) {
+    public ProductService initproductService(Coinbase exchange) {
         return new ProductService(exchange);
     }
 
     @Bean
-    public AccountService initaccountService(CoinbaseExchange exchange) {
+    public AccountService initaccountService(Coinbase exchange) {
         return new AccountService(exchange);
     }
 
     @Bean
-    public PaymentService initpaymentService(CoinbaseExchange exchange) {
+    public PaymentService initpaymentService(Coinbase exchange) {
         return new PaymentService(exchange);
     }
 
@@ -87,22 +75,35 @@ public class FroskApplication {
         return new Signature(secret);
     }
 
+/*
     @Bean
     public CoinbaseExchange coinbasePro(@Value("${exchange.key}") String apiKey,
-                                        @Value("${exchange.passphrase}") String passphrase,
                                         @Value("${exchange.api.baseUrl}") String baseUrl,
                                         @Value("${exchange.secret}") String secretKey,
                                         ObjectMapper objectMapper) {
         return new CoinbaseExchangeImpl(apiKey,
-                passphrase,
+                baseUrl,
+                new Signature(secretKey),
+                objectMapper);
+    }
+*/
+
+    @Bean
+    public Coinbase coinbaseAdvanced(@Value("${exchange.key}") String apiKey,
+                                     @Value("${exchange.api.baseUrl}") String baseUrl,
+                                     @Value("${exchange.secret}") String secretKey,
+                                     ObjectMapper objectMapper) {
+        return new CoinbaseImpl(apiKey,
                 baseUrl,
                 new Signature(secretKey),
                 objectMapper);
     }
 
+
     @Bean
     public RestTemplate restTemplate() {
-        RestTemplate restTemplate = new RestTemplate(Arrays.asList(new MappingJackson2HttpMessageConverter(objectMapper())));
+       // RestTemplate restTemplate = new RestTemplate(Arrays.asList(new MappingJackson2HttpMessageConverter(objectMapper())));
+        RestTemplate restTemplate = new RestTemplate();
 
         return restTemplate;
     }

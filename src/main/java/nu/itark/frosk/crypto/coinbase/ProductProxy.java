@@ -1,13 +1,11 @@
 package nu.itark.frosk.crypto.coinbase;
 
-import com.coinbase.exchange.api.marketdata.MarketData;
-import com.coinbase.exchange.api.marketdata.MarketDataService;
-import com.coinbase.exchange.api.marketdata.Trade;
-import com.coinbase.exchange.api.products.ProductService;
-import com.coinbase.exchange.model.Candles;
-import com.coinbase.exchange.model.Granularity;
-import com.coinbase.exchange.model.Product;
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
+import nu.itark.frosk.crypto.coinbase.model.Candles;
+import nu.itark.frosk.crypto.coinbase.model.Granularity;
+import nu.itark.frosk.crypto.coinbase.model.Product;
+import nu.itark.frosk.crypto.coinbase.model.Products;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -24,24 +22,36 @@ public class ProductProxy {
     ProductService productService;
 
     public Candles getCandles(String productId, Instant start, Instant end, Granularity granularity) {
-        log.info("Retrieving Candles with selection - productId:{} start:{} end:{} granularity:{}",productId, start, end, granularity);
         return productService.getCandles(productId, start, end, granularity);
     }
 
-    public List<Product> getProducts() {
+    public Products getProducts() {
         return productService.getProducts();
     }
 
+    public Product getProduct(String productId) {
+        return productService.getProduct(productId);
+    }
+
+
+    //TODO fix below
     public List<Product> getProductsForBaseCurrency(String currency) {
+/*
         return getProducts().stream()
-                .filter(p-> p.getBase_currency().equals(currency))
+                .filter(p -> p.getBase_currency_id().equals(currency))
                 .collect(Collectors.toList());
+*/
+        return null;
     }
 
     public List<Product> getProductsForQuoteCurrency(String currency) {
+/*
         return getProducts().stream()
-                .filter(p-> p.getQuote_currency().equals(currency))
+                .filter(p -> p.getQuote_currency_id().equals(currency))
                 .collect(Collectors.toList());
+*/
+        return null;
     }
+
 
 }

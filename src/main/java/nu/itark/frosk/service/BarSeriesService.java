@@ -1,6 +1,21 @@
 package nu.itark.frosk.service;
 
 
+import nu.itark.frosk.crypto.coinbase.ProductProxy;
+import nu.itark.frosk.crypto.coinbase.model.Candle;
+import nu.itark.frosk.crypto.coinbase.model.Candles;
+import nu.itark.frosk.crypto.coinbase.model.Granularity;
+import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.SecurityPrice;
+import nu.itark.frosk.repo.SecurityPriceRepository;
+import nu.itark.frosk.repo.SecurityRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.BaseBarSeriesBuilder;
+import org.ta4j.core.num.DecimalNum;
+import org.ta4j.core.num.DoubleNum;
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -10,23 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import com.coinbase.exchange.model.Candle;
-import com.coinbase.exchange.model.Candles;
-import com.coinbase.exchange.model.Granularity;
-import lombok.Data;
-import nu.itark.frosk.crypto.coinbase.ProductProxy;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.ta4j.core.BarSeries;
-import org.ta4j.core.BaseBarSeriesBuilder;
-import org.ta4j.core.num.DecimalNum;
-
-import nu.itark.frosk.model.Security;
-import nu.itark.frosk.model.SecurityPrice;
-import nu.itark.frosk.repo.SecurityPriceRepository;
-import nu.itark.frosk.repo.SecurityRepository;
-import org.ta4j.core.num.DoubleNum;
 
 @Component
 public class BarSeriesService  {

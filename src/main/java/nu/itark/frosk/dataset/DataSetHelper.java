@@ -1,5 +1,21 @@
 package nu.itark.frosk.dataset;
 
+import com.opencsv.CSVReader;
+import lombok.SneakyThrows;
+import nu.itark.frosk.crypto.coinbase.ProductProxy;
+import nu.itark.frosk.crypto.coinbase.model.Product;
+import nu.itark.frosk.crypto.coinbase.model.Products;
+import nu.itark.frosk.model.DataSet;
+import nu.itark.frosk.model.Security;
+import nu.itark.frosk.repo.DataSetRepository;
+import nu.itark.frosk.repo.SecurityRepository;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,24 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-
-import javax.annotation.PostConstruct;
-
-import com.coinbase.exchange.model.Product;
-import nu.itark.frosk.crypto.coinbase.ProductProxy;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Service;
-
-import com.opencsv.CSVReader;
-
-import lombok.SneakyThrows;
-import nu.itark.frosk.model.DataSet;
-import nu.itark.frosk.model.Security;
-import nu.itark.frosk.repo.DataSetRepository;
-import nu.itark.frosk.repo.SecurityRepository;
 
 /**
  * This class inserts securities and connect them to dataset.
@@ -88,6 +86,21 @@ public class DataSetHelper {
 			logger.info("Saved dataset="+dataset.getName()+ " to database.");
 		}
 
+		Products products = productProxy.getProducts();
+		for (Product product: products.getProducts()) {
+			Security security = securityRepository.findByName(product.getProduct_id());
+			if (Objects.nonNull(security) ) {
+				//logger.info("Security="+security.getName()+ " exist in database:" + database);
+				checkIfAddToDataset(datasetName, dataset, security);
+			} else {
+				//logger.info("Security name::"+product.getId()+" to be inserted::");
+				security = securityRepository.saveAndFlush(new Security(product.getProduct_id(), product.getBase_name() + " " + product.getQuote_name(), database));
+				checkIfAddToDataset(datasetName, dataset, security);
+			}
+		}
+
+
+/*
 		for (Product product: productProxy.getProductsForQuoteCurrency("EUR")) {
 			Security security = securityRepository.findByName(product.getId());
 			if (Objects.nonNull(security) ) {
@@ -112,7 +125,7 @@ public class DataSetHelper {
 			}
 		}
 
-
+*/
 		datasetRepository.saveAndFlush(dataset);
 
 	}

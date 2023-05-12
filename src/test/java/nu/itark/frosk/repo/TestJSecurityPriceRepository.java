@@ -1,16 +1,14 @@
 package nu.itark.frosk.repo;
 
-import com.coinbase.exchange.model.Candle;
-import com.coinbase.exchange.model.Candles;
-import com.coinbase.exchange.model.Granularity;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.crypto.coinbase.ProductProxy;
+import nu.itark.frosk.crypto.coinbase.model.Candle;
+import nu.itark.frosk.crypto.coinbase.model.Granularity;
 import nu.itark.frosk.dataset.COINBASEDataManager;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
-import org.apache.commons.collections.iterators.ArrayIterator;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +22,7 @@ import java.io.IOException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.logging.Logger;
 
 @Slf4j
 @SpringBootTest(classes = {FroskApplication.class})
@@ -64,7 +59,7 @@ public class TestJSecurityPriceRepository extends BaseIntegrationTest {
 */
 		List<Security> securities = Arrays.asList(security);
 
-		Map<Long, List<Candle>> currencyCandlesMap  = coinbaseDataManager.getCandles(securities,Granularity.ONE_DAY);
+		Map<Long, List<Candle>> currencyCandlesMap  = coinbaseDataManager.getCandles(securities, Granularity.ONE_DAY);
 
 		currencyCandlesMap.forEach((sec_id, candleList) -> {
 			candleList.forEach(row -> {
