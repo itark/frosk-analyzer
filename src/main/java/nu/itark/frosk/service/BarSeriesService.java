@@ -116,13 +116,13 @@ public class BarSeriesService  {
 
   		Candles candles = productProxy.getCandles(productId, SelectionCriteria.startTime,SelectionCriteria.endTime, SelectionCriteria.granularity );
 
-		List<Candle> sortedList = candles.getCandleList()
+		List<Candle> sortedList = candles.getCandles()
 				.stream()
-				.sorted((p1, p2)-> p1.getTime().compareTo(p2.getTime()))
+				.sorted((p1, p2)-> p1.getStart().compareTo(p2.getStart()))
 				.collect(Collectors.toList());
 
 		sortedList.forEach(row -> {
-			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTime(),ZoneId.systemDefault());
+			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getStart(),ZoneId.systemDefault());
 			series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
 		});
 

@@ -2,17 +2,12 @@ package nu.itark.frosk.crypto.coinbase;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
-import nu.itark.frosk.crypto.coinbase.model.Candles;
-import nu.itark.frosk.crypto.coinbase.model.Granularity;
-import nu.itark.frosk.crypto.coinbase.model.Product;
-import nu.itark.frosk.crypto.coinbase.model.Products;
+import nu.itark.frosk.crypto.coinbase.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j

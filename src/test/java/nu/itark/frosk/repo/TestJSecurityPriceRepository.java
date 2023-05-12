@@ -40,30 +40,21 @@ public class TestJSecurityPriceRepository extends BaseIntegrationTest {
 	@Autowired
 	COINBASEDataManager coinbaseDataManager;
 
-
 	@Test
 	public void testForDecimalsInTable() throws IOException {
 		log.info("hello="+ ReflectionToStringBuilder.toString(securityRepository.findByName("SHPING-EUR")));
-
 		Security security = securityRepository.findByName("SHPING-EUR");
-
-		//logger.info("count="+secRepo.count());
 		SecurityPrice sp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
 		log.info("sp="+ ReflectionToStringBuilder.toString(sp));
 		securityPriceRepository.deleteAllInBatch(Arrays.asList(sp));
 
-/*
-		Instant startTime = Instant.now().minus(400, ChronoUnit.MINUTES);
-		Instant endTime = Instant.now().minus(100, ChronoUnit.MINUTES);
-		Candles candles = productProxy.getCandles("SHPING-EUR", startTime,endTime, Granularity.FIFTEEN_MIN );
-*/
 		List<Security> securities = Arrays.asList(security);
 
 		Map<Long, List<Candle>> currencyCandlesMap  = coinbaseDataManager.getCandles(securities, Granularity.ONE_DAY);
 
 		currencyCandlesMap.forEach((sec_id, candleList) -> {
 			candleList.forEach(row -> {
-				Date date = Date.from(row.getTime());
+				Date date = Date.from(row.getStart());
 				SecurityPrice securityPrice = null;
 				if (date != null && row.getOpen() != null && row.getHigh() != null && row.getLow() != null
 						&& row.getClose() != null && row.getVolume() != null) {

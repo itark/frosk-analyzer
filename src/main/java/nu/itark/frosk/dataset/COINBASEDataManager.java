@@ -47,9 +47,9 @@ public class COINBASEDataManager {
      * Download prices and insert into database.
      */
     public void syncronize() {
-        log.info("sync="+Database.COINBASE.toString());
+        log.info("sync=" + Database.COINBASE.toString());
         List<Security> securities = securityRepository.findByDatabaseAndActive(Database.COINBASE.toString(), true);
-        log.info("About to sync {} active securities",securities.size());
+        log.info("About to sync {} active securities", securities.size());
 
         List<SecurityPrice> spList;
         try {
@@ -64,7 +64,7 @@ public class COINBASEDataManager {
                 securityPriceRepository.save(sp);
             } catch (DataIntegrityViolationException e) {
                 final Optional<Security> byId = securityRepository.findById(sp.getSecurityId());
-                log.error("Delivered duplicates on : "+ byId.get().getName() + ", continues....");
+                log.error("Delivered duplicates on : " + byId.get().getName() + ", continues....");
                 //sort of ok, continue
             }
         });
@@ -75,7 +75,7 @@ public class COINBASEDataManager {
      * Download prices and insert into database for one security
      */
     public void syncronize(String sec) {
-        log.info("sync="+Database.COINBASE.toString());
+        log.info("sync=" + Database.COINBASE.toString());
         Security security = securityRepository.findByName(sec);
         Assert.notNull(security, "security can not be null");
         List<Security> securities = Arrays.asList(security);
@@ -102,19 +102,19 @@ public class COINBASEDataManager {
         List<SecurityPrice> sp = new ArrayList<>();
         Map<Long, List<Candle>> currencyCandlesMap = getCandles(securities, Granularity.ONE_DAY);
 
-        log.info("1. {} candles to update",currencyCandlesMap.size());
+        log.info("1. {} candles to update", currencyCandlesMap.size());
 
         currencyCandlesMap.forEach((sec_id, candleList) -> {
 
             if (candleList.isEmpty()) {
                 Security security = securityRepository.findById(sec_id).get();
-                log.info("Inga candles:{}",security.getName());
+                log.info("Inga candles:{}", security.getName());
                 security.setActive(false);
                 securityRepository.saveAndFlush(security);
             }
 
             candleList.forEach(row -> {
-                Date date = Date.from(row.getTime());
+                Date date = Date.from(row.getStart());
                 SecurityPrice securityPrice = null;
                 if (date != null && row.getOpen() != null && row.getHigh() != null && row.getLow() != null
                         && row.getClose() != null && row.getVolume() != null) {
@@ -130,20 +130,19 @@ public class COINBASEDataManager {
             });
         });
 
-        log.info("2. {} candles to update",sp.size());
+        log.info("2. {} candles to update", sp.size());
 
         return sp;
     }
 
     public Map<Long, List<Candle>> getCandles(Iterable<Security> securities, Granularity granularity) throws IOException {
-        if (granularity.equals(Granularity.ONE_DAY) || granularity.equals(Granularity.FIFTEEN_MIN)) {
+        if (granularity.equals(Granularity.ONE_DAY) || granularity.equals(Granularity.FIFTEEN_MINUTE)) {
         } else {
             throw new RuntimeException("Granularity not supported!");
         }
 
         Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
         Instant endTime = DateTimeManager.truncatedToDays(Instant.now());
-        int count = 0;
         final Iterator<Security> securityIterator = securities.iterator();
 
         Security security = null;
@@ -153,7 +152,7 @@ public class COINBASEDataManager {
             SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
             if (Objects.nonNull(topSp)) {
                 Date lastDate = topSp.getTimestamp();
-                if (DateUtils.isSameInstant(Date.from(startTime),lastDate )){
+                if (DateUtils.isSameInstant(Date.from(startTime), lastDate)) {
                     continue;
                 }
                 if (lastDate.toInstant().isBefore(startTime)) {
@@ -165,15 +164,15 @@ public class COINBASEDataManager {
                     startTime = startTime.plus(1, ChronoUnit.DAYS);
                 }
             } else {
-                startTime=  startTime.minus(nrOfCandles, ChronoUnit.DAYS);
+                startTime = startTime.minus(nrOfCandles, ChronoUnit.DAYS);
             }
             try {
                 //https://docs.cloud.coinbase.com/exchange/docs/rest-rate-limits
-                Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
+                Candles candles = productProxy.getCandles(security.getName(), startTime, endTime, granularity);
                 ThreadUtils.sleep(Duration.ofMillis(1000));
-                candlesMap.put(security.getId(), candles.getCandleList());
+                candlesMap.put(security.getId(), candles.getCandles());
             } catch (Exception e) {
-                log.error("Could not get candles for:"+security.getName()+", continue...");
+                log.error("Could not get candles for:" + security.getName() + ", continue...");
             }
 
 
@@ -207,14 +206,14 @@ public class COINBASEDataManager {
                     startTime = startTime.plus(1, ChronoUnit.DAYS);
                 }
             } else {
-                startTime=  startTime.minus(nrOfCandles, ChronoUnit.DAYS);
+                startTime = startTime.minus(nrOfCandles, ChronoUnit.DAYS);
             }
 
             try {
-                Candles candles = productProxy.getCandles(security.getName(), startTime,endTime, granularity );
-                candlesMap.put(security.getId(), candles.getCandleList());
+                Candles candles = productProxy.getCandles(security.getName(), startTime, endTime, granularity);
+                candlesMap.put(security.getId(), candles.getCandles());
             } catch (Exception e) {
-                log.error("Could not get candles for:"+security.getName()+", continue...");
+                log.error("Could not get candles for:" + security.getName() + ", continue...");
             }
         });
         return candlesMap;
