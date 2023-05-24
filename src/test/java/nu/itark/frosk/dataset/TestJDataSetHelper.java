@@ -41,40 +41,23 @@ public class TestJDataSetHelper {
 		
 		DataSet dataset = new DataSet("kalle", "was here");
 		
-		Security security = new Security("Volvo","AB", "Sweden");
-		Security security2 = new Security("IBM","Corp", "World");
+		Security security = null ;
+/*
+				=Security.builder()
+				.name("Volvo")
+				.description("AB")
+				.database("Sweden")
+				.build();
+*/
+
 		
 		dataset.getSecurities().add(security);
-		dataset.getSecurities().add(security2);
-		
+
 		datasetRepository.save(dataset);
 		
 		
 	}
 
-	@Test
-	public void helloworldAfter() {
-		datasetRepository.deleteAllInBatch();
-		securityRepository.deleteAllInBatch();
-		
-		DataSet dataset = new DataSet("kalle", "was here");
-		
-		Security security = new Security("Volvo","AB", "Sweden");
-		Security security2 = new Security("IBM","Corp", "World");
-		
-		dataset.getSecurities().add(security);
-		dataset.getSecurities().add(security2);
-		
-		datasetRepository.save(dataset);
-		
-		
-	}
-	
-	
-	
-	
-	
-	
 	@Test
 	public final void testSubstrings() {
 		String csvFile = "YAHOO-OMX30-description.csv";

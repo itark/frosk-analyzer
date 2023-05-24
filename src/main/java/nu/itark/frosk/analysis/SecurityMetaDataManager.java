@@ -43,7 +43,7 @@ public class SecurityMetaDataManager {
     public List<FeaturedStrategyDTO> getFeaturedStrategies() {
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
         featuredStrategyRepository.findAll().forEach(fs->{
-                returnList.add(getDTO(fs));
+                returnList.add(getDTO(fs, false));
         });
         return returnList;
     }
@@ -51,7 +51,7 @@ public class SecurityMetaDataManager {
     public List<FeaturedStrategyDTO> getTop10FeaturedStrategies() {
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
         featuredStrategyRepository.findTop10ByOrderByTotalProfitDesc().forEach(fs->{
-            returnList.add(getDTO(fs));
+            returnList.add(getDTO(fs, false));
         });
         return returnList;
     }
@@ -104,7 +104,7 @@ public class SecurityMetaDataManager {
         }
     }
 
-    public FeaturedStrategyDTO getDTO(FeaturedStrategy fs) {
+    public FeaturedStrategyDTO getDTO(FeaturedStrategy fs, boolean includeIndicatorValues) {
         FeaturedStrategyDTO dto = new FeaturedStrategyDTO();
         if (Objects.isNull(fs)) {
             return dto;
@@ -122,7 +122,7 @@ public class SecurityMetaDataManager {
             dto.setProfitableTradesRatio("empty");
         }
         dto.setMaxDD(fs.getMaxDD());
-        dto.setTotalTranactionCost(fs.getTotalTransactionCost());
+        dto.setTotalTransactionCost(fs.getTotalTransactionCost());
         dto.setPeriod(fs.getPeriod());
         if (Objects.nonNull(fs.getLatestTrade())) {
             dto.setLatestTrade(fs.getLatestTrade().toString());
@@ -130,11 +130,16 @@ public class SecurityMetaDataManager {
             dto.setLatestTrade("empty");
         }
         dto.setIsOpen(String.valueOf(fs.isOpen()));
+        dto.setTotalTransactionCost(fs.getTotalTransactionCost());
         dto.setNumberofTrades(fs.getNumberofTrades());
-        fs.getIndicatorValues().forEach(siv -> {
-            indicatorValues.add(new IndicatorValueDTO(siv.getDate(),siv.getValue(), siv.getIndicator()));
-        });
-        dto.setIndicatorValues(indicatorValues);
+
+        if (includeIndicatorValues) {
+            fs.getIndicatorValues().forEach(siv -> {
+                indicatorValues.add(new IndicatorValueDTO(siv.getDate(),siv.getValue(), siv.getIndicator()));
+            });
+            dto.setIndicatorValues(indicatorValues);
+        }
+
         dto.setTrades(convert(fs.getTrades()));
 
         return dto;

@@ -46,7 +46,7 @@ public class BarSeriesService  {
 	 */
 	public List<BarSeries> getDataSet() {
 		//Iterable<Security> spList = securityRepository.findAll();
-		Iterable<Security> spList = securityRepository.findAllByActive(true);
+		Iterable<Security> spList = securityRepository.findAllByActiveAndQuoteCurrency(true, "EUR");
 		List<BarSeries> barSeries = new ArrayList<BarSeries>();
 		
 		spList.forEach(sp -> {

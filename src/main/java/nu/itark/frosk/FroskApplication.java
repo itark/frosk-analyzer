@@ -101,6 +101,7 @@ public class FroskApplication {
 
 
     @Bean
+    @Deprecated
     public RestTemplate restTemplate() {
        // RestTemplate restTemplate = new RestTemplate(Arrays.asList(new MappingJackson2HttpMessageConverter(objectMapper())));
         RestTemplate restTemplate = new RestTemplate();

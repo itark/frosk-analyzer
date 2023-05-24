@@ -21,7 +21,16 @@ public class TestJSecurityRepository extends BaseIntegrationTest {
 	
 	@Test
 	public final void testExist() {
-		Security security = new Security("BITFINEX/BTCEUR","name", "BITFINEX");
+
+		Security security = null;
+/*
+		Security security = Security.builder()
+				.name("Name")
+				.description("NameDesc")
+				.database("database")
+				.build();
+*/
+
 		boolean exist = securityRepo.existsByName(security.getName());
 		log.info("exist="+exist);
 	}
@@ -32,10 +41,10 @@ public class TestJSecurityRepository extends BaseIntegrationTest {
 	}
 
 	@Test
-	public final void testFindByActive() {
+	public final void findAllByActiveAndQuoteCurrency() {
 		List<Security> all = securityRepo.findAll();
 		log.info("all.size() {}",all.size());
-		List<Security> allActive = securityRepo.findAllByActive(true);
+		List<Security> allActive = securityRepo.findAllByActiveAndQuoteCurrency(true, "EUR");
 		log.info("allActive.size() {}",allActive.size());
 
 	}

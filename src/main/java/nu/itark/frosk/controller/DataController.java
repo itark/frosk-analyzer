@@ -55,7 +55,10 @@ public class DataController {
      */
     @RequestMapping(path = "/featuredStrategies", method = RequestMethod.GET)
     public List<FeaturedStrategyDTO> getFeaturedStrategies() {
-        return securityMetaDataManager.getFeaturedStrategies();
+        log.info("/featuredStrategies...");
+        List<FeaturedStrategyDTO> featuredStrategies = securityMetaDataManager.getFeaturedStrategies();
+        log.info("/featuredStrategies, found:{}",featuredStrategies.size());
+        return featuredStrategies;
     }
 
     @RequestMapping(path = "/topFeaturedStrategies", method = RequestMethod.GET)
@@ -84,7 +87,7 @@ public class DataController {
             strategies.forEach(strategyName -> {
                 datasetet.getSecurities().forEach(security -> {
                     FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, security.getName());
-                    returnList.add(securityMetaDataManager.getDTO(fs));
+                    returnList.add(securityMetaDataManager.getDTO(fs, false));
                 });
             });
         } else {
@@ -94,7 +97,7 @@ public class DataController {
                     log.info("Kunde inte hitta FeaturedStrategy för " + strategy + " och " + security.getName() + ". Kolla ditt data. Kanske inte kört runStrategy");
                     return;
                 }
-                returnList.add(securityMetaDataManager.getDTO(fs));
+                returnList.add(securityMetaDataManager.getDTO(fs, false));
             });
         }
 
@@ -178,7 +181,7 @@ public class DataController {
     public FeaturedStrategyDTO getFeaturedStrategy(@RequestParam("security") String security, @RequestParam("strategy") String strategy) {
         log.info("/featuredStrategy?security=" + security + "&strategy=" + strategy);
         final FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategy, security);
-        return securityMetaDataManager.getDTO(featuredStrategy);
+        return securityMetaDataManager.getDTO(featuredStrategy, true);
     }
 
     /**

@@ -12,12 +12,12 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 @Entity
 @Table(name = "security")
 public class Security {
@@ -35,22 +35,26 @@ public class Security {
 	@Column(name = "database")
 	private String database;
 
+	@Column(name = "quote_currency")
+	private String quoteCurrency;
+
 	@Column(name = "active", columnDefinition="BOOLEAN DEFAULT true")
 	private boolean active = true;
 	
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "securities")
-	private List<DataSet> datasets = new ArrayList<>();	
-	
+	private List<DataSet> datasets = new ArrayList<>();
+
 	protected Security() {
 	}
 
-	public Security(String name, String description, String database) {
+	public Security(String name, String description, String database, String quoteCurrency) {
 		this.name = name;
 		this.description = description;
 		this.database = database;
+		this.quoteCurrency = quoteCurrency;
 		this.active = true;
 	}
-	
+
 }
 
 

@@ -22,6 +22,7 @@
  */
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.analysis.Costs;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.BarSeriesService;
@@ -43,14 +44,16 @@ public class TestJEngulfingStrategy extends BaseIntegrationTest {
 	 
 	 @Autowired
 	 BarSeriesService barSeriesService;
-	 
+
+    @Autowired
+    Costs costs;
 
     @Test
     public final void run() throws Exception {
 		BarSeries timeSeries = barSeriesService.getDataSet("BTRST-EUR", false);
 		EngulfingStrategy strat = new EngulfingStrategy(timeSeries);
         Strategy strategy = strat.buildStrategy();
-        BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
+        BarSeriesManager seriesManager = new BarSeriesManager(timeSeries, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Position> positions = tradingRecord.getPositions();
      

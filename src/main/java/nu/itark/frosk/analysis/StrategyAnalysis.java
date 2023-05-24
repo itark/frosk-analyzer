@@ -14,6 +14,7 @@ import nu.itark.frosk.strategies.*;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
@@ -27,7 +28,6 @@ import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.TradesRepository;
 import org.ta4j.core.analysis.criteria.pnl.AverageProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
-import org.ta4j.core.analysis.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.reports.TradingStatement;
@@ -39,8 +39,13 @@ import org.ta4j.core.reports.TradingStatement;
 @Service
 @Slf4j
 public class StrategyAnalysis {
-//	Logger logger = Logger.getLogger(StrategyAnalysis.class.getName());
-	
+
+	@Value("${exchange.transaction.initialAmount}")
+	private double initialAmount;
+
+	@Value("${exchange.transaction.feePerTradePercent}")
+	private double feePerTradePercent;
+
 	@Autowired
 	BarSeriesService barSeriesService;
 	
@@ -58,6 +63,9 @@ public class StrategyAnalysis {
 
 	@Autowired
 	TradingBot tradingBot;
+
+	@Autowired
+	Costs costs;
 	
 	/**
 	 * This is the thing !!
@@ -134,7 +142,8 @@ public class StrategyAnalysis {
 			strategyToRun = getStrategyToRun(strategy, series);
 			strategyToRun = new BaseStrategy(strategyToRun.getName(), strategyToRun.getEntryRule(), strategyToRun.getExitRule());
 
-			BarSeriesManager seriesManager = new BarSeriesManager(series);
+			//BarSeriesManager seriesManager = new BarSeriesManager(series);
+			BarSeriesManager seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(),  costs.getBorrowingCostModel());
 			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
 			if (series.getBarData().isEmpty()){
 				log.warn("Something fishy on {}. BarData isEmpty, continues...", series.getName());
@@ -200,7 +209,8 @@ public class StrategyAnalysis {
 			}
 			fs.setPeriod(getPeriod(series));
 			fs.setLatestTrade(latestTradeDate);
-			totalProfit = new ProfitLossPercentageCriterion().calculate(series, tradingRecord).doubleValue();
+			//totalProfit = new ProfitLossPercentageCriterion().calculate(series, tradingRecord).doubleValue();
+			totalProfit = new GrossReturnCriterion().calculate(series, tradingRecord).doubleValue();
 			if (!Double.isNaN(totalProfit)) {
 				fs.setTotalProfit(new BigDecimal(totalProfit).setScale(2, BigDecimal.ROUND_DOWN));
 			} else {
@@ -220,7 +230,7 @@ public class StrategyAnalysis {
 			} else {
 				fs.setMaxDD(BigDecimal.ZERO);
 			}
-			double totalTransactionCost = new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord).doubleValue();
+			double totalTransactionCost = new LinearTransactionCostCriterion(initialAmount, feePerTradePercent).calculate(series, tradingRecord).doubleValue();
 			if(!Double.isNaN(totalTransactionCost)) {
 				fs.setTotalTransactionCost(new BigDecimal(totalTransactionCost));
 			} else {

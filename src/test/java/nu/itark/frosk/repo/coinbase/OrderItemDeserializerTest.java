@@ -1,15 +1,12 @@
 package nu.itark.frosk.repo.coinbase;
 
-import java.io.IOException;
-
-import org.aspectj.lang.annotation.Before;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.coinbase.exchange.api.marketdata.MarketData;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.MarketData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 
 /**
  * Created by ren7881 on 20/03/2017.

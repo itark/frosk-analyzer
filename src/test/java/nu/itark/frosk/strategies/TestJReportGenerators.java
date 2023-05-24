@@ -2,9 +2,11 @@ package nu.itark.frosk.strategies;
 
 
 import nu.itark.frosk.FroskApplication;
+import nu.itark.frosk.analysis.Costs;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,12 +22,22 @@ public class TestJReportGenerators extends BaseIntegrationTest {
     @Autowired
     BarSeriesService barSeriesService;
 
+    @Autowired
+    Costs costs;
+
+    BarSeries series;
+    Strategy strategy;
+    BarSeriesManager seriesManager;
+    @BeforeEach
+    private void setup(){
+        series = barSeriesService.getDataSet("BTC-EUR", false);
+        strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
+        seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+    }
+
     @Test
     public void runPrg() {
         PerformanceReportGenerator performanceReportGenerator = new  PerformanceReportGenerator();
-        BarSeries series = barSeriesService.getDataSet("BTC-EUR", false);
-        Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
-        BarSeriesManager seriesManager = new BarSeriesManager(series);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         final PerformanceReport performanceReport = performanceReportGenerator.generate(strategy, tradingRecord, series);
 
@@ -35,9 +47,6 @@ public class TestJReportGenerators extends BaseIntegrationTest {
     @Test
     public void runPsg() {
         PositionStatsReportGenerator performanceReportGenerator = new  PositionStatsReportGenerator();
-        BarSeries series = barSeriesService.getDataSet("BTC-EUR", false);
-        Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
-        BarSeriesManager seriesManager = new BarSeriesManager(series);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         final PositionStatsReport performanceReport = performanceReportGenerator.generate(strategy, tradingRecord, series);
 
@@ -48,9 +57,6 @@ public class TestJReportGenerators extends BaseIntegrationTest {
     @Test
     public void runTsg() {
         TradingStatementGenerator performanceReportGenerator = new  TradingStatementGenerator();
-        BarSeries series = barSeriesService.getDataSet("BTC-EUR", false);
-        Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
-        BarSeriesManager seriesManager = new BarSeriesManager(series);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         final TradingStatement performanceReport = performanceReportGenerator.generate(strategy, tradingRecord, series);
 

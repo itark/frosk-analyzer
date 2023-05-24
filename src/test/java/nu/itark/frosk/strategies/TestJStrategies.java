@@ -1,9 +1,11 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.FroskApplication;
+import nu.itark.frosk.analysis.Costs;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +15,13 @@ import org.ta4j.core.analysis.criteria.*;
 import org.ta4j.core.analysis.criteria.pnl.GrossProfitCriterion;
 import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
 import org.ta4j.core.analysis.criteria.pnl.ProfitLossPercentageCriterion;
+import org.ta4j.core.cost.CostModel;
+import org.ta4j.core.cost.LinearBorrowingCostModel;
+import org.ta4j.core.cost.LinearTransactionCostModel;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
+import org.ta4j.core.reports.PerformanceReport;
+import org.ta4j.core.reports.PerformanceReportGenerator;
 import org.ta4j.core.reports.TradingStatement;
 
 import java.text.NumberFormat;
@@ -30,6 +37,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Autowired
 	BarSeriesService barSeriesService;
+
+	@Autowired
+	Costs costs;
 
 	Formatter fmt;
 
@@ -94,15 +104,16 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 		ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(timeSeries);
 		resultMap.add(run(cd.buildStrategy(),timeSeries));
-*/
+
 
 		SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(timeSeries);
 		resultMap.add(run(simpleMa.buildStrategy(),timeSeries));
 
-/*
-		ADXStrategy adx = new ADXStrategy();
-		resultMap.add(run(adx.buildStrategy(timeSeries),timeSeries));
 */
+
+
+		ADXStrategy adx = new ADXStrategy(timeSeries);
+		resultMap.add(run(adx.buildStrategy(),timeSeries));
 
 
 		printResult(resultMap);
@@ -130,53 +141,62 @@ public class TestJStrategies extends BaseIntegrationTest {
 			resultMap.add(run(cd.buildStrategy(), ts));
 */
 
+/*
 			SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(ts);
 			resultMap.add(run(simpleMa.buildStrategy(), ts));
-
-/*
-			ADXStrategy adx = new ADXStrategy();
-			resultMap.add(run(adx.buildStrategy(ts), ts));
 */
+
+
+			ADXStrategy adx = new ADXStrategy(ts);
+			resultMap.add(run(adx.buildStrategy(), ts));
+
+
 
 		});
 		printResult(resultMap);
+
+
+
 
 	}
 
 	@Test
 	public void runOneSingleDataSet2() {
 	BarSeries series = barSeriesService.getDataSet("BTC-EUR", false);
-	Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
-	BarSeriesManager seriesManager = new BarSeriesManager(series);
+	//Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
+	Strategy strategy = new ADXStrategy(series).buildStrategy();
+
+	BarSeriesManager seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
 	TradingRecord tradingRecord = seriesManager.run(strategy);
 
 	for (Position position : tradingRecord.getPositions()) {
 		Bar barEntry = series.getBar(position.getEntry().getIndex());
-		//System.out.println(series.getName()+"::barEntry="+barEntry.getEndTime());
-		//System.out.println(series.getName()+"::barEntry.getClosePrice="+ barEntry.getClosePrice());
+		System.out.println(series.getName()+"::barEntry="+barEntry.getEndTime());
+		System.out.println(series.getName()+"::barEntry.getClosePrice="+ barEntry.getClosePrice());
 		Bar barExit = series.getBar(position.getExit().getIndex());
-/*
 		System.out.println(series.getName()+"::barExit="+barExit.getDateName());
 		System.out.println(series.getName()+"::barExit.getClosePrice="+ barExit.getClosePrice());
 		System.out.println("profit(position): " + position.getProfit());
 		System.out.println("Gross return(position): " + position.getGrossReturn());
 		System.out.println("Gross profit(position): " + position.getGrossProfit());
-*/
 
 		Num pnl = barExit.getClosePrice().dividedBy(barEntry.getClosePrice()).multipliedBy(series.numOf(100));
-		//System.out.println("P/L: " + pnl.doubleValue());
+		System.out.println("P/L: " + pnl.doubleValue());
 
 	}
 
 	// Total return Xtra
 	GrossProfitCriterion totalprofit = new GrossProfitCriterion();
-        System.out.println("Total profit: " + totalprofit.calculate(series, tradingRecord).doubleValue());
+        System.out.println("Total gross profit: " + totalprofit.calculate(series, tradingRecord).doubleValue());
 	// Total profit
 	GrossReturnCriterion totalReturn = new GrossReturnCriterion();
-        System.out.println("Total return: " + totalReturn.calculate(series, tradingRecord).doubleValue());
+        System.out.println("Total gross return: " + totalReturn.calculate(series, tradingRecord).doubleValue());
 
+	//Tveksam implentation
+/*
 	ProfitLossPercentageCriterion totalPercentage = new ProfitLossPercentageCriterion();
-		System.out.println("Total percentage: " + totalPercentage.calculate(series, tradingRecord).doubleValue());
+		System.out.println("Total pnl percentage: " + totalPercentage.calculate(series, tradingRecord).doubleValue());
+*/
 
 	// Number of bars
         System.out.println("Number of bars: " + new NumberOfBarsCriterion().calculate(series, tradingRecord));
@@ -201,7 +221,16 @@ public class TestJStrategies extends BaseIntegrationTest {
 	// Total profit vs buy-and-hold
         System.out.println("Custom strategy return vs buy-and-hold strategy return: "
 				+ new VersusBuyAndHoldCriterion(totalReturn).calculate(series, tradingRecord));
-}
+
+		doPerformanceReport(series, strategy, tradingRecord);
+
+	}
+
+	private static void doPerformanceReport(BarSeries series, Strategy strategy, TradingRecord tradingRecord) {
+		PerformanceReportGenerator performanceReportGenerator = new  PerformanceReportGenerator();
+		final PerformanceReport performanceReport = performanceReportGenerator.generate(strategy, tradingRecord, series);
+		System.out.println("performanceReport="+ ReflectionToStringBuilder.toString(performanceReport));
+	}
 
 
 	private void printResult(List<ReturnObject> resultMap) {
@@ -218,8 +247,8 @@ public class TestJStrategies extends BaseIntegrationTest {
 				barSeries = ro.seriesManager.getBarSeries();
 				tradingRecord = ro.tradingRecord;
 				strategy = ro.strategy;
-				//Num totalProfit = (new GrossReturnCriterion().calculate(barSeries, tradingRecord));
-				Num totalProfit = (new ProfitLossPercentageCriterion().calculate(barSeries, tradingRecord));
+				Num totalProfit = (new GrossReturnCriterion().calculate(barSeries, tradingRecord));
+				//Num totalProfit = (new ProfitLossPercentageCriterion().calculate(barSeries, tradingRecord));
 				if (!totalProfit.isNaN()) {
 					totalProfitAcc.add(totalProfit);
 				}
@@ -244,6 +273,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	}
 
 	ReturnObject run(Strategy strategy, BarSeries timeSeries) {
+
 		BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Position> trades = tradingRecord.getPositions();
@@ -253,17 +283,21 @@ public class TestJStrategies extends BaseIntegrationTest {
 			return null;
 		}
 
+		doPerformanceReport(timeSeries, strategy, tradingRecord);
+
 		return returnObject;
 	}
 
 	@Test
 	public void chooseBestForSecurity() {
-		BarSeries timeSeries = barSeriesService.getDataSet("ALCX-USDT", false);
+		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false);
 		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 		// The analysis criterion
 		AnalysisCriterion profitCriterion = new GrossReturnCriterion();
 
-		BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries);
+		//BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries);
+		BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+
 		for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
 			Strategy strategy = entry.getKey();
 			String name = entry.getValue();
@@ -279,7 +313,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void chooseBestForSecurity2() {
-		BarSeries barSeries = barSeriesService.getDataSet("ETC-EUR", false);
+		BarSeries barSeries = barSeriesService.getDataSet("BTC-EUR", false);
 		List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
 		AnalysisCriterion profitCriterion = new GrossReturnCriterion();
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
@@ -297,7 +331,6 @@ public class TestJStrategies extends BaseIntegrationTest {
 		} else {
 			System.err.println("no match:"+bestStrategy);
 		}
-
 
 	}
 

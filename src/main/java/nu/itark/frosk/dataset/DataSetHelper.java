@@ -56,7 +56,6 @@ public class DataSetHelper {
 		datasets.add("codes/YAHOO-OMX30-All securites included in OMX30.csv");
 		datasets.add("codes/YAHOO-OSCAR-The Money Machine.csv");
 		datasets.add("codes/YAHOO-INDEX-World indexes.csv");
-//		datasets.add("codes/COINBASE-CB-Simple.csv");
 	}
 
 	/**
@@ -94,7 +93,7 @@ public class DataSetHelper {
 				checkIfAddToDataset(datasetName, dataset, security);
 			} else {
 				//logger.info("Security name::"+product.getId()+" to be inserted::");
-				security = securityRepository.saveAndFlush(new Security(product.getProduct_id(), product.getBase_name() + " " + product.getQuote_name(), database));
+				security = securityRepository.saveAndFlush(new Security(product.getProduct_id(), product.getBase_name() + " " + product.getQuote_name(), database, product.getQuote_currency_id()));
 				checkIfAddToDataset(datasetName, dataset, security);
 			}
 		}
@@ -166,7 +165,7 @@ public class DataSetHelper {
 				checkIfAddToDataset(datasetName, dataset, security);
 			} else {
 				logger.info("Security name::"+name+" to be inserted::");
-				security = securityRepository.saveAndFlush(new Security(name, description, database));
+				security = securityRepository.saveAndFlush(new Security(name, description, database, null));
 				checkIfAddToDataset(datasetName, dataset, security);
 
 			}
