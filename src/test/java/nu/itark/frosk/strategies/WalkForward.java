@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
-import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
+import org.ta4j.core.criteria.pnl.ProfitCriterion;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -160,7 +160,7 @@ public class WalkForward {
         Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 
         // The analysis criterion
-        AnalysisCriterion profitCriterion = new NetProfitCriterion();
+        AnalysisCriterion profitCriterion = new ProfitCriterion();
 
         for (BarSeries slice : subseries) {
             // For each sub-series...

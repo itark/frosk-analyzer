@@ -1,26 +1,21 @@
 package nu.itark.frosk.controller;
 
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.*;
-import nu.itark.frosk.model.StrategyTrade;
-import nu.itark.frosk.strategies.filter.StrategyFilter;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import org.ta4j.core.Bar;
-import org.ta4j.core.BarSeries;
-
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.strategies.filter.StrategyFilter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -121,12 +116,14 @@ public class DataController {
         DailyPriceDTO dailyPrices = null;
         SecurityDTO frosk = null;
         List<DailyPriceDTO> dpList = new ArrayList<DailyPriceDTO>();
+/*
         BarSeries timeSeries = timeSeriesService.getDataSet(security, false);
         for (int i = 0; i < timeSeries.getBarCount(); i++) {
             Bar bar = timeSeries.getBar(i);
             dailyPrices = new DailyPriceDTO(bar);
             dpList.add(dailyPrices);
         }
+*/
         return dpList;
     }
 
@@ -164,12 +161,14 @@ public class DataController {
         //logger.info("/dailyPrices...security=" + security);
         DailyPriceDTO dailyPrices = null;
         List<DailyPriceDTO> dpList = new ArrayList<DailyPriceDTO>();
+/*
         BarSeries timeSeries = timeSeriesService.getDataSet(security, false);
         for (int i = 0; i < timeSeries.getBarCount(); i++) {
             Bar bar = timeSeries.getBar(i);
             dailyPrices = new DailyPriceDTO(bar);
             dpList.add(dailyPrices);
         }
+*/
         return dpList;
     }
 

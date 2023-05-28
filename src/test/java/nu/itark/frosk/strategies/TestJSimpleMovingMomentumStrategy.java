@@ -25,15 +25,14 @@ package nu.itark.frosk.strategies;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.analysis.Costs;
-import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
-import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
-import org.ta4j.core.analysis.criteria.pnl.ProfitLossPercentageCriterion;
+import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
+import org.ta4j.core.criteria.pnl.ReturnCriterion;
 import org.ta4j.core.num.Num;
 
 import java.util.List;
@@ -84,7 +83,7 @@ public class TestJSimpleMovingMomentumStrategy extends BaseIntegrationTest {
         log.info("Number of positions for the strategy: " + tradingRecord.getPositionCount());
 
         // Analysis
-        GrossReturnCriterion totalReturn = new GrossReturnCriterion();
+        AnalysisCriterion totalReturn = new ReturnCriterion();
         System.out.println("Total return: " + totalReturn.calculate(timeSeries, tradingRecord).doubleValue());
         ProfitLossPercentageCriterion totalPercentage = new ProfitLossPercentageCriterion();
         System.out.println("Total percentage: " + totalPercentage.calculate(timeSeries, tradingRecord).doubleValue());

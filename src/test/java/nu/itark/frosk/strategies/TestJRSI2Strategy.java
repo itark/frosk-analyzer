@@ -28,8 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
-import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
-import org.ta4j.core.analysis.criteria.pnl.NetProfitCriterion;
+import org.ta4j.core.criteria.pnl.ProfitCriterion;
+import org.ta4j.core.criteria.pnl.ReturnCriterion;
 import org.ta4j.core.num.Num;
 
 import java.util.List;
@@ -93,8 +93,8 @@ public class TestJRSI2Strategy {
         logger.info("Number of positions for the strategy: " + tradingRecord.getPositionCount());
 
         // Analysis
-        logger.info("Total profit for the strategy: " + new NetProfitCriterion().calculate(timeSeries, tradingRecord));
-        double totalProfit = new GrossReturnCriterion().calculate(timeSeries, tradingRecord).doubleValue();
+        logger.info("Total profit for the strategy: " + new ProfitCriterion().calculate(timeSeries, tradingRecord));
+        double totalProfit = new ReturnCriterion().calculate(timeSeries, tradingRecord).doubleValue();
         double totalProfitPercentage = (totalProfit - 1 ) *100;  //TODO minus
         logger.info("Total profit for the strategy (%): "+ totalProfitPercentage);
     }

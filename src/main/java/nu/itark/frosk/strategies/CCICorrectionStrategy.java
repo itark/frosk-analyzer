@@ -83,7 +83,6 @@ public class CCICorrectionStrategy extends AbstractStrategy implements IIndicato
         }
 
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
-        strategy.setUnstablePeriod(5);
         return strategy;
     }
 

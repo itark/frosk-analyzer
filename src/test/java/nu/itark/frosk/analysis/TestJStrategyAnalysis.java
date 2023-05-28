@@ -4,9 +4,11 @@ import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyPerformance;
+import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.strategies.ADXStrategy;
 import nu.itark.frosk.strategies.ConvergenceDivergenceStrategy;
 import nu.itark.frosk.strategies.RSI2Strategy;
 import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
@@ -17,8 +19,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.BarSeries;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @SpringBootTest(classes = {FroskApplication.class})
 public class TestJStrategyAnalysis extends BaseIntegrationTest {
@@ -35,7 +39,18 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;
-	
+
+	@Test
+	public void runADX() {
+		Long sec_id = barSeriesService.getSecurityId("BTC-EUR");
+		strategyAnalysis.run(ADXStrategy.class.getSimpleName(), sec_id);
+		//Verify
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(ADXStrategy.class.getSimpleName(), "BTC-EUR");
+		fs.getTrades().stream()
+				.sorted(Comparator.comparing(StrategyTrade::getDate))
+				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t)))
+				.collect(Collectors.toSet());
+	}
 
 	@Test
 	public final void runSMM() {

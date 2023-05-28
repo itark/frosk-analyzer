@@ -2,9 +2,9 @@ package nu.itark.frosk.analysis;
 
 import java.time.format.DateTimeFormatter;
 
-import org.ta4j.core.Bar;
 
 import lombok.Data;
+import org.ta4j.core.Bar;
 
 @Data
 public class DailyPriceDTO {
@@ -17,6 +17,7 @@ public class DailyPriceDTO {
 	private double close;
 	private long value;  //volume, for TradingView Histogram
 	private String trade;
+
 
 	public DailyPriceDTO(Bar bar) {
 		//this.setTime(bar.getEndTime().toInstant().toEpochMilli());

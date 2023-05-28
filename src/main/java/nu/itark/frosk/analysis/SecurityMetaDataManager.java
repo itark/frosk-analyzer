@@ -15,8 +15,9 @@ import org.ta4j.core.AnalysisCriterion;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BarSeriesManager;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.analysis.criteria.pnl.GrossReturnCriterion;
+import org.ta4j.core.criteria.pnl.ReturnCriterion;
 import org.ta4j.core.num.Num;
+
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -81,11 +82,10 @@ public class SecurityMetaDataManager {
     private Strategy getBestStrategy(String securityName)  {
         BarSeries barSeries = barSeriesService.getDataSet(securityName, false);
         List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
-        AnalysisCriterion profitCriterion = new GrossReturnCriterion();
+        AnalysisCriterion profitCriterion = new ReturnCriterion();
         BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
         return profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
-    }
-
+ }
 
     public BigDecimal getBarPercent(String securityName, int nrOfBars) {
         BarSeries timeSeries = barSeriesService.getDataSet(securityName, false);
