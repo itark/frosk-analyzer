@@ -64,14 +64,14 @@ public class FeaturedStrategy {
 	private BigDecimal rewardRiskRatio; 
 
 	@Column(name = "transaction_cost")
-	private BigDecimal totalTransactionCost; 
-											
-	@Column(name = "buy_hold")
-	private BigDecimal buyAndHold; 
+	private BigDecimal totalTransactionCost;
 
-	@Column(name = "buy_vs_hold")
-	private BigDecimal totalProfitVsButAndHold; 
-												
+	@Column(name = "sqn")
+	private BigDecimal sqn;
+
+	@Column(name = "expectency")
+	private BigDecimal expectency;
+
 	@Column(name = "period")
 	private String period;
 
@@ -91,25 +91,5 @@ public class FeaturedStrategy {
 	
 	public FeaturedStrategy () {}
 
-	public FeaturedStrategy(String name,String securityName, BigDecimal totalProfit, Integer numberOfTicks,
-			BigDecimal averageTickProfit, Integer numberofTrades, BigDecimal profitableTradesRatio, BigDecimal maxDD,
-			BigDecimal rewardRiskRatio, BigDecimal totalTransactionCost, BigDecimal buyAndHold, BigDecimal totalProfitVsButAndHold, String period, Date latestTrade,
-			boolean	isOpen) {
-		this.name = name;
-		this.securityName = securityName;
-		this.totalProfit = totalProfit;
-		this.numberOfTicks = numberOfTicks;
-		this.averageTickProfit = averageTickProfit;
-		this.numberofTrades = numberofTrades;
-		this.profitableTradesRatio = profitableTradesRatio;
-		this.maxDD = maxDD;
-		this.rewardRiskRatio = rewardRiskRatio;
-		this.totalTransactionCost = totalTransactionCost;
-		this.buyAndHold = buyAndHold;
-		this.totalProfitVsButAndHold = totalProfitVsButAndHold;
-		this.period = period;
-		this.latestTrade = latestTrade;
-		this.isOpen = isOpen;
-	}
 
 }

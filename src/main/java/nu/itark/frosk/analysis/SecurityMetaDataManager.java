@@ -10,6 +10,7 @@ import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.AnalysisCriterion;
 import org.ta4j.core.BarSeries;
@@ -26,6 +27,19 @@ import java.util.*;
 @Component
 @Slf4j
 public class SecurityMetaDataManager {
+
+
+    @Value("${frosk.criteria.sqn}")
+    private BigDecimal sqn;
+
+    @Value("${frosk.criteria.expectency}")
+    private BigDecimal expectency;
+
+    @Value("${frosk.criteria.profitable.ratio}")
+    private BigDecimal profitableRatio;
+
+    @Value("${frosk.criteria.numberOfTrades}")
+    private Integer numberOfTrades;
 
     @Autowired
     BarSeriesService barSeriesService;
@@ -52,6 +66,14 @@ public class SecurityMetaDataManager {
     public List<FeaturedStrategyDTO> getTop10FeaturedStrategies() {
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
         featuredStrategyRepository.findTop10ByOrderByTotalProfitDesc().forEach(fs->{
+            returnList.add(getDTO(fs, false));
+        });
+        return returnList;
+    }
+
+    public List<FeaturedStrategyDTO> getTopFeaturedStrategies() {
+        List<FeaturedStrategyDTO> returnList = new ArrayList<>();
+        featuredStrategyRepository.findTopStrategies(profitableRatio, numberOfTrades, sqn, expectency ).forEach(fs->{
             returnList.add(getDTO(fs, false));
         });
         return returnList;
@@ -122,6 +144,8 @@ public class SecurityMetaDataManager {
             dto.setProfitableTradesRatio("empty");
         }
         dto.setMaxDD(fs.getMaxDD());
+        dto.setSqn(fs.getSqn());
+        dto.setExpectancy(fs.getExpectency());
         dto.setTotalTransactionCost(fs.getTotalTransactionCost());
         dto.setPeriod(fs.getPeriod());
         if (Objects.nonNull(fs.getLatestTrade())) {

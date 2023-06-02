@@ -17,6 +17,15 @@ public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrate
 	FeaturedStrategy findTopBySecurityNameOrderByLatestTradeDesc(String security);
 	List<FeaturedStrategy> findTop10BySecurityNameOrderByLatestTradeDesc(String security);
 	List<FeaturedStrategy> findTop10ByOrderByTotalProfitDesc();
+
+	@Query("SELECT fs " +
+			"FROM FeaturedStrategy fs " +
+			"WHERE fs.profitableTradesRatio > ?1 " +
+			"AND fs.numberofTrades > ?2 " +
+			"AND fs.sqn > ?3 " +
+			"AND fs.expectency > ?4 " +
+			"ORDER BY totalProfit DESC")
+	List<FeaturedStrategy> findTopStrategies(BigDecimal profitableTradesRatio, Integer nrOfTrades, BigDecimal sqn, BigDecimal expectency);
 	@Query("SELECT fs FROM FeaturedStrategy fs, StrategyTrade st WHERE fs.securityName = ?1 AND st.type = 'BUY'")
 	List<FeaturedStrategy> findByOpenTrade(String securityName);
 

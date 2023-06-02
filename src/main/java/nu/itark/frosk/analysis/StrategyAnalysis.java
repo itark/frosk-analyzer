@@ -13,6 +13,7 @@ import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.*;
 import nu.itark.frosk.util.DateTimeManager;
+import nu.itark.frosk.util.FroskUtil;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,12 +22,14 @@ import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
 import org.ta4j.core.criteria.*;
 import org.ta4j.core.criteria.pnl.AverageProfitCriterion;
+import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.criteria.pnl.ReturnCriterion;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.reports.TradingStatement;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -82,7 +85,7 @@ public class StrategyAnalysis {
 			List<String> strategies = StrategiesMap.buildStrategiesMap();
 			strategies.forEach(strategyName -> {
 				try {
-					//runStrategy(strategyName, barSeriesService.getDataSet());
+					runStrategy(strategyName, barSeriesService.getDataSet());
 				} catch (DataIntegrityViolationException e) {
 					log.error("Error runStrategy on strategyName="+ strategyName);
 					throw e;
@@ -92,14 +95,13 @@ public class StrategyAnalysis {
 		} 
 		else if (Objects.nonNull(strategy) && Objects.isNull(security_id)) {
 			try {
-		//		runStrategy(strategy, barSeriesService.getDataSet());
+				runStrategy(strategy, barSeriesService.getDataSet());
 			} catch (Exception e) {
 				log.error("Error runStrategy on strategy="+ strategy);
 				throw e;
 			}
 		} 
 		else if (Objects.nonNull(strategy) && security_id != null) {
-/*
 			List<BarSeries> BarSeriesList = new ArrayList<BarSeries>();
 			BarSeries BarSeries = barSeriesService.getDataSet(security_id);
 			//Sanity check
@@ -113,7 +115,6 @@ public class StrategyAnalysis {
 				log.error("Error runStrategy on strategy="+ strategy+ " and security_id="+security_id);
 				throw e;
 			}
-*/
 		}
 		else {
 			throw new UnsupportedOperationException("kalle anka");
@@ -204,24 +205,26 @@ public class StrategyAnalysis {
 			}
 			fs.setPeriod(getPeriod(series));
 			fs.setLatestTrade(latestTradeDate);
-			//totalProfit = new ProfitLossPercentageCriterion().calculate(series, tradingRecord).doubleValue();
-			totalProfit = new ReturnCriterion().calculate(series, tradingRecord).doubleValue();
+			totalProfit = new ProfitLossPercentageCriterion().calculate(series, tradingRecord).doubleValue();
+			//totalProfit = new ReturnCriterion().calculate(series, tradingRecord).doubleValue();
 			if (!Double.isNaN(totalProfit)) {
 				fs.setTotalProfit(new BigDecimal(totalProfit).setScale(2, BigDecimal.ROUND_DOWN));
 			} else {
 				fs.setTotalProfit(BigDecimal.ZERO);
 			}
-			fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
-			double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord).doubleValue();
-			fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
+			//Hidden in UI
+			//fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
+			//double averageTickProfit = new AverageProfitCriterion().calculate(series, tradingRecord).doubleValue();
+			//Hidden in UI
+			//fs.setAverageTickProfit(new BigDecimal(averageTickProfit).setScale(2, BigDecimal.ROUND_DOWN));
 			fs.setNumberofTrades(new BigDecimal(new NumberOfPositionsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
 			double profitableTradesRatio =  PositionsRatioCriterion.WinningPositionsRatioCriterion().calculate(series, tradingRecord).doubleValue();
 			if (!Double.isNaN(profitableTradesRatio)) {
-				fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, BigDecimal.ROUND_DOWN));
+				fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, RoundingMode.DOWN));
 			}
 			double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord).doubleValue();
 			if (!Double.isNaN(maximumDrawdownCriterion)) {
-				fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, BigDecimal.ROUND_DOWN));
+				fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, RoundingMode.DOWN));
 			} else {
 				fs.setMaxDD(BigDecimal.ZERO);
 			}
@@ -232,6 +235,8 @@ public class StrategyAnalysis {
 				fs.setTotalTransactionCost(BigDecimal.ZERO);
 			}
 			fs.setOpen(tradingRecord.getCurrentPosition().isOpened());
+			fs.setSqn(new BigDecimal(new SqnCriterion().calculate(series, tradingRecord).doubleValue()));
+			fs.setExpectency(new BigDecimal(new ExpectancyCriterion().calculate(series, tradingRecord).doubleValue()));
 			FeaturedStrategy fsRes = featuredStrategyRepository.saveAndFlush(fs);
 			//StrategyTrade
 			List<StrategyTrade>  existingStrategyTrades = tradesRepository.findByFeaturedStrategyId(fsRes.getId());

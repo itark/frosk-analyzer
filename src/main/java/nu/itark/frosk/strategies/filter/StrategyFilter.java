@@ -12,6 +12,7 @@ import nu.itark.frosk.repo.TradesRepository;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,6 +23,11 @@ import java.util.*;
 
 @Service
 public class StrategyFilter {
+
+
+    @Value("${frosk.criteria.sqn}")
+    private BigDecimal sqn;
+
     @Autowired
     TradesRepository tradesRepository;
     @Autowired

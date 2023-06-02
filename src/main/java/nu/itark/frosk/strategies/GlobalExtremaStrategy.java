@@ -83,61 +83,6 @@ public class GlobalExtremaStrategy extends AbstractStrategy implements IIndicato
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
 
-    public Strategy buildStrategy(int lossPercentage) {
-        if (this.series == null) {
-            throw new IllegalArgumentException("Series cannot be null");
-        }
-
-        ClosePriceIndicator closePrices = new ClosePriceIndicator(series);
-
-        // Getting the max price over the past week
-        HighPriceIndicator maxPrices = new HighPriceIndicator(series);
-        HighestValueIndicator weekMaxPrice = new HighestValueIndicator(maxPrices, NB_TICKS_PER_WEEK);
-        // Getting the min price over the past week
-        LowPriceIndicator minPrices = new LowPriceIndicator(series);
-        LowestValueIndicator weekMinPrice = new LowestValueIndicator(minPrices, NB_TICKS_PER_WEEK);
-
-        // Going long if the close price goes below the min price
-        TransformIndicator downWeek = TransformIndicator.plus(weekMinPrice, 1.004);
-        Rule buyingRule = new UnderIndicatorRule(closePrices, downWeek);
-
-        // Going short if the close price goes above the max price
-        TransformIndicator upWeek = TransformIndicator.plus(weekMaxPrice, 0.996);
-
-        Rule sellingRule = new OverIndicatorRule(closePrices, upWeek)
-        		.or(new StopLossRule(  closePrices, series.numOf(lossPercentage)));
-
-        return new BaseStrategy("GlobalExtremaStrategy", buyingRule, sellingRule);
-    }
-
-    public Strategy buildStrategy(int lossPercentage, int gainPercentage) {
-        if (this.series == null) {
-            throw new IllegalArgumentException("Series cannot be null");
-        }
-
-        ClosePriceIndicator closePrices = new ClosePriceIndicator(series);
-
-        // Getting the max price over the past week
-        HighPriceIndicator maxPrices = new HighPriceIndicator(series);
-        HighestValueIndicator weekMaxPrice = new HighestValueIndicator(maxPrices, NB_TICKS_PER_WEEK);
-        // Getting the min price over the past week
-        LowPriceIndicator minPrices = new LowPriceIndicator(series);
-        LowestValueIndicator weekMinPrice = new LowestValueIndicator(minPrices, NB_TICKS_PER_WEEK);
-
-        // Going long if the close price goes below the min price
-        TransformIndicator downWeek = TransformIndicator.plus(weekMinPrice, 1.004);
-        Rule buyingRule = new UnderIndicatorRule(closePrices, downWeek);
-
-        // Going short if the close price goes above the max price
-        TransformIndicator upWeek = TransformIndicator.plus(weekMaxPrice, 0.996);
-
-        Rule sellingRule = new OverIndicatorRule(closePrices, upWeek)
-        		.or(new StopLossRule( closePrices, series.numOf(lossPercentage)))
-        		.or(new StopGainRule(closePrices, series.numOf(gainPercentage)));
-
-        return new BaseStrategy("GlobalExtremaStrategy", buyingRule, sellingRule);
-    }
-
     @Override
     public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;

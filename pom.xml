@@ -244,7 +244,7 @@
 		<dependency>
 			<groupId>org.ta4j</groupId>
 			<artifactId>ta4j-core</artifactId>
-			<version>0.15-SNAPSHOT</version>
+			<version>0.16-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 

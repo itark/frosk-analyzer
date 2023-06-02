@@ -10,6 +10,8 @@ import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.ta4j.core.Bar;
+import org.ta4j.core.BarSeries;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,7 +60,8 @@ public class DataController {
 
     @RequestMapping(path = "/topFeaturedStrategies", method = RequestMethod.GET)
     public List<FeaturedStrategyDTO> getTopFeaturedStrategies() {
-        return securityMetaDataManager.getTop10FeaturedStrategies();
+        //return securityMetaDataManager.getTop10FeaturedStrategies();
+        return securityMetaDataManager.getTopFeaturedStrategies();
     }
 
     /**
@@ -103,6 +106,7 @@ public class DataController {
 
     @RequestMapping(path = "/strategies", method = RequestMethod.GET)
     public List<String> getStrategies() {
+        log.info("/strategies");
         return StrategiesMap.buildStrategiesMap();
     }
 
@@ -112,18 +116,18 @@ public class DataController {
      */
     @RequestMapping(path = "/prices", method = RequestMethod.GET)
     public List<DailyPriceDTO> getPrices(@RequestParam("security") String security) {
-        //logger.info("/prices...security=" + security);
+        log.info("/prices for security=" + security);
         DailyPriceDTO dailyPrices = null;
         SecurityDTO frosk = null;
         List<DailyPriceDTO> dpList = new ArrayList<DailyPriceDTO>();
-/*
+
         BarSeries timeSeries = timeSeriesService.getDataSet(security, false);
         for (int i = 0; i < timeSeries.getBarCount(); i++) {
             Bar bar = timeSeries.getBar(i);
             dailyPrices = new DailyPriceDTO(bar);
             dpList.add(dailyPrices);
         }
-*/
+
         return dpList;
     }
 
@@ -133,7 +137,7 @@ public class DataController {
      */
     @RequestMapping(path = "/metadata", method = RequestMethod.GET)
     public List<SecurityDTO> getMetaData() {
-        //logger.info("/metadata");
+        log.info("/metadata");
         return securityMetaDataManager.getSecurityMetaData();
     }
 
@@ -143,6 +147,7 @@ public class DataController {
      */
     @RequestMapping(path = "/topStrategies", method = RequestMethod.GET)
     public List<TopStrategyDTO> getTopStrategies() {
+        log.info("/topStrategies");
         return strategyMetaDataManager.getTopStrategies().stream()
                 .map(dto -> TopStrategyDTO.builder()
                         .name(dto.getName().replace("Strategy",""))
@@ -158,17 +163,16 @@ public class DataController {
     @Deprecated
     @RequestMapping(path = "/dailyPrices", method = RequestMethod.GET)
     public List<DailyPriceDTO> getDailyPrices(@RequestParam("security") String security, @RequestParam("strategy") String strategy) {
-        //logger.info("/dailyPrices...security=" + security);
+        log.info("/dailyPrices for security=" + security);
         DailyPriceDTO dailyPrices = null;
         List<DailyPriceDTO> dpList = new ArrayList<DailyPriceDTO>();
-/*
+
         BarSeries timeSeries = timeSeriesService.getDataSet(security, false);
         for (int i = 0; i < timeSeries.getBarCount(); i++) {
             Bar bar = timeSeries.getBar(i);
             dailyPrices = new DailyPriceDTO(bar);
             dpList.add(dailyPrices);
         }
-*/
         return dpList;
     }
 
@@ -189,7 +193,7 @@ public class DataController {
     @Deprecated
     @RequestMapping(path = "/indicatorValues", method = RequestMethod.GET)
     public List<IndicatorValueDTO> getIndicatorValues(@RequestParam("security") String security, @RequestParam("strategy") String strategy) {
-       // logger.info("/indicatorValues?security=" + security + "&strategy=" + strategy);
+        log.info("/indicatorValues?security=" + security + "&strategy=" + strategy);
         List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
         strategyAnalysis.run(strategy, timeSeriesService.getSecurityId(security));
         final FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategy, security);
@@ -207,7 +211,7 @@ public class DataController {
      */
     @RequestMapping(path = "/trades", method = RequestMethod.GET)
     public List<TradeDTO> getTradees(@RequestParam("security") String security, @RequestParam("strategy") String strategy) {
-        //logger.info("/trades?security=" + security + "&strategy=" + strategy);
+        log.info("/trades?security=" + security + "&strategy=" + strategy);
         return getTrades(security, strategy);
     }
 
@@ -216,7 +220,7 @@ public class DataController {
      */
     @GetMapping(value = "/longtrades")
     public List<TradeDTO> longTrades() {
-        //logger.info("/longtrades");
+        log.info("/longtrades");
         return getLongTrades();
     }
 
@@ -225,12 +229,13 @@ public class DataController {
      */
     @GetMapping(value = "/shorttrades")
     public List<TradeDTO> shortTrades() {
-        //logger.info("/shorttrades");
+        log.info("/shorttrades");
         return getShortTrades();
     }
 
     @GetMapping(value = "/smartSignals")
     public List<OpenFeaturedStrategyDTO> openSmartSignals() {
+        log.info("/smartSignals");
         return getOpenSmartSignals();
     }
 

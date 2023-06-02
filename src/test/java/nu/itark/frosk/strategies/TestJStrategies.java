@@ -9,6 +9,7 @@ import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.util.FroskUtil;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,12 +52,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	FeaturedStrategyRepository featuredStrategyRepository;
 
 	Formatter fmt;
-/*
-	BarSeries series;
-	Strategy strategy;
-	BarSeriesManager seriesManager;
-	TradingRecord tradingRecord;
-*/
+
 
 	@BeforeEach
 	public void addFormat() {
@@ -210,7 +206,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	ProfitLossPercentageCriterion totalPercentage = new ProfitLossPercentageCriterion();
 		System.out.println("Total pnl percentage: " + totalPercentage.calculate(series, tradingRecord).doubleValue());
 	// Number of bars
-        System.out.println("Number of bars: " + new NumberOfBarsCriterion().calculate(series, tradingRecord));
+//        System.out.println("Number of bars: " + new NumberOfBarsCriterion().calculate(series, tradingRecord));
 	// Average profit (per bar)
         System.out.println(
 				"Average return (per bar): " + new AverageReturnPerBarCriterion().calculate(series, tradingRecord));
@@ -278,7 +274,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 		Double averageProfit = totalProfitAcc.stream()
 				.map(p -> p.doubleValue())
 				.collect(Collectors.averagingDouble(Double::doubleValue));
-		System.out.println("Average on all TotalProfit:"+averageProfit);
+		System.out.println("Average on all TotalProfit(eget):"+averageProfit);
 	}
 
 	ReturnObject run(Strategy strategy, BarSeries series) {
@@ -300,12 +296,12 @@ public class TestJStrategies extends BaseIntegrationTest {
 	public void chooseBestForSecurity() {
 		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false);
 		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
-		// The analysis criterion
-		AnalysisCriterion profitCriterion = new ReturnCriterion();
 
-		//BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries);
+		chooseBestForSecurity(new ReturnCriterion(), timeSeries, strategies);
+		chooseBestForSecurity(new SqnCriterion(), timeSeries, strategies);
+		chooseBestForSecurity(new ExpectancyCriterion(), timeSeries, strategies);
+/*
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
-
 		for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
 			Strategy strategy = entry.getKey();
 			String name = entry.getValue();
@@ -317,6 +313,22 @@ public class TestJStrategies extends BaseIntegrationTest {
 		}
 		Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
 		System.out.println("\t\t--> Best strategy: " + strategies.get(bestStrategy) + "\n");
+*/
+	}
+
+
+	private Strategy chooseBestForSecurity(AnalysisCriterion criterion,BarSeries timeSeries, Map<Strategy, String> strategies) {
+		BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+		for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
+			Strategy strategy = entry.getKey();
+			String name = entry.getValue();
+			TradingRecord tradingRecord = timeSeriesManager.run(strategy);
+			double profit = criterion.calculate(timeSeries, tradingRecord).doubleValue();
+			System.out.println("\tcriterion "+ criterion.getClass().getName() + ", for " + name + ": " + profit);
+		}
+		Strategy bestStrategy = criterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
+		System.out.println("\t\t--> Best strategy: " + strategies.get(bestStrategy) + "\n");
+		return bestStrategy;
 	}
 
 	@Test
@@ -439,75 +451,66 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void testMostAppropriateWayOfPerformanceMeasurement() {
-
 	/*
 		Measurements:
-		- Init amount
+		- Init amount ?
 		- GrossReturn -> In percent
+		- Lite nytt: SqnCriterion och ExpectancyCriterion, kanske combo
 		- TotalCurrency : SEK ?
 
 	*/
+		String securityName = "BTC-EUR";
+		BarSeries series = barSeriesService.getDataSet(securityName, false);
+		Strategy strategy = new ADXStrategy(series).buildStrategy();
 
-		BarSeries series;
-		Strategy strategy;
-		BarSeriesManager seriesManager;
-		TradingRecord tradingRecord;
-
-
-		series = barSeriesService.getDataSet("BTC-EUR", false);
-		strategy = new ADXStrategy(series).buildStrategy();
 		costs.setTransactionCostModel(new LinearBorrowingCostModel(costs.getFeePerTrade()));
-		seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
-		tradingRecord = seriesManager.run(strategy);
-
+		BarSeriesManager seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+		TradingRecord tradingRecord = seriesManager.run(strategy);
 		//1 . StrategyAnalysis
 		System.out.println("********************strategyAnalysis.run***********************");
-		Long sec_id = barSeriesService.getSecurityId("BTC-EUR");
-		strategyAnalysis.run(ADXStrategy.class.getSimpleName(), sec_id);
-		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(ADXStrategy.class.getSimpleName(), "BTC-EUR");
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		strategyAnalysis.run(strategy.getName(), sec_id);
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy.getName(), series.getName());
 		fs.getTrades().stream()
 				.sorted(Comparator.comparing(StrategyTrade::getDate))
-				//.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t)))
 				.peek(t-> System.out.println("date="+t.getDate() + ",type="+t.getType() + ",price="+t.getPrice() + ",grossProfit="+t.getGrossProfit() + ",pnl="+t.getPnl()))
 				.collect(Collectors.toSet());
 		Double averageProfit = fs.getTrades().stream()
 				.filter(p-> Objects.nonNull(p.getPnl()))
 				.map(p -> p.getPnl().doubleValue())
 				.collect(Collectors.averagingDouble(Double::doubleValue));
-		System.out.println("Average on all TotalProfit:"+averageProfit);
+		System.out.println("Average on all PnL(eget):"+averageProfit);
 		//2. printResult(resultMap)
 		System.out.println("********************printResult(resultMap)***********************");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		ADXStrategy adx = new ADXStrategy(series);
-		resultMap.add(run(adx.buildStrategy(),series));
+		resultMap.add(run(strategy,series));
 		printResult(resultMap);
-
 		//3. doPerformanceReport
 		System.out.println("********************performanceReportGenerator***********************");
 		PerformanceReportGenerator performanceReportGenerator = new  PerformanceReportGenerator();
 		PerformanceReport performanceReport = performanceReportGenerator.generate(strategy, tradingRecord, series);
 		System.out.println("performanceReport="+ ReflectionToStringBuilder.toString(performanceReport));
-
 		//4. GrossReturn and ProfitLossPercentage
 		System.out.println("********************Criterion***********************");
 		LossCriterion lossCriterion = new LossCriterion();
-
 		ReturnCriterion returnCriterion = new ReturnCriterion();
 		ProfitLossPercentageCriterion profitLossPercentageCriterion = new ProfitLossPercentageCriterion();
 		System.out.println("lossCriterion:"+lossCriterion.calculate(series, tradingRecord));
 		System.out.println("grossReturnCriterion:"+returnCriterion.calculate(series, tradingRecord));
 		System.out.println("profitLossPercentageCriterion:"+ profitLossPercentageCriterion.calculate(series, tradingRecord));
 
-		System.out.println("********************runOneSingleDataSet2***********************");
-		runOneSingleDataSet2();
-
+		//6. ProfitLossCriterion
 		System.out.println("********************Manuell ProfitLossCriterion***********************");
-		//ProfitLossCriterion
 		Object profitLoss = tradingRecord.getPositions().stream().filter(Position::isClosed)
 				.map(position -> calculate(series, position)).reduce(series.numOf(0), Num::plus);
 		System.out.println("profitLoss:"+ profitLoss);
 
-
+		//.7 ,lite nytt
+		System.out.println("********************Q-Criterion***********************");
+		AnalysisCriterion sqnCriterion = new SqnCriterion();
+		System.out.println("sqnCriterion:"+sqnCriterion.calculate(series, tradingRecord));
+		AnalysisCriterion expCriterion = new ExpectancyCriterion();
+		System.out.println("expCriterion:"+expCriterion.calculate(series, tradingRecord));
 	}
 
 	public Num calculate(BarSeries series, Position position) {

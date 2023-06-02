@@ -3,6 +3,7 @@ package nu.itark.frosk;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import nu.itark.frosk.analysis.StrategyAnalysis;
@@ -16,6 +17,15 @@ import nu.itark.frosk.dataset.Database;
 @Component
 @Slf4j
 public class HighLander {
+
+	@Value("${frosk.adddatasetandsecurities}")
+	private boolean addDatasetAndSecurities;
+
+	@Value("${frosk.addsecuritypricesfromcoinbase}")
+	private boolean addSecuritypricesFromCoinbase;
+
+	@Value("${frosk.runallstrategies}")
+	private boolean runAllStrategies;
 
 	@Autowired
 	DataManager dataManager;
@@ -49,9 +59,15 @@ public class HighLander {
 	 * 
 	 */
 	public void runInstall(Database database) {
-		addDataSetAndSecurities();
-		addSecurityPricesFromCoinbase();
-		runAllStrategies();
+		if (addDatasetAndSecurities) {
+			addDataSetAndSecurities();
+		}
+		if (addSecuritypricesFromCoinbase) {
+			addSecurityPricesFromCoinbase();
+		}
+		if (runAllStrategies) {
+			runAllStrategies();
+		}
 		runChooseBestStrategy();
 	}
 

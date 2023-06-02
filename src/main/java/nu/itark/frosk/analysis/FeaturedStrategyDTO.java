@@ -25,6 +25,8 @@ public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
 	private String profitableTradesRatio; // "Profitable trades ratio
 	private BigDecimal maxDD; // "Maximum drawdown
 	private BigDecimal totalTransactionCost; // Total transaction cost (from// $1000)
+	private BigDecimal sqn; // ""System Quality Number"
+	private BigDecimal expectancy; // ""System Quality Number"
 	private String period;
 	private String latestTrade;
 	private String isOpen;

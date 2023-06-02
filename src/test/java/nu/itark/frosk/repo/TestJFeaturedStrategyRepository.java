@@ -41,33 +41,6 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 
 	
 	@Test
-	public final void testSaveFeaturedStrategy() {
-
-//		fsRepo.deleteAllInBatch();
-
-		String name = "HELOO";
-		String securityName = "TEST";
-		BigDecimal totalProfit = new BigDecimal(12.0);
-		Integer numberOfTicks = 12;
-		BigDecimal averageTickProfit = new BigDecimal(12.0);
-		Integer numberofTrades = 12;
-		BigDecimal profitableTradesRatio = new BigDecimal(12.0);
-		BigDecimal maxDD = new BigDecimal(12.0);
-		BigDecimal rewardRiskRatio = new BigDecimal(12.0);
-		BigDecimal totalTransactionCost = new BigDecimal(12.0);
-		BigDecimal buyAndHold = new BigDecimal(12.0);
-		BigDecimal totalProfitVsButAndHold = new BigDecimal(25.0);
-		String period = "PER";
-		Date latestTrade = new Date();
-		
-		
-		FeaturedStrategy featuredStrategy = new FeaturedStrategy(name, securityName, totalProfit, numberOfTicks, averageTickProfit,
-				numberofTrades, profitableTradesRatio, maxDD, rewardRiskRatio, totalTransactionCost, buyAndHold,
-				totalProfitVsButAndHold, period, latestTrade, false);
-		
-	}
-	
-	@Test
 	public void testFindByNameAndSecurityName() {
 		log.info("count="+ featuredStrategyRepository.count());
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName("SimpleMovingMomentumStrategy", "BTRST-EUR");
@@ -131,15 +104,11 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 		BigDecimal maxDD = new BigDecimal(12.0);
 		BigDecimal rewardRiskRatio = new BigDecimal(12.0);
 		BigDecimal totalTransactionCost = new BigDecimal(12.0);
-		BigDecimal buyAndHold = new BigDecimal(12.0);
-		BigDecimal totalProfitVsButAndHold = new BigDecimal(25.0);
 		String period = "PER";
 		Date latestTrade = new Date();
 		
 		
-		FeaturedStrategy featuredStrategy = new FeaturedStrategy(name, securityName, totalProfit, numberOfTicks, averageTickProfit,
-				numberofTrades, profitableTradesRatio, maxDD, rewardRiskRatio, totalTransactionCost, buyAndHold,
-				totalProfitVsButAndHold, period, latestTrade, false);
+		FeaturedStrategy featuredStrategy = new FeaturedStrategy();
 		
 		
 		FeaturedStrategy featuredStrategyREs =	featuredStrategyRepository.saveAndFlush(featuredStrategy);
