@@ -22,3 +22,4 @@ src/test/resources/non-commit.txt
 logs/
 
 no_check_in.txt
+/src/main/resources/rnnRegression/

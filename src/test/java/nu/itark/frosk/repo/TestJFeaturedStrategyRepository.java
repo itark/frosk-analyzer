@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.model.*;
-import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -151,7 +149,7 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 
 	@Test
 	public void testFindStrategies() {
-		List<TopStrategy> strategies = featuredStrategyRepository.findStrategies();
+		List<TopStrategy> strategies = featuredStrategyRepository.findBestPerformingStrategies();
 		strategies.forEach(strategy ->{
 			System.out.println("strategy.getName():"+strategy.getName() + "strategy.getTotalProfit():"+strategy.getTotalProfit());
 		});

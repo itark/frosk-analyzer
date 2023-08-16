@@ -37,9 +37,9 @@ public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrate
 			"ORDER BY latestTrade DESC")
 	List<FeaturedStrategy> findSmartSignals(BigDecimal profitableTradesRatio, Integer aboveNrOfTrades);
 
-	@Query("SELECT avg(totalProfit) as totalProfit, name as name " +
+	@Query("SELECT avg(sqn) as sqn, avg(totalProfit) as totalProfit, name as name " +
 			"FROM FeaturedStrategy " +
-			"GROUP BY name ORDER BY avg(totalProfit) DESC")
-	List<TopStrategy> findStrategies();
+			"GROUP BY name")
+	List<TopStrategy> findBestPerformingStrategies();
 
 }

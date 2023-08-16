@@ -10,4 +10,6 @@ import java.math.BigDecimal;
 public class TopStrategyDTO {
     private String name;
     private BigDecimal totalProfit;
+    private BigDecimal sqn;
+    private BigDecimal sqnRaw;
 }

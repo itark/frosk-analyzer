@@ -31,9 +31,9 @@ public class StrategyMetaDataManager {
      *
      * @return
      */
-    public List<TopStrategyDTO> getTopStrategies() {
+    public List<TopStrategyDTO> findBestPerformingStrategies() {
         List<TopStrategyDTO> returnList = new ArrayList<>();
-        featuredStrategyRepository.findStrategies().forEach(fs->{
+        featuredStrategyRepository.findBestPerformingStrategies().forEach(fs->{
                 returnList.add(getDTO(fs));
         });
         return returnList;
@@ -43,6 +43,8 @@ public class StrategyMetaDataManager {
         return TopStrategyDTO.builder()
                 .name(ts.getName())
                 .totalProfit(BigDecimal.valueOf(ts.getTotalProfit().doubleValue()).round(new MathContext(2)))
+                .sqn(ts.getSqn().abs().doubleValue() < 100 ? BigDecimal.valueOf(ts.getSqn().doubleValue()).round(new MathContext(2)): BigDecimal.valueOf(0L))
+                .sqnRaw(ts.getSqn())
                 .build();
     }
 

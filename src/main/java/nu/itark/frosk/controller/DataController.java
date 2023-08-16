@@ -148,10 +148,12 @@ public class DataController {
     @RequestMapping(path = "/topStrategies", method = RequestMethod.GET)
     public List<TopStrategyDTO> getTopStrategies() {
         log.info("/topStrategies");
-        return strategyMetaDataManager.getTopStrategies().stream()
+        return strategyMetaDataManager.findBestPerformingStrategies().stream()
                 .map(dto -> TopStrategyDTO.builder()
                         .name(dto.getName().replace("Strategy",""))
                         .totalProfit(dto.getTotalProfit())
+                        .sqn(dto.getSqn())
+                        .sqnRaw(dto.getSqnRaw())
                         .build())
                 .collect(Collectors.toList());
     }
