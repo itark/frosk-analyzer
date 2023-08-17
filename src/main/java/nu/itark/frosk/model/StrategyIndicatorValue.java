@@ -37,7 +37,7 @@ public class StrategyIndicatorValue {
 	@Column(name = "indicator")
 	private String indicator;	
 	
-	@Column(name = "value", precision=12, scale=6)
+	@Column(name = "value_", precision=12, scale=6)  //value invalid for spring boot 2.7,hence the _
 	private BigDecimal value;	
 	
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.6.3</version>
+		<version>2.7.13</version>
 		<relativePath/>
 	</parent>
 	<groupId>nu.itark.frosk</groupId>
@@ -31,7 +31,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -41,79 +40,34 @@
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 			<version>2.6.6</version>
 		</dependency>
-
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-jasper</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>jstl</artifactId>
-			<version>1.2</version>
-		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
- 
-	    <dependency>
-	      <groupId>com.google.code.gson</groupId>
-	      <artifactId>gson</artifactId>
-	      <scope>compile</scope>
-	      <exclusions>
-	        <exclusion>
-	          <artifactId>commons-logging</artifactId>
-	          <groupId>commons-logging</groupId>
-	        </exclusion>
-	      </exclusions>
-	    </dependency>
-
-	    <dependency>
-	      <groupId>joda-time</groupId>
-	      <artifactId>joda-time</artifactId>
-		  <version>2.1</version>
-
-	      <scope>compile</scope>
-	      <exclusions>
-	        <exclusion>
-	          <artifactId>commons-logging</artifactId>
-	          <groupId>commons-logging</groupId>
-	        </exclusion>
-	      </exclusions>
-	    </dependency>
-
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-
 		<dependency>
 		  <groupId>com.jimmoores</groupId>
 		  <artifactId>quandl-core</artifactId>
@@ -133,99 +87,6 @@
 	        <version>3.9</version>
 	    </dependency>	
 
-		<!-- webjars  -->
-		<dependency>
-			<groupId>org.webjars</groupId>
-			<artifactId>bootstrap</artifactId>
-			<version>3.3.7</version>
-		</dependency>
-
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>jquery</artifactId>
-		    <version>3.2.1</version>
-		</dependency>
-	 
-		 <dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>metisMenu</artifactId>
-		    <version>2.7.0</version>
-		</dependency> 
-		
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>morrisjs</artifactId>
-		    <version>0.5.1</version>
-		</dependency>	
-			  
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>font-awesome</artifactId>
-		    <version>4.7.0</version>
-		</dependency>
-	
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>raphaeljs</artifactId>
-		    <version>2.1.4</version>
-		</dependency>
-	
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>startbootstrap-sb-admin-2</artifactId>
-		    <version>3.3.7+1</version>
-		</dependency>
-	
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>excanvas</artifactId>
-		    <version>3</version>
-		</dependency>
-	
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>flot</artifactId>
-		    <version>0.8.3-1</version>
-		</dependency>
-	  
-		<dependency>
-		    <groupId>org.webjars.bower</groupId>
-		    <artifactId>flot.tooltip</artifactId>
-		    <version>0.8.5</version>
-		</dependency>
-		
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>bootstrap-social</artifactId>
-		    <version>5.0.0</version>
-		</dependency>		
-	
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>datatables</artifactId>
-		    <version>1.10.15</version>
-		</dependency>
-	
-	    <dependency>
-	        <groupId>org.webjars</groupId>
-	        <artifactId>webjars-locator</artifactId>
-	        <version>0.32</version>
-	    </dependency>
-
-		<dependency>
-			<groupId>org.webjars</groupId>
-			<artifactId>sockjs-client</artifactId>
-			<version>1.1.1</version>
-		</dependency>   
-
-		<dependency>
-		    <groupId>org.webjars</groupId>
-		    <artifactId>stomp-websocket</artifactId>
-		    <version>2.3.3</version>
-		</dependency>
-
-		<!-- end webjars -->
-
       <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-math3</artifactId>
@@ -243,6 +104,7 @@
 			<artifactId>commons-codec</artifactId>
 			<version>1.15</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.ta4j</groupId>
 			<artifactId>ta4j-core</artifactId>
