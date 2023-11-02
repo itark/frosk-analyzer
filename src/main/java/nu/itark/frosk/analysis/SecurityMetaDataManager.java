@@ -102,7 +102,7 @@ public class SecurityMetaDataManager {
     }
 
     private Strategy getBestStrategy(String securityName)  {
-        BarSeries barSeries = barSeriesService.getDataSet(securityName, false);
+        BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
         List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
         AnalysisCriterion profitCriterion = new ReturnCriterion();
         BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
@@ -110,7 +110,7 @@ public class SecurityMetaDataManager {
  }
 
     public BigDecimal getBarPercent(String securityName, int nrOfBars) {
-        BarSeries timeSeries = barSeriesService.getDataSet(securityName, false);
+        BarSeries timeSeries = barSeriesService.getDataSet(securityName, false, false);
         //Sanitycheck
         if (timeSeries.getBarCount() <= nrOfBars) {
             return null;

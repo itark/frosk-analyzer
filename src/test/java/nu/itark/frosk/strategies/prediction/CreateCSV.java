@@ -38,7 +38,7 @@ public class CreateCSV {
         boolean success = newFile.createNewFile();
         Path featuresPath = Paths.get(newFile.getAbsolutePath());
 
-        BarSeries barSeries = barSeriesService.getDataSet(securityName, false);
+        BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
 
         for (int i = 0; i < barSeries.getBarCount(); i++) {
             Bar bar = barSeries.getBar(i);
@@ -56,7 +56,7 @@ public class CreateCSV {
         }
         boolean success = newFile.createNewFile();
         Path featuresPath = Paths.get(newFile.getAbsolutePath());
-        BarSeries barSeries = barSeriesService.getDataSet(securityName, false);
+        BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
         for (int i = 0; i < 300; i++) {
             Bar bar = barSeries.getBar(i);
             String firstClosePrice = bar.getClosePrice().toString();
@@ -91,7 +91,7 @@ public class CreateCSV {
         }
         boolean success = newFile.createNewFile();
         Path featuresPath = Paths.get(newFile.getAbsolutePath());
-        BarSeries barSeries = barSeriesService.getDataSet(securityName, false);
+        BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
         for (int i = 0; i < 20; i++) {
             Bar bar = barSeries.getBar(i);
             Files.write(featuresPath,bar.getClosePrice().toString().concat(System.lineSeparator()).getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
@@ -107,7 +107,7 @@ public class CreateCSV {
         }
         boolean success = newFile.createNewFile();
         Path featuresPath = Paths.get(newFile.getAbsolutePath());
-        BarSeries barSeries = barSeriesService.getDataSet(securityName, false);
+        BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
         for (int i = (barSeries.getBarCount() - 10); i < barSeries.getBarCount(); i++) {
             Bar bar = barSeries.getBar(i);
             String price = bar.getClosePrice().toString();

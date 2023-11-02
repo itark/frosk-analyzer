@@ -1,15 +1,6 @@
 package nu.itark.frosk.crypto.coinbase.security;
 
 import org.apache.commons.codec.digest.HmacUtils;
-import org.springframework.util.StringUtils;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.management.RuntimeErrorException;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 
 /**
  * Created by robevansuk on 17/03/2017.

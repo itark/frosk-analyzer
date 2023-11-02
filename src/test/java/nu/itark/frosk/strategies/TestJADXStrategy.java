@@ -48,7 +48,7 @@ public class TestJADXStrategy extends BaseIntegrationTest {
 
     @Test
     public final void run() throws Exception {
-        BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false);
+        BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
         ADXStrategy strat = new ADXStrategy(timeSeries);
         Strategy strategy = strat.buildStrategy();
         BarSeriesManager seriesManager = new BarSeriesManager(timeSeries, costs.getTransactionCostModel(), costs.getBorrowingCostModel());

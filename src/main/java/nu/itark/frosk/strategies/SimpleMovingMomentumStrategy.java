@@ -33,6 +33,7 @@ import org.ta4j.core.indicators.ChandelierExitLongIndicator;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
+import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.rules.*;
 
@@ -45,6 +46,7 @@ public class SimpleMovingMomentumStrategy extends AbstractStrategy implements II
 
     public SimpleMovingMomentumStrategy(BarSeries series) {
         super(series);
+        //this.series = super.barSeriesWithForecast;
         this.series = series;
     }
 
@@ -61,6 +63,9 @@ public class SimpleMovingMomentumStrategy extends AbstractStrategy implements II
         setIndicatorValues(shortEma, "shortEma");
         setIndicatorValues(longEma, "longEma");
 
+        //System.out.println("series:"+series.getName()+" stationary="+stationary);
+
+
 /*
         ParabolicSarIndicator pSar = new ParabolicSarIndicator(series);
         IsRisingRule pSarIsRisingRule = new IsRisingRule(pSar, 1);
@@ -76,6 +81,14 @@ public class SimpleMovingMomentumStrategy extends AbstractStrategy implements II
                        // .and(openPriceIsRisingRule);
 
         Rule exitRule;
+        ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series, 5, 3);
+        // ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series);
+        setIndicatorValues(cel, "cel");
+        exitRule = new UnderIndicatorRule(openPrice,cel)
+                .or(new StopLossRule(closePrice, 2))
+                .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
+
+/*
         if (!inherentExitRule) {
             ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series, 5, 3);
            // ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series);
@@ -85,7 +98,8 @@ public class SimpleMovingMomentumStrategy extends AbstractStrategy implements II
                     .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
         } else {
             exitRule = exitRule();
-           }
+        }
+*/
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

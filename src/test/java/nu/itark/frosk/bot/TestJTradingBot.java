@@ -23,7 +23,7 @@ public class TestJTradingBot   extends BaseIntegrationTest {
     @Test
     public void testBot() {
 
-        BarSeries barSeries = barSeriesService.getDataSet("BTC-USDT", false);
+        BarSeries barSeries = barSeriesService.getDataSet("BTC-USDT", false, false);
         SimpleMovingMomentumStrategy strat = new SimpleMovingMomentumStrategy(barSeries);
         Strategy strategy = strat.buildStrategy();
         BarSeriesManager seriesManager = new BarSeriesManager(barSeries);

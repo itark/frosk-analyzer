@@ -9,13 +9,16 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.crypto.coinbase.MarketDataProxy;
+import org.surus.math.AugmentedDickeyFuller;
 
 @Service
 @Slf4j
 public class ADF {
 	static int DEFAULT_QUEUE_SIZE = 100;
 	Queue<Double> xQueue = new CircularFifoQueue<Double>(DEFAULT_QUEUE_SIZE);	
-//	AugmentedDickeyFuller adf;
+	AugmentedDickeyFuller adf;
+
+
 	
 	@Autowired	
 	MarketDataProxy marketDataProxy;
@@ -46,7 +49,8 @@ public class ADF {
 	public void run() {
 		Double[] xx = xQueue.toArray(new Double[0]);
 		double[] xxx = ArrayUtils.toPrimitive(xx);
-//		adf = new AugmentedDickeyFuller(xxx);
+		adf = new AugmentedDickeyFuller(xxx);
+
 	}
 	
 	

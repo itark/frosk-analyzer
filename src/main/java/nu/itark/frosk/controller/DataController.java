@@ -30,7 +30,7 @@ public class DataController {
     DataSetRepository datasetRepository;
 
     @Autowired
-    BarSeriesService timeSeriesService;
+    BarSeriesService barSeriesService;
 
     @Autowired
     StrategyAnalysis strategyAnalysis;
@@ -121,7 +121,7 @@ public class DataController {
         SecurityDTO frosk = null;
         List<DailyPriceDTO> dpList = new ArrayList<DailyPriceDTO>();
 
-        BarSeries timeSeries = timeSeriesService.getDataSet(security, false);
+        BarSeries timeSeries = barSeriesService.getDataSet(security, false, true);
         for (int i = 0; i < timeSeries.getBarCount(); i++) {
             Bar bar = timeSeries.getBar(i);
             dailyPrices = new DailyPriceDTO(bar);
@@ -169,7 +169,7 @@ public class DataController {
         DailyPriceDTO dailyPrices = null;
         List<DailyPriceDTO> dpList = new ArrayList<DailyPriceDTO>();
 
-        BarSeries timeSeries = timeSeriesService.getDataSet(security, false);
+        BarSeries timeSeries = barSeriesService.getDataSet(security, false, false);
         for (int i = 0; i < timeSeries.getBarCount(); i++) {
             Bar bar = timeSeries.getBar(i);
             dailyPrices = new DailyPriceDTO(bar);
@@ -197,7 +197,7 @@ public class DataController {
     public List<IndicatorValueDTO> getIndicatorValues(@RequestParam("security") String security, @RequestParam("strategy") String strategy) {
         log.info("/indicatorValues?security=" + security + "&strategy=" + strategy);
         List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
-        strategyAnalysis.run(strategy, timeSeriesService.getSecurityId(security));
+        strategyAnalysis.run(strategy, barSeriesService.getSecurityId(security));
         final FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategy, security);
         featuredStrategy.getIndicatorValues().forEach(siv -> {
             indicatorValues.add(new IndicatorValueDTO(siv.getDate(),siv.getValue(), siv.getIndicator()));

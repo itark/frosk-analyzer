@@ -9,9 +9,14 @@ import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
+import nu.itark.frosk.strategies.prediction.workday.ArimaModel;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.surus.math.AugmentedDickeyFuller;
+import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
+import org.ta4j.core.BaseBar;
 import org.ta4j.core.BaseBarSeriesBuilder;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.DoubleNum;
@@ -38,6 +43,8 @@ public class BarSeriesService  {
 	
 	@Autowired
 	ProductProxy productProxy;
+
+	ArimaModel arimaModel = new ArimaModel();
 
 	/**
 	 * Retrive from {@linkplain SecurityPriceRepository}
@@ -69,14 +76,49 @@ public class BarSeriesService  {
 	 * @param  api, true if retrieving data direcly from coinbase api.
 	 * @return BarSeries
 	 */
-	public BarSeries getDataSet(String securityName, boolean api) {
+	public BarSeries getDataSet(String securityName, boolean api, boolean forecast) {
+		BarSeries barSeries;
 		if (api) {
-			return getDataSetFromCoinbase(securityName);
+			barSeries=  getDataSetFromCoinbase(securityName);
 		} else {
-			return  getDataSet( getSecurityId(securityName)  );
+			barSeries=  getDataSet( getSecurityId(securityName)  );
+		}
+		if (forecast) {
+			return withArimaForecast(barSeries, 3);
+		} else {
+			return barSeries;
 		}
 	}
 
+	public BarSeries withArimaForecast(BarSeries barSeries, int forecastSize) {
+		BarSeries seriesWithForecast = barSeries;
+
+		double[] closePrices = new double[barSeries.getBarCount()];
+		double[] highPrices = new double[barSeries.getBarCount()];
+		double[] lowPrices = new double[barSeries.getBarCount()];
+		double[] openPrices = new double[barSeries.getBarCount()];
+		double[] volumes = new double[barSeries.getBarCount()];
+
+		for (int i = 0; i < barSeries.getBarCount(); i++) {
+			closePrices[i] = barSeries.getBar(i).getClosePrice().doubleValue();
+			highPrices[i] = barSeries.getBar(i).getHighPrice().doubleValue();
+			lowPrices[i] = barSeries.getBar(i).getLowPrice().doubleValue();
+			openPrices[i] = barSeries.getBar(i).getOpenPrice().doubleValue();
+			volumes[i] = barSeries.getBar(i).getVolume().doubleValue();
+		}
+
+		double[] forecastedClosePrice = arimaModel.forecast(closePrices, forecastSize);
+		double[] forecastedHighPrices = arimaModel.forecast(highPrices, forecastSize);
+		double[] forecastedLowPrices = arimaModel.forecast(lowPrices, forecastSize);
+		double[] forecastedOpenPrices = arimaModel.forecast(openPrices, forecastSize);
+		double[] forecastedVolumes = arimaModel.forecast(volumes, forecastSize);
+
+		for (int i = 0; i < forecastSize; i++) {
+			seriesWithForecast.addBar(barSeries.getLastBar().getEndTime().plusDays(i+1), forecastedOpenPrices[i], forecastedHighPrices[i], forecastedLowPrices[i], forecastedClosePrice[i], forecastedVolumes[i]);
+		}
+
+		return seriesWithForecast;
+	}
 
 	/**
 	 * Return TimesSeries bases on id in Security.

@@ -87,7 +87,7 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Test
 	public final void runSetBestStrategy() {
-		BarSeries barSeries = barSeriesService.getDataSet("ALCX-USDT", false);
+		BarSeries barSeries = barSeriesService.getDataSet("ALCX-USDT", false, false);
 
 		strategyPerformanceRepository.findAll().forEach(sp-> {
 			logger.info("test:sp="+ReflectionToStringBuilder.toString(sp));
@@ -112,7 +112,7 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 	public void runBot() {
 		String strategy = "SimpleMovingMomentumStrategy";
 		String securityName = "ALCX-USDT"; // ALCX-USDT
-		BarSeries barSeries = barSeriesService.getDataSet(securityName, false);
+		BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
 		strategyAnalysis.runBot(strategy,barSeries );
 	}
 

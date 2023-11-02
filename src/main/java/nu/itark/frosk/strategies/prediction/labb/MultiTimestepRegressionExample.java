@@ -145,6 +145,7 @@ public class MultiTimestepRegressionExample {
             org.nd4j.evaluation.regression.RegressionEvaluation evaluation = new RegressionEvaluation(1);
 
             //Run evaluation. This is on 25k reviews, so can take some time
+/*
             while(testDataIter.hasNext()){
                 DataSet t = testDataIter.next();
                 INDArray features = t.getFeatures();
@@ -153,6 +154,7 @@ public class MultiTimestepRegressionExample {
 
                 evaluation.evalTimeSeries(lables,predicted);
             }
+*/
 
            // System.out.println(evaluation.stats());
 
@@ -164,6 +166,7 @@ public class MultiTimestepRegressionExample {
          */
 
         //Init rrnTimeStemp with train data and predict test data
+
         while (trainDataIter.hasNext()) {
             DataSet t = trainDataIter.next();
             net.rnnTimeStep(t.getFeatures());
@@ -173,7 +176,31 @@ public class MultiTimestepRegressionExample {
 
         DataSet t = testDataIter.next();
         INDArray predicted  = net.rnnTimeStep(t.getFeatures());
+
+        DataSet tt = trainDataIter.next();
+        INDArray future  = net.rnnTimeStep(tt.getFeatures());
+
+        INDArray output = net.feedForward(tt.getFeatures()).get(0);
+
+        // Generate future
+/*
+        int nRows = (int)predicted.shape()[2];
+        double predictedLast = predicted.getDouble(nRows-1);
+        int steps = 5;
+        INDArray input = Nd4j.create(new double[]{predictedLast}); // Initialize with the last value in the series
+        System.out.println("Predicted values:");
+        for (int i = 0; i < steps; i++) {
+            INDArray future = net.rnnTimeStep(input);
+            System.out.println(predicted.getDouble(i));
+            input = future;
+        }
+*/
+
+
         normalizer.revertLabels(predicted);
+        normalizer.revertLabels(future);
+        normalizer.revertLabels(output);
+
 
         //Convert raw string data to IndArrays for plotting
         INDArray trainArray = createIndArrayFromStringList(rawStrings, 0, trainSize);
@@ -185,6 +212,27 @@ public class MultiTimestepRegressionExample {
         createSeries(c, trainArray, 0, "Train data");
         createSeries(c, testArray, trainSize, "Actual test data");
         createSeries(c, predicted, trainSize, "Predicted test data");
+        createSeries(c, future, trainSize, "Future data");
+
+        final float trainArrayLast = trainArray.getFloat(trainArray.length()-1);
+        System.out.println("trainArrayLast:"+trainArrayLast);
+        final float testArrayLast = testArray.getFloat(testArray.length()-1);
+        System.out.println("testArrayLast:"+testArrayLast);
+
+
+        int nRows = (int)predicted.shape()[2];
+        double predictedLast = predicted.getDouble(nRows-1);
+        System.out.println("predictedLast2:"+predictedLast);
+
+
+        int nRows2 = (int)future.shape()[2];
+        double futureLast = future.getDouble(nRows2-1);
+        System.out.println("futureLast:"+futureLast);
+
+        int nRows3 = (int)future.shape()[2];
+        double outputLast = output.getDouble(nRows3-1);
+        System.out.println("outputLast:"+futureLast);
+
 
         plotDataset(c);
 
@@ -214,11 +262,13 @@ public class MultiTimestepRegressionExample {
     private static XYSeriesCollection createSeries(XYSeriesCollection seriesCollection, INDArray data, int offset, String name) {
         int nRows = (int)data.shape()[2];
         XYSeries series = new XYSeries(name);
+        //System.out.println("**********name:"+name);
         for (int i = 0; i < nRows; i++) {
+            //System.out.println(data.getDouble(i));
             series.add(i + offset, data.getDouble(i));
         }
-
         seriesCollection.addSeries(series);
+
 
         return seriesCollection;
     }

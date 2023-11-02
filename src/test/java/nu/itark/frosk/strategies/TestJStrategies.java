@@ -73,7 +73,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 		List<ReturnObject> resultMap = new ArrayList<>();
 		String productId = "BTC-EUR";  //SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
 		addFormat();
-		BarSeries timeSeries = barSeriesService.getDataSet(productId, false);
+		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
 //		VWAPStrategy vwap = new VWAPStrategy(timeSeries);
 //		run(vwap.buildStrategy(),timeSeries);
@@ -173,7 +173,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void runOneSingleDataSet2() {
-	BarSeries series = barSeriesService.getDataSet("BTC-EUR", false);
+	BarSeries series = barSeriesService.getDataSet("BTC-EUR", false, false);
 	//Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
 	Strategy strategy = new ADXStrategy(series).buildStrategy();
 
@@ -294,7 +294,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void chooseBestForSecurity() {
-		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false);
+		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
 		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 
 		chooseBestForSecurity(new ReturnCriterion(), timeSeries, strategies);
@@ -333,7 +333,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void chooseBestForSecurity2() {
-		BarSeries barSeries = barSeriesService.getDataSet("BTC-EUR", false);
+		BarSeries barSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
 		List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
 		AnalysisCriterion profitCriterion = new ReturnCriterion();
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
@@ -460,7 +460,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	*/
 		String securityName = "BTC-EUR";
-		BarSeries series = barSeriesService.getDataSet(securityName, false);
+		BarSeries series = barSeriesService.getDataSet(securityName, false, false);
 		Strategy strategy = new ADXStrategy(series).buildStrategy();
 
 		costs.setTransactionCostModel(new LinearBorrowingCostModel(costs.getFeePerTrade()));

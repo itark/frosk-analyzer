@@ -30,7 +30,7 @@ public class TestJReportGenerators extends BaseIntegrationTest {
     BarSeriesManager seriesManager;
     @BeforeEach
     private void setup(){
-        series = barSeriesService.getDataSet("BTC-EUR", false);
+        series = barSeriesService.getDataSet("BTC-EUR", false, false);
         strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
         seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
     }
