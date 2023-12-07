@@ -4,6 +4,7 @@ import org.datavec.api.records.reader.SequenceRecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVSequenceRecordReader;
 import org.datavec.api.split.NumberedFileInputSplit;
 import org.deeplearning4j.datasets.datavec.SequenceRecordReaderDataSetIterator;
+import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.LSTM;
@@ -27,6 +28,7 @@ import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerMinMaxScaler;
 import org.nd4j.linalg.learning.config.Nesterovs;
+import org.nd4j.linalg.learning.config.RmsProp;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,17 +88,26 @@ public class SingleTimestepRegressionExample {
 
         // ----- Configure the network -----
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-                .seed(140)
+                .seed(14)
                 .weightInit(WeightInit.XAVIER)
                 .updater(new Nesterovs(0.0015, 0.9))
                 .list()
-                .layer(0, new LSTM.Builder().activation(Activation.TANH).nIn(1).nOut(10)
+                .layer(0, new LSTM.Builder()
+                        .activation(Activation.TANH)
+                        .nIn(1)
+                        .nOut(10)
                         .build())
                 .layer(1, new RnnOutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                        .activation(Activation.IDENTITY).nIn(10).nOut(1).build())
+                        .activation(Activation.IDENTITY)
+                        .nIn(10)
+                        .nOut(1)
+                        .build())
                 .build();
 
         MultiLayerNetwork net = new MultiLayerNetwork(conf);
+
+     //   MultiLayerNetwork net = new MultiLayerNetwork(getNet());
+
         net.init();
 
 
@@ -129,12 +140,15 @@ public class SingleTimestepRegressionExample {
         net.rnnTimeStep(trainData.getFeatures());
         INDArray predicted = net.rnnTimeStep(testData.getFeatures());
 
+   //     INDArray predictions = net.rnnTimeStep(predicted);
+
         System.out.println("net.score():"+net.score());;
 
         //Revert data back to original values for plotting
         normalizer.revert(trainData);
         normalizer.revert(testData);
         normalizer.revertLabels(predicted);
+   //     normalizer.revertLabels(predictions);
 
 
         //Create plot with out data
@@ -142,6 +156,7 @@ public class SingleTimestepRegressionExample {
         createSeries(c, trainData.getFeatures(), 0, "Train data");
         createSeries(c, testData.getFeatures(), 99, "Actual test data");
         createSeries(c, predicted, 99, "Predicted test data");
+      //  createSeries(c, predictions, 99, "Predictions");
 
         plotDataset(c);
 
@@ -192,6 +207,52 @@ public class SingleTimestepRegressionExample {
         RefineryUtilities.centerFrameOnScreen(f);
         f.setVisible(true);
     }
+
+
+
+    private static MultiLayerConfiguration getNet() {
+        int HIDDEN_LAYER_WIDTH = 10;
+        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+                .seed(140)
+              //  .miniBatch(false)
+              //  .updater(new RmsProp(0.001))
+                .updater(new Nesterovs(0.0015, 0.9))
+                .weightInit(WeightInit.XAVIER)
+                .list()
+                .layer(0, new LSTM.Builder()
+                        .nIn(1)
+                        .nOut(HIDDEN_LAYER_WIDTH)
+                        .activation(Activation.TANH)
+                        .build())
+/*
+                .layer(1, new LSTM.Builder()
+                        .nIn(HIDDEN_LAYER_WIDTH)
+                        .nOut(HIDDEN_LAYER_WIDTH)
+                        .activation(Activation.TANH)
+                        .build())
+                .layer(2, new LSTM.Builder()
+                        .nIn(HIDDEN_LAYER_WIDTH)
+                        .nOut(HIDDEN_LAYER_WIDTH)
+                        .activation(Activation.TANH)
+                        .build())
+*/
+                .layer(1, new RnnOutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                        .activation(Activation.IDENTITY)
+                        .nIn(HIDDEN_LAYER_WIDTH)
+                        .nOut(1)
+                        .build())
+                .build();
+
+
+        conf.setBackpropType(BackpropType.TruncatedBPTT);
+
+        return conf;
+
+
+    }
+
+
+
 
 }
 

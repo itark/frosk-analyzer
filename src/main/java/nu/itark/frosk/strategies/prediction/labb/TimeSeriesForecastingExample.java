@@ -8,7 +8,7 @@ import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.api.DataSet;
+import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerMinMaxScaler;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.NDArrayIndex;
@@ -49,15 +49,27 @@ public class TimeSeriesForecastingExample {
         INDArray timeSeries = Nd4j.create(stockPrices, new int[]{stockPrices.length, 1});
         INDArray features = timeSeries.get(NDArrayIndex.all(), NDArrayIndex.point(0));
 
+/*
+        List<org.nd4j.linalg.dataset.DataSet> trainingData = new ArrayList<>();
+        trainingData.add(new DataSet(timeSeries, features));
+*/
+
+
         // Normalize the data using Min-Max scaling
+
         NormalizerMinMaxScaler normalizer = new NormalizerMinMaxScaler();
         normalizer.fitLabel(true);
-        normalizer.fit((DataSet) features);
+        normalizer.fit((org.nd4j.linalg.dataset.api.DataSet) features);
         normalizer.transform(features);
+
 
         // Split the data into input features and labels
         INDArray input = features.get(NDArrayIndex.interval(0, stockPrices.length - 1), NDArrayIndex.all());
         INDArray labels = features.get(NDArrayIndex.interval(1, stockPrices.length), NDArrayIndex.all());
+
+        List<org.nd4j.linalg.dataset.DataSet> trainingData = new ArrayList<>();
+        trainingData.add(new DataSet(input, labels));
+
 
         // Define the model configuration
         int numInputs = 1;

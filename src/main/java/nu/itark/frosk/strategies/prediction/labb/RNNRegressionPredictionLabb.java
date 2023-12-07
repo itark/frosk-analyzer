@@ -10,6 +10,7 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.LSTM;
 import org.deeplearning4j.nn.conf.layers.RnnOutputLayer;
+import org.deeplearning4j.nn.graph.vertex.impl.rnn.LastTimeStepVertex;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.jfree.chart.ChartFactory;
@@ -42,6 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.LinkedList;
 import java.util.List;
 
 
@@ -71,16 +73,16 @@ public class RNNRegressionPredictionLabb {
     public static void main(String[] args) throws Exception {
 
         //Set number of examples for training, testing, and time steps
-        int trainSize = 10;
-        int testSize = 2;
-        int numberOfTimesteps = 2;
+        int trainSize = 20;
+        int testSize = 8;
+        int numberOfTimesteps = 1;
 
         //Prepare multi time step data, see method comments for more info
         List<String> rawStrings = prepareTrainAndTest(trainSize, testSize, numberOfTimesteps);
 
         //Make sure miniBatchSize is divisable by trainSize and testSize,
         //as rnnTimeStep will not accept different sized examples
-        int miniBatchSize = 2;
+        int miniBatchSize = 4;
 
         // ----- Load the training data -----
         SequenceRecordReader trainFeatures = new CSVSequenceRecordReader();
@@ -130,6 +132,7 @@ public class RNNRegressionPredictionLabb {
         for (int i = 0; i < nEpochs; i++) {
             net.fit(trainDataIter);
             trainDataIter.reset();
+/*
             log.info("Epoch " + i + " complete. Time series evaluation:");
             //Run regression evaluation on our single column testDataInput
             RegressionEvaluation evaluation = new RegressionEvaluation(1);
@@ -142,6 +145,7 @@ public class RNNRegressionPredictionLabb {
                 evaluation.evalTimeSeries(lables,predicted);
             }
             log.info(evaluation.stats());
+*/
             testDataIter.reset();
         }
 
@@ -160,21 +164,29 @@ public class RNNRegressionPredictionLabb {
         DataSet testDataDataSet = testDataIter.next();
         INDArray predictionsTestdata  = net.rnnTimeStep(testDataDataSet.getFeatures());
 
-        INDArray testDataInput = testDataDataSet.getFeatures().get(NDArrayIndex.interval(1,2), NDArrayIndex.all());
-        net.rnnClearPreviousState();
-        INDArray predictedOutput  = net.rnnTimeStep(testDataInput);
-        normalizer.revertLabels(predictedOutput);
+/*
+        float[] samples = sampleFromNetwork(testDataDataSet.getFeatures(), numberOfTimesteps, net);
+        System.out.println("samples:"+samples.length);
+        for (int i = 0; i < samples.length; i++) {
+            System.out.println("samples:"+samples[i]);
+        }
+*/
 
-        normalizer.revertLabels(testDataInput);
-        log.info("testDataInput:"+testDataInput);
+      //  INDArray preOutput = Nd4j.argMax(predictionsTestdata, 2);
 
-        double testDataLastPrice = testDataInput.getDouble(testDataInput.length() - 1);
-        log.info("testDataLastPrice:"+testDataLastPrice);
-        double predictedPrice2 = predictedOutput.getDouble(predictedOutput.length() - 1);
-        log.info("predictedPrice2:"+predictedPrice2);
+        INDArray preOutput = predictionsTestdata.tensorAlongDimension((int) predictionsTestdata.size(2) - 1, 1, 0);    //Gets the last time step output
+
+
+
+        System.out.println("shape: "+Nd4j.shape(predictionsTestdata));;
 
         normalizer.revertLabels(predictionsTestdata);
 
+
+        net.rnnClearPreviousState();
+        INDArray output = net.rnnTimeStep(preOutput);
+
+        normalizer.revertLabels(output);
         RegressionEvaluation evaluation = net.evaluateRegression(testDataIter);
         testDataIter.reset();
         log.info(evaluation.stats());
@@ -189,8 +201,8 @@ public class RNNRegressionPredictionLabb {
         createSeries(c, trainArray, 0, "Train data");
         createSeries(c, testArray, trainSize, "Actual test data");
         createSeries(c, predictionsTestdata, trainSize, "Predicted test data");
-        createSeries(c, predictedOutput, trainSize + testSize, "Predicted output data");
-       // createSeries(c, allDataArray, 0, "Raw data");
+        createSeries2(c, output, trainSize , "Predicted output data");
+   //     createSeries(c, allDataArray, 0, "Raw data");
 
 
         plotDataset(c);
@@ -232,6 +244,18 @@ public class RNNRegressionPredictionLabb {
         return seriesCollection;
     }
 
+    private static XYSeriesCollection createSeries2(XYSeriesCollection seriesCollection, INDArray data, int offset, String name) {
+        int nRows = (int)data.shape()[0];
+        XYSeries series = new XYSeries(name);
+        for (int i = 0; i < nRows; i++) {
+            series.add(i + offset, data.getDouble(i));
+        }
+
+        seriesCollection.addSeries(series);
+
+        return seriesCollection;
+    }
+
     private static XYSeriesCollection createSeries(XYSeriesCollection seriesCollection, List<String> rawStrings, int offset, String name) {
         XYSeries series = new XYSeries(name);
         for (int i = 0; i < rawStrings.size(); i++) {
@@ -240,7 +264,6 @@ public class RNNRegressionPredictionLabb {
         seriesCollection.addSeries(series);
         return seriesCollection;
     }
-
 
     /**
      * Generate an xy plot of the datasets provided.
@@ -301,7 +324,8 @@ public class RNNRegressionPredictionLabb {
             Path labelsPath = Paths.get(labelsDirTrain + "/train_" + i + ".csv");
             int j;
             for (j = 0; j < numberOfTimesteps; j++) {
-                Files.write(featuresPath,rawStrings.get(i+j).concat(System.lineSeparator()).getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+                Path path = Files.write(featuresPath,rawStrings.get(i+j).concat(System.lineSeparator()).getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+                System.out.println("Path: "+path);
             }
             Files.write(labelsPath,rawStrings.get(i+j).concat(System.lineSeparator()).getBytes(),StandardOpenOption.APPEND, StandardOpenOption.CREATE);
         }
@@ -318,4 +342,54 @@ public class RNNRegressionPredictionLabb {
 
         return rawStrings;
     }
+
+    public static float[] sampleFromNetwork(INDArray priori, int numTimeSteps, MultiLayerNetwork net){
+        //  int inputCount = this.getNumOfInputs();
+        int inputCount = 1;
+        float[] samples = new float[numTimeSteps];
+
+        System.out.println("priori.size(1)"+priori.size(1));
+
+/*
+        if(priori.size(1) != inputCount) {
+            String format = String.format("the priori should have the same number of inputs [%s] as the trained network [%s]", priori.size(1), inputCount);
+            throw new RuntimeException(format);
+        }
+        if(priori.size(2) < inputCount) {
+            String format = String.format("the priori should have enough timesteps [%s] to prime the new inputs [%s]", priori.size(2), inputCount);
+            throw new RuntimeException(format);
+        }
+*/
+
+        net.rnnClearPreviousState();
+        INDArray output = net.rnnTimeStep(priori);
+
+        output = output.ravel();
+        // Store the output for use in the inputs
+        LinkedList<Float> prevOutput = new LinkedList<>();
+        for (int i = 0; i < output.length(); i++) {
+            prevOutput.add(output.getFloat(0, i));
+        }
+
+        for( int i=0; i<numTimeSteps; ++i ){
+            samples[i] = (prevOutput.peekLast());
+            //Set up next input (single time step) by sampling from previous output
+            INDArray nextInput = Nd4j.zeros(1,inputCount);
+
+            float[] newInputs = new float[inputCount];
+            newInputs[inputCount-1] = prevOutput.peekLast();
+            for( int j=0; j<newInputs.length-1; j++ ) {
+                newInputs[j] = prevOutput.get(prevOutput.size()-inputCount-j);
+            }
+
+            nextInput.assign(Nd4j.create(newInputs)); //Prepare next time step input
+
+            net.rnnClearPreviousState();
+            output = net.rnnTimeStep(nextInput); //Do one time step of forward pass
+            // Add the output to the end of the previous output queue
+            prevOutput.addLast(output.ravel().getFloat(0, output.length()-1));
+        }
+        return samples;
+    }
+
 }

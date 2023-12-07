@@ -63,10 +63,7 @@ public abstract  class AbstractStrategy {
         }
 
         AugmentedDickeyFuller adfClosePrices = new AugmentedDickeyFuller(closePrices);
-
-      //  log.info("adfClosePrices.isNeedsDiff()="+adfClosePrices.isNeedsDiff());
-
-        return adfClosePrices.isNeedsDiff();
+        return !adfClosePrices.isNeedsDiff();
 
     }
 
