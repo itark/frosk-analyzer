@@ -16,6 +16,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -92,8 +94,8 @@ public class DataSetHelper {
 				//logger.info("Security="+security.getName()+ " exist in database:" + database);
 				checkIfAddToDataset(datasetName, dataset, security);
 			} else {
-				//logger.info("Security name::"+product.getId()+" to be inserted::");
-				security = securityRepository.saveAndFlush(new Security(product.getProduct_id(), product.getBase_name() + " " + product.getQuote_name(), database, product.getQuote_currency_id()));
+				//logger.info("Product_id::"+product.getProduct_id()+" to be inserted::");
+				security = securityRepository.save(new Security(product.getProduct_id(), product.getBase_name() + " " + product.getQuote_name(), database, product.getQuote_currency_id()));
 				checkIfAddToDataset(datasetName, dataset, security);
 			}
 		}
@@ -177,19 +179,14 @@ public class DataSetHelper {
 		in.close();
 
 	}
-
 	private void checkIfAddToDataset(String datasetName, DataSet dataset, Security security) {
-		long match = security.getDatasets().stream()
-		   .filter(ds -> { 
-			   return ds.getName().equals(datasetName);
-			})
-		   .count();
-
-		if (match == 0) {
-			logger.info("add security=" + security.getName() + ", to dataset="+ dataset.getName());
+		boolean match = security.getDatasets()
+				.stream()
+				.anyMatch(ds -> ds.getName().equals(datasetName));
+		if (!match) {
+			logger.info("adding security=" + security.getName() + ", to dataset="+ dataset.getName());
 			dataset.getSecurities().add(security);
 		}
 	}
 
-	
 }

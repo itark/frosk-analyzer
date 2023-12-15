@@ -27,20 +27,18 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
+import org.ta4j.core.analysis.CashFlow;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.volume.MVWAPIndicator;
 import org.ta4j.core.indicators.volume.VWAPIndicator;
-import org.ta4j.core.rules.OverIndicatorRule;
-import org.ta4j.core.rules.StopGainRule;
-import org.ta4j.core.rules.StopLossRule;
-import org.ta4j.core.rules.UnderIndicatorRule;
+import org.ta4j.core.rules.*;
 
 import java.util.List;
 
 
 public class VWAPStrategy extends AbstractStrategy implements IIndicatorValue {
     BarSeries series = null;
-    EMAIndicator shortEma, longEma = null;
     VWAPIndicator vwap;
 
     public VWAPStrategy(BarSeries series) {
@@ -56,8 +54,16 @@ public class VWAPStrategy extends AbstractStrategy implements IIndicatorValue {
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         vwap = new VWAPIndicator(series,1);
+        MVWAPIndicator mvwap = new MVWAPIndicator(vwap, 10);
+        setIndicatorValues(vwap, "shortEma");
+        setIndicatorValues(mvwap, "longEma");
         // Entry rule
-        Rule entryRule = new OverIndicatorRule(closePrice,vwap ) ;
+        //Rule entryRule = new OverIndicatorRule(closePrice,vwap ) ;
+        //On trend
+       // Rule entryRule = new OverIndicatorRule(vwap,mvwap ) ;
+        Rule entryRule = new CrossedUpIndicatorRule(vwap,mvwap );
+        //On ranging
+        //Rule entryRule = TDB;
 
         Rule exitRule;
         if (!inherentExitRule) {

@@ -60,7 +60,6 @@ public class DataController {
 
     @RequestMapping(path = "/topFeaturedStrategies", method = RequestMethod.GET)
     public List<FeaturedStrategyDTO> getTopFeaturedStrategies() {
-        //return securityMetaDataManager.getTop10FeaturedStrategies();
         return securityMetaDataManager.getTopFeaturedStrategies();
     }
 
@@ -121,7 +120,7 @@ public class DataController {
         SecurityDTO frosk = null;
         List<DailyPriceDTO> dpList = new ArrayList<DailyPriceDTO>();
 
-        BarSeries timeSeries = barSeriesService.getDataSet(security, false, true);
+        BarSeries timeSeries = barSeriesService.getDataSet(security, false, false);
         for (int i = 0; i < timeSeries.getBarCount(); i++) {
             Bar bar = timeSeries.getBar(i);
             dailyPrices = new DailyPriceDTO(bar);

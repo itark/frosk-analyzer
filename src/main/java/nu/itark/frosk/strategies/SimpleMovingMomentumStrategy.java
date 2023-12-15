@@ -63,22 +63,9 @@ public class SimpleMovingMomentumStrategy extends AbstractStrategy implements II
         setIndicatorValues(shortEma, "shortEma");
         setIndicatorValues(longEma, "longEma");
 
-        //System.out.println("series:"+series.getName()+" stationary="+stationary);
-
-
-/*
-        ParabolicSarIndicator pSar = new ParabolicSarIndicator(series);
-        IsRisingRule pSarIsRisingRule = new IsRisingRule(pSar, 1);
-        IsFallingRule pSarIsFallingRule = new IsFallingRule(pSar, 1);
-*/
-/*
-        Rule entryRuleX = new OverIndicatorRule(shortEma, longEma)
-                .and(pSarIsRisingRule);
-*/
-
         IsRisingRule openPriceIsRisingRule = new IsRisingRule(closePrice, 2);
-        Rule entryRule = new CrossedUpIndicatorRule(shortEma, longEma);
-                       // .and(openPriceIsRisingRule);
+        Rule entryRule = new CrossedUpIndicatorRule(shortEma, longEma)
+                        .and(openPriceIsRisingRule);
 
         Rule exitRule;
         ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series, 5, 3);

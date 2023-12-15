@@ -39,6 +39,7 @@ public class GlobalExtremaStrategy extends AbstractStrategy implements IIndicato
 
     // We assume that there were at least one trade every 5 minutes during the whole week
     private static final int NB_TICKS_PER_WEEK = 12 * 24 * 7;
+    private static final int TICKS_PER_WEEK = 24 * 7;
 
 	BarSeries series = null;
    
@@ -60,10 +61,10 @@ public class GlobalExtremaStrategy extends AbstractStrategy implements IIndicato
 
         // Getting the max price over the past week
         HighPriceIndicator maxPrices = new HighPriceIndicator(series);
-        HighestValueIndicator weekMaxPrice = new HighestValueIndicator(maxPrices, NB_TICKS_PER_WEEK);
+        HighestValueIndicator weekMaxPrice = new HighestValueIndicator(maxPrices, TICKS_PER_WEEK);
         // Getting the min price over the past week
         LowPriceIndicator minPrices = new LowPriceIndicator(series);
-        LowestValueIndicator weekMinPrice = new LowestValueIndicator(minPrices, NB_TICKS_PER_WEEK);
+        LowestValueIndicator weekMinPrice = new LowestValueIndicator(minPrices, TICKS_PER_WEEK);
 
         // Going long if the close price goes below the min price
         TransformIndicator downWeek = TransformIndicator.plus(weekMinPrice, 1.004);

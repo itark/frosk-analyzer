@@ -27,8 +27,9 @@ public class ArimaModel {
         int p = 3;
         int d = 0;
         int q = 3;
-        int P = 1;
-        int D = 1;
+
+        int P = 0;
+        int D = 0;
         int Q = 0;
         int m = 0;
         int forecastSize = 1;

@@ -13,4 +13,5 @@ public class OpenFeaturedStrategyDTO {
     private String name;
     private BigDecimal totalProfit;
     private String latestTrade;
+    private BigDecimal close;
 }

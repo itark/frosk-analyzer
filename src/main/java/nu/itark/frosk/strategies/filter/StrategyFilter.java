@@ -56,6 +56,7 @@ public class StrategyFilter {
                 .securityName(fs.getSecurityName())
                 .latestTrade(DateFormatUtils.format(fs.getLatestTrade(), "yyyy-MM-dd"))
                 .totalProfit(securityMetaDataManager.getBarPercent(fs.getSecurityName(), nrOfBars.intValue()))
+                .close(securityMetaDataManager.getLatestClose(fs.getSecurityName()))
                 .build();
     }
 

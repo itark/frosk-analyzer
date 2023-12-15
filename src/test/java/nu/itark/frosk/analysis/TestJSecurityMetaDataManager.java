@@ -29,6 +29,14 @@ public class TestJSecurityMetaDataManager extends BaseIntegrationTest {
 
     }
 
+    @Test
+    public void testLastestClose() {
+
+        BigDecimal closePrice = securityMetaDataManager.getLatestClose("BTC-EUR");
+        System.out.println("closePrice="+closePrice);
+
+    }
+
 
 
 }

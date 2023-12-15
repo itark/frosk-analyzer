@@ -41,7 +41,7 @@ public class Security {
 	@Column(name = "active", columnDefinition="BOOLEAN DEFAULT true")
 	private boolean active = true;
 	
-    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "securities")
+    @ManyToMany(fetch = FetchType.EAGER, mappedBy = "securities")
 	private List<DataSet> datasets = new ArrayList<>();
 
 	protected Security() {

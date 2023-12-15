@@ -29,8 +29,10 @@ public class StrategiesMap {
 		EngulfingStrategy engStrat = new EngulfingStrategy(series);
 		strategies.put(engStrat.buildStrategy(), EngulfingStrategy.class.getSimpleName());
 
+/*   Oklar
 		GlobalExtremaStrategy geStrat = new GlobalExtremaStrategy(series);
 		strategies.put(geStrat.buildStrategy(), GlobalExtremaStrategy.class.getSimpleName());
+*/
 
 		HaramiStrategy haramisStrat = new HaramiStrategy(series);
 		strategies.put(haramisStrat.buildStrategy(), HaramiStrategy.class.getSimpleName());
@@ -63,7 +65,7 @@ public class StrategiesMap {
 		strategies.add(CCICorrectionStrategy.class.getSimpleName());
 		strategies.add(ConvergenceDivergenceStrategy.class.getSimpleName());
 		strategies.add(EngulfingStrategy.class.getSimpleName());
-		strategies.add(GlobalExtremaStrategy.class.getSimpleName());
+//		strategies.add(GlobalExtremaStrategy.class.getSimpleName());
 		strategies.add(HaramiStrategy.class.getSimpleName());
 		strategies.add(MovingMomentumStrategy.class.getSimpleName());
 		strategies.add(RSI2Strategy.class.getSimpleName());
@@ -81,7 +83,7 @@ public class StrategiesMap {
 		strategies.add(new CCICorrectionStrategy(series).buildStrategy());
 		strategies.add(new ConvergenceDivergenceStrategy(series).buildStrategy());
 		strategies.add(new EngulfingStrategy(series).buildStrategy());
-		strategies.add(new GlobalExtremaStrategy(series).buildStrategy());
+//		strategies.add(new GlobalExtremaStrategy(series).buildStrategy());
 		strategies.add(new HaramiStrategy(series).buildStrategy());
 		strategies.add(new MovingMomentumStrategy(series).buildStrategy());
 		strategies.add(new RSI2Strategy(series).buildStrategy());

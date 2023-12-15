@@ -2,11 +2,11 @@ package nu.itark.frosk.analysis;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.dataset.Database;
-import nu.itark.frosk.model.DataSet;
-import nu.itark.frosk.model.FeaturedStrategy;
-import nu.itark.frosk.model.StrategyTrade;
+import nu.itark.frosk.model.*;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.SecurityPriceRepository;
+import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +49,12 @@ public class SecurityMetaDataManager {
 
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
+
+    @Autowired
+    SecurityRepository securityRepository;
+
+    @Autowired
+    SecurityPriceRepository securityPriceRepository;
 
     /**
      * Gets all featured strategies, hence per all strategies and all securities.
@@ -124,6 +130,12 @@ public class SecurityMetaDataManager {
         } else {
             return BigDecimal.valueOf(pnl.doubleValue()).round(new MathContext(2));
         }
+    }
+
+    public BigDecimal getLatestClose(String securityName) {
+        final Security security = securityRepository.findByName(securityName);
+        final SecurityPrice securityPrice = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
+        return securityPrice.getClose();
     }
 
     public FeaturedStrategyDTO getDTO(FeaturedStrategy fs, boolean includeIndicatorValues) {

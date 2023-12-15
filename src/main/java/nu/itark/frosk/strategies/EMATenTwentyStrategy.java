@@ -55,7 +55,8 @@ public class EMATenTwentyStrategy extends AbstractStrategy implements IIndicator
         longEma = new EMAIndicator(closePrice, 20);
         setIndicatorValues(shortEma, "shortEma");
         setIndicatorValues(longEma, "longEma");
-        Rule entryRule = new OverIndicatorRule(shortEma, longEma);
+       // Rule entryRule = new OverIndicatorRule(shortEma, longEma);
+        Rule entryRule = new CrossedUpIndicatorRule(shortEma,longEma );
         Rule exitRule;
         if (!inherentExitRule) {
             exitRule = new UnderIndicatorRule(shortEma, longEma);

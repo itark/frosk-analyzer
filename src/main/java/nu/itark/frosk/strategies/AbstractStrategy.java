@@ -39,8 +39,8 @@ public abstract  class AbstractStrategy {
         IsFallingRule pSarIsFallingRule = new IsFallingRule(pSar, 1);
 
         exitRule = pSarIsFallingRule
-                .or(new StopLossRule(closePrice, 4))
-                .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(4)));
+                .or(new StopLossRule(closePrice, 2))
+                .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
 
         return exitRule;
     }
