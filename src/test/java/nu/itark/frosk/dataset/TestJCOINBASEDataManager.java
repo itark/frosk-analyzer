@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 @ExtendWith(SpringExtension.class)
-//@Import({IntegrationTestConfiguration.class})
 @SpringBootTest
 @Slf4j
 public class TestJCOINBASEDataManager extends BaseIntegrationTest {
@@ -23,7 +22,7 @@ public class TestJCOINBASEDataManager extends BaseIntegrationTest {
 
     @Test
     public void syncOne(){
-        coinbaseDataManager.syncronize("WLUNA-USDT");
+        coinbaseDataManager.syncronize("BTC-EUR");
     }  //WLUNA-USDT
 
     @Test

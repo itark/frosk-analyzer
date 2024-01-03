@@ -1,8 +1,11 @@
 package nu.itark.frosk.crypto.coinbase.api.products;
 
+import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
+import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import nu.itark.frosk.crypto.coinbase.model.Candles;
 import nu.itark.frosk.crypto.coinbase.model.Granularity;
+import nu.itark.frosk.crypto.coinbase.model.Product;
 import nu.itark.frosk.crypto.coinbase.model.Products;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -15,28 +18,30 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest
-public class TestJProductService extends BaseIntegrationTest {
+@SpringBootTest(classes = {FroskApplication.class})
+public class TestJProductService {
 
     @Autowired
     ProductService productService;
 
-    @Test
-    public final void testProductRaw() {
-        String product = productService.getProductRaw("BTC-EUR");
-        System.out.println("product:"+product);
-    }
+    @Autowired
+    ProductProxy productProxy;
 
     @Test
-    public final void testProductsRaw() {
-        String products = productService.getProductsRaw();
-        System.out.println("products:"+products);
+    public final void testProductProxyRaw() {
+        Product product = productProxy.getProduct("BTC-EUR");
+        System.out.println("product:"+product);
     }
 
     @Test
     public final void testProducts() {
         Products products = productService.getProducts();
+        System.out.println("products:"+products);
+    }
+
+    @Test
+    public final void testProductsProxy() {
+        Products products = productProxy.getProducts();
         System.out.println("products:"+ReflectionToStringBuilder.toString(products));
     }
 

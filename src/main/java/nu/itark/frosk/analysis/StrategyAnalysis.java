@@ -9,11 +9,10 @@ import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.StrategyPerformanceRepository;
-import nu.itark.frosk.repo.TradesRepository;
+import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.*;
 import nu.itark.frosk.util.DateTimeManager;
-import nu.itark.frosk.util.FroskUtil;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +20,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
 import org.ta4j.core.criteria.*;
-import org.ta4j.core.criteria.pnl.AverageProfitCriterion;
 import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.criteria.pnl.ReturnCriterion;
 import org.ta4j.core.num.DoubleNum;
@@ -55,7 +53,7 @@ public class StrategyAnalysis {
 	FeaturedStrategyRepository featuredStrategyRepository;
 	
 	@Autowired
-	TradesRepository tradesRepository;
+    StrategyTradeRepository tradesRepository;
 	
 	@Autowired
 	StrategyIndicatorValueRepository indicatorValueRepo;
@@ -66,8 +64,6 @@ public class StrategyAnalysis {
 	@Autowired
 	TradingBot tradingBot;
 
-	@Autowired
-	Costs costs;
 	
 	/**
 	 * This is the thing !!
@@ -102,15 +98,15 @@ public class StrategyAnalysis {
 			}
 		} 
 		else if (Objects.nonNull(strategy) && security_id != null) {
-			List<BarSeries> BarSeriesList = new ArrayList<BarSeries>();
+			List<BarSeries> barSeriesList = new ArrayList<BarSeries>();
 			BarSeries BarSeries = barSeriesService.getDataSet(security_id);
 			//Sanity check
 			if (Objects.isNull(BarSeries) || BarSeries.isEmpty()) {
 				throw new RuntimeException("BarSeries is null or empty. Download security prices.");
 			}
-			BarSeriesList.add(BarSeries);
+			barSeriesList.add(BarSeries);
 			try {
-				runStrategy(strategy, BarSeriesList);
+				runStrategy(strategy, barSeriesList);
 			} catch (Exception e) {
 				log.error("Error runStrategy on strategy="+ strategy+ " and security_id="+security_id);
 				throw e;
@@ -122,13 +118,17 @@ public class StrategyAnalysis {
 		
 	}
 	public void runChooseBestStrategy() {
+
+		log.info("WTF SfeePerTradePercent;"+feePerTradePercent);
+
 		for (BarSeries series : barSeriesService.getDataSet()) {
 			setBestStrategy(series);
 		}
 	}
 
-	public void runBot(String strategy, BarSeries barSeries) {
+	public void runBot(String strategy, Long security_id) {
 		Strategy strategyToRun = null;
+		BarSeries barSeries = barSeriesService.getDataSet(security_id);
 		strategyToRun = getStrategyToRun(strategy, barSeries);
 		tradingBot.run(strategyToRun, barSeries);
 	}
@@ -142,8 +142,8 @@ public class StrategyAnalysis {
 		for (BarSeries series : barSeriesList) {
 			log.info("runStrategy("+strategy+", "+series.getName()+")");
 			strategyToRun = getStrategyToRun(strategy, series);
-			BarSeriesManager seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(),  costs.getBorrowingCostModel());
-			TradingRecord tradingRecord = seriesManager.run(strategyToRun);
+			BarSeriesManager seriesManager = new BarSeriesManager(series);
+			TradingRecord tradingRecord = seriesManager.run(strategyToRun, Trade.TradeType.BUY, series.numOf(0.1));
 			if (series.getBarData().isEmpty()){
 				log.warn("Something fishy on {}. BarData isEmpty, continues...", series.getName());
 				continue;
@@ -261,7 +261,7 @@ public class StrategyAnalysis {
 				indicatorValueRepo.save(iv);
 			});
 
-			log.info("EXIT runStrategy("+strategy+", "+series.getName()+")");
+			//log.info("EXIT runStrategy("+strategy+", "+series.getName()+")");
 
 		}
 	}

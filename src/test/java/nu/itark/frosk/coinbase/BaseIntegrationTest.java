@@ -17,7 +17,6 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {
         FroskApplication.class,
         H2TestProfileJPAConfig.class})
-//@ActiveProfiles("test")
 public abstract class BaseIntegrationTest {
 
     @Autowired

@@ -1,7 +1,6 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.FroskApplication;
-import nu.itark.frosk.analysis.Costs;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
@@ -9,14 +8,12 @@ import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
-import nu.itark.frosk.util.FroskUtil;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
-import org.ta4j.core.analysis.cost.LinearBorrowingCostModel;
 import org.ta4j.core.criteria.*;
 import org.ta4j.core.criteria.pnl.LossCriterion;
 import org.ta4j.core.criteria.pnl.ProfitCriterion;
@@ -41,9 +38,6 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Autowired
 	BarSeriesService barSeriesService;
-
-	@Autowired
-	Costs costs;
 
 	@Autowired
 	StrategyAnalysis strategyAnalysis;
@@ -177,9 +171,10 @@ public class TestJStrategies extends BaseIntegrationTest {
 	//Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
 	Strategy strategy = new ADXStrategy(series).buildStrategy();
 
-	BarSeriesManager seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+	BarSeriesManager seriesManager = new BarSeriesManager(series);
 	TradingRecord tradingRecord = seriesManager.run(strategy);
 
+/*
 	for (Position position : tradingRecord.getPositions()) {
 		Bar barEntry = series.getBar(position.getEntry().getIndex());
 		System.out.println(series.getName()+"::barEntry="+barEntry.getEndTime());
@@ -190,11 +185,10 @@ public class TestJStrategies extends BaseIntegrationTest {
 		System.out.println("profit(position): " + position.getProfit());
 		System.out.println("Gross return(position): " + position.getGrossReturn());
 		System.out.println("Gross profit(position): " + position.getGrossProfit());
-
 		Num pnl = barExit.getClosePrice().dividedBy(barEntry.getClosePrice()).multipliedBy(series.numOf(100));
 		System.out.println("P/L: " + pnl.doubleValue());
-
 	}
+*/
 
 	// Total return Xtra
 	ProfitCriterion totalprofit = new ProfitCriterion();
@@ -278,7 +272,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	}
 
 	ReturnObject run(Strategy strategy, BarSeries series) {
-		BarSeriesManager seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+		BarSeriesManager seriesManager = new BarSeriesManager(series);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		List<Position> trades = tradingRecord.getPositions();
 		ReturnObject returnObject = new ReturnObject(strategy,seriesManager, tradingRecord);
@@ -318,7 +312,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 
 	private Strategy chooseBestForSecurity(AnalysisCriterion criterion,BarSeries timeSeries, Map<Strategy, String> strategies) {
-		BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+		BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries);
 		for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
 			Strategy strategy = entry.getKey();
 			String name = entry.getValue();
@@ -463,19 +457,19 @@ public class TestJStrategies extends BaseIntegrationTest {
 		BarSeries series = barSeriesService.getDataSet(securityName, false, false);
 		Strategy strategy = new ADXStrategy(series).buildStrategy();
 
-		costs.setTransactionCostModel(new LinearBorrowingCostModel(costs.getFeePerTrade()));
-		BarSeriesManager seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+
+		BarSeriesManager seriesManager = new BarSeriesManager(series);
 		TradingRecord tradingRecord = seriesManager.run(strategy);
 		//1 . StrategyAnalysis
 		System.out.println("********************strategyAnalysis.run***********************");
 		Long sec_id = barSeriesService.getSecurityId(securityName);
 		strategyAnalysis.run(strategy.getName(), sec_id);
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategy.getName(), series.getName());
-		fs.getTrades().stream()
+		fs.getStrategyTrades().stream()
 				.sorted(Comparator.comparing(StrategyTrade::getDate))
 				.peek(t-> System.out.println("date="+t.getDate() + ",type="+t.getType() + ",price="+t.getPrice() + ",grossProfit="+t.getGrossProfit() + ",pnl="+t.getPnl()))
 				.collect(Collectors.toSet());
-		Double averageProfit = fs.getTrades().stream()
+		Double averageProfit = fs.getStrategyTrades().stream()
 				.filter(p-> Objects.nonNull(p.getPnl()))
 				.map(p -> p.getPnl().doubleValue())
 				.collect(Collectors.averagingDouble(Double::doubleValue));
@@ -523,7 +517,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 		strategyAnalysis.run(ADXStrategy.class.getSimpleName(), sec_id);
 		//Verify
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(ADXStrategy.class.getSimpleName(), "BTC-EUR");
-		fs.getTrades().stream()
+		fs.getStrategyTrades().stream()
 				.sorted(Comparator.comparing(StrategyTrade::getDate))
 				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t)))
 				.collect(Collectors.toSet());

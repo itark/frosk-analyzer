@@ -45,7 +45,7 @@ public class BarSeriesService  {
 	/**
 	 * Retrive from {@linkplain SecurityPriceRepository}
 	 * 
-	 * @return List<BarSeries> for alla securities in database
+	 * @return List<BarSeries> for alla securities in database. Filter on 'EUR'
 	 */
 	public List<BarSeries> getDataSet() {
 		//Iterable<Security> spList = securityRepository.findAll();

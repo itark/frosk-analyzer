@@ -3,7 +3,6 @@ package nu.itark.frosk.analysis;
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.model.FeaturedStrategy;
-import nu.itark.frosk.model.StrategyPerformance;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyPerformanceRepository;
@@ -20,7 +19,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.BarSeries;
 
 import java.util.Comparator;
-import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -46,10 +44,19 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 		strategyAnalysis.run(ADXStrategy.class.getSimpleName(), sec_id);
 		//Verify
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(ADXStrategy.class.getSimpleName(), "BTC-EUR");
-		fs.getTrades().stream()
+		fs.getStrategyTrades().stream()
 				.sorted(Comparator.comparing(StrategyTrade::getDate))
-				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t)))
+				//.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t, ToStringStyle.MULTI_LINE_STYLE)))
+				.peek(t-> {
+					if (t.getType().equals("BUY")) {
+						System.out.println("Entered on " + t.getPrice());
+					} else {
+						System.out.println("Exit on " + t.getPrice() + ", pnl="+t.getPnl());
+					}
+				})
 				.collect(Collectors.toSet());
+
+		strategyAnalysis.runBot(ADXStrategy.class.getSimpleName(), sec_id);
 	}
 
 	@Test
@@ -59,7 +66,7 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 		//Verify
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(SimpleMovingMomentumStrategy.class.getSimpleName(), "BTC-EUR");
 
-		fs.getTrades().forEach(t-> {
+		fs.getStrategyTrades().forEach(t-> {
 			System.out.println(ReflectionToStringBuilder.toString(t));
 		});
 
@@ -111,9 +118,9 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 	@Test
 	public void runBot() {
 		String strategy = "SimpleMovingMomentumStrategy";
-		String securityName = "ALCX-USDT"; // ALCX-USDT
-		BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
-		strategyAnalysis.runBot(strategy,barSeries );
+		String securityName = "BTC-EUR";
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		strategyAnalysis.runBot(strategy,sec_id );
 	}
 
 

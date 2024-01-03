@@ -41,6 +41,9 @@ public class SecurityMetaDataManager {
     @Value("${frosk.criteria.numberOfTrades}")
     private Integer numberOfTrades;
 
+    @Value("${frosk.criteria.open}")
+    private Boolean isOpen;
+
     @Autowired
     BarSeriesService barSeriesService;
 
@@ -79,7 +82,7 @@ public class SecurityMetaDataManager {
 
     public List<FeaturedStrategyDTO> getTopFeaturedStrategies() {
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
-        featuredStrategyRepository.findTopStrategies(profitableRatio, numberOfTrades, sqn, expectency ).forEach(fs->{
+        featuredStrategyRepository.findTopStrategies(profitableRatio, numberOfTrades, sqn, expectency, isOpen ).forEach(fs->{
             returnList.add(getDTO(fs, false));
         });
         return returnList;
@@ -176,7 +179,7 @@ public class SecurityMetaDataManager {
             dto.setIndicatorValues(indicatorValues);
         }
 
-        dto.setTrades(convert(fs.getTrades()));
+        dto.setTrades(convert(fs.getStrategyTrades()));
 
         return dto;
     }

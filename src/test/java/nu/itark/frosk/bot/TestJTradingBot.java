@@ -20,16 +20,26 @@ public class TestJTradingBot   extends BaseIntegrationTest {
     @Autowired
     TradingBot tradingBot;
 
+
     @Test
     public void testBot() {
 
-        BarSeries barSeries = barSeriesService.getDataSet("BTC-USDT", false, false);
+        BarSeries barSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
         SimpleMovingMomentumStrategy strat = new SimpleMovingMomentumStrategy(barSeries);
         Strategy strategy = strat.buildStrategy();
+     //   BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
+
         TradingRecord tradingRecord = seriesManager.run(strategy);
 
         tradingBot.run(strategy, barSeries);
+
+/*
+        tradeService.getOrders().stream()
+                .peek(order-> System.out.println("order:"+order));
+*/
+
+
     }
 
 }

@@ -15,7 +15,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.OrderBy;
@@ -83,12 +82,18 @@ public class FeaturedStrategy {
 	private boolean isOpen = false;
 	
 	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
-	private Set<StrategyTrade> trades;
+	private Set<StrategyTrade> strategyTrades;
 
 	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
 	@OrderBy(clause = "date")
-	private Set<StrategyIndicatorValue> indicatorValues;	
-	
+	private Set<StrategyIndicatorValue> indicatorValues;
+
+/*
+	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
+	private Set<Order> orders;
+*/
+
+
 	public FeaturedStrategy () {}
 
 

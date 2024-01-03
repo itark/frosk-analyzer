@@ -24,8 +24,11 @@
 package nu.itark.frosk.bot;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
+import org.ta4j.core.analysis.cost.CostModel;
+import org.ta4j.core.analysis.cost.LinearTransactionCostModel;
 import org.ta4j.core.num.DoubleNum;
 
 
@@ -33,33 +36,28 @@ import org.ta4j.core.num.DoubleNum;
 @Slf4j
 public class TradingBot {
 
+    @Value("${exchange.transaction.feePerTradePercent}")
+    private double feePerTrade;
+
     public void run(Strategy strategy, BarSeries barSeries) {
         int runBeginIndex = barSeries.getBeginIndex();
         int runEndIndex = barSeries.getEndIndex();
-        log.trace("Running strategy (indexes: {} -> {}): {}", new Object[]{runBeginIndex, runEndIndex, strategy});
-        BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
+        log.info("Running strategy (indexes: {} -> {}): {}", new Object[]{runBeginIndex, runEndIndex, strategy.getName()});
+        CostModel transactionCostModel = new LinearTransactionCostModel(feePerTrade);
+        BarSeriesManager seriesManager = new BarSeriesManager(barSeries, transactionCostModel,null);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         int seriesMaxSize;
 
-        Rule entryRule = strategy.getEntryRule();
-        Rule exitRule = strategy.getExitRule();
 
         for (seriesMaxSize = runBeginIndex; seriesMaxSize <= runEndIndex; ++seriesMaxSize) {
-
-            if(entryRule.isSatisfied(seriesMaxSize)) {
-              log.info("entryRule:{}",strategy.getEntryRule());
-
-            }
-
             if (strategy.shouldEnter(seriesMaxSize)) {
                 // Our strategy should enter
                 boolean entered = tradingRecord.enter(seriesMaxSize, barSeries.getBar(seriesMaxSize).getClosePrice(), DoubleNum.valueOf(10));
                 if (entered) {
                     Trade entry = tradingRecord.getLastEntry();
                     log.info("Entered on " + entry.getIndex() + " (price=" + entry.getNetPrice().doubleValue() + ", amount=" + entry.getAmount().doubleValue() + ")");
-
-                    /*log.info("entryRule:{}",strategy.getEntryRule()();*/
-
+                    log.info("strategy: {}, securityName:{}, netPrice:{}",strategy.getName(), barSeries.getName(), entry.getNetPrice().doubleValue() );
+                //    tradeService.createBuyMarketOrder(strategy, barSeries.getName(), new BigDecimal(10), new BigDecimal(entry.getNetPrice().doubleValue()));
                 }
             } else if (strategy.shouldExit(seriesMaxSize)) {
                 // Our strategy should exit
@@ -69,6 +67,21 @@ public class TradingBot {
                     log.info("Exited on " + exit.getIndex() + " (price=" + exit.getNetPrice().doubleValue() + ", amount=" + exit.getAmount().doubleValue() + ")");
                 }
             }
+
+/*
+            DecimalFormat df = new DecimalFormat("##.##");
+            System.out.println("------------ Borrowing Costs ------------");
+            tradingRecord.getPositions()
+                    .forEach(position -> System.out.println("Borrowing cost for "
+                            + df.format(position.getExit().getIndex() - position.getEntry().getIndex()) + " periods is: "
+                            + df.format(position.getHoldingCost().doubleValue())));
+            System.out.println("------------ Transaction Costs ------------");
+            tradingRecord.getPositions()
+                    .forEach(position -> System.out.println("Transaction cost for selling: "
+                            + df.format(position.getEntry().getCost().doubleValue()) + " -- Transaction cost for buying: "
+                            + df.format(position.getExit().getCost().doubleValue())));
+
+*/
         }
     }
 

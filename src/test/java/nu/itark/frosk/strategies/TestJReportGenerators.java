@@ -2,7 +2,6 @@ package nu.itark.frosk.strategies;
 
 
 import nu.itark.frosk.FroskApplication;
-import nu.itark.frosk.analysis.Costs;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -22,9 +21,6 @@ public class TestJReportGenerators extends BaseIntegrationTest {
     @Autowired
     BarSeriesService barSeriesService;
 
-    @Autowired
-    Costs costs;
-
     BarSeries series;
     Strategy strategy;
     BarSeriesManager seriesManager;
@@ -32,7 +28,7 @@ public class TestJReportGenerators extends BaseIntegrationTest {
     private void setup(){
         series = barSeriesService.getDataSet("BTC-EUR", false, false);
         strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
-        seriesManager = new BarSeriesManager(series, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+        seriesManager = new BarSeriesManager(series);
     }
 
     @Test

@@ -15,12 +15,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.util.Arrays;
 
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "nu.itark.frosk.repo")
@@ -51,18 +48,6 @@ public class FroskApplication {
         return new PaymentService(exchange);
     }
 
-    /*
-    @Primary
-    public ObjectMapper objectMapper() {
-        return Jackson2ObjectMapperBuilder.json()
-                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) //ISODate
-                .createXmlMapper(false)
-                .featuresToEnable(SerializationFeature.INDENT_OUTPUT) //nicer output
-                .serializationInclusion(JsonInclude.Include.NON_NULL) //exclude null values
-                .build();
-    }
-*/
-
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -74,19 +59,6 @@ public class FroskApplication {
     public Signature signature(@Value("${exchange.secret}") String secret) {
         return new Signature(secret);
     }
-
-/*
-    @Bean
-    public CoinbaseExchange coinbasePro(@Value("${exchange.key}") String apiKey,
-                                        @Value("${exchange.api.baseUrl}") String baseUrl,
-                                        @Value("${exchange.secret}") String secretKey,
-                                        ObjectMapper objectMapper) {
-        return new CoinbaseExchangeImpl(apiKey,
-                baseUrl,
-                new Signature(secretKey),
-                objectMapper);
-    }
-*/
 
     @Bean
     public Coinbase coinbaseAdvanced(@Value("${exchange.key}") String apiKey,
@@ -103,9 +75,7 @@ public class FroskApplication {
     @Bean
     @Deprecated
     public RestTemplate restTemplate() {
-       // RestTemplate restTemplate = new RestTemplate(Arrays.asList(new MappingJackson2HttpMessageConverter(objectMapper())));
         RestTemplate restTemplate = new RestTemplate();
-
         return restTemplate;
     }
 

@@ -25,7 +25,7 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 	FeaturedStrategyRepository featuredStrategyRepository;
 
 	@Autowired
-	TradesRepository tradesRepo;	
+    StrategyTradeRepository tradesRepo;
 
 	@Autowired
 	StrategyIndicatorValueRepository indicatorValuesRepo;		
@@ -80,7 +80,7 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByName("RSI2Strategy");
 		assertNotNull(fsList);
 
-		fsList.forEach(fs -> log.info("sec=" + fs.getSecurityName() + ", tr size=" + fs.getTrades().size()));
+		fsList.forEach(fs -> log.info("sec=" + fs.getSecurityName() + ", tr size=" + fs.getStrategyTrades().size()));
 
 	}
 	
@@ -140,7 +140,7 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 
 		fsList.forEach(fs ->{
 			log.info("fs.getName():"+fs.getName() + "fs.getSecurityName():"+fs.getSecurityName());
-			fs.getTrades().forEach(t-> {
+			fs.getStrategyTrades().forEach(t-> {
 				log.info("**t.getType:"+t.getType());
 			});
 		});
@@ -156,7 +156,7 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 	}
 
 	@Test
-	public void testFindTop() {
+	public void testFindTopBySecurityNameOrderByLatestTradeDesc() {
 		FeaturedStrategy strat = featuredStrategyRepository.findTopBySecurityNameOrderByLatestTradeDesc("BTC-EUR");
 		System.out.println("strategy.getName():"+strat.getName() + "strategy.getTotalProfit():"+strat.getTotalProfit());
 	}
@@ -176,7 +176,17 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 			System.out.println("strategy.getName():"+strategy.getName() + " strategy.getTotalProfit():"+strategy.getTotalProfit());
 		});	}
 
+	@Test
+	public void testFindTop() {
+		BigDecimal profitableTradesRatio = new BigDecimal(0.1);
+		Integer nrOfTrades = 4;
+		BigDecimal sqn = new BigDecimal(1.7);
+		BigDecimal expectency = new BigDecimal(0.5);
 
+		List<FeaturedStrategy> strategies = featuredStrategyRepository.findTopStrategies(profitableTradesRatio, nrOfTrades, sqn, expectency, Boolean.FALSE );
+		strategies.forEach(strategy ->{
+			System.out.println("name:"+strategy.getName() + ", totalProfit:"+strategy.getTotalProfit() + ", securityName:"+ strategy.getSecurityName());
+		});	}
 
 
 }

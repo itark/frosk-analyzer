@@ -2,13 +2,11 @@ package nu.itark.frosk.strategies.filter;
 
 import nu.itark.frosk.analysis.OpenFeaturedStrategyDTO;
 import nu.itark.frosk.analysis.SecurityMetaDataManager;
-import nu.itark.frosk.analysis.TopStrategyDTO;
 import nu.itark.frosk.analysis.TradeDTO;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
-import nu.itark.frosk.repo.TopStrategy;
-import nu.itark.frosk.repo.TradesRepository;
+import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -29,7 +25,7 @@ public class StrategyFilter {
     private BigDecimal sqn;
 
     @Autowired
-    TradesRepository tradesRepository;
+    StrategyTradeRepository tradesRepository;
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
 

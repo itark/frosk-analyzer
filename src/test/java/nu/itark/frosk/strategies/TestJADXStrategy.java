@@ -24,7 +24,6 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.FroskApplication;
-import nu.itark.frosk.analysis.Costs;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
 import org.junit.jupiter.api.Test;
@@ -43,15 +42,13 @@ public class TestJADXStrategy extends BaseIntegrationTest {
 
     @Autowired
     BarSeriesService barSeriesService;
-    @Autowired
-    Costs costs;
 
     @Test
     public final void run() throws Exception {
         BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
         ADXStrategy strat = new ADXStrategy(timeSeries);
         Strategy strategy = strat.buildStrategy();
-        BarSeriesManager seriesManager = new BarSeriesManager(timeSeries, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
+        BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Position> positions = tradingRecord.getPositions();
 
