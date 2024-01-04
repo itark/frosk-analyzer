@@ -23,9 +23,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * - One calling ticker flux.
  * - One calling order and trade flux.
  */
+/*
 @Profile("!schedule-disabled")
 @Configuration
 @EnableScheduling
+*/
 @RequiredArgsConstructor
 public class ScheduleAutoConfiguration extends BaseConfiguration {
 

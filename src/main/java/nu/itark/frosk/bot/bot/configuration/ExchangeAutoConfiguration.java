@@ -35,7 +35,9 @@ import java.util.Set;
 /**
  * ExchangeConfiguration configures the exchange connection.
  */
+/*
 @Configuration
+*/
 @EnableConfigurationProperties(ExchangeParameters.class)
 @RequiredArgsConstructor
 public class ExchangeAutoConfiguration extends BaseConfiguration {

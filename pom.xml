@@ -27,6 +27,7 @@
 		<bucket4j.version>7.6.0</bucket4j.version>
 		<maven.lombok.plugin.version>1.18.20.0</maven.lombok.plugin.version>
 		<maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
+		<xchange.version>5.1.2-SNAPSHOT</xchange.version>
 	</properties>
 
 	<dependencies>
@@ -200,8 +201,6 @@
             <scope>compile</scope>
         </dependency>
 
-
-
 		<dependency>
 			<groupId>org.knowm.xchange</groupId>
 			<artifactId>xchange-simulated</artifactId>
@@ -215,8 +214,6 @@
 			<version>5.1.2-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
-
-
 
 		<dependency>
 			<groupId>org.hibernate.validator</groupId>
@@ -238,65 +235,7 @@
 					</image>
 				</configuration>
 		    </plugin>
-			<plugin>
-				<groupId>org.projectlombok</groupId>
-				<artifactId>lombok-maven-plugin</artifactId>
-				<version>${maven.lombok.plugin.version}</version>
-				<dependencies>
-					<dependency>
-						<groupId>org.projectlombok</groupId>
-						<artifactId>lombok</artifactId>
-						<version>${lombok.version}</version>
-					</dependency>
-				</dependencies>
-				<configuration>
-					<sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
-					<outputDirectory>${project.build.directory}/delombok</outputDirectory>
-					<addOutputDirectory>false</addOutputDirectory>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>delombok</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.plugin.version}</version>
-				<configuration>
-					<compilerArgument>-Xlint:unchecked</compilerArgument>
-					<source>${java.version}</source>
-					<target>${java.version}</target>
-					<annotationProcessorPaths>
-						<path>
-							<groupId>org.mapstruct</groupId>
-							<artifactId>mapstruct-processor</artifactId>
-							<version>${mapstruct.version}</version>
-						</path>
-						<path>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-							<version>${lombok.version}</version>
-						</path>
-						<path>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok-mapstruct-binding</artifactId>
-							<version>${lombok.mapstruct.version}</version>
-						</path>
-						<path>
-							<groupId>org.springframework.boot</groupId>
-							<artifactId>spring-boot-configuration-processor</artifactId>
-							<version>3.1.2</version>
-						</path>
-					</annotationProcessorPaths>
-				</configuration>
-			</plugin>
 		</plugins>
-
 	</build>
 
 </project>

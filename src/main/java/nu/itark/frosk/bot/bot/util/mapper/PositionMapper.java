@@ -14,20 +14,23 @@ import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 /**
  * Position mapper.
  */
-@Mapper(uses = {CurrencyMapper.class, OrderMapper.class, UtilMapper.class, StrategyMapper.class}, nullValuePropertyMappingStrategy = IGNORE)
+//@Mapper(uses = {CurrencyMapper.class, OrderMapper.class, UtilMapper.class, StrategyMapper.class}, nullValuePropertyMappingStrategy = IGNORE)
 public interface PositionMapper {
 
     // =================================================================================================================
     // DTO to Domain.
 
+/*
     @Mapping(source = "currencyPair.baseCurrencyPrecision", target = "baseCurrencyPrecision")
     @Mapping(source = "currencyPair.quoteCurrencyPrecision", target = "quoteCurrencyPrecision")
     @Mapping(source = "rules.stopGainPercentage", target = "stopGainPercentageRule")
     @Mapping(source = "rules.stopLossPercentage", target = "stopLossPercentageRule")
     @Mapping(target = "createdOn", ignore = true)
     @Mapping(target = "updatedOn", ignore = true)
+*/
     Position mapToPosition(PositionDTO source);
 
+/*
     @Mapping(target = "uid", ignore = true)
     @Mapping(target = "strategy", ignore = true)
     @Mapping(target = "positionId", ignore = true)
@@ -38,13 +41,16 @@ public interface PositionMapper {
     @Mapping(target = "updatedOn", ignore = true)
     @Mapping(target = "baseCurrencyPrecision", ignore = true)
     @Mapping(target = "quoteCurrencyPrecision", ignore = true)
+*/
     void updatePosition(PositionDTO source, @MappingTarget Position target);
 
     // =================================================================================================================
     // Domain to DTO.
 
+/*
     @Mapping(source = "source", target = "currencyPair", qualifiedByName = "mapToPositionDTOCurrencyPair")
     @Mapping(source = "source", target = "rules")
+*/
     PositionDTO mapToPositionDTO(Position source);
 
     @Named("mapToPositionDTOCurrencyPair")

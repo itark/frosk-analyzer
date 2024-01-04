@@ -20,7 +20,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication
-@EnableJpaRepositories(basePackages = "nu.itark.frosk.repo")
+@EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo","nu.itark.frosk.bot.bot.repository"})
 @Slf4j
 public class FroskApplication {
 

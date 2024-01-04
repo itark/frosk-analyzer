@@ -9,13 +9,13 @@ import org.mapstruct.Mapping;
 /**
  * Ticker mapper.
  */
-@Mapper(uses = {CurrencyMapper.class})
+//@Mapper(uses = {CurrencyMapper.class})
 public interface TickerMapper {
 
     // =================================================================================================================
     // XChange to DTO.
 
-    @Mapping(source = "instrument", target = "currencyPair")
+ //   @Mapping(source = "instrument", target = "currencyPair")
     TickerDTO mapToTickerDTO(Ticker source);
 
     // =================================================================================================================

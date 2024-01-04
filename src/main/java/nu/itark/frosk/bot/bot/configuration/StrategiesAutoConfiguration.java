@@ -47,8 +47,10 @@ import static nu.itark.frosk.bot.bot.dto.position.PositionStatusDTO.OPENING;
 /**
  * StrategyAutoConfiguration configures the strategies.
  */
+/*
 @Configuration
 @EnableConfigurationProperties(ExchangeParameters.class)
+*/
 @RequiredArgsConstructor
 public class StrategiesAutoConfiguration extends BaseConfiguration {
 

@@ -7,8 +7,6 @@ import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.dto.account.AccountInfo;
 import org.knowm.xchange.dto.account.Balance;
 import org.knowm.xchange.dto.account.Wallet;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Account mapper.
  */
-@Mapper(uses = {CurrencyMapper.class})
+//@Mapper(uses = {CurrencyMapper.class})
 public interface AccountMapper {
 
     // =================================================================================================================

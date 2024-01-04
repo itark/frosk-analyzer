@@ -7,12 +7,11 @@ import nu.itark.frosk.bot.bot.util.jpa.CurrencyAmount;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.instrument.Instrument;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+
 /**
  * Currency mapper.
  */
-@Mapper
+//@Mapper
 public interface CurrencyMapper {
 
     // =================================================================================================================
@@ -30,7 +29,7 @@ public interface CurrencyMapper {
         return new CurrencyDTO(value);
     }
 
-    @Mapping(source = "currencyCode", target = "code")
+   // @Mapping(source = "currencyCode", target = "code")
     CurrencyDTO mapToCurrencyDTO(Currency source);
 
     default String mapToCurrencyPairString(CurrencyPairDTO source) {
@@ -48,14 +47,18 @@ public interface CurrencyMapper {
         return new CurrencyPairDTO(source);
     }
 
+/*
     @Mapping(source = "base", target = "baseCurrency")
     @Mapping(source = "counter", target = "quoteCurrency")
     @Mapping(target = "baseCurrencyPrecision", ignore = true)
     @Mapping(target = "quoteCurrencyPrecision", ignore = true)
+*/
     CurrencyPairDTO mapToCurrencyPairDTO(CurrencyPair source);
 
+/*
     @Mapping(source = "value", target = "value")
     @Mapping(source = "currency", target = "currency")
+*/
     CurrencyAmountDTO mapToCurrencyAmountDTO(CurrencyAmount source);
 
     // =================================================================================================================
