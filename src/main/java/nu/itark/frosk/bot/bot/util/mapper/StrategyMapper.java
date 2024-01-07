@@ -8,16 +8,16 @@ import org.mapstruct.Mapping;
 /**
  * Strategy mapper.
  */
-//@Mapper
+@Mapper
 public interface StrategyMapper {
 
     // =================================================================================================================
     // DTO to Domain.
 
-/*
+
     @Mapping(target = "createdOn", ignore = true)
     @Mapping(target = "updatedOn", ignore = true)
-*/
+
     Strategy mapToStrategy(StrategyDTO source);
 
     // =================================================================================================================

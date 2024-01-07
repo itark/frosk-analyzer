@@ -9,13 +9,13 @@ import org.mapstruct.ValueMappings;
 /**
  * Util mapper.
  */
-//@Mapper(uses = {CurrencyMapper.class})
+@Mapper(uses = {CurrencyMapper.class})
 public interface UtilMapper {
 
     // =================================================================================================================
     // XChange to DTO.
 
-/*
+
     @ValueMappings({
             @ValueMapping(source = "BID", target = "BID"),
             @ValueMapping(source = "ASK", target = "ASK"),
@@ -23,18 +23,15 @@ public interface UtilMapper {
             @ValueMapping(source = "EXIT_ASK", target = "ASK")
 
     })
-*/
     OrderTypeDTO mapToOrderTypeDTO(Order.OrderType source);
 
     // =================================================================================================================
     // DTO to XChange.
 
-/*
     @ValueMappings({
             @ValueMapping(source = "BID", target = "BID"),
             @ValueMapping(source = "ASK", target = "ASK")
     })
-*/
     Order.OrderType mapToOrderType(OrderTypeDTO source);
 
 }

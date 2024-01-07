@@ -2,6 +2,8 @@ package nu.itark.frosk.bot.bot.service;
 
 import lombok.NonNull;
 import nu.itark.frosk.bot.bot.domain.Order;
+import nu.itark.frosk.bot.bot.domain.Strategy;
+import nu.itark.frosk.bot.bot.dto.strategy.StrategyDTO;
 import nu.itark.frosk.bot.bot.dto.trade.OrderCreationResultDTO;
 import nu.itark.frosk.bot.bot.dto.trade.OrderDTO;
 import nu.itark.frosk.bot.bot.dto.trade.OrderTypeDTO;
@@ -9,9 +11,13 @@ import nu.itark.frosk.bot.bot.dto.trade.TradeDTO;
 import nu.itark.frosk.bot.bot.dto.util.CurrencyAmountDTO;
 import nu.itark.frosk.bot.bot.dto.util.CurrencyPairDTO;
 import nu.itark.frosk.bot.bot.repository.OrderRepository;
+import nu.itark.frosk.bot.bot.repository.StrategyRepository;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategyInterface;
 import nu.itark.frosk.bot.bot.util.base.service.BaseService;
 import nu.itark.frosk.bot.bot.util.xchange.CancelOrderParams;
+import nu.itark.frosk.crypto.coinbase.api.marketdata.MarketDataService;
+import nu.itark.frosk.crypto.coinbase.service.CoinbaseProTradeService;
+import nu.itark.frosk.model.FeaturedStrategy;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.knowm.xchange.dto.trade.LimitOrder;
@@ -19,6 +25,7 @@ import org.knowm.xchange.dto.trade.MarketOrder;
 import org.knowm.xchange.exceptions.NotAvailableFromExchangeException;
 import org.knowm.xchange.service.trade.params.TradeHistoryParamsAll;
 import org.knowm.xchange.service.trade.params.orders.DefaultOpenOrdersParamCurrencyPair;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -51,8 +58,14 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
     /** Order repository. */
     private final OrderRepository orderRepository;
 
+    @Autowired
+    private  StrategyRepository strategyRepository;
+
     /** XChange service. */
-    private final org.knowm.xchange.service.trade.TradeService tradeService;
+   // private final org.knowm.xchange.service.trade.TradeService tradeService;
+
+    @Autowired
+    CoinbaseProTradeService tradeService;
 
     /**
      * Constructor.
@@ -63,7 +76,7 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
      */
     public TradeServiceXChangeImplementation(final long rate,
                                              final OrderRepository newOrderRepository,
-                                             final org.knowm.xchange.service.trade.TradeService newTradeService) {
+                                             final CoinbaseProTradeService newTradeService) {
         super(rate);
         this.orderRepository = newOrderRepository;
         this.tradeService = newTradeService;
@@ -79,10 +92,28 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
 
     @Override
     @SuppressWarnings("checkstyle:DesignForExtension")
+    public OrderCreationResultDTO createBuyMarketOrder(@NonNull final FeaturedStrategy strategy,
+                                                       @NonNull final CurrencyPairDTO currencyPair,
+                                                       @NonNull final BigDecimal amount,
+                                                       @NonNull final BigDecimal limitPrice) {
+        return createMarketOrder(strategy, BID, currencyPair, amount,limitPrice);
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:DesignForExtension")
     public OrderCreationResultDTO createSellMarketOrder(@NonNull final CassandreStrategyInterface strategy,
                                                         @NonNull final CurrencyPairDTO currencyPair,
                                                         @NonNull final BigDecimal amount) {
         return createMarketOrder(strategy, ASK, currencyPair, amount);
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:DesignForExtension")
+    public OrderCreationResultDTO createSellMarketOrder(@NonNull final FeaturedStrategy strategy,
+                                                        @NonNull final CurrencyPairDTO currencyPair,
+                                                        @NonNull final BigDecimal amount,
+                                                        @NonNull final BigDecimal limitPrice) {
+        return createMarketOrder(strategy, ASK, currencyPair, amount, limitPrice);
     }
 
     @Override
@@ -169,6 +200,75 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
             return new OrderCreationResultDTO(errorMessage, e);
         }
     }
+
+    private OrderCreationResultDTO createMarketOrder(final FeaturedStrategy strategy,
+                                                     final OrderTypeDTO orderTypeDTO,
+                                                     final CurrencyPairDTO currencyPair,
+                                                     final BigDecimal amount,
+                                                     final BigDecimal lastPrice) {
+        try {
+            // Making the order.
+            MarketOrder m = new MarketOrder(UTIL_MAPPER.mapToOrderType(orderTypeDTO),
+                    amount.setScale(currencyPair.getBaseCurrencyPrecision(), FLOOR),
+                    CURRENCY_MAPPER.mapToCurrencyPair(currencyPair),
+                    getGeneratedOrderId(),
+                    null);
+            logger.debug("Sending market order: {} - {} - {}",
+                    orderTypeDTO,
+                    currencyPair,
+                    amount.setScale(currencyPair.getBaseCurrencyPrecision(), FLOOR));
+
+            // If the strategy is NOT in database.
+            Strategy newStrategy = new Strategy();
+            newStrategy.setStrategyId(String.valueOf(strategy.getId()));
+            newStrategy.setName(strategy.getName());
+            StrategyDTO strategyDTO = STRATEGY_MAPPER.mapToStrategyDTO(strategyRepository.saveAndFlush(newStrategy));
+            logger.debug("Strategy created in database: {}", newStrategy);
+
+            // We create the order in database with the PENDING_NEW status.
+            OrderDTO order = OrderDTO.builder()
+                    .orderId(tradeService.placeMarketOrder(m))
+                    .type(orderTypeDTO)
+                    //.strategy(strategy.getConfiguration().getStrategyDTO())
+                    //TODO
+                    .strategy(strategyDTO)
+                    .currencyPair(currencyPair)
+                    .amount(CurrencyAmountDTO.builder()
+                            .value(amount)
+                            .currency(currencyPair.getBaseCurrency())
+                            .build())
+                    .cumulativeAmount(CurrencyAmountDTO.builder()
+                            .value(amount)
+                            .currency(currencyPair.getBaseCurrency())
+                            .build())
+                    .averagePrice(CurrencyAmountDTO.builder()
+                            .value(lastPrice)
+                            .currency(currencyPair.getQuoteCurrency())
+                            .build())
+                    .marketPrice(CurrencyAmountDTO.builder()
+                            .value(lastPrice)
+                            .currency(currencyPair.getQuoteCurrency())
+                            .build())
+                    .status(PENDING_NEW)
+                    .timestamp(ZonedDateTime.now())
+                    .build();
+
+            // We save the order.
+            Optional<Order> savedOrder = orderRepository.findByOrderId(order.getOrderId());
+            if (savedOrder.isEmpty()) {
+                savedOrder = Optional.of(orderRepository.save(ORDER_MAPPER.mapToOrder(order)));
+            }
+            final OrderCreationResultDTO result = new OrderCreationResultDTO(ORDER_MAPPER.mapToOrderDTO(savedOrder.get()));
+            logger.debug("Order created: {}", result);
+            return result;
+        } catch (Exception e) {
+            final String errorMessage = "Error calling createMarketOrder for " + amount + " " + currencyPair + ": " + e.getMessage();
+            e.printStackTrace();
+            logger.error(errorMessage);
+            return new OrderCreationResultDTO(errorMessage, e);
+        }
+    }
+
 
     /**
      * Creates limit order.
@@ -296,15 +396,19 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
                     // Consume a token from the token bucket.
                     // If a token is not available this method will block until the refill adds one to the bucket.
                     bucket.asBlocking().consume(1);
+/*
                     return tradeService.getOpenOrders()
                             .getOpenOrders()
                             .stream()
                             .map(ORDER_MAPPER::mapToOrderDTO)
                             .peek(orderDTO -> logger.debug("Remote order retrieved: {}", orderDTO))
                             .collect(Collectors.toCollection(LinkedHashSet::new));
+*/
+                return null;
                 } catch (NotAvailableFromExchangeException e) {
                     // If the classical call to getOpenOrders() is not implemented, we use the specific parameters that asks for currency pair.
                     Set<OrderDTO> orders = new LinkedHashSet<>();
+/*
                     orderRepository.findAll()
                             .stream()
                             .map(ORDER_MAPPER::mapToOrderDTO)
@@ -327,11 +431,15 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
                                     logger.error("Error retrieving orders: {}", specificOrderException.getMessage());
                                 }
                             });
+*/
                     return orders;
-                } catch (IOException e) {
+                }
+/*
+                catch (IOException e) {
                     logger.error("Error retrieving orders: {}", e.getMessage());
                     return Collections.emptySet();
                 }
+*/
             }
         } catch (InterruptedException e) {
             return Collections.emptySet();
@@ -361,6 +469,7 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
 
         // We set currency pairs on each param (required for exchanges like Gemini or Binance).
         Set<TradeDTO> results = new LinkedHashSet<>();
+/*
         if (!currencyPairs.isEmpty()) {
             currencyPairs.forEach(pair -> {
                 params.setCurrencyPair(CURRENCY_MAPPER.mapToCurrencyPair(pair));
@@ -384,6 +493,7 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
             });
         }
         logger.debug("{} trade(s) found", results.size());
+*/
         return results;
     }
 

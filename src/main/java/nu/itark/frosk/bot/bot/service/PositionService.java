@@ -11,6 +11,8 @@ import nu.itark.frosk.bot.bot.dto.util.CurrencyPairDTO;
 import nu.itark.frosk.bot.bot.dto.util.GainDTO;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategy;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategyInterface;
+import nu.itark.frosk.model.FeaturedStrategy;
+import org.ta4j.core.Strategy;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -36,6 +38,12 @@ public interface PositionService {
     PositionCreationResultDTO createLongPosition(CassandreStrategy strategy,
                                                  CurrencyPairDTO currencyPair,
                                                  BigDecimal amount,
+                                                 PositionRulesDTO rules);
+
+    PositionCreationResultDTO createLongPosition(Strategy strategy,
+                                                 CurrencyPairDTO currencyPair,
+                                                 BigDecimal amount,
+                                                 BigDecimal limitPrice,
                                                  PositionRulesDTO rules);
 
     /**

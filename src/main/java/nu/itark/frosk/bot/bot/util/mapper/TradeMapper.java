@@ -15,13 +15,13 @@ import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 /**
  * Trade mapper.
  */
-//@Mapper(uses = {UtilMapper.class, CurrencyMapper.class}, nullValuePropertyMappingStrategy = IGNORE)
+@Mapper(uses = {UtilMapper.class, CurrencyMapper.class}, nullValuePropertyMappingStrategy = IGNORE)
 public interface TradeMapper {
 
     // =================================================================================================================
     // XChange to DTO.
 
-/*
+
     @Mapping(source = "id", target = "tradeId")
     @Mapping(target = "uid", ignore = true)
     @Mapping(source = "source", target = "amount", qualifiedByName = "mapUserTradeToTradeDTOAmount")
@@ -30,14 +30,14 @@ public interface TradeMapper {
     @Mapping(target = "order", ignore = true)
     @Mapping(source = "orderUserReference", target = "userReference")
     @Mapping(source = "instrument", target = "currencyPair")
-*/
+
     TradeDTO mapToTradeDTO(UserTrade source);
 
     @Named("mapUserTradeToTradeDTOAmount")
-/*
+
     @Mapping(target = "createdOn", ignore = true)
     @Mapping(target = "updatedOn", ignore = true)
-*/
+
     default CurrencyAmountDTO mapUserTradeToTradeDTOAmount(UserTrade source) {
         CurrencyPairDTO cp = new CurrencyPairDTO(source.getInstrument());
         if (source.getOriginalAmount() != null && source.getInstrument() != null) {
@@ -78,28 +78,28 @@ public interface TradeMapper {
     // =================================================================================================================
     // DTO to domain.
 
-/*
+
     @Mapping(target = "uid", ignore = true)
     @Mapping(target = "createdOn", ignore = true)
     @Mapping(target = "updatedOn", ignore = true)
     @Mapping(target = "order", ignore = true)
-*/
+
     Trade mapToTrade(TradeDTO source);
 
-/*
+
     @Mapping(target = "createdOn", ignore = true)
     @Mapping(target = "updatedOn", ignore = true)
     @Mapping(target = "order", ignore = true)
-*/
+
     void updateTrade(TradeDTO source, @MappingTarget Trade target);
 
     // =================================================================================================================
     // Domain to DTO.
 
-/*
+
     @Mapping(target = "order.trades", ignore = true)
     @Mapping(target = "orderId", source = "order.orderId")
-*/
+
     TradeDTO mapToTradeDTO(Trade source);
 
 }

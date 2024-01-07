@@ -9,6 +9,7 @@ import nu.itark.frosk.bot.bot.dto.position.PositionCreationResultDTO;
 import nu.itark.frosk.bot.bot.dto.position.PositionDTO;
 import nu.itark.frosk.bot.bot.dto.position.PositionRulesDTO;
 import nu.itark.frosk.bot.bot.dto.position.PositionTypeDTO;
+import nu.itark.frosk.bot.bot.dto.strategy.StrategyDTO;
 import nu.itark.frosk.bot.bot.dto.trade.OrderCreationResultDTO;
 import nu.itark.frosk.bot.bot.dto.trade.TradeDTO;
 import nu.itark.frosk.bot.bot.dto.util.CurrencyAmountDTO;
@@ -16,9 +17,16 @@ import nu.itark.frosk.bot.bot.dto.util.CurrencyDTO;
 import nu.itark.frosk.bot.bot.dto.util.CurrencyPairDTO;
 import nu.itark.frosk.bot.bot.dto.util.GainDTO;
 import nu.itark.frosk.bot.bot.repository.PositionRepository;
+import nu.itark.frosk.bot.bot.repository.StrategyRepository;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategy;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategyInterface;
 import nu.itark.frosk.bot.bot.util.base.service.BaseService;
+import nu.itark.frosk.model.FeaturedStrategy;
+import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.service.BarSeriesService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.ta4j.core.Strategy;
+
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,6 +59,15 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
     /** Position flux. */
     private final PositionFlux positionFlux;
 
+    @Autowired
+    private FeaturedStrategyRepository featuredStrategyRepository;
+
+    @Autowired
+    private StrategyRepository strategyRepository;
+
+    @Autowired
+    private BarSeriesService barSeriesService;
+
     @Override
     public final PositionCreationResultDTO createLongPosition(@NonNull final CassandreStrategy strategy,
                                                               @NonNull final CurrencyPairDTO currencyPair,
@@ -58,6 +75,18 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
                                                               @NonNull final PositionRulesDTO rules) {
         return createPosition(strategy, LONG, currencyPair, amount, rules);
     }
+
+    @Override
+    public final PositionCreationResultDTO createLongPosition(@NonNull final Strategy strategy,
+                                                              @NonNull final CurrencyPairDTO currencyPair,
+                                                              @NonNull final BigDecimal amount,
+                                                              @NonNull final BigDecimal limitPrice,
+                                                              final PositionRulesDTO rules) {
+
+        final FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategy.getName(), currencyPair.toString());
+        return createPosition(featuredStrategy, LONG, currencyPair, amount, limitPrice);
+    }
+
 
     @Override
     public final PositionCreationResultDTO createShortPosition(@NonNull final CassandreStrategy strategy,
@@ -130,6 +159,79 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
             return new PositionCreationResultDTO(orderCreationResult.getErrorMessage(), orderCreationResult.getException());
         }
     }
+
+    private PositionCreationResultDTO createPosition(final FeaturedStrategy strategy,
+                                                     final PositionTypeDTO type,
+                                                     final CurrencyPairDTO currencyPair,
+                                                     final BigDecimal amount,
+                                                     final BigDecimal limitPrice) {
+        logger.debug("Creating a {} position for {} on {} with the rules: {}",
+                type.toString().toLowerCase(Locale.ROOT),
+                amount,
+                currencyPair);
+
+        // It's forbidden to create a position with a too small amount.
+        if (MINIMUM_AMOUNT_FOR_POSITION.compareTo(amount) > 0) {
+            logger.error("Impossible to create a position for such a small amount ({})", amount);
+            return new PositionCreationResultDTO("Impossible to create a position for such a small amount: " + amount, null);
+        }
+
+        // =============================================================================================================
+        // Creates the order on the exchange.
+        final OrderCreationResultDTO orderCreationResult;
+        if (type == LONG) {
+            // Long position - we buy.
+            orderCreationResult = tradeService.createBuyMarketOrder(strategy, currencyPair, amount, limitPrice);
+        } else {
+            // Short position - we sell.
+            orderCreationResult = tradeService.createSellMarketOrder(strategy, currencyPair, amount, limitPrice);
+        }
+
+        // If it works, we create the position.
+        if (orderCreationResult.isSuccessful()) {
+            // =========================================================================================================
+            // Creates the position in database.
+            Position position = new Position();
+
+            // If the strategy is NOT in database.
+            nu.itark.frosk.bot.bot.domain.Strategy newStrategy = new nu.itark.frosk.bot.bot.domain.Strategy();
+            newStrategy.setStrategyId(String.valueOf(strategy.getId()));
+            newStrategy.setName(strategy.getName());
+            StrategyDTO strategyDTO = STRATEGY_MAPPER.mapToStrategyDTO(strategyRepository.saveAndFlush(newStrategy));
+            nu.itark.frosk.bot.bot.domain.Strategy strategyee= strategyRepository.saveAndFlush(newStrategy);
+            logger.debug("Strategy created in database: {}", newStrategy);
+            //position.setStrategy(STRATEGY_MAPPER.mapToStrategy(featuredStrategy.getConfiguration().getStrategyDTO()));
+            position.setStrategy(strategyee);
+            position = positionRepository.saveAndFlush(position);
+            // =========================================================================================================
+            // Creates the position dto.
+            //TODO
+//            PositionDTO p = new PositionDTO(position.getUid(), type, featuredStrategy.getConfiguration().getStrategyDTO(), currencyPair, amount, orderCreationResult.getOrder(), rules);
+
+/*
+            StrategyDTO strategyDTO = StrategyDTO.builder()
+                    .name(strategyee.getName())
+                    .strategyId(strategyee.getStrategyId())
+                    .build();
+*/
+
+            PositionDTO p = new PositionDTO(position.getUid(), type, strategyDTO, currencyPair, amount, orderCreationResult.getOrder(), null);
+
+            positionRepository.save(POSITION_MAPPER.mapToPosition(p));
+            logger.debug("Position {} opened with order {}",
+                    p.getPositionId(),
+                    orderCreationResult.getOrder().getOrderId());
+
+            // =========================================================================================================
+            // Emit the position, creates and return the position creation result.
+            positionFlux.emitValue(p);
+            return new PositionCreationResultDTO(p);
+        } else {
+            logger.error("Position creation failure: {}", orderCreationResult.getErrorMessage());
+            return new PositionCreationResultDTO(orderCreationResult.getErrorMessage(), orderCreationResult.getException());
+        }
+    }
+
 
     @Override
     public final void updatePositionRules(final long positionUid, @NonNull final PositionRulesDTO newRules) {

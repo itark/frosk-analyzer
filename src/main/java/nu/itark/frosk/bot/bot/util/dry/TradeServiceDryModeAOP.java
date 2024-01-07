@@ -65,7 +65,7 @@ public class TradeServiceDryModeAOP extends BaseService {
     /** User service - dry mode. */
     private final UserServiceDryModeAOP userService;
 
-    @Around(value = "execution(* tech.cassandre.trading.bot.service.TradeService.createBuyMarketOrder(..)) && args(strategy, currencyPair, amount)", argNames = "pjp, strategy, currencyPair, amount")
+    @Around(value = "execution(* nu.itark.frosk.bot.bot.service.TradeService.createBuyMarketOrder(..)) && args(strategy, currencyPair, amount)", argNames = "pjp, strategy, currencyPair, amount")
     public final OrderCreationResultDTO createBuyMarketOrder(final ProceedingJoinPoint pjp,
                                                              final CassandreStrategy strategy,
                                                              final CurrencyPairDTO currencyPair,
@@ -108,7 +108,7 @@ public class TradeServiceDryModeAOP extends BaseService {
         return (OrderCreationResultDTO) result;
     }
 
-    @Around(value = "execution(* tech.cassandre.trading.bot.service.TradeService.createSellMarketOrder(..)) && args(strategy, currencyPair, amount)", argNames = "pjp, strategy, currencyPair, amount")
+    @Around(value = "execution(* nu.itark.frosk.bot.bot.service.TradeService.createSellMarketOrder(..)) && args(strategy, currencyPair, amount)", argNames = "pjp, strategy, currencyPair, amount")
     public final OrderCreationResultDTO createSellMarketOrder(final ProceedingJoinPoint pjp,
                                                               final CassandreStrategy strategy,
                                                               final CurrencyPairDTO currencyPair,
@@ -154,7 +154,7 @@ public class TradeServiceDryModeAOP extends BaseService {
         return DRY_ORDER_PREFIX.concat(String.format("%09d", orderCounter.getAndIncrement()));
     }
 
-    @Around(value = "execution(* tech.cassandre.trading.bot.service.TradeService.cancelOrder(..)) && args(orderUid))", argNames = "pjp, orderUid")
+    @Around(value = "execution(* nu.itark.frosk.bot.bot.service.TradeService.cancelOrder(..)) && args(orderUid))", argNames = "pjp, orderUid")
     public final boolean cancelOrder(final ProceedingJoinPoint pjp, final long orderUid) {
         throw new DryModeException("Not supported");
     }

@@ -12,7 +12,7 @@ import org.ta4j.core.Strategy;
 import org.ta4j.core.TradingRecord;
 
 @SpringBootTest
-public class TestJTradingBot   extends BaseIntegrationTest {
+public class TestJTradingBot extends BaseIntegrationTest {
 
     @Autowired
     BarSeriesService barSeriesService;
@@ -23,23 +23,25 @@ public class TestJTradingBot   extends BaseIntegrationTest {
 
     @Test
     public void testBot() {
-
-        BarSeries barSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
+        BarSeries barSeries = barSeriesService.getDataSet("GRT-EUR", false, false);
         SimpleMovingMomentumStrategy strat = new SimpleMovingMomentumStrategy(barSeries);
         Strategy strategy = strat.buildStrategy();
-     //   BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
-
         TradingRecord tradingRecord = seriesManager.run(strategy);
-
         tradingBot.run(strategy, barSeries);
+    }
+
 
 /*
-        tradeService.getOrders().stream()
-                .peek(order-> System.out.println("order:"+order));
-*/
-
-
+    @Test
+    public void testBotWithCassandre() {
+        BarSeries barSeries = barSeriesService.getDataSet("GRT-EUR", false, false);
+        BTCStrategy strat = new BTCStrategy();
+        Strategy strategy = strat.buildStrategy();
+        BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
+        TradingRecord tradingRecord = seriesManager.run(strategy);
+        tradingBot.run(strategy, barSeries);
     }
+*/
 
 }

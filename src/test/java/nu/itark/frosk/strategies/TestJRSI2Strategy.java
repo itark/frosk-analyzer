@@ -22,6 +22,7 @@
  */
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.BarSeriesService;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ import java.util.logging.Logger;
  */
 
 @SpringBootTest
-public class TestJRSI2Strategy {
+public class TestJRSI2Strategy extends BaseIntegrationTest {
 
 	Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
 	 

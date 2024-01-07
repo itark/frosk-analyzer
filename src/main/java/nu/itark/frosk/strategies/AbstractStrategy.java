@@ -1,6 +1,7 @@
 package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.bot.bot.strategy.BasicCassandreStrategy;
 import nu.itark.frosk.service.BarSeriesService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

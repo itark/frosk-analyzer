@@ -14,13 +14,13 @@ import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 /**
  * Order mapper.
  */
-//@Mapper(uses = {UtilMapper.class, CurrencyMapper.class, TradeMapper.class, StrategyMapper.class}, nullValuePropertyMappingStrategy = IGNORE)
+@Mapper(uses = {UtilMapper.class, CurrencyMapper.class, TradeMapper.class, StrategyMapper.class}, nullValuePropertyMappingStrategy = IGNORE)
 public interface OrderMapper {
 
     // =================================================================================================================
     // XChange to DTO.
 
-/*
+
     @Mapping(source = "id", target = "orderId")
     @Mapping(target = "uid", ignore = true)
     @Mapping(source = "source", target = "amount", qualifiedByName = "mapLimitOrderToOrderDTOAmount")
@@ -32,7 +32,7 @@ public interface OrderMapper {
     @Mapping(target = "strategy", ignore = true)
     @Mapping(target = "trades", ignore = true)
     @Mapping(target = "trade", ignore = true)
-*/
+
     OrderDTO mapToOrderDTO(LimitOrder source);
 
     @Named("mapLimitOrderToOrderDTOAmount")
@@ -90,26 +90,26 @@ public interface OrderMapper {
     // =================================================================================================================
     // DTO to domain.
 
-/*
+
     @Mapping(target = "createdOn", ignore = true)
     @Mapping(target = "updatedOn", ignore = true)
-*/
+
     Order mapToOrder(OrderDTO source);
 
-/*
+
     @Mapping(target = "createdOn", ignore = true)
     @Mapping(target = "updatedOn", ignore = true)
     @Mapping(target = "trades", ignore = true)
-*/
+
     void updateOrder(OrderDTO source, @MappingTarget Order target);
 
     // =================================================================================================================
     // Domain to DTO.
 
-/*
+
     @Mapping(source = "trades", target = "trades")
     @Mapping(target = "trade", ignore = true)
-*/
+
     OrderDTO mapToOrderDTO(Order source);
 
 }

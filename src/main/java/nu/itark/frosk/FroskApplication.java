@@ -13,6 +13,7 @@ import nu.itark.frosk.crypto.coinbase.security.Signature;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.client.RestTemplate;
@@ -21,12 +22,23 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo","nu.itark.frosk.bot.bot.repository"})
+//@EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo"})
 @Slf4j
 public class FroskApplication {
 
+    private static ApplicationContext applicationContext;
+
 	public static void main(String[] args){
-		SpringApplication.run(FroskApplication.class, args);
+        applicationContext = SpringApplication.run(FroskApplication.class, args);
+       // displayAllBeans();
 	}
+
+    public static void displayAllBeans() {
+        String[] allBeanNames = applicationContext.getBeanDefinitionNames();
+        for(String beanName : allBeanNames) {
+            log.info("Bean:"+beanName);
+        }
+    }
 
     @Bean
     public MarketDataService initmarketDataService(Coinbase exchange) {

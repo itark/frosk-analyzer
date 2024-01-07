@@ -14,6 +14,7 @@ import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategyInterface;
 import nu.itark.frosk.bot.bot.util.base.configuration.BaseConfiguration;
 import nu.itark.frosk.bot.bot.util.exception.ConfigurationException;
 import nu.itark.frosk.bot.bot.util.parameters.ExchangeParameters;
+import nu.itark.frosk.crypto.coinbase.service.CoinbaseProTradeService;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeFactory;
 import org.knowm.xchange.ExchangeSpecification;
@@ -35,9 +36,8 @@ import java.util.Set;
 /**
  * ExchangeConfiguration configures the exchange connection.
  */
-/*
+
 @Configuration
-*/
 @EnableConfigurationProperties(ExchangeParameters.class)
 @RequiredArgsConstructor
 public class ExchangeAutoConfiguration extends BaseConfiguration {
@@ -70,7 +70,7 @@ public class ExchangeAutoConfiguration extends BaseConfiguration {
     private MarketDataService xChangeMarketDataService;
 
     /** XChange trade service. */
-    private org.knowm.xchange.service.trade.TradeService xChangeTradeService;
+    private CoinbaseProTradeService xChangeTradeService;
 
     /** Exchange service. */
     private ExchangeService exchangeService;
@@ -108,12 +108,11 @@ public class ExchangeAutoConfiguration extends BaseConfiguration {
     /**
      * Instantiating the exchange services based on user parameters.
      */
-    @PostConstruct
+    //@PostConstruct
     public void configure() {
         try {
 
             logger.info("HELLO WORLD!");
-
 
             // Instantiate exchange class.
            // Class<? extends Exchange> exchangeClass = Class.forName(getExchangeClassName()).asSubclass(Exchange.class);
@@ -150,7 +149,7 @@ public class ExchangeAutoConfiguration extends BaseConfiguration {
             }
             xChangeAccountService = xChangeExchange.getAccountService();
             xChangeMarketDataService = xChangeExchange.getMarketDataService();
-            xChangeTradeService = xChangeExchange.getTradeService();
+          //  xChangeTradeService = xChangeExchange.getTradeService();
 
             if (exchangeParameters.isTickerStreamEnabled()) {
                 ProductSubscription.ProductSubscriptionBuilder builder = ProductSubscription.create();
@@ -249,10 +248,12 @@ public class ExchangeAutoConfiguration extends BaseConfiguration {
      *
      * @return xChangeTradeService
      */
+
     @Bean
-    public org.knowm.xchange.service.trade.TradeService getXChangeTradeService() {
-        return xChangeTradeService;
+    public CoinbaseProTradeService getXChangeTradeService() {
+        return new CoinbaseProTradeService();
     }
+
 
     /**
      * Getter for exchangeService.
@@ -352,8 +353,9 @@ public class ExchangeAutoConfiguration extends BaseConfiguration {
      */
     @Bean
     public TickerStreamFlux getTickerStreamFlux() {
-        if (tickerStreamFlux == null && exchangeParameters.isTickerStreamEnabled()) {
-            tickerStreamFlux = new TickerStreamFlux(applicationContext, (StreamingExchange) getXChangeExchange());
+       if (tickerStreamFlux == null && exchangeParameters.isTickerStreamEnabled()) {
+       //  if (tickerStreamFlux == null) {
+                tickerStreamFlux = new TickerStreamFlux(applicationContext, (StreamingExchange) getXChangeExchange());
         }
         return tickerStreamFlux;
     }

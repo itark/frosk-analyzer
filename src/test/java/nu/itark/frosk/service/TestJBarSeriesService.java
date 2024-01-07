@@ -17,9 +17,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-
-//@ExtendWith(SpringExtension.class)
-//@Import({IntegrationTestConfiguration.class})
 @SpringBootTest
 public class TestJBarSeriesService extends BaseIntegrationTest {
 

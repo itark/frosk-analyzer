@@ -46,7 +46,7 @@ public class TestJEngulfingStrategy extends BaseIntegrationTest {
 
     @Test
     public final void run() throws Exception {
-		BarSeries timeSeries = barSeriesService.getDataSet("BTRST-EUR", false, false);
+		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
 		EngulfingStrategy strat = new EngulfingStrategy(timeSeries);
         Strategy strategy = strat.buildStrategy();
         BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);

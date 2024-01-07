@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-@SpringBootTest(classes = {FroskApplication.class})
+@SpringBootTest
 public class TestJStrategies extends BaseIntegrationTest {
 
 	Logger logger = Logger.getLogger(TestJStrategies.class.getName());

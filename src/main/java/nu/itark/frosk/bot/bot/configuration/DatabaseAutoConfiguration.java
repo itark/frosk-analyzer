@@ -13,12 +13,11 @@ import java.util.Optional;
 /**
  * DatabaseAutoConfiguration configures the database.
  */
-/*
-@Configuration
-@EntityScan(basePackages = "tech.cassandre.trading.bot.domain")
-@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
-*/
-//@EnableJpaRepositories(basePackages = "tech.cassandre.trading.bot.repository")
+
+//@Configuration
+//@EntityScan(basePackages = "nu.itark.frosk.bot.bot.domain")
+//@EnableJpaRepositories(basePackages = "nu.itark.frosk.bot.bot.repository")
+//@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
 public class DatabaseAutoConfiguration extends BaseConfiguration {
 
     /** Precision. */

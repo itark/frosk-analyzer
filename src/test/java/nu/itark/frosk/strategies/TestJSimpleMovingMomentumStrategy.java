@@ -36,7 +36,7 @@ import org.ta4j.core.num.Num;
 
 import java.util.List;
 
-@SpringBootTest(classes = {FroskApplication.class})
+@SpringBootTest
 @Slf4j
 public class TestJSimpleMovingMomentumStrategy extends BaseIntegrationTest {
 

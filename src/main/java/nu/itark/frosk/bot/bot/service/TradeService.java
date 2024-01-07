@@ -5,6 +5,7 @@ import nu.itark.frosk.bot.bot.dto.trade.OrderDTO;
 import nu.itark.frosk.bot.bot.dto.trade.TradeDTO;
 import nu.itark.frosk.bot.bot.dto.util.CurrencyPairDTO;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategyInterface;
+import nu.itark.frosk.model.FeaturedStrategy;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -26,6 +27,11 @@ public interface TradeService {
                                                 CurrencyPairDTO currencyPair,
                                                 BigDecimal amount);
 
+    OrderCreationResultDTO createBuyMarketOrder(FeaturedStrategy strategy,
+                                                CurrencyPairDTO currencyPair,
+                                                BigDecimal amount,
+                                                BigDecimal limitPrice);
+
     /**
      * Creates a sell market order.
      *
@@ -37,6 +43,11 @@ public interface TradeService {
     OrderCreationResultDTO createSellMarketOrder(CassandreStrategyInterface strategy,
                                                  CurrencyPairDTO currencyPair,
                                                  BigDecimal amount);
+
+    OrderCreationResultDTO createSellMarketOrder(FeaturedStrategy strategy,
+                                                 CurrencyPairDTO currencyPair,
+                                                 BigDecimal amount,
+                                                 BigDecimal limitPrice);
 
     /**
      * Creates a buy limit order.
