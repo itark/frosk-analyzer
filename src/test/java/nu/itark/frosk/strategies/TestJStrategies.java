@@ -64,8 +64,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void runAllSingleDataSet() {
+		logger.info("runAllSingleDataSet");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "BTC-EUR";  //SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
+		String productId = "GRT-EUR";  //SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
@@ -110,15 +111,16 @@ public class TestJStrategies extends BaseIntegrationTest {
 		ConvergenceDivergenceStrategy cd = new ConvergenceDivergenceStrategy(timeSeries);
 		resultMap.add(run(cd.buildStrategy(),timeSeries));
 
-
+*/
 		SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(timeSeries);
 		resultMap.add(run(simpleMa.buildStrategy(),timeSeries));
 
-*/
+/*
 
 
 		Strategy strategy = new ADXStrategy(timeSeries).buildStrategy();
 		resultMap.add(run(strategy,timeSeries));
+*/
 
 
 		printResult(resultMap);
@@ -161,15 +163,14 @@ public class TestJStrategies extends BaseIntegrationTest {
 		printResult(resultMap);
 
 
-
-
 	}
 
 	@Test
 	public void runOneSingleDataSet2() {
-	BarSeries series = barSeriesService.getDataSet("BTC-EUR", false, false);
-	//Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
-	Strategy strategy = new ADXStrategy(series).buildStrategy();
+		logger.info("runOneSingleDataSet2");
+	BarSeries series = barSeriesService.getDataSet("GRT-EUR", false, false);
+	Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
+	//Strategy strategy = new ADXStrategy(series).buildStrategy();
 
 	BarSeriesManager seriesManager = new BarSeriesManager(series);
 	TradingRecord tradingRecord = seriesManager.run(strategy);

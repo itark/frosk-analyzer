@@ -351,12 +351,12 @@ public class ExchangeAutoConfiguration extends BaseConfiguration {
      *
      * @return tickerStreamFlux
      */
-    @Bean
+   // @Bean
     public TickerStreamFlux getTickerStreamFlux() {
-       if (tickerStreamFlux == null && exchangeParameters.isTickerStreamEnabled()) {
-       //  if (tickerStreamFlux == null) {
-                tickerStreamFlux = new TickerStreamFlux(applicationContext, (StreamingExchange) getXChangeExchange());
-        }
+        //TODO översyn
+   //    if (tickerStreamFlux == null && exchangeParameters.isTickerStreamEnabled()) {
+            tickerStreamFlux = new TickerStreamFlux(applicationContext, (StreamingExchange) getXChangeExchange());
+   //     }
         return tickerStreamFlux;
     }
 

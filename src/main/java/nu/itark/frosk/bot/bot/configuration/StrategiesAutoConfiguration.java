@@ -2,6 +2,7 @@ package nu.itark.frosk.bot.bot.configuration;
 
 import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.RequiredArgsConstructor;
+import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.bot.bot.batch.*;
 import nu.itark.frosk.bot.bot.domain.ImportedCandle;
 import nu.itark.frosk.bot.bot.domain.ImportedTicker;
@@ -52,6 +53,7 @@ import static nu.itark.frosk.bot.bot.dto.position.PositionStatusDTO.OPENING;
 @Configuration
 @EnableConfigurationProperties(ExchangeParameters.class)
 */
+@Configuration
 @RequiredArgsConstructor
 public class StrategiesAutoConfiguration extends BaseConfiguration {
 
@@ -98,7 +100,7 @@ public class StrategiesAutoConfiguration extends BaseConfiguration {
     private final TickerFlux tickerFlux;
 
     /** Ticker Stream flux. */
-    private final TickerStreamFlux tickerStreamFlux;
+//    private final TickerStreamFlux tickerStreamFlux;
 
     /** Order flux. */
     private final OrderFlux orderFlux;
@@ -116,12 +118,16 @@ public class StrategiesAutoConfiguration extends BaseConfiguration {
     @SuppressWarnings("checkstyle:MethodLength")
     public void configure() {
         // Retrieving all the beans have the @Strategy annotation.
-        final Map<String, Object> strategies = applicationContext.getBeansWithAnnotation(CassandreStrategy.class);
+        //final Map<String, Object> strategies = applicationContext.getBeansWithAnnotation(CassandreStrategy.class);
+        //final Map<String, Object> strategies = applicationContext.getBeansWithAnnotation(CassandreStrategy.class);
+
+        final List<String> strategies = StrategiesMap.buildStrategiesMap();
+
 
         // =============================================================================================================
         // Configuration check.
         // We run tests to display and check if everything is ok with the configuration.
-        final UserDTO user = checkConfiguration(strategies);
+   //     final UserDTO user = checkConfiguration(strategies);
 
         // =============================================================================================================
         // Maintenance code.
@@ -146,43 +152,57 @@ public class StrategiesAutoConfiguration extends BaseConfiguration {
         final ConnectableFlux<Set<PositionDTO>> connectablePositionFlux = positionFlux.getFlux().publish();
         final ConnectableFlux<Set<OrderDTO>> connectableOrderFlux = orderFlux.getFlux().publish();
         final ConnectableFlux<Set<TradeDTO>> connectableTradeFlux = tradeFlux.getFlux().publish();
+
+        final ConnectableFlux<Set<TickerDTO>> connectableTickerFlux = tickerFlux.getFlux().publish();
+/*
         final ConnectableFlux<Set<TickerDTO>> connectableTickerFlux;
         if (exchangeParameters.isTickerStreamEnabled()) {
             connectableTickerFlux = tickerStreamFlux.getFlux().publish();
         } else {
             connectableTickerFlux = tickerFlux.getFlux().publish();
         }
+*/
 
         // =============================================================================================================
         // Configuring strategies.
         // Data in database, services, flux...
         logger.info("Running the following strategies:");
-        strategies.values()
+//        strategies.values()
+        strategies
                 .forEach(s -> {
+/*
                     CassandreStrategyInterface strategy = (CassandreStrategyInterface) s;
                     CassandreStrategy annotation = s.getClass().getAnnotation(CassandreStrategy.class);
+*/
 
                     // Retrieving strategy information from annotation.
+/*
                     final String strategyId = annotation.strategyId();
                     final String strategyName = annotation.strategyName();
+*/
+                    final String strategyId = s;
+                    final String strategyName = s;
 
                     // Displaying information about strategy.
-                    logger.info("- Strategy '{}/{}' (requires {})",
+
+ /*                   logger.info("- Strategy '{}/{}' (requires {})",
                             strategyId,
                             strategyName,
                             strategy.getRequestedCurrencyPairs().stream()
                                     .map(CurrencyPairDTO::toString)
                                     .collect(Collectors.joining(", ")));
+*/
 
-                    // StrategyDTO: saving or updating the strategy in database.
                     StrategyDTO strategyDTO;
-                    final Optional<Strategy> strategyInDatabase = strategyRepository.findByStrategyId(annotation.strategyId());
+//                    final Optional<Strategy> strategyInDatabase = strategyRepository.findByStrategyId(annotation.strategyId());
+                    final Optional<Strategy> strategyInDatabase = strategyRepository.findByStrategyId(strategyId);
+
                     if (strategyInDatabase.isEmpty()) {
                         // =============================================================================================
                         // If the strategy is NOT in database.
                         Strategy newStrategy = new Strategy();
-                        newStrategy.setStrategyId(annotation.strategyId());
-                        newStrategy.setName(annotation.strategyName());
+                        newStrategy.setStrategyId(strategyId);
+                        newStrategy.setName(strategyName);
                         strategyDTO = STRATEGY_MAPPER.mapToStrategyDTO(strategyRepository.save(newStrategy));
                         logger.debug("Strategy created in database: {}", newStrategy);
                     } else {
@@ -195,19 +215,25 @@ public class StrategiesAutoConfiguration extends BaseConfiguration {
                     strategyDTO.initializeLastPositionIdUsed(positionRepository.getLastPositionIdUsedByStrategy(strategyDTO.getUid()));
 
                     // Setting up configuration, dependencies and accounts in strategy.
+/*
                     strategy.initializeAccounts(user.getAccounts());
                     strategy.setConfiguration(getCassandreStrategyConfiguration(strategyDTO));
                     strategy.setDependencies(getCassandreStrategyDependencies());
+*/
 
                     // Calling user defined initialize() method.
+/*
                     strategy.initialize();
+*/
 
                     // Connecting flux to strategy.
+/*
                     connectableAccountFlux.subscribe(strategy::accountsUpdates, throwable -> logger.error("AccountsUpdates failing: {}", throwable.getMessage()));
                     connectablePositionFlux.subscribe(strategy::positionsUpdates, throwable -> logger.error("PositionsUpdates failing: {}", throwable.getMessage()));
                     connectableOrderFlux.subscribe(strategy::ordersUpdates, throwable -> logger.error("OrdersUpdates failing: {}", throwable.getMessage()));
                     connectableTradeFlux.subscribe(strategy::tradesUpdates, throwable -> logger.error("TradesUpdates failing: {}", throwable.getMessage()));
                     connectableTickerFlux.subscribe(strategy::tickersUpdates, throwable -> logger.error("TickersUpdates failing: {}", throwable.getMessage()));
+*/
                 });
 
         // =============================================================================================================

@@ -21,6 +21,7 @@ import nu.itark.frosk.bot.bot.repository.StrategyRepository;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategy;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategyInterface;
 import nu.itark.frosk.bot.bot.util.base.service.BaseService;
+import nu.itark.frosk.bot.bot.util.jpa.CurrencyAmount;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
@@ -56,6 +57,7 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
     /** Trade service. */
     private final TradeService tradeService;
 
+    @Autowired
     /** Position flux. */
     private final PositionFlux positionFlux;
 
@@ -147,7 +149,7 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
             PositionDTO p = new PositionDTO(position.getUid(), type, strategy.getConfiguration().getStrategyDTO(), currencyPair, amount, orderCreationResult.getOrder(), rules);
             positionRepository.save(POSITION_MAPPER.mapToPosition(p));
             logger.debug("Position {} opened with order {}",
-                    p.getPositionId(),
+                    p.getUid(),
                     orderCreationResult.getOrder().getOrderId());
 
             // =========================================================================================================
@@ -165,6 +167,9 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
                                                      final CurrencyPairDTO currencyPair,
                                                      final BigDecimal amount,
                                                      final BigDecimal limitPrice) {
+
+        StrategyDTO strategyDTO = STRATEGY_MAPPER.mapToStrategyDTO(strategyRepository.findByStrategyId(strategy.getName()).get());
+
         logger.debug("Creating a {} position for {} on {} with the rules: {}",
                 type.toString().toLowerCase(Locale.ROOT),
                 amount,
@@ -186,52 +191,34 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
             // Short position - we sell.
             orderCreationResult = tradeService.createSellMarketOrder(strategy, currencyPair, amount, limitPrice);
         }
+        logger.debug("Order created: {}",orderCreationResult);
 
         // If it works, we create the position.
         if (orderCreationResult.isSuccessful()) {
             // =========================================================================================================
             // Creates the position in database.
-            Position position = new Position();
 
-            // If the strategy is NOT in database.
-            nu.itark.frosk.bot.bot.domain.Strategy newStrategy = new nu.itark.frosk.bot.bot.domain.Strategy();
-            newStrategy.setStrategyId(String.valueOf(strategy.getId()));
-            newStrategy.setName(strategy.getName());
-            StrategyDTO strategyDTO = STRATEGY_MAPPER.mapToStrategyDTO(strategyRepository.saveAndFlush(newStrategy));
-            nu.itark.frosk.bot.bot.domain.Strategy strategyee= strategyRepository.saveAndFlush(newStrategy);
-            logger.debug("Strategy created in database: {}", newStrategy);
-            //position.setStrategy(STRATEGY_MAPPER.mapToStrategy(featuredStrategy.getConfiguration().getStrategyDTO()));
-            position.setStrategy(strategyee);
-            position = positionRepository.saveAndFlush(position);
+            Position position = new Position();
+            position.setStrategy(STRATEGY_MAPPER.mapToStrategy(strategyDTO));
+            position = positionRepository.save(position);
+
             // =========================================================================================================
             // Creates the position dto.
-            //TODO
-//            PositionDTO p = new PositionDTO(position.getUid(), type, featuredStrategy.getConfiguration().getStrategyDTO(), currencyPair, amount, orderCreationResult.getOrder(), rules);
-
-/*
-            StrategyDTO strategyDTO = StrategyDTO.builder()
-                    .name(strategyee.getName())
-                    .strategyId(strategyee.getStrategyId())
-                    .build();
-*/
-
             PositionDTO p = new PositionDTO(position.getUid(), type, strategyDTO, currencyPair, amount, orderCreationResult.getOrder(), null);
-
             positionRepository.save(POSITION_MAPPER.mapToPosition(p));
-            logger.debug("Position {} opened with order {}",
+            logger.info("Position {} opened with order {}",
                     p.getPositionId(),
                     orderCreationResult.getOrder().getOrderId());
-
             // =========================================================================================================
             // Emit the position, creates and return the position creation result.
-            positionFlux.emitValue(p);
+            //TODO enalble fluyx
+            //positionFlux.emitValue(p);
             return new PositionCreationResultDTO(p);
         } else {
             logger.error("Position creation failure: {}", orderCreationResult.getErrorMessage());
             return new PositionCreationResultDTO(orderCreationResult.getErrorMessage(), orderCreationResult.getException());
         }
     }
-
 
     @Override
     public final void updatePositionRules(final long positionUid, @NonNull final PositionRulesDTO newRules) {
@@ -298,6 +285,59 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
             return new OrderCreationResultDTO("Impossible to close position " + positionUid + " because we couldn't find it in database", null);
         }
     }
+
+    @Override
+    public final OrderCreationResultDTO closePosition(@NonNull final Strategy strategy,
+                                                      final long positionUid,
+                                                      @NonNull final TickerDTO ticker) {
+        logger.info("Trying to close position {}.", positionUid);
+        final FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategy.getName(), ticker.getCurrencyPair().toString());
+        final Optional<Position> position = positionRepository.findById(positionUid);
+        if (position.isPresent()) {
+            final PositionDTO positionDTO = POSITION_MAPPER.mapToPositionDTO(position.get());
+            final OrderCreationResultDTO orderCreationResult;
+
+            // =========================================================================================================
+            // Here, we create the order creation depending on the position type (Short or long).
+            if (positionDTO.getType() == LONG) {
+                // Long - We just sell.
+                //TODO review correct price
+                orderCreationResult = tradeService.createSellMarketOrder(featuredStrategy, positionDTO.getCurrencyPair(), positionDTO.getAmount().getValue(), ticker.getBid());
+            } else {
+                // Short - We buy back with the money we get from the original selling.
+                // On opening, we had:
+                // CP2: ETH/USDT - 1 ETH costs 10 USDT - We sold 1 ETH, and it will give us 10 USDT.
+                // We will use those 10 USDT to buy back ETH when the rule is triggered.
+                // CP2: ETH/USDT - 1 ETH costs 2 USDT - We buy 5 ETH, and it will cost us 10 USDT.
+                // We can now use those 10 USDT to buy 5 ETH (amount sold / price).
+                final BigDecimal amountToBuy = positionDTO.getAmountToLock().getValue().divide(ticker.getLast(), HALF_UP).setScale(BIGINTEGER_SCALE, FLOOR);
+                //TODO review correct price
+                orderCreationResult = tradeService.createBuyMarketOrder(featuredStrategy, positionDTO.getCurrencyPair(), amountToBuy, ticker.getBid());
+            }
+
+            // =========================================================================================================
+            // If the order is successful, we set the position as closed using closePositionWithOrder().
+            if (orderCreationResult.isSuccessful()) {
+                positionDTO.closePositionWithOrder(orderCreationResult.getOrder());
+                logger.debug("Position {} closed with order {}", positionDTO.getPositionId(), orderCreationResult.getOrder().getOrderId());
+            } else {
+                logger.error("Position {} not closed, failed to create order: {}", positionDTO.getPositionId(), orderCreationResult.getErrorMessage());
+            }
+
+            // =========================================================================================================
+            // We emit the position to save it and send events to strategies.
+
+            //TODO fix, save first
+            positionFlux.emitValue(positionDTO);
+            return orderCreationResult;
+        } else {
+            logger.error("Impossible to close position {} because we couldn't find it in database", positionUid);
+            return new OrderCreationResultDTO("Impossible to close position " + positionUid + " because we couldn't find it in database", null);
+        }
+    }
+
+
+
 
     @Override
     public final void setAutoClose(final long positionUid, final boolean value) {

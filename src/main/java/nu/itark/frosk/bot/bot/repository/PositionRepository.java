@@ -18,6 +18,9 @@ import java.util.Optional;
 @Repository
 public interface PositionRepository extends JpaRepository<Position, Long>, JpaSpecificationExecutor<Position> {
 
+
+    Optional<Position> findByCurrencyPair(String currencyPair);
+
     /**
      * Find a position by its position id.
      *

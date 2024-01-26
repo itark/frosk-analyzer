@@ -2,6 +2,7 @@ package nu.itark.frosk.bot.bot.batch;
 
 import info.bitrich.xchangestream.core.StreamingExchange;
 import io.reactivex.disposables.Disposable;
+import lombok.RequiredArgsConstructor;
 import nu.itark.frosk.bot.bot.dto.market.TickerDTO;
 import nu.itark.frosk.bot.bot.dto.util.CurrencyPairDTO;
 import nu.itark.frosk.bot.bot.strategy.CassandreStrategy;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
  * It registers for tickers streams from the exchange.
  * To get a deep understanding of how it works, read the documentation of {@link BaseFlux}.
  */
-//@RequiredArgsConstructor
+@RequiredArgsConstructor
 public class TickerStreamFlux extends BaseFlux<TickerDTO> {
 
     /** ticker subscriptions. */

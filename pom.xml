@@ -167,7 +167,6 @@
 			<groupId>org.ta4j</groupId>
 			<artifactId>ta4j-core</artifactId>
 			<version>0.16-SNAPSHOT</version>
-			<scope>compile</scope>
 		</dependency>
 
 		<dependency>
@@ -276,40 +275,11 @@
 		</dependency>
 
 		<dependency>
-			<groupId>tech.cassandre.trading.bot</groupId>
-			<artifactId>cassandre-trading-bot-spring-boot-starter-api-graphql</artifactId>
-			<version>6.0.2-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.awaitility</groupId>
 			<artifactId>awaitility</artifactId>
 			<version>4.2.0</version>
 			<scope>test</scope>
 		</dependency>
-
-		<dependency>
-			<groupId>tech.cassandre.trading.bot</groupId>
-			<artifactId>cassandre-trading-bot-spring-boot-starter-test</artifactId>
-			<version>6.0.2-SNAPSHOT</version>
-			<scope>test</scope>
-		</dependency>
-
-<!--
-		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct-processor</artifactId>
-			<version>1.5.5.Final</version>
-		</dependency>
--->
-
-<!--
-		<dependency>
-			<groupId>org.modelmapper</groupId>
-			<artifactId>modelmapper</artifactId>
-			<version>3.1.1</version>
-		</dependency>
--->
 
 		<dependency>
 			<groupId>org.knowm.xchange</groupId>
@@ -365,43 +335,6 @@
 						</path>
 					</annotationProcessorPaths>
 				</configuration>
-			</plugin>
-			<!-- Surefire -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<properties>
-						<configurationParameters>
-							junit.jupiter.extensions.autodetection.enabled = true
-						</configurationParameters>
-					</properties>
-					<reuseForks>false</reuseForks>
-					<forkCount>1</forkCount>
-					<excludes>
-						<exclude>**/integration/**</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>${maven.jacoco.plugin.version}</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>prepare-agent</goal>
-						</goals>
-					</execution>
-					<!-- attached to Maven test phase -->
-					<execution>
-						<id>report</id>
-						<phase>test</phase>
-						<goals>
-							<goal>report</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>

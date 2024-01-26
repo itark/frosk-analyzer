@@ -9,10 +9,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.UUID;
+import java.util.random.RandomGenerator;
 
 //@Component
 public class CoinbaseProTradeService  {
 
+
+  //TODO fix!
 
   public String placeMarketOrder(MarketOrder marketOrder) throws IOException {
 /*
@@ -20,9 +24,11 @@ public class CoinbaseProTradeService  {
          .getId();
 */
 
-    return "666";
+    return UUID.randomUUID().toString();
 
   }
+
+  //TODO fix
 
   public String placeLimitOrder(LimitOrder limitOrder) throws IOException, FundsExceededException {
 /*
@@ -30,7 +36,7 @@ public class CoinbaseProTradeService  {
         .getId();
 */
 
-    return  "666";
+    return UUID.randomUUID().toString();
 
   }
 

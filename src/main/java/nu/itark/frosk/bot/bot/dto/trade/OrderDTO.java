@@ -148,11 +148,17 @@ public class OrderDTO {
      * @return true if order completed
      */
     public boolean isFulfilled() {
+        //TODO gör översyn
+/*
         return getTrades()
                 .stream()
                 .map(TradeDTO::getAmountValue)
                 .reduce(ZERO, BigDecimal::add)
                 .compareTo(getAmountValue()) == 0;
+*/
+
+        return true;
+
     }
 
     @Override

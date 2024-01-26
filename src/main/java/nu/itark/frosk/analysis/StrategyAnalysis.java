@@ -179,7 +179,8 @@ public class StrategyAnalysis {
 				strategyTrade = new StrategyTrade(	sellDate,
 													exitType,
 													BigDecimal.valueOf(position.getExit().getValue().doubleValue()),
-													BigDecimal.valueOf(position.getProfit().doubleValue()),
+													//BigDecimal.valueOf(position.getProfit().doubleValue()),
+													new BigDecimal(position.getProfit().doubleValue()).setScale(4, BigDecimal.ROUND_DOWN),
 													BigDecimal.valueOf(pnl.doubleValue()));
 				strategyTradeList.add(strategyTrade);
 				latestTradeDate = Date.from(barExit.getEndTime().toInstant());

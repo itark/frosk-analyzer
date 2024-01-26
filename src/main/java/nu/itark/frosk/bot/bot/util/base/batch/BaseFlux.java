@@ -1,6 +1,7 @@
 package nu.itark.frosk.bot.bot.util.base.batch;
 
 import nu.itark.frosk.bot.bot.util.base.Base;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
@@ -24,6 +25,7 @@ public abstract class BaseFlux<T> extends Base {
 
     /** Flux. */
     protected final Flux<Set<T>> flux;
+
 
     /** Flux sink. */
     protected FluxSink<Set<T>> fluxSink;

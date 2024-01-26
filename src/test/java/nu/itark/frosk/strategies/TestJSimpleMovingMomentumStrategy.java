@@ -34,6 +34,7 @@ import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.criteria.pnl.ReturnCriterion;
 import org.ta4j.core.num.Num;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @SpringBootTest
@@ -45,45 +46,41 @@ public class TestJSimpleMovingMomentumStrategy extends BaseIntegrationTest {
 
     @Test
     public final void run() throws Exception {
-        BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", true, false);
+        BarSeries timeSeries = barSeriesService.getDataSet("GRT-EUR", false, false);
         SimpleMovingMomentumStrategy strat = new SimpleMovingMomentumStrategy(timeSeries);
         Strategy strategy = strat.buildStrategy();
         BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
+
+        System.out.println("XXX: Total percentage: " + new ProfitLossPercentageCriterion().calculate(timeSeries, tradingRecord).doubleValue());
+
         List<Position> positions = tradingRecord.getPositions();
 
         for (Position position : positions) {
             Bar barEntry = timeSeries.getBar(position.getEntry().getIndex());
-            log.info(timeSeries.getName() + "::barEntry=" + barEntry.getDateName());
+            log.info("Entered on " + barEntry.getSimpleDateName() + " (close_price=" + barEntry.getClosePrice().doubleValue() + ", amount=" + barEntry.getAmount().doubleValue() + ")");
+           // log.info(timeSeries.getName() + "::barEntry=" + barEntry.getDateName());
             Bar barExit = timeSeries.getBar(position.getExit().getIndex());
-            log.info(timeSeries.getName() + "::barExit=" + barExit.getDateName());
+            log.info("Exited on " + barExit.getSimpleDateName() + " (close_price=" + barExit.getClosePrice().doubleValue() + ", amount=" + barExit.getAmount().doubleValue() + ")");
+            //log.info(timeSeries.getName() + "::barExit=" + barExit.getDateName());
             Num closePriceBuy = barEntry.getClosePrice();
             Num closePriceSell = barExit.getClosePrice();
             Num profit = closePriceSell.minus(closePriceBuy);
-
-            if (position.isOpened()) {
-                log.info("isOpened():{}", barEntry.getDateName());
-            }
-            if (position.isNew()) {
-                log.info("isNew():{}", barEntry.getDateName());
-            }
-            if (position.isClosed()) {
-                log.info("isClose():{}", barExit.getDateName());
-            } else {
-                log.info("!isClose():{}", barExit.getDateName());
-            }
-
             log.info("profit=" + profit);
 
+            log.info("position.profit=" + position.getProfit());
+            log.info("position.profit2 =" + BigDecimal.valueOf(position.getProfit().doubleValue()));
         }
 
         log.info("Number of positions for the strategy: " + tradingRecord.getPositionCount());
 
         // Analysis
+/*
         AnalysisCriterion totalReturn = new ReturnCriterion();
         System.out.println("Total return: " + totalReturn.calculate(timeSeries, tradingRecord).doubleValue());
-        ProfitLossPercentageCriterion totalPercentage = new ProfitLossPercentageCriterion();
+        totalPercentage = new ProfitLossPercentageCriterion();
         System.out.println("Total percentage: " + totalPercentage.calculate(timeSeries, tradingRecord).doubleValue());
+*/
 
 
     }

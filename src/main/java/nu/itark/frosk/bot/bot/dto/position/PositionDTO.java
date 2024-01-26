@@ -44,7 +44,7 @@ import static nu.itark.frosk.bot.bot.util.math.MathConstants.ONE_HUNDRED_BIG_DEC
 public class PositionDTO {
 
     /** Technical ID. */
-    private final long uid;
+    private long uid;
 
     /** An identifier that uniquely identifies the position. */
     private final long positionId;
@@ -117,6 +117,27 @@ public class PositionDTO {
         this.forceClosing = false;
         this.autoClose = true;
     }
+
+    public PositionDTO(final PositionTypeDTO newType,
+                       final StrategyDTO newStrategy,
+                       final CurrencyPairDTO newCurrencyPair,
+                       final BigDecimal newAmount,
+                       final OrderDTO newOpenOrder,
+                       final PositionRulesDTO newRules) {
+        this.type = newType;
+        this.positionId = newStrategy.getNextPositionId();
+        this.strategy = newStrategy;
+        this.currencyPair = newCurrencyPair;
+        this.amount = CurrencyAmountDTO.builder()
+                .value(newAmount)
+                .currency(newCurrencyPair.getBaseCurrency())
+                .build();
+        this.openingOrder = newOpenOrder;
+        this.rules = newRules;
+        this.forceClosing = false;
+        this.autoClose = true;
+    }
+
 
     /**
      * Returns position status.
@@ -386,9 +407,13 @@ public class PositionDTO {
      */
     public final void closePositionWithOrder(final OrderDTO newCloseOrder) {
         // This method should only be called when the position is in the OPENED status.
+
+        //TODO fix
+/*
         if (getStatus() != OPENED) {
             throw new PositionException("Impossible to close position " + uid + " because of its status " + getStatus());
         }
+*/
         closingOrder = newCloseOrder;
     }
 
@@ -587,7 +612,7 @@ public class PositionDTO {
             }
             return value;
         } catch (Exception e) {
-            return "Position " + this.getUid() + " (error in getDescription() method)";
+            return "Position (error in getDescription() method)";
         }
     }
 
@@ -601,7 +626,7 @@ public class PositionDTO {
         }
         final PositionDTO that = (PositionDTO) o;
         return new EqualsBuilder()
-                .append(this.uid, that.uid)
+                //.append(this.uid, that.uid)
                 .append(this.positionId, that.positionId)
                 .append(this.type, that.type)
                 .append(this.currencyPair, that.currencyPair)
@@ -616,11 +641,13 @@ public class PositionDTO {
                 .isEquals();
     }
 
+/*
     @Override
     public final int hashCode() {
         return new HashCodeBuilder()
                 .append(uid)
                 .toHashCode();
     }
+*/
 
 }

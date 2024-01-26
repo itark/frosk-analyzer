@@ -10,6 +10,7 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.ParabolicSarIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.rules.IsFallingRule;
 import org.ta4j.core.rules.StopLossRule;
@@ -24,8 +25,8 @@ public abstract  class AbstractStrategy {
 
     BarSeriesService barSeriesService = new BarSeriesService();
 
-    @Value("${frosk.inherent.exitrule}")
-    public boolean inherentExitRule = true;
+    @Value("${frosk.inherent.exitrule:true}")
+    public boolean inherentExitRule;
 
     public Boolean stationary;
 

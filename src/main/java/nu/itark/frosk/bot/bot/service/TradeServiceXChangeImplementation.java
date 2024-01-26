@@ -112,7 +112,7 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
     public OrderCreationResultDTO createSellMarketOrder(@NonNull final FeaturedStrategy strategy,
                                                         @NonNull final CurrencyPairDTO currencyPair,
                                                         @NonNull final BigDecimal amount,
-                                                        @NonNull final BigDecimal limitPrice) {
+                                                        final BigDecimal limitPrice) {
         return createMarketOrder(strategy, ASK, currencyPair, amount, limitPrice);
     }
 
@@ -218,12 +218,7 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
                     currencyPair,
                     amount.setScale(currencyPair.getBaseCurrencyPrecision(), FLOOR));
 
-            // If the strategy is NOT in database.
-            Strategy newStrategy = new Strategy();
-            newStrategy.setStrategyId(String.valueOf(strategy.getId()));
-            newStrategy.setName(strategy.getName());
-            StrategyDTO strategyDTO = STRATEGY_MAPPER.mapToStrategyDTO(strategyRepository.saveAndFlush(newStrategy));
-            logger.debug("Strategy created in database: {}", newStrategy);
+            StrategyDTO strategyDTO = STRATEGY_MAPPER.mapToStrategyDTO(strategyRepository.findByStrategyId(strategy.getName()).get());
 
             // We create the order in database with the PENDING_NEW status.
             OrderDTO order = OrderDTO.builder()
@@ -259,7 +254,7 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
                 savedOrder = Optional.of(orderRepository.save(ORDER_MAPPER.mapToOrder(order)));
             }
             final OrderCreationResultDTO result = new OrderCreationResultDTO(ORDER_MAPPER.mapToOrderDTO(savedOrder.get()));
-            logger.debug("Order created: {}", result);
+            logger.info("Order created: {}", result);
             return result;
         } catch (Exception e) {
             final String errorMessage = "Error calling createMarketOrder for " + amount + " " + currencyPair + ": " + e.getMessage();
@@ -469,6 +464,8 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
 
         // We set currency pairs on each param (required for exchanges like Gemini or Binance).
         Set<TradeDTO> results = new LinkedHashSet<>();
+
+        //TODO enable for Coinbase
 /*
         if (!currencyPairs.isEmpty()) {
             currencyPairs.forEach(pair -> {

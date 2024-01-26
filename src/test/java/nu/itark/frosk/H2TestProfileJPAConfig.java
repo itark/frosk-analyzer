@@ -10,15 +10,15 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 
 
-/*
-@Configuration
-@EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo"})
-@EnableTransactionManagement
-*/
+
+//@Configuration
+//@EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo"})
+//@EnableTransactionManagement
 @Deprecated
 public class H2TestProfileJPAConfig {
 
-/*
+    //Funkar inte sålänge alla bönar behövs som drivs av FroskApplication.java
+
     @Bean
     @Profile("test")
     public DataSource dataSource() {
@@ -30,7 +30,6 @@ public class H2TestProfileJPAConfig {
 
         return dataSource;
     }
-*/
 
 
 

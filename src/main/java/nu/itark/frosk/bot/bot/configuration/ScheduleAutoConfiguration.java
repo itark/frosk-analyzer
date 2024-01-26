@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Configuration
 @EnableScheduling
 */
+@Configuration
 @RequiredArgsConstructor
 public class ScheduleAutoConfiguration extends BaseConfiguration {
 
@@ -41,7 +42,7 @@ public class ScheduleAutoConfiguration extends BaseConfiguration {
     private static final int TERMINATION_DELAY_IN_MILLISECONDS = 10_000;
 
     /** Flux continues to run as long as enabled is set to true. */
-    private final AtomicBoolean enabled = new AtomicBoolean(true);
+    private final AtomicBoolean enabled = new AtomicBoolean(false);
 
     /** Account flux. */
     private final AccountFlux accountFlux;

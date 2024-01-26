@@ -81,6 +81,16 @@ public interface PositionService {
     OrderCreationResultDTO closePosition(CassandreStrategyInterface strategy, long positionUid, TickerDTO ticker);
 
     /**
+     * Close a position.
+     *
+     * @param strategy    strategy
+     * @param positionUid position uid
+     * @param ticker      ticker
+     * @return order creation result
+     */
+    OrderCreationResultDTO closePosition(Strategy strategy, long positionUid, TickerDTO ticker);
+
+    /**
      * Set auto close value on a specific position.
      * If true, Cassandre will close the position according to rules.
      * if false, Cassandre will never close the position itself.
