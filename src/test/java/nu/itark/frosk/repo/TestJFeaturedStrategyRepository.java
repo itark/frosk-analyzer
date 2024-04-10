@@ -85,56 +85,6 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 	}
 	
 	@Test
-	public void testManyToOne() {
-	
-		tradesRepo.deleteAllInBatch();
-		featuredStrategyRepository.deleteAllInBatch();
-		
-		
-		
-		String name = "HELOO";
-		String securityName = "TEST";
-		BigDecimal totalProfit = new BigDecimal(12.0);
-		Integer numberOfTicks = 12;
-		BigDecimal averageTickProfit = new BigDecimal(12.0);
-		Integer numberofTrades = 12;
-		BigDecimal profitableTradesRatio = new BigDecimal(12.0);
-		BigDecimal maxDD = new BigDecimal(12.0);
-		BigDecimal rewardRiskRatio = new BigDecimal(12.0);
-		BigDecimal totalTransactionCost = new BigDecimal(12.0);
-		String period = "PER";
-		Date latestTrade = new Date();
-		
-		
-		FeaturedStrategy featuredStrategy = new FeaturedStrategy();
-		
-		
-		FeaturedStrategy featuredStrategyREs =	featuredStrategyRepository.saveAndFlush(featuredStrategy);
-
-		log.info("featuredStrategyREs id="+featuredStrategyREs.getId());
-		
-		// save trade
-		StrategyTrade trades = new StrategyTrade(new Date(), "X", new BigDecimal(23),new BigDecimal(23),new BigDecimal(23));
-		trades.setFeaturedStrategy(featuredStrategyREs);
-
-		StrategyTrade trades2 = new StrategyTrade(new Date(), "Y", new BigDecimal(23),new BigDecimal(23),new BigDecimal(23));
-		trades2.setFeaturedStrategy(featuredStrategyREs);
-
-		// save indicatorvalues
-		StrategyIndicatorValue indicatorValue = new StrategyIndicatorValue(new Date(), new BigDecimal(21), "EMAIndicator");
-		indicatorValue.setFeaturedStrategy(featuredStrategyREs);
-		
-		
-		tradesRepo.saveAndFlush(trades);
-		tradesRepo.saveAndFlush(trades2);
-
-		indicatorValuesRepo.saveAndFlush(indicatorValue);
-		
-		
-	}
-
-
-	@Test
 	public void testFindByOpenTrade() {
 		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByOpenTrade("BTC-EUR");
 

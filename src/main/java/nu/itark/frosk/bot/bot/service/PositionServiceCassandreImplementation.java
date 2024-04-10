@@ -21,7 +21,6 @@ import nu.itark.frosk.bot.bot.repository.StrategyRepository;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategy;
 import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategyInterface;
 import nu.itark.frosk.bot.bot.util.base.service.BaseService;
-import nu.itark.frosk.bot.bot.util.jpa.CurrencyAmount;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
@@ -169,7 +168,6 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
                                                      final BigDecimal limitPrice) {
 
         StrategyDTO strategyDTO = STRATEGY_MAPPER.mapToStrategyDTO(strategyRepository.findByStrategyId(strategy.getName()).get());
-
         logger.debug("Creating a {} position for {} on {} with the rules: {}",
                 type.toString().toLowerCase(Locale.ROOT),
                 amount,
@@ -290,7 +288,7 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
     public final OrderCreationResultDTO closePosition(@NonNull final Strategy strategy,
                                                       final long positionUid,
                                                       @NonNull final TickerDTO ticker) {
-        logger.info("Trying to close position {}.", positionUid);
+        logger.debug("Trying to close position {}.", positionUid);
         final FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategy.getName(), ticker.getCurrencyPair().toString());
         final Optional<Position> position = positionRepository.findById(positionUid);
         if (position.isPresent()) {
@@ -319,7 +317,7 @@ public class PositionServiceCassandreImplementation extends BaseService implemen
             // If the order is successful, we set the position as closed using closePositionWithOrder().
             if (orderCreationResult.isSuccessful()) {
                 positionDTO.closePositionWithOrder(orderCreationResult.getOrder());
-                logger.debug("Position {} closed with order {}", positionDTO.getPositionId(), orderCreationResult.getOrder().getOrderId());
+                logger.info("Position {} closed with order {}", positionDTO.getPositionId(), orderCreationResult.getOrder().getOrderId());
             } else {
                 logger.error("Position {} not closed, failed to create order: {}", positionDTO.getPositionId(), orderCreationResult.getErrorMessage());
             }

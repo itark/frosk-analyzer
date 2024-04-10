@@ -5,6 +5,7 @@ import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.analysis.SecurityMetaDataManager;
 import nu.itark.frosk.bot.TradingBot;
 import nu.itark.frosk.repo.*;
+import nu.itark.frosk.service.TradingAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -66,7 +67,7 @@ public class HighLander {
 	SecurityMetaDataManager securityMetaDataManager;
 
 	@Autowired
-	TradingBot tradingBot;
+	TradingAccountService tradingAccountService;
 
 
 	/**
@@ -91,11 +92,22 @@ public class HighLander {
 
 	private void runDoRealTrades() {
 		List<FeaturedStrategyDTO> topFeaturedStratyList =  securityMetaDataManager.getTopFeaturedStrategies();
+		tradingAccountService.deleteTotalValue(); //when runBotPositions
 		topFeaturedStratyList.forEach(tfs -> {
 			String strategy = tfs.getName()+"Strategy";
 			long securityId = securityRepository.findByName(tfs.getSecurityName()).getId();
-			strategyAnalysis.runBot(strategy,securityId);
+			//runBot(strategy,securityId);
+			runBotPositions(strategy,securityId);
 		});
+	}
+
+
+	private void runBot(String strategy, Long securityId) {
+		strategyAnalysis.runBot(strategy,securityId);
+	}
+
+	private void runBotPositions(String strategy, Long securityId) {
+		strategyAnalysis.runBotPositions(strategy,securityId);
 	}
 
 	/**

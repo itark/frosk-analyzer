@@ -12,6 +12,7 @@ public class OpenFeaturedStrategyDTO {
     private String securityName;
     private String name;
     private BigDecimal totalProfit;
+    private BigDecimal totalGrossReturn;
     private String latestTrade;
     private BigDecimal close;
 }

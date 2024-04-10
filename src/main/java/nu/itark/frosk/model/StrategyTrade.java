@@ -16,12 +16,11 @@ import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.UniqueConstraint;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
+@Data
+//@Builder
+@NoArgsConstructor
 @Entity
 @Table(name = "strategy_trade", uniqueConstraints={@UniqueConstraint(columnNames={"date", "type", "featured_strategy_id"})})
 public class StrategyTrade {
@@ -40,6 +39,9 @@ public class StrategyTrade {
 	@Column(name = "gross_profit")
 	private BigDecimal grossProfit;
 
+	@Column(name = "amount")
+	private BigDecimal amount = BigDecimal.ZERO;
+
 	@Column(name = "pnl")
 	private BigDecimal pnl;
 
@@ -50,8 +52,7 @@ public class StrategyTrade {
     @JoinColumn(name="featured_strategy_id", nullable=false)
     private FeaturedStrategy featuredStrategy;
 
-    protected StrategyTrade(){}
-    
+/*
     public StrategyTrade(Date date, String type, BigDecimal price, BigDecimal grossProfit, BigDecimal pnl){
     	this.date = date;
     	this.price = price;
@@ -59,6 +60,6 @@ public class StrategyTrade {
 		this.pnl = pnl;
     	this.type = type;
     }
-    
+*/
 
 }

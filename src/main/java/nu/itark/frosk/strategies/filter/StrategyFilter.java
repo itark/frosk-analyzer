@@ -52,6 +52,7 @@ public class StrategyFilter {
                 .securityName(fs.getSecurityName())
                 .latestTrade(DateFormatUtils.format(fs.getLatestTrade(), "yyyy-MM-dd"))
                 .totalProfit(securityMetaDataManager.getBarPercent(fs.getSecurityName(), nrOfBars.intValue()))
+                .totalGrossReturn(securityMetaDataManager.getBarGrossProfit(fs.getSecurityName(), nrOfBars.intValue()))
                 .close(securityMetaDataManager.getLatestClose(fs.getSecurityName()))
                 .build();
     }
@@ -102,6 +103,7 @@ public class StrategyFilter {
             tradee.setDate(trade.getDate().toInstant().toEpochMilli());
             tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd"));
             tradee.setPrice(BigDecimal.valueOf(trade.getPrice().doubleValue()));
+            tradee.setAmount(BigDecimal.valueOf(trade.getAmount().doubleValue()));
             tradee.setType(trade.getType());
             tradee.setSecurityName(trade.getFeaturedStrategy().getSecurityName());
             tradee.setStrategy(trade.getFeaturedStrategy().getName());

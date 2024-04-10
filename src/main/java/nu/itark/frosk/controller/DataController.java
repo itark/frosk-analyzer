@@ -7,6 +7,7 @@ import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -238,6 +239,16 @@ public class DataController {
     public List<OpenFeaturedStrategyDTO> openSmartSignals() {
         log.info("/smartSignals");
         return getOpenSmartSignals();
+    }
+
+    @GetMapping(value = "/totalTrading")
+    public TotalTradingDTO totalTrading() {
+        log.info("/totalTrading");
+        return getTotalTrading();
+    }
+
+    private TotalTradingDTO getTotalTrading() {
+       return strategyMetaDataManager.getTradingInfo();
     }
 
     private List<TradeDTO> getLongTrades() {

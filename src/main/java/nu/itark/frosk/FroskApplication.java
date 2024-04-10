@@ -10,6 +10,7 @@ import nu.itark.frosk.crypto.coinbase.api.marketdata.MarketDataService;
 import nu.itark.frosk.crypto.coinbase.api.payments.PaymentService;
 import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
 import nu.itark.frosk.crypto.coinbase.security.Signature;
+import org.h2.tools.Server;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -19,6 +20,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.sql.SQLException;
 
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo","nu.itark.frosk.bot.bot.repository"})
@@ -39,6 +42,12 @@ public class FroskApplication {
             log.info("Bean:"+beanName);
         }
     }
+
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    public Server h2Server() throws SQLException {
+        return Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092");
+    }
+
 
     @Bean
     public MarketDataService initmarketDataService(Coinbase exchange) {

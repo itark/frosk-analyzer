@@ -42,7 +42,10 @@ public class FeaturedStrategy {
 	private String securityName;
 
 	@Column(name = "total_profit")
-	private BigDecimal totalProfit; 
+	private BigDecimal totalProfit;
+
+	@Column(name = "total_gross_return")
+	private BigDecimal totalGrossReturn;
 
 	@Column(name = "ticks")
 	private Integer numberOfTicks; 

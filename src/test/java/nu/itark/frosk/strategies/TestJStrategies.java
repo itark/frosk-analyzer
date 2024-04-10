@@ -1,12 +1,13 @@
 package nu.itark.frosk.strategies;
 
-import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.Profit;
+import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,11 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
+import org.ta4j.core.backtest.BacktestExecutor;
+import org.ta4j.core.backtest.BarSeriesManager;
 import org.ta4j.core.criteria.*;
-import org.ta4j.core.criteria.pnl.LossCriterion;
-import org.ta4j.core.criteria.pnl.ProfitCriterion;
-import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
-import org.ta4j.core.criteria.pnl.ReturnCriterion;
+import org.ta4j.core.criteria.pnl.*;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.reports.PerformanceReport;
@@ -45,6 +45,10 @@ public class TestJStrategies extends BaseIntegrationTest {
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;
 
+	@Autowired
+	StrategyTradeRepository strategyTradeRepository;
+
+
 	Formatter fmt;
 
 
@@ -66,7 +70,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	public void runAllSingleDataSet() {
 		logger.info("runAllSingleDataSet");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "GRT-EUR";  //SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
+		String productId = "FIL-EUR";  //SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
@@ -99,10 +103,10 @@ public class TestJStrategies extends BaseIntegrationTest {
 		run(eng.buildStrategy(),timeSeries);
 */
 
-/*
+
 		HaramiStrategy harami = new HaramiStrategy(timeSeries);
 		resultMap.add(run(harami.buildStrategy(),timeSeries));
-*/
+
 
 /*
 		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
@@ -112,8 +116,11 @@ public class TestJStrategies extends BaseIntegrationTest {
 		resultMap.add(run(cd.buildStrategy(),timeSeries));
 
 */
+		/*
 		SimpleMovingMomentumStrategy simpleMa = new SimpleMovingMomentumStrategy(timeSeries);
 		resultMap.add(run(simpleMa.buildStrategy(),timeSeries));
+
+		 */
 
 /*
 
@@ -168,14 +175,17 @@ public class TestJStrategies extends BaseIntegrationTest {
 	@Test
 	public void runOneSingleDataSet2() {
 		logger.info("runOneSingleDataSet2");
-	BarSeries series = barSeriesService.getDataSet("GRT-EUR", false, false);
-	Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
+	BarSeries series = barSeriesService.getDataSet("BAT-EUR", false, false);
+	Strategy strategy = new HaramiStrategy(series).buildStrategy();
+	//Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
 	//Strategy strategy = new ADXStrategy(series).buildStrategy();
 
-	BarSeriesManager seriesManager = new BarSeriesManager(series);
-	TradingRecord tradingRecord = seriesManager.run(strategy);
 
-/*
+	BarSeriesManager seriesManager = new BarSeriesManager(series);
+	//TradingRecord tradingRecord = seriesManager.run(strategy);
+	TradingRecord tradingRecord = barSeriesService.runConfiguredStrategy(series, strategy);
+
+
 	for (Position position : tradingRecord.getPositions()) {
 		Bar barEntry = series.getBar(position.getEntry().getIndex());
 		System.out.println(series.getName()+"::barEntry="+barEntry.getEndTime());
@@ -184,19 +194,21 @@ public class TestJStrategies extends BaseIntegrationTest {
 		System.out.println(series.getName()+"::barExit="+barExit.getDateName());
 		System.out.println(series.getName()+"::barExit.getClosePrice="+ barExit.getClosePrice());
 		System.out.println("profit(position): " + position.getProfit());
-		System.out.println("Gross return(position): " + position.getGrossReturn());
+		System.out.println("Gross return(position, percentage): " + position.getGrossReturn());
 		System.out.println("Gross profit(position): " + position.getGrossProfit());
+/*
 		Num pnl = barExit.getClosePrice().dividedBy(barEntry.getClosePrice()).multipliedBy(series.numOf(100));
 		System.out.println("P/L: " + pnl.doubleValue());
-	}
 */
+	}
+
 
 	// Total return Xtra
 	ProfitCriterion totalprofit = new ProfitCriterion();
-        System.out.println("Total gross profit: " + totalprofit.calculate(series, tradingRecord).doubleValue());
+        System.out.println("\nTotal profit(pengar): " + totalprofit.calculate(series, tradingRecord).doubleValue());
 	// Total profit
 	ReturnCriterion totalReturn = new ReturnCriterion();
-        System.out.println("Total gross return: " + totalReturn.calculate(series, tradingRecord).doubleValue());
+        System.out.println("Total return: " + totalReturn.calculate(series, tradingRecord).doubleValue());
 
 	ProfitLossPercentageCriterion totalPercentage = new ProfitLossPercentageCriterion();
 		System.out.println("Total pnl percentage: " + totalPercentage.calculate(series, tradingRecord).doubleValue());
@@ -289,10 +301,11 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void chooseBestForSecurity() {
-		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
+		BarSeries timeSeries = barSeriesService.getDataSet("BAT-EUR", false, false);
 		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
 
-		chooseBestForSecurity(new ReturnCriterion(), timeSeries, strategies);
+		chooseBestForSecurity(new ProfitCriterion(), timeSeries, strategies);
+		chooseBestForSecurity(new ProfitLossPercentageCriterion(), timeSeries, strategies);
 		chooseBestForSecurity(new SqnCriterion(), timeSeries, strategies);
 		chooseBestForSecurity(new ExpectancyCriterion(), timeSeries, strategies);
 /*
@@ -454,9 +467,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 		- TotalCurrency : SEK ?
 
 	*/
-		String securityName = "BTC-EUR";
+		String securityName = "FIL-EUR";
 		BarSeries series = barSeriesService.getDataSet(securityName, false, false);
-		Strategy strategy = new ADXStrategy(series).buildStrategy();
+		Strategy strategy = new HaramiStrategy(series).buildStrategy();
 
 
 		BarSeriesManager seriesManager = new BarSeriesManager(series);
@@ -490,8 +503,10 @@ public class TestJStrategies extends BaseIntegrationTest {
 		LossCriterion lossCriterion = new LossCriterion();
 		ReturnCriterion returnCriterion = new ReturnCriterion();
 		ProfitLossPercentageCriterion profitLossPercentageCriterion = new ProfitLossPercentageCriterion();
+		ProfitLossCriterion profitLossCriterion = new ProfitLossCriterion();
 		System.out.println("lossCriterion:"+lossCriterion.calculate(series, tradingRecord));
-		System.out.println("grossReturnCriterion:"+returnCriterion.calculate(series, tradingRecord));
+		System.out.println("returnCriterion:"+returnCriterion.calculate(series, tradingRecord));
+		System.out.println("profitLossCriterion:"+profitLossCriterion.calculate(series, tradingRecord));
 		System.out.println("profitLossPercentageCriterion:"+ profitLossPercentageCriterion.calculate(series, tradingRecord));
 
 		//6. ProfitLossCriterion
@@ -522,6 +537,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 				.sorted(Comparator.comparing(StrategyTrade::getDate))
 				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t)))
 				.collect(Collectors.toSet());
+
+		final Profit totalGrossProfitForStrategy = strategyTradeRepository.findTotalGrossProfitForStrategy(fs.getId());
+		System.out.println("totalGrossProfitForStrategy:"+totalGrossProfitForStrategy.getGrossProfit() + "fsId: "+fs.getId());
 	}
 
 }

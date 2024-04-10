@@ -6,7 +6,7 @@ import java.util.Locale;
 
 public class IconManager {
 
-    static String ICON_PROVIDER_URL = "https://cryptoicons.org/api/icon/";
+    static String ICON_PROVIDER_URL = "https://cryptoicons.co/api/icon/";
     static String SIZE = "/20";
 
     public static String getIconUrl(String securityName) {

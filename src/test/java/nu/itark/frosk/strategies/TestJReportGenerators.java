@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.BarSeries;
-import org.ta4j.core.BarSeriesManager;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.TradingRecord;
+import org.ta4j.core.backtest.BarSeriesManager;
 import org.ta4j.core.reports.*;
 
 @SpringBootTest(classes = {FroskApplication.class})
@@ -26,8 +26,8 @@ public class TestJReportGenerators extends BaseIntegrationTest {
     BarSeriesManager seriesManager;
     @BeforeEach
     private void setup(){
-        series = barSeriesService.getDataSet("BTC-EUR", false, false);
-        strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
+        series = barSeriesService.getDataSet("FIL-EUR", false, false);
+        strategy = new HaramiStrategy(series).buildStrategy();
         seriesManager = new BarSeriesManager(series);
     }
 

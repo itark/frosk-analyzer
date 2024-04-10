@@ -47,8 +47,8 @@ public class COINBASEDataManager {
      * Download prices and insert into database.
      */
     public void syncronize() {
-        log.info("sync=" + Database.COINBASE.toString());
-        List<Security> securities = securityRepository.findByDatabaseAndActive(Database.COINBASE.toString(), true);
+        log.info("sync=" + Database.COINBASE.toString()+ " on EUR");
+        List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
         log.info("About to sync {} active securities", securities.size());
 
         List<SecurityPrice> spList;

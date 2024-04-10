@@ -13,6 +13,7 @@ public class TradeDTO {
     private String dateReadable;
     private BigDecimal price;
     private BigDecimal grossProfit;
+    private BigDecimal amount;
     private BigDecimal pnl;
     private String type;
 }

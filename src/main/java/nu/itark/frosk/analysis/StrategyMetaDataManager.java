@@ -1,10 +1,14 @@
 package nu.itark.frosk.analysis;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.model.TradingAccount;
+import nu.itark.frosk.model.dto.AccountTypeDTO;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.TopStrategy;
+import nu.itark.frosk.repo.TradingAccountRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.service.TradingAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +30,9 @@ public class StrategyMetaDataManager {
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
 
+    @Autowired
+    TradingAccountService tradingAccountService;
+
     /**
      * Gets all featured strategies, hence per all strategies and all securities.
      *
@@ -45,6 +52,18 @@ public class StrategyMetaDataManager {
                 .totalProfit(BigDecimal.valueOf(ts.getTotalProfit().doubleValue()).round(new MathContext(2)))
                 .sqn(ts.getSqn().abs().doubleValue() < 100 ? BigDecimal.valueOf(ts.getSqn().doubleValue()).round(new MathContext(2)): BigDecimal.valueOf(0L))
                 .sqnRaw(ts.getSqn())
+                .build();
+    }
+
+    public TotalTradingDTO getTradingInfo() {
+        TradingAccount tradingAccount = tradingAccountService.getTradingAccount();
+        return TotalTradingDTO.builder()
+                .createDate(tradingAccount.getCreateDate())
+                .initTotalValue(tradingAccount.getInitTotalValue())
+                .positionValue(tradingAccount.getPositionValue())
+                .securityValue(tradingAccount.getTotalValue())
+                .totalValue(tradingAccount.getTotalValue())
+                .totalReturnPercentage(tradingAccount.getTotalReturnPercentage())
                 .build();
     }
 

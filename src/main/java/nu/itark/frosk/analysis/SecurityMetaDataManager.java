@@ -14,8 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.AnalysisCriterion;
 import org.ta4j.core.BarSeries;
-import org.ta4j.core.BarSeriesManager;
 import org.ta4j.core.Strategy;
+import org.ta4j.core.backtest.BarSeriesManager;
 import org.ta4j.core.criteria.pnl.ReturnCriterion;
 import org.ta4j.core.num.Num;
 
@@ -135,6 +135,19 @@ public class SecurityMetaDataManager {
         }
     }
 
+    public BigDecimal getBarGrossProfit(String securityName, int nrOfBars) {
+        BarSeries timeSeries = barSeriesService.getDataSet(securityName, false, false);
+        //Sanitycheck
+        if (timeSeries.getBarCount() <= nrOfBars) {
+            return null;
+        }
+        Num entryOpen = timeSeries.getBar((timeSeries.getBarCount()) - nrOfBars).getOpenPrice();
+        Num exitClose = timeSeries.getLastBar().getClosePrice();
+        Num grossProfit = exitClose.minus(entryOpen);
+        return BigDecimal.valueOf(grossProfit.doubleValue()).round(new MathContext(2));
+    }
+
+
     public BigDecimal getLatestClose(String securityName) {
         final Security security = securityRepository.findByName(securityName);
         final SecurityPrice securityPrice = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
@@ -151,6 +164,7 @@ public class SecurityMetaDataManager {
         dto.setSecurityName(fs.getSecurityName());
         dto.setIcon(IconManager.getIconUrl(fs.getSecurityName()));
         dto.setTotalProfit(fs.getTotalProfit());
+        dto.setTotalGrossReturn(fs.getTotalGrossReturn());
         dto.setNumberOfTicks(fs.getNumberOfTicks());
         dto.setAverageTickProfit(fs.getAverageTickProfit());
         if (Objects.nonNull(fs.getProfitableTradesRatio())) {
@@ -191,15 +205,16 @@ public class SecurityMetaDataManager {
             tradee.setId(trade.getId());
             tradee.setDate(trade.getDate().toInstant().toEpochMilli());
             tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd"));
-            tradee.setPrice(BigDecimal.valueOf(trade.getPrice().doubleValue()));
+            tradee.setPrice(trade.getPrice());
+            tradee.setAmount(trade.getAmount());
             tradee.setType(trade.getType());
             tradee.setSecurityName(trade.getFeaturedStrategy().getSecurityName());
             tradee.setStrategy(trade.getFeaturedStrategy().getName());
             if (Objects.nonNull(trade.getGrossProfit())) {
-                tradee.setGrossProfit(BigDecimal.valueOf(trade.getGrossProfit().doubleValue()));
+                tradee.setGrossProfit(trade.getGrossProfit());
             }
             if (Objects.nonNull(trade.getPnl())) {
-                tradee.setPnl(BigDecimal.valueOf(trade.getPnl().doubleValue()));
+                tradee.setPnl(trade.getPnl());
             }
             trades.add(tradee);
         });

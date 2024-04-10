@@ -254,7 +254,8 @@ public class TradeServiceXChangeImplementation extends BaseService implements Tr
                 savedOrder = Optional.of(orderRepository.save(ORDER_MAPPER.mapToOrder(order)));
             }
             final OrderCreationResultDTO result = new OrderCreationResultDTO(ORDER_MAPPER.mapToOrderDTO(savedOrder.get()));
-            logger.info("Order created: {}", result);
+            //logger.info("Order created: {}", result);
+            logger.debug("Order created: id:{}, type:{}, status:{}", result.getOrderId(), result.getOrder().getType(),result.getOrder().getStatus());
             return result;
         } catch (Exception e) {
             final String errorMessage = "Error calling createMarketOrder for " + amount + " " + currencyPair + ": " + e.getMessage();

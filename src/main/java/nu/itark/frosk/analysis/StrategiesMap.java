@@ -93,6 +93,41 @@ public class StrategiesMap {
 		return strategies;
 	}
 
+	public static Strategy getStrategyToRun(String strategy, BarSeries series) {
+		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
+			return new RSI2Strategy(series).buildStrategy();
+		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
+			return new MovingMomentumStrategy(series).buildStrategy();
+		} else if (strategy.equals(SimpleMovingMomentumStrategy.class.getSimpleName())) {
+			return new SimpleMovingMomentumStrategy(series).buildStrategy();
+		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
+			return new GlobalExtremaStrategy(series).buildStrategy();
+		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
+			return new CCICorrectionStrategy(series).buildStrategy();
+		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
+			return new EngulfingStrategy(series).buildStrategy();
+		} else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
+			return new HaramiStrategy(series).buildStrategy();
+		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
+			return new ThreeBlackWhiteStrategy(series).buildStrategy();
+		} else if (strategy.equals(ADXStrategy.class.getSimpleName())) {
+			return new ADXStrategy(series).buildStrategy();
+		} else if (strategy.equals(ConvergenceDivergenceStrategy.class.getSimpleName())) {
+			return new ConvergenceDivergenceStrategy(series).buildStrategy();
+		} else if (strategy.equals(VWAPStrategy.class.getSimpleName())) {
+			return new VWAPStrategy(series).buildStrategy();
+		} else if (strategy.equals(RunawayGAPStrategy.class.getSimpleName())) {
+			return new RunawayGAPStrategy(series).buildStrategy();
+		} else if (strategy.equals(EMATenTwentyStrategy.class.getSimpleName())) {
+			return new EMATenTwentyStrategy(series).buildStrategy();
+		} else {
+			throw new RuntimeException("Strategy not found!, strategy="+strategy);
+		}
+	}
+
+
+
+
 
 
 }

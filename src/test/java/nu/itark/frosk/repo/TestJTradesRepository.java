@@ -36,5 +36,17 @@ public class TestJTradesRepository extends BaseIntegrationTest {
 		}
 	}
 
+	@Test
+	public final void testProfit() {
+		Profit profit = tradesRepository.findTotalGrossProfit();
+		log.info("profit:{}", profit.getGrossProfit());
+
+		Long fsId = 4L;
+		profit = tradesRepository.findTotalGrossProfitForStrategy(fsId);
+		log.info("profit:{} for fsId:{}", profit.getGrossProfit(), fsId);
+
+
+	}
+
 
 }

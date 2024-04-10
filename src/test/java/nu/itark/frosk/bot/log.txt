@@ -1,0 +1,53 @@
+2024-01-26 16:02:22,377 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] Total percentage:0.8970883789829234 %
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] Entered on 2 (close_price=0.1344, amount=0.0)
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] Exited on 4 (close_price=0.1324, amount=0.0)
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] position.profit=-0.0020000000000000018
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] Entered on 81 (close_price=0.1248, amount=0.0)
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] Exited on 82 (close_price=0.1191, amount=0.0)
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] position.profit=-0.005699999999999997
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] Entered on 227 (close_price=0.0863, amount=0.0)
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] Exited on 230 (close_price=0.0923, amount=0.0)
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] position.profit=0.0059999999999999915
+2024-01-26 16:02:22,378 INFO  n.i.f.s.TestJSimpleMovingMomentumStrategy [main] Number of positions for the strategy: 3
+
+
+2024-01-26 16:02:46,827 INFO  n.i.f.b.TradingBot [main] Running strategy (indexes: 0 -> 321): SimpleMovingMomentumStrategy
+2024-01-26 16:02:46,830 INFO  n.i.f.b.TradingBot [main] Total percentage:0.8970883789829234 %
+2024-01-26 16:02:46,841 INFO  n.i.f.b.TradingBot [main] Strategy created in database: Strategy(uid=854, strategyId=SimpleMovingMomentumStrategy, name=SimpleMovingMomentumStrategy)
+2024-01-26 16:02:46,843 INFO  n.i.f.b.TradingBot [main] Entered on 2 (price=0.1344, amount=1.0)
+2024-01-26 16:02:46,844 INFO  n.i.f.b.TradingBot [main] Exited on 42 (price=0.1289, amount=10.0)
+2024-01-26 16:02:46,844 INFO  n.i.f.b.TradingBot [main] Entered on 81 (price=0.1248, amount=1.0)
+2024-01-26 16:02:46,844 INFO  n.i.f.b.TradingBot [main] Exited on 160 (price=0.0832, amount=10.0)
+2024-01-26 16:02:46,844 INFO  n.i.f.b.TradingBot [main] Entered on 227 (price=0.0863, amount=1.0)
+
+
+
+
+
+
+
+
+
+
+
+2024-01-14 14:53:47,877 INFO  n.i.f.s.TestJStrategies [main] runAllSingleDataSet
+Strategy                  Security        Begin           End             Open            Total profit    Number of bars  Number of trades     Profitable trades ratio
+SimpleMovingMomentum      GRT-EUR         2023-03-10      2024-01-05                      1.0054877822725263 9.0             3.0                  33,3 %
+Average on all TotalProfit(eget):1.0054877822725263
+
+
+
+
+
+2024-01-14 14:52:20,160 INFO  n.i.f.s.TestJStrategies [main] runOneSingleDataSet2
+Total gross profit: 0.0059999999999999915
+Total gross return: 1.0054877822725263
+Total pnl percentage: 0.8970883789829234
+Average return (per bar): 1.0006082715064846
+Number of positions: 3.0
+Winning positions ratio: 0.3333333333333333
+Maximum drawdown: 0.10830709516312913
+Return over maximum drawdown: 9.283674174421249
+Total transaction cost (from $1000): 28.91822223419264
+Custom strategy return vs enter-and-hold strategy return: 0.6084198025309112
+performanceReport=org.ta4j.core.reports.PerformanceReport@169ddbb6[totalLoss=-0.0076999999999999985,totalProfit=0.0059999999999999915,totalProfitLoss=-0.001700000000000007,totalProfitLossPercentage=0.8970883789829234]

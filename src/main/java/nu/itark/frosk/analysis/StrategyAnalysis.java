@@ -11,6 +11,7 @@ import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.*;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -19,11 +20,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
+import org.ta4j.core.backtest.BacktestExecutor;
+import org.ta4j.core.backtest.BarSeriesManager;
 import org.ta4j.core.criteria.*;
+import org.ta4j.core.criteria.pnl.ProfitCriterion;
 import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.criteria.pnl.ReturnCriterion;
-import org.ta4j.core.num.DoubleNum;
-import org.ta4j.core.num.Num;
 import org.ta4j.core.reports.TradingStatement;
 
 import java.math.BigDecimal;
@@ -40,14 +42,14 @@ import java.util.*;
 @Slf4j
 public class StrategyAnalysis {
 
-	@Value("${exchange.transaction.initialAmount}")
-	private double initialAmount;
-
 	@Value("${exchange.transaction.feePerTradePercent}")
 	private double feePerTradePercent;
 
 	@Autowired
 	BarSeriesService barSeriesService;
+
+	@Autowired
+	TradingAccountService tradingAccountService;
 	
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;
@@ -119,7 +121,7 @@ public class StrategyAnalysis {
 	}
 	public void runChooseBestStrategy() {
 
-		log.info("WTF SfeePerTradePercent;"+feePerTradePercent);
+		log.info("WTF feePerTradePercent;"+feePerTradePercent);
 
 		for (BarSeries series : barSeriesService.getDataSet()) {
 			setBestStrategy(series);
@@ -130,71 +132,68 @@ public class StrategyAnalysis {
 		Strategy strategyToRun = null;
 		BarSeries barSeries = barSeriesService.getDataSet(security_id);
 		strategyToRun = getStrategyToRun(strategy, barSeries);
-		tradingBot.run(strategyToRun, barSeries);
+	//	tradingBot.run(strategyToRun, barSeries);
+		log.info("runBot executing tradingBot.runningPositions");
+		tradingBot.runningPositions(strategyToRun, barSeries);
 	}
+
+	public void runBotPositions(String strategy, Long security_id) {
+		BarSeries barSeries = barSeriesService.getDataSet(security_id);
+		Strategy strategyToRun = getStrategyToRun(strategy, barSeries);
+		tradingBot.runningPositions(strategyToRun, barSeries);
+	}
+
 
 	private void runStrategy(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException{
 		FeaturedStrategy fs = null;
-        double totalProfit ;
+        double totalProfit;
+		double totalGrossReturn;
         Date latestTradeDate= null;
         Strategy strategyToRun;
 
 		for (BarSeries series : barSeriesList) {
 			log.info("runStrategy("+strategy+", "+series.getName()+")");
 			strategyToRun = getStrategyToRun(strategy, series);
-			BarSeriesManager seriesManager = new BarSeriesManager(series);
-			TradingRecord tradingRecord = seriesManager.run(strategyToRun, Trade.TradeType.BUY, series.numOf(0.1));
 			if (series.getBarData().isEmpty()){
 				log.warn("Something fishy on {}. BarData isEmpty, continues...", series.getName());
 				continue;
 			}
+			// Running the strategy
+			TradingRecord tradingRecord = barSeriesService.runConfiguredStrategy(series, strategyToRun);
 			Set<StrategyTrade> strategyTradeList = new HashSet<StrategyTrade>();
 			StrategyTrade strategyTrade = null;
-
 			for (Position position : tradingRecord.getPositions()) {
 				//Entry
 				Bar barEntry = series.getBar(position.getEntry().getIndex());
-				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
-				String entryType = position.getEntry().getType().name();
-				strategyTrade = new StrategyTrade(	buyDate,
-													entryType,
-													BigDecimal.valueOf(position.getEntry().getValue().doubleValue()),
-													null,
-													null);
+				strategyTrade = new StrategyTrade();
+                strategyTrade.setDate(Date.from(barEntry.getEndTime().toInstant()));
+				strategyTrade.setType(position.getEntry().getType().name());
+				strategyTrade.setPrice(BigDecimal.valueOf(position.getEntry().getPricePerAsset().doubleValue()));
+				strategyTrade.setAmount(BigDecimal.valueOf(position.getEntry().getAmount().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 				// Exit
 				Bar barExit = series.getBar(position.getExit().getIndex());
 				Date sellDate = Date.from(barExit.getEndTime().toInstant());
 				String exitType = position.getExit().getType().name();
-				Num pnl = position.getProfit().dividedBy(position.getEntry().getValue()).multipliedBy(series.numOf(100));
-				//logger.info("pnl="+pnl.doubleValue());
-				if (pnl.isNaN()) {
-					log.info("series.getName()="+series.getName());
-					log.info("position.getExit().getValue().doubleValue()="+position.getExit().getValue().doubleValue());
-					log.info("position.getProfit().doubleValue()="+position.getProfit().doubleValue());
-					pnl = series.numOf(0);
-					log.info("pnl="+pnl);
-
-				}
-				strategyTrade = new StrategyTrade(	sellDate,
-													exitType,
-													BigDecimal.valueOf(position.getExit().getValue().doubleValue()),
-													//BigDecimal.valueOf(position.getProfit().doubleValue()),
-													new BigDecimal(position.getProfit().doubleValue()).setScale(4, BigDecimal.ROUND_DOWN),
-													BigDecimal.valueOf(pnl.doubleValue()));
+				BigDecimal grossProfit = BigDecimal.valueOf(position.getGrossProfit().doubleValue());
+				BigDecimal pnl = new BigDecimal((position.getGrossReturn().doubleValue()-1)*100).setScale(4, BigDecimal.ROUND_DOWN);
+				strategyTrade = new StrategyTrade();
+				strategyTrade.setDate(sellDate);
+				strategyTrade.setType(exitType);
+				strategyTrade.setPrice(BigDecimal.valueOf(position.getExit().getPricePerAsset().doubleValue()));
+				strategyTrade.setAmount(BigDecimal.valueOf(position.getEntry().getAmount().doubleValue()));
+				strategyTrade.setGrossProfit( grossProfit  );
+				strategyTrade.setPnl(pnl);
 				strategyTradeList.add(strategyTrade);
 				latestTradeDate = Date.from(barExit.getEndTime().toInstant());
 			}
 			//If open
 			if (tradingRecord.getCurrentPosition().isOpened()) {
 				Bar barEntry = series.getBar(tradingRecord.getCurrentPosition().getEntry().getIndex());
-				Date buyDate = Date.from(barEntry.getEndTime().toInstant());
-				String entryType = tradingRecord.getCurrentPosition().getEntry().getType().name();
-				strategyTrade = new StrategyTrade(	buyDate,
-													entryType,
-													BigDecimal.valueOf(tradingRecord.getCurrentPosition().getEntry().getValue().doubleValue()),
-													null,
-													null);
+				strategyTrade = new StrategyTrade();
+				strategyTrade.setDate(Date.from(barEntry.getEndTime().toInstant()));
+				strategyTrade.setType(tradingRecord.getCurrentPosition().getEntry().getType().name());
+				strategyTrade.setPrice(BigDecimal.valueOf(tradingRecord.getCurrentPosition().getEntry().getPricePerAsset().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 				latestTradeDate = Date.from(barEntry.getBeginTime().toInstant());
 			}
@@ -207,11 +206,17 @@ public class StrategyAnalysis {
 			fs.setPeriod(getPeriod(series));
 			fs.setLatestTrade(latestTradeDate);
 			totalProfit = new ProfitLossPercentageCriterion().calculate(series, tradingRecord).doubleValue();
-			//totalProfit = new ReturnCriterion().calculate(series, tradingRecord).doubleValue();
 			if (!Double.isNaN(totalProfit)) {
-				fs.setTotalProfit(new BigDecimal(totalProfit).setScale(2, BigDecimal.ROUND_DOWN));
+				fs.setTotalProfit(new BigDecimal(totalProfit).setScale(4, BigDecimal.ROUND_DOWN));
 			} else {
 				fs.setTotalProfit(BigDecimal.ZERO);
+			}
+			//totalGrossReturn = new ReturnCriterion().calculate(series, tradingRecord).doubleValue();
+			totalGrossReturn = new ProfitCriterion().calculate(series, tradingRecord).doubleValue();
+			if (!Double.isNaN(totalGrossReturn)) {
+				fs.setTotalGrossReturn(new BigDecimal(totalGrossReturn).setScale(4, BigDecimal.ROUND_DOWN));
+			} else {
+				fs.setTotalGrossReturn(BigDecimal.ZERO);
 			}
 			//Hidden in UI
 			//fs.setNumberOfTicks(new BigDecimal(new NumberOfBarsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
@@ -229,12 +234,15 @@ public class StrategyAnalysis {
 			} else {
 				fs.setMaxDD(BigDecimal.ZERO);
 			}
-			double totalTransactionCost = new LinearTransactionCostCriterion(initialAmount, feePerTradePercent).calculate(series, tradingRecord).doubleValue();
+			//TODO review, förmodligen ta bort totalTransactionCost här.
+/*
+			double totalTransactionCost = new LinearTransactionCostCriterion(strategyTrade.getAmount().doubleValue(), feePerTradePercent).calculate(series, tradingRecord).doubleValue();
 			if(!Double.isNaN(totalTransactionCost)) {
 				fs.setTotalTransactionCost(new BigDecimal(totalTransactionCost));
 			} else {
 				fs.setTotalTransactionCost(BigDecimal.ZERO);
 			}
+*/
 			fs.setOpen(tradingRecord.getCurrentPosition().isOpened());
 			fs.setSqn(new BigDecimal(new SqnCriterion().calculate(series, tradingRecord).doubleValue()));
 			fs.setExpectency(new BigDecimal(new ExpectancyCriterion().calculate(series, tradingRecord).doubleValue()));
@@ -261,9 +269,6 @@ public class StrategyAnalysis {
 				iv.setFeaturedStrategy(fsRes);
 				indicatorValueRepo.save(iv);
 			});
-
-			//log.info("EXIT runStrategy("+strategy+", "+series.getName()+")");
-
 		}
 	}
 
@@ -281,13 +286,14 @@ public class StrategyAnalysis {
 		AnalysisCriterion profitCriterion = new ReturnCriterion();
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
 		BacktestExecutor backtestExecutor = new BacktestExecutor(barSeries);
-		final List<TradingStatement> tradingStatements = backtestExecutor.execute(strategies, DoubleNum.valueOf(50), Trade.TradeType.BUY);
+		final List<TradingStatement> tradingStatements = backtestExecutor.execute(strategies, barSeriesService.getAmount(barSeries));
 		Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
 
 		StrategyPerformance strategyPerformance = new StrategyPerformance();
 		strategyPerformance.setDate(DateTimeManager.get(barSeries.getLastBar().getEndTime()));
 		strategyPerformance.setBestStrategy(bestStrategy.getName());
-		strategyPerformance.setTotalProfitLoss(getTotalPnL(tradingStatements, bestStrategy));
+		strategyPerformance.setTotalProfitLoss(getTotalPnLPercentage(tradingStatements, bestStrategy));
+		//strategyPerformance.setTotalProfitLoss(getTotalPnL(tradingStatements, bestStrategy));
 		strategyPerformance.setSecurityName(barSeries.getName());
 
 		try {
@@ -298,12 +304,20 @@ public class StrategyAnalysis {
 		}
 	}
 
-	private static BigDecimal getTotalPnL(List<TradingStatement> tradingStatements, Strategy bestStrategy) {
+	private static BigDecimal getTotalPnLPercentage(List<TradingStatement> tradingStatements, Strategy bestStrategy) {
 		Optional<TradingStatement> bestTradingStatement = tradingStatements.stream()
 				.filter(s -> s.getStrategy().getName().equals(bestStrategy.getName())).findFirst();
 		double pnl = bestTradingStatement.get().getPerformanceReport().getTotalProfitLossPercentage().doubleValue();
 		return new BigDecimal(pnl).setScale(2, BigDecimal.ROUND_DOWN);
 	}
+
+	private static BigDecimal getTotalPnL(List<TradingStatement> tradingStatements, Strategy bestStrategy) {
+		Optional<TradingStatement> bestTradingStatement = tradingStatements.stream()
+				.filter(s -> s.getStrategy().getName().equals(bestStrategy.getName())).findFirst();
+		double pnl = bestTradingStatement.get().getPerformanceReport().getTotalProfitLoss().doubleValue();
+		return new BigDecimal(pnl).setScale(2, BigDecimal.ROUND_DOWN);
+	}
+
 
 	private List<StrategyIndicatorValue> getIndicatorValues(String strategy, BarSeries series) {
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
@@ -382,7 +396,6 @@ public class StrategyAnalysis {
 		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
-
 	}
 	
 	private String getPeriod(BarSeries series) {

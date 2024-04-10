@@ -19,6 +19,7 @@ public class FeaturedStrategyDTO implements Comparable<FeaturedStrategyDTO> {
 	private String securityName;
 	private String icon;
 	private BigDecimal totalProfit; // Total profit
+	private BigDecimal totalGrossReturn; // in cash
 	private Integer numberOfTicks; // Number of ticks
 	private BigDecimal averageTickProfit; // Average profit (per tick)
 	private Integer numberofTrades; // Number of trades
