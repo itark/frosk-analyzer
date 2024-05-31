@@ -24,6 +24,7 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.FroskApplication;
+import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
 import org.junit.jupiter.api.Test;
@@ -45,11 +46,13 @@ public class TestJSimpleMovingMomentumStrategy extends BaseIntegrationTest {
     @Autowired
     BarSeriesService barSeriesService;
 
+    @Autowired
+    StrategiesMap strategiesMap;
+
     @Test
     public final void run() throws Exception {
         BarSeries timeSeries = barSeriesService.getDataSet("GRT-EUR", false, false);
-        SimpleMovingMomentumStrategy strat = new SimpleMovingMomentumStrategy(timeSeries);
-        Strategy strategy = strat.buildStrategy();
+        Strategy strategy = strategiesMap.getSimpleMovingMomentumStrategy().buildStrategy(timeSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
 

@@ -24,6 +24,7 @@ package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.indicators.RunawayGAPIndicator;
+import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
@@ -40,20 +41,17 @@ import java.util.List;
 /**
  * https://www.investopedia.com/terms/r/runawaygap.asp
  */
+@Component
 public class RunawayGAPStrategy extends AbstractStrategy implements IIndicatorValue {
-	BarSeries series = null;
-	public RunawayGAPStrategy(BarSeries series) {
-        super(series);
-        this.series = series;
-	}	
-	
-    public Strategy buildStrategy() {
+
+    public Strategy buildStrategy(BarSeries series) {
+        super.setInherentExitRule();
 		indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
-         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-
+        super.barSeries = series;
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         RunawayGAPIndicator runawayGAPIndicator = new RunawayGAPIndicator(series);
         Rule entryRule = new BooleanIndicatorRule(runawayGAPIndicator);
 

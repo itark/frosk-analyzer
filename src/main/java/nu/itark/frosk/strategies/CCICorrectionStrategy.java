@@ -23,6 +23,7 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import org.springframework.stereotype.Component;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -44,24 +45,16 @@ import java.util.List;
  * <p>
  * @see ://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:cci_correction
  */
+@Component
 public class CCICorrectionStrategy extends AbstractStrategy implements IIndicatorValue {
 
-	BarSeries series = null;
-	   
-	public CCICorrectionStrategy(BarSeries series) {
-        super(series);
-        this.series = series;
-	}	
-	
-	/**
-     * @return a CCI correction strategy
-     */
-    public Strategy buildStrategy() {
+    public Strategy buildStrategy(BarSeries series) {
+        super.setInherentExitRule();
         indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
-
+        super.barSeries = series;
         CCIIndicator longCci = new CCIIndicator(series, 200);
         setIndicatorValues(longCci, "longCci");
 

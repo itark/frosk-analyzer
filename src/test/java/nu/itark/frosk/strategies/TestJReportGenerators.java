@@ -24,10 +24,11 @@ public class TestJReportGenerators extends BaseIntegrationTest {
     BarSeries series;
     Strategy strategy;
     BarSeriesManager seriesManager;
+
     @BeforeEach
-    private void setup(){
+    public void init(){
         series = barSeriesService.getDataSet("FIL-EUR", false, false);
-        strategy = new HaramiStrategy(series).buildStrategy();
+        strategy = new HaramiStrategy().buildStrategy(series);
         seriesManager = new BarSeriesManager(series);
     }
 

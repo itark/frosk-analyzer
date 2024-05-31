@@ -85,19 +85,6 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 	}
 	
 	@Test
-	public void testFindByOpenTrade() {
-		List<FeaturedStrategy> fsList = featuredStrategyRepository.findByOpenTrade("BTC-EUR");
-
-		fsList.forEach(fs ->{
-			log.info("fs.getName():"+fs.getName() + "fs.getSecurityName():"+fs.getSecurityName());
-			fs.getStrategyTrades().forEach(t-> {
-				log.info("**t.getType:"+t.getType());
-			});
-		});
-
-	}
-
-	@Test
 	public void testFindStrategies() {
 		List<TopStrategy> strategies = featuredStrategyRepository.findBestPerformingStrategies();
 		strategies.forEach(strategy ->{
@@ -110,21 +97,6 @@ public class TestJFeaturedStrategyRepository extends BaseIntegrationTest {
 		FeaturedStrategy strat = featuredStrategyRepository.findTopBySecurityNameOrderByLatestTradeDesc("BTC-EUR");
 		System.out.println("strategy.getName():"+strat.getName() + "strategy.getTotalProfit():"+strat.getTotalProfit());
 	}
-
-	@Test
-	public void testFindTop10ByName() {
-		List<FeaturedStrategy> strategies = featuredStrategyRepository.findTop10BySecurityNameOrderByLatestTradeDesc("BTC-EUR");
-		strategies.forEach(strategy ->{
-			System.out.println("strategy.getName():"+strategy.getName() + "strategy.getTotalProfit():"+strategy.getTotalProfit());
-		});	}
-
-
-	@Test
-	public void testFindTop10() {
-		List<FeaturedStrategy> strategies = featuredStrategyRepository.findTop10ByOrderByTotalProfitDesc();
-		strategies.forEach(strategy ->{
-			System.out.println("strategy.getName():"+strategy.getName() + " strategy.getTotalProfit():"+strategy.getTotalProfit());
-		});	}
 
 	@Test
 	public void testFindTop() {

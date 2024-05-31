@@ -24,6 +24,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.sql.SQLException;
 
 @SpringBootApplication
+//@SpringBootApplication(scanBasePackages = {"se.fast2.doman.arbetsorder"})
 @EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo","nu.itark.frosk.bot.bot.repository"})
 //@EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo"})
 @Slf4j

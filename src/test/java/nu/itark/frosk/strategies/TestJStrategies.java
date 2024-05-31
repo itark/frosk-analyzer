@@ -48,6 +48,8 @@ public class TestJStrategies extends BaseIntegrationTest {
 	@Autowired
 	StrategyTradeRepository strategyTradeRepository;
 
+	@Autowired
+	StrategiesMap strategiesMap;
 
 	Formatter fmt;
 
@@ -70,16 +72,17 @@ public class TestJStrategies extends BaseIntegrationTest {
 	public void runAllSingleDataSet() {
 		logger.info("runAllSingleDataSet");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "FIL-EUR";  //SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
+		String productId = "BTC-EUR";  //FIL-EUR, SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
 //		VWAPStrategy vwap = new VWAPStrategy(timeSeries);
 //		run(vwap.buildStrategy(),timeSeries);
 
-//		RSI2Strategy rsi = new RSI2Strategy(timeSeries);
-//		run(rsi.buildStrategy(),timeSeries);
-		
+		RSI2Strategy rsi = strategiesMap.getRsiStrategy();
+		rsi.inherentExitRule = true;
+		resultMap.add(run(rsi.buildStrategy(timeSeries),timeSeries));
+
 //		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
 //		run(mm.buildStrategy(),timeSeries);
 
@@ -104,9 +107,11 @@ public class TestJStrategies extends BaseIntegrationTest {
 */
 
 
-		HaramiStrategy harami = new HaramiStrategy(timeSeries);
-		resultMap.add(run(harami.buildStrategy(),timeSeries));
+		HaramiStrategy harami = strategiesMap.getHaramiStrategy();
+		resultMap.add(run(harami.buildStrategy(timeSeries),timeSeries));
 
+		harami.inherentExitRule = false;
+		resultMap.add(run(harami.buildStrategy(timeSeries),timeSeries));
 
 /*
 		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
@@ -161,8 +166,8 @@ public class TestJStrategies extends BaseIntegrationTest {
 */
 
 
-			ADXStrategy adx = new ADXStrategy(ts);
-			resultMap.add(run(adx.buildStrategy(), ts));
+		//	ADXStrategy adx = new ADXStrategy();
+			resultMap.add(run(strategiesMap.getAdxStrategy().buildStrategy(ts), ts));
 
 
 
@@ -176,13 +181,12 @@ public class TestJStrategies extends BaseIntegrationTest {
 	public void runOneSingleDataSet2() {
 		logger.info("runOneSingleDataSet2");
 	BarSeries series = barSeriesService.getDataSet("BAT-EUR", false, false);
-	Strategy strategy = new HaramiStrategy(series).buildStrategy();
+	Strategy strategy = strategiesMap.getHaramiStrategy().buildStrategy(series);
 	//Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
 	//Strategy strategy = new ADXStrategy(series).buildStrategy();
 
 
 	BarSeriesManager seriesManager = new BarSeriesManager(series);
-	//TradingRecord tradingRecord = seriesManager.run(strategy);
 	TradingRecord tradingRecord = barSeriesService.runConfiguredStrategy(series, strategy);
 
 
@@ -302,7 +306,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	@Test
 	public void chooseBestForSecurity() {
 		BarSeries timeSeries = barSeriesService.getDataSet("BAT-EUR", false, false);
-		Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
+		List<Strategy> strategies = strategiesMap.getStrategies(timeSeries);
 
 		chooseBestForSecurity(new ProfitCriterion(), timeSeries, strategies);
 		chooseBestForSecurity(new ProfitLossPercentageCriterion(), timeSeries, strategies);
@@ -325,8 +329,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 	}
 
 
-	private Strategy chooseBestForSecurity(AnalysisCriterion criterion,BarSeries timeSeries, Map<Strategy, String> strategies) {
+	private Strategy chooseBestForSecurity(AnalysisCriterion criterion,BarSeries timeSeries, List<Strategy> strategies) {
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries);
+/*
 		for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
 			Strategy strategy = entry.getKey();
 			String name = entry.getValue();
@@ -334,15 +339,16 @@ public class TestJStrategies extends BaseIntegrationTest {
 			double profit = criterion.calculate(timeSeries, tradingRecord).doubleValue();
 			System.out.println("\tcriterion "+ criterion.getClass().getName() + ", for " + name + ": " + profit);
 		}
-		Strategy bestStrategy = criterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
-		System.out.println("\t\t--> Best strategy: " + strategies.get(bestStrategy) + "\n");
+*/
+		Strategy bestStrategy = criterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
+		System.out.println("\t\t--> Best strategy: " + bestStrategy + "\n");
 		return bestStrategy;
 	}
 
 	@Test
 	public void chooseBestForSecurity2() {
 		BarSeries barSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
-		List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
+		List<Strategy> strategies = strategiesMap.getStrategies(barSeries);
 		AnalysisCriterion profitCriterion = new ReturnCriterion();
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
 		BacktestExecutor backtestExecutor = new BacktestExecutor(barSeries);
@@ -379,8 +385,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 		AnalysisCriterion nrOfTradesCriterion = new NumberOfPositionsCriterion();
 		
 		for (BarSeries timeSeries : timeSeriesList) {
-			Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
+			List<Strategy> strategies = strategiesMap.getStrategies(timeSeries);
 			BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries);
+/*
 			for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
 				Strategy strategy = entry.getKey();
 				String name = entry.getValue();
@@ -397,18 +404,13 @@ public class TestJStrategies extends BaseIntegrationTest {
 					highestProfitNameNrTrade = timeSeries.getName();
 					highestProfitNameStrategyNrTrade = strategy.getName();
 				}
-/*
-				System.out.println(
-						"\tProfit(Profit) for strategy: " + name + " and security :" + timeSeries.getName() + " = " + profitProfit);
-				System.out.println(
-						"\tProfit(NrTrade) for strategy: " + name + " and security :" + timeSeries.getName() + " = " + profitNrTrade);
-*/
 			}
-			Strategy bestProfitStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
-			System.out.println("\t\t--> Best strategy(profit criteria) for : "+timeSeries.getName()+" = " + strategies.get(bestProfitStrategy));
+*/
+			Strategy bestProfitStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
+			System.out.println("\t\t--> Best strategy(profit criteria) for : "+timeSeries.getName()+" = " + bestProfitStrategy);
 			System.out.println("\t\t--> HighestProfit Name: " + highestProfitNameProfit + " profit%: " + percent(highestProfitProfit));
 			System.out.println("\t\t--> Strategy: " + highestProfitNameStrategyProfit + "\n");
-			Strategy bestNrOfTradesStrategy = nrOfTradesCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies.keySet()));
+			Strategy bestNrOfTradesStrategy = nrOfTradesCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
 /*
 			System.out.println("\t\t--> Best strategy(nr of trades) for : "+timeSeries.getName()+" = " + strategies.get(bestNrOfTradesStrategy));
 			System.out.println("\t\t--> HighestProfit Name: " + highestProfitNameNrTrade + " profit%: " + percent(highestProfitNrTrade));
@@ -469,7 +471,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	*/
 		String securityName = "FIL-EUR";
 		BarSeries series = barSeriesService.getDataSet(securityName, false, false);
-		Strategy strategy = new HaramiStrategy(series).buildStrategy();
+		Strategy strategy = new HaramiStrategy().buildStrategy(series);
 
 
 		BarSeriesManager seriesManager = new BarSeriesManager(series);

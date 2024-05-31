@@ -22,7 +22,9 @@
  */
 package nu.itark.frosk.strategies;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import org.springframework.stereotype.Component;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -40,29 +42,25 @@ import java.util.List;
  * @see <a href="http://www.investopedia.com/terms/b/bullishharami.asp">
  *     http://www.investopedia.com/terms/b/bullishharami.asp</a>
  */
+@Component
+@Slf4j
 public class HaramiStrategy extends AbstractStrategy implements IIndicatorValue {
 
-	BarSeries series = null;
-	   
-	public HaramiStrategy(BarSeries series) {
-        super(series);
-        this.series = series;
-	}	
-	
 	/**
      * @return a CCI correction strategy
      */
-    public Strategy buildStrategy() {
+    public Strategy buildStrategy(BarSeries series) {
+        super.setInherentExitRule();
         indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
-
+        super.barSeries = series;
         BullishHaramiIndicator  bullish = new BullishHaramiIndicator(series);
         BearishHaramiIndicator  bearish = new BearishHaramiIndicator(series);
         Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
-
         Rule exitRule;
+
         if (!inherentExitRule) {
             exitRule = new BooleanIndicatorRule(bearish); // Bear trend
         } else {

@@ -52,14 +52,5 @@ public class StrategyTrade {
     @JoinColumn(name="featured_strategy_id", nullable=false)
     private FeaturedStrategy featuredStrategy;
 
-/*
-    public StrategyTrade(Date date, String type, BigDecimal price, BigDecimal grossProfit, BigDecimal pnl){
-    	this.date = date;
-    	this.price = price;
-		this.grossProfit = grossProfit;
-		this.pnl = pnl;
-    	this.type = type;
-    }
-*/
 
 }

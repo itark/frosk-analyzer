@@ -15,8 +15,6 @@ public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrate
 	List<FeaturedStrategy> findByNameOrderByTotalProfitDesc(String name);
 	FeaturedStrategy findByNameAndSecurityName(String name, String securityName);
 	FeaturedStrategy findTopBySecurityNameOrderByLatestTradeDesc(String security);
-	List<FeaturedStrategy> findTop10BySecurityNameOrderByLatestTradeDesc(String security);
-	List<FeaturedStrategy> findTop10ByOrderByTotalProfitDesc();
 
 	@Query("SELECT fs " +
 			"FROM FeaturedStrategy fs " +
@@ -27,16 +25,16 @@ public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrate
 			"AND fs.isOpen = ?5 " +
 			"ORDER BY totalProfit DESC")
 	List<FeaturedStrategy> findTopStrategies(BigDecimal profitableTradesRatio, Integer nrOfTrades, BigDecimal sqn, BigDecimal expectency, Boolean isOpen);
-	@Query("SELECT fs FROM FeaturedStrategy fs, StrategyTrade st WHERE fs.securityName = ?1 AND st.type = 'BUY'")
-	List<FeaturedStrategy> findByOpenTrade(String securityName);
 
 	@Query("SELECT fs " +
 			"FROM FeaturedStrategy fs " +
 			"WHERE fs.profitableTradesRatio > ?1 " +
 			"AND fs.numberofTrades > ?2 " +
-			"AND fs.isOpen = true " +
+			"AND fs.sqn > ?3 " +
+			"AND fs.expectency > ?4 " +
+			"AND fs.isOpen = ?5 " +
 			"ORDER BY latestTrade DESC")
-	List<FeaturedStrategy> findSmartSignals(BigDecimal profitableTradesRatio, Integer aboveNrOfTrades);
+	List<FeaturedStrategy> findSmartSignals(BigDecimal profitableTradesRatio, Integer nrOfTrades, BigDecimal sqn, BigDecimal expectency, Boolean isOpen);
 
 	@Query("SELECT avg(sqn) as sqn, avg(totalProfit) as totalProfit, name as name " +
 			"FROM FeaturedStrategy " +

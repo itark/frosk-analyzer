@@ -22,6 +22,7 @@
  */
 package nu.itark.frosk.strategies;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.BarSeriesService;
@@ -38,42 +39,45 @@ import java.util.List;
 import java.util.logging.Logger;
 
 @SpringBootTest
+@Slf4j
 public class TestJEngulfingStrategy extends BaseIntegrationTest {
 
-	Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
-	 
 	 @Autowired
 	 BarSeriesService barSeriesService;
 
+    @Autowired
+    EngulfingStrategy engulfingStrategy;
+
     @Test
     public final void run() throws Exception {
-		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
-		EngulfingStrategy strat = new EngulfingStrategy(timeSeries);
-        Strategy strategy = strat.buildStrategy();
-        BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
+		BarSeries barSeries = barSeriesService.getDataSet("SOL-EUR", false, false);
+        Strategy strategy = engulfingStrategy.buildStrategy(barSeries);
+        BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Position> positions = tradingRecord.getPositions();
      
         for (Position trade : positions) {
-        	Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
-        	logger.info(timeSeries.getName()+"::barEntry="+barEntry.getDateName());
-        	Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
-        	logger.info(timeSeries.getName()+"::barExit="+barExit.getDateName());
+        	Bar barEntry = barSeries.getBar(trade.getEntry().getIndex());
+        	log.info(barSeries.getName()+"::barEntry="+barEntry.getDateName());
+        	Bar barExit = barSeries.getBar(trade.getExit().getIndex());
+        	log.info(barSeries.getName()+"::barExit="+barExit.getDateName());
             Num closePriceBuy = barEntry.getClosePrice();
             Num closePriceSell = barExit.getClosePrice();
             Num profit = closePriceSell.minus(closePriceBuy);
             
-            logger.info("profit="+profit);
+            log.info("profit="+profit);
             
         }
         
-        logger.info("Number of positions for the strategy: " + tradingRecord.getPositionCount());
+        log.info("Number of positions for the strategy: " + tradingRecord.getPositionCount());
 
         // Analysis
-        logger.info("Total profit for the strategy: " + new ProfitCriterion().calculate(timeSeries, tradingRecord));
-        double totalProfit = new ReturnCriterion().calculate(timeSeries, tradingRecord).doubleValue();
+        log.info("Profit: " + new ProfitCriterion().calculate(barSeries, tradingRecord));
+        log.info("Return: " + new ReturnCriterion().calculate(barSeries, tradingRecord));
+/*
         double totalProfitPercentage = (totalProfit - 1 ) *100;  //TODO minus
         logger.info("Total profit for the strategy (%): "+ totalProfitPercentage);
+*/
     }
 
 }

@@ -2,10 +2,9 @@ package nu.itark.frosk;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
-import nu.itark.frosk.analysis.SecurityMetaDataManager;
-import nu.itark.frosk.bot.TradingBot;
 import nu.itark.frosk.repo.*;
 import nu.itark.frosk.service.TradingAccountService;
+import nu.itark.frosk.strategies.filter.StrategyFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -64,10 +63,8 @@ public class HighLander {
 	StrategyAnalysis strategyAnalysis;
 
 	@Autowired
-	SecurityMetaDataManager securityMetaDataManager;
+	StrategyFilter strategyFilter;
 
-	@Autowired
-	TradingAccountService tradingAccountService;
 
 
 	/**
@@ -86,28 +83,8 @@ public class HighLander {
 		}
 		runChooseBestStrategy();
 		if (runBot) {
-			runDoRealTrades();
+			strategyAnalysis.runningPositions();
 		}
-	}
-
-	private void runDoRealTrades() {
-		List<FeaturedStrategyDTO> topFeaturedStratyList =  securityMetaDataManager.getTopFeaturedStrategies();
-		tradingAccountService.deleteTotalValue(); //when runBotPositions
-		topFeaturedStratyList.forEach(tfs -> {
-			String strategy = tfs.getName()+"Strategy";
-			long securityId = securityRepository.findByName(tfs.getSecurityName()).getId();
-			//runBot(strategy,securityId);
-			runBotPositions(strategy,securityId);
-		});
-	}
-
-
-	private void runBot(String strategy, Long securityId) {
-		strategyAnalysis.runBot(strategy,securityId);
-	}
-
-	private void runBotPositions(String strategy, Long securityId) {
-		strategyAnalysis.runBotPositions(strategy,securityId);
 	}
 
 	/**

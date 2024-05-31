@@ -8,6 +8,8 @@ import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+import static java.math.RoundingMode.FLOOR;
+
 public class FroskUtil {
 
 
@@ -22,6 +24,12 @@ public class FroskUtil {
         }
         value = raw  * 100;
         return new BigDecimal(value).setScale(2, RoundingMode.DOWN);
+    }
+
+    static public BigDecimal getPercentage(BigDecimal initValue, BigDecimal targetValue) {
+        return  ((targetValue.subtract(initValue))
+                .divide(initValue, 4, FLOOR))
+                .multiply(BigDecimal.valueOf(100L));
     }
 
 

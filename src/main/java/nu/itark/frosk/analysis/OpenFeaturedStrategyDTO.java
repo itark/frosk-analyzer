@@ -11,8 +11,9 @@ import java.util.Date;
 public class OpenFeaturedStrategyDTO {
     private String securityName;
     private String name;
+    private BigDecimal openPrice;
     private BigDecimal totalProfit;
     private BigDecimal totalGrossReturn;
-    private String latestTrade;
-    private BigDecimal close;
+    private String openTradeDate;
+    private BigDecimal closePrice;
 }

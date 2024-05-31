@@ -108,8 +108,13 @@ public class COINBASEDataManager {
 
             if (candleList.isEmpty()) {
                 Security security = securityRepository.findById(sec_id).get();
-                log.info("Inga candles:{}", security.getName());
+                log.info("No candles for:{}", security.getName());
                 security.setActive(false);
+                securityRepository.saveAndFlush(security);
+            } else {
+                Security security = securityRepository.findById(sec_id).get();
+                log.info("Candles exist for:{}", security.getName());
+                security.setActive(true);
                 securityRepository.saveAndFlush(security);
             }
 

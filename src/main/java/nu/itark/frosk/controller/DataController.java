@@ -34,6 +34,9 @@ public class DataController {
     BarSeriesService barSeriesService;
 
     @Autowired
+    TradingAccountService tradingAccountService;
+
+    @Autowired
     StrategyAnalysis strategyAnalysis;
 
     @Autowired
@@ -43,7 +46,8 @@ public class DataController {
     SecurityMetaDataManager securityMetaDataManager;
 
     @Autowired
-    StrategyMetaDataManager strategyMetaDataManager;
+    StrategiesMap strategiesMap;
+
 
     /**
      * @return
@@ -54,14 +58,14 @@ public class DataController {
     @RequestMapping(path = "/featuredStrategies", method = RequestMethod.GET)
     public List<FeaturedStrategyDTO> getFeaturedStrategies() {
         log.info("/featuredStrategies...");
-        List<FeaturedStrategyDTO> featuredStrategies = securityMetaDataManager.getFeaturedStrategies();
+        List<FeaturedStrategyDTO> featuredStrategies = strategyFilter.getFeaturedStrategies();
         log.info("/featuredStrategies, found:{}",featuredStrategies.size());
         return featuredStrategies;
     }
 
     @RequestMapping(path = "/topFeaturedStrategies", method = RequestMethod.GET)
     public List<FeaturedStrategyDTO> getTopFeaturedStrategies() {
-        return securityMetaDataManager.getTopFeaturedStrategies();
+        return strategyFilter.getTopFeaturedStrategies();
     }
 
     /**
@@ -81,7 +85,7 @@ public class DataController {
         }
 
         if ("ALL".equals(strategy)) {
-            List<String> strategies = StrategiesMap.buildStrategiesMap();
+            List<String> strategies = strategiesMap.buildStrategiesMap();
             strategies.forEach(strategyName -> {
                 datasetet.getSecurities().forEach(security -> {
                     FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, security.getName());
@@ -107,7 +111,7 @@ public class DataController {
     @RequestMapping(path = "/strategies", method = RequestMethod.GET)
     public List<String> getStrategies() {
         log.info("/strategies");
-        return StrategiesMap.buildStrategiesMap();
+        return strategiesMap.buildStrategiesMap();
     }
 
     /**
@@ -148,7 +152,7 @@ public class DataController {
     @RequestMapping(path = "/topStrategies", method = RequestMethod.GET)
     public List<TopStrategyDTO> getTopStrategies() {
         log.info("/topStrategies");
-        return strategyMetaDataManager.findBestPerformingStrategies().stream()
+        return strategyFilter.findBestPerformingStrategies().stream()
                 .map(dto -> TopStrategyDTO.builder()
                         .name(dto.getName().replace("Strategy",""))
                         .totalProfit(dto.getTotalProfit())
@@ -241,14 +245,14 @@ public class DataController {
         return getOpenSmartSignals();
     }
 
-    @GetMapping(value = "/totalTrading")
-    public TotalTradingDTO totalTrading() {
-        log.info("/totalTrading");
-        return getTotalTrading();
+    @GetMapping(value = "/tradingAccounts")
+    public List<TotalTradingDTO> tradingAccounts() {
+        log.info("/tradingAccounts");
+        return getTradingAccounts();
     }
 
-    private TotalTradingDTO getTotalTrading() {
-       return strategyMetaDataManager.getTradingInfo();
+    private List<TotalTradingDTO> getTradingAccounts() {
+       return tradingAccountService.getTradingAccounts();
     }
 
     private List<TradeDTO> getLongTrades() {

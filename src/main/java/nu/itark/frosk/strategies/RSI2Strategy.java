@@ -24,6 +24,8 @@ package nu.itark.frosk.strategies;
 
 import java.util.List;
 
+import lombok.Data;
+import org.springframework.stereotype.Component;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -44,20 +46,17 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  * <p>
  * @see //stockcharts.com/school/doku.php?id=chart_school:trading_strategies:rsi2
  */
+@Component
 public class RSI2Strategy extends AbstractStrategy implements IIndicatorValue {
 	private RSIIndicator rsi = null;
-	private BarSeries series = null;
 
-	public RSI2Strategy(BarSeries series) {
-        super(series);
-        this.series = series;
-	}
-
-    public Strategy buildStrategy() {
+    public Strategy buildStrategy(BarSeries series) {
+        super.setInherentExitRule();
 		indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
+        super.barSeries = series;
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
 		setIndicatorValues(shortSma, "shortSma");
@@ -68,7 +67,7 @@ public class RSI2Strategy extends AbstractStrategy implements IIndicatorValue {
         // Entry rule
         // The long-term trend is up when a security is above its 200-period SMA.
         Rule entryRule = new OverIndicatorRule(shortSma, longSma) // Trend
-               .and(new CrossedDownIndicatorRule(rsi, 20)) // Signal 1
+               .and(new CrossedDownIndicatorRule(rsi, 10)) // Signal 1
                 .and(new OverIndicatorRule(shortSma, closePrice)); // Signal 2
 
         Rule exitRule;

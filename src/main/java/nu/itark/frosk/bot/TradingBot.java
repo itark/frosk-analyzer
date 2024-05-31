@@ -24,6 +24,8 @@
 package nu.itark.frosk.bot;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.analysis.FeaturedStrategyDTO;
+import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.bot.bot.domain.Order;
 import nu.itark.frosk.bot.bot.dto.market.TickerDTO;
 import nu.itark.frosk.bot.bot.dto.position.PositionCreationResultDTO;
@@ -40,13 +42,16 @@ import nu.itark.frosk.bot.bot.util.jpa.CurrencyAmount;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.model.TradingAccount;
-import nu.itark.frosk.model.dto.AccountTypeDTO;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.repo.TradingAccountRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.TradingAccountService;
+import nu.itark.frosk.strategies.filter.StrategyFilter;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.slf4j.Marker;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
 import org.ta4j.core.criteria.pnl.ProfitCriterion;
@@ -90,15 +95,21 @@ public class TradingBot extends Base {
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
 
+    @Autowired
+    StrategyFilter strategyFilter;
+
+    @Autowired
+    StrategiesMap strategiesMap;
+
     public void run(Strategy strategy, BarSeries series) {
         List<BigDecimal> totalBefore = new ArrayList<>();
-        List<BigDecimal> totalAfter =new ArrayList<>();
+        List<BigDecimal> totalAfter = new ArrayList<>();
         final List<FeaturedStrategy> topStrategies = featuredStrategyRepository.findTopStrategies(BigDecimal.valueOf(0.1), 4, BigDecimal.valueOf(1.7), BigDecimal.valueOf(0.5), false);
         final Long fsId = topStrategies.get(0).getId();
-        System.out.println("fsId:"+fsId);
+        System.out.println("fsId:" + fsId);
         final List<StrategyTrade> strategyTradeList = strategyTradeRepository.findByFeaturedStrategyId(fsId);
         strategyTradeList.stream()
-                .forEach(trade-> {
+                .forEach(trade -> {
                     if (trade.getType().equals(Trade.TradeType.BUY.name())) {
                         totalBefore.add(trade.getPrice().multiply(trade.getAmount()));
                     } else {
@@ -107,16 +118,16 @@ public class TradingBot extends Base {
                 });
 
         BigDecimal buySum = totalBefore.stream()
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal sellSum = totalAfter.stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalProfit = sellSum.subtract(buySum);
 
-        System.out.println("buySum:"+buySum);
-        System.out.println("sellSum:"+sellSum);
-        System.out.println("totalProfit(EUR):"+totalProfit);
+        System.out.println("buySum:" + buySum);
+        System.out.println("sellSum:" + sellSum);
+        System.out.println("totalProfit(EUR):" + totalProfit);
 
 
     }
@@ -132,18 +143,18 @@ public class TradingBot extends Base {
         TradingAccount tradingAccount = tradingAccountRepository.findAll().get(0);
         final BigDecimal totalValueForSecurities = tradingAccount.getSecurityValue();
         final BigDecimal positionValue = tradingAccount.getPositionValue();
-        System.out.println("securityValue:"+totalValueForSecurities);
-        System.out.println("positionValue:"+positionValue);
+        System.out.println("securityValue:" + totalValueForSecurities);
+        System.out.println("positionValue:" + positionValue);
 
         Num positionIn = DoubleNum.valueOf(positionValue);
-        Num buyAmount =  DoubleNum.valueOf(1);
-        log.info("strategy: {}, securityName:{}",strategy.getName(), series.getName());
+        Num buyAmount = DoubleNum.valueOf(1);
+        log.info("strategy: {}, securityName:{}", strategy.getName(), series.getName());
         for (seriesMaxSize = runBeginIndex; seriesMaxSize <= runEndIndex; ++seriesMaxSize) {
             if (strategy.shouldEnter(seriesMaxSize)) {
                 log.info("shouldEnter");
                 //buyAmount = buyAmount == DoubleNum.valueOf(1) ? buyAmount : positionIn.dividedBy(series.getBar(seriesMaxSize).getClosePrice());
                 buyAmount = positionIn.dividedBy(series.getBar(seriesMaxSize).getClosePrice());
-                log.info("buyAmount:"+buyAmount);
+                log.info("buyAmount:" + buyAmount);
                 boolean entered = tradingRecord.enter(seriesMaxSize, series.getBar(seriesMaxSize).getClosePrice(), buyAmount);
                 if (entered) {
                     Trade entry = tradingRecord.getLastEntry();
@@ -159,7 +170,7 @@ public class TradingBot extends Base {
                 }
             } else if (strategy.shouldExit(seriesMaxSize)) {
                 //log.info("shouldExit");
-                log.info("buyAmount -> exit:"+buyAmount);
+                log.info("buyAmount -> exit:" + buyAmount);
                 boolean exited = tradingRecord.exit(seriesMaxSize, series.getBar(seriesMaxSize).getClosePrice(), buyAmount);
                 if (exited) {
                     Trade exit = tradingRecord.getLastExit();
@@ -179,29 +190,51 @@ public class TradingBot extends Base {
         }
 
         double pnl = new ProfitLossPercentageCriterion().calculate(series, tradingRecord).doubleValue();
-        log.info("PnL:{}% ",pnl);
+        log.info("PnL:{}% ", pnl);
 
-       double profit = new ProfitCriterion().calculate(series, tradingRecord).doubleValue();
-        log.info("Profit:{}% ",profit);
+        double profit = new ProfitCriterion().calculate(series, tradingRecord).doubleValue();
+        log.info("Profit:{}% ", profit);
+    }
+
+
+    public void runningPositions() {
+        final List<FeaturedStrategyDTO> topFeaturedStrategies = strategyFilter.getTopFeaturedStrategies();
+        log.info("**TopFeaturedStrategies** }");
+
+        topFeaturedStrategies.stream()
+                .peek(o -> System.out.println("o.name:" + o.getName() + "o.secName:" + o.getSecurityName()))
+                .toList();
+
+
+        topFeaturedStrategies.stream().forEach(dto -> {
+            log.info("FeaturedStrategy: name: {}, security: {}", dto.getName(), dto.getSecurityName());
+            log.info(Marker.ANY_MARKER);
+            BarSeries series = barSeriesService.getDataSet(dto.getSecurityName(), false, false);
+            List<TradingAccount> tradingAccounts = tradingAccountRepository.findAll();
+            tradingAccounts.forEach(tradingAccount -> {
+                log.info("TradingAccount: type:{}, inherentExitRule:{}", tradingAccount.getAccountType().getType(), tradingAccount.getAccountType().getInherentExitRule());
+                tradingAccountService.setActiveTradingAccount(tradingAccount);
+                Strategy strategyToRun = strategiesMap.getStrategyToRun(dto.getName() + "Strategy", series);
+                runningPositions(strategyToRun, series);
+            });
+        });
     }
 
     public void runningPositions(Strategy strategy, BarSeries series) {
         TradingRecord tradingRecord = barSeriesService.runConfiguredStrategy(series, strategy);
-        BigDecimal totalValue = tradingAccountService.getTotalValue();
-        log.info("strategy: {}, securityName:{}",strategy.getName(), series.getName());
-/*
+        //log.info("TradingInfo" + tradingAccountService.getTradingAccounts());
         for (Position position : tradingRecord.getPositions()) {
-            log.info("Entered on " + position.getEntry().getIndex() + " (net_price=" + position.getEntry().getNetPrice().doubleValue() + ", amount=" + position.getEntry().getAmount().doubleValue() + ")");
-            log.info("Exited on " + position.getExit().getIndex() + " (net_price=" + position.getExit().getNetPrice().doubleValue() + ", amount=" + position.getExit().getAmount().doubleValue() + ")");
-            log.info("position.profit=" + position.getProfit());
-           // tradingAccountService.updateAccountOnProfit((DoubleNum)position.getProfit());
+            // log.info("Entered on " + position.getEntry().getIndex() + " (net_price=" + position.getEntry().getNetPrice().doubleValue() + ", amount=" + position.getEntry().getAmount().doubleValue() + ")");
+            // log.info("Exited on " + position.getExit().getIndex() + " (net_price=" + position.getExit().getNetPrice().doubleValue() + ", amount=" + position.getExit().getAmount().doubleValue() + ")");
+            // log.info("position.profit=" + position.getProfit());
+            // tradingAccountService.updateAccountOnProfit(position.getProfit());
+            tradingAccountService.updateAccount(position);
         }
-*/
-        Num profit = new ProfitCriterion().calculate(series, tradingRecord);
-        log.info("profit: {}",profit);
-        tradingAccountService.updateAccountOnProfit(profit);
-        totalValue = tradingAccountService.getTotalValue();
-        log.info("totalValue: {}",totalValue);
+        // log.info("Leaving strategy: *** {} ***, accountValue: {}", strategy.getName(), tradingAccountService.getAccountValue());
+        tradingAccountService.updateTotalReturnPercentage();
+        log.info("strategy: *** {} ***, securityName:{}, accountValue: {}", strategy.getName(), series.getName(), tradingAccountService.getAccountValue());
+
+        // log.info("TradingInfo : {}", tradingAccountService.getTradingAccounts());
     }
 
     private void fixOrderStatus(String orderId) {
@@ -253,14 +286,12 @@ public class TradingBot extends Base {
     }
 
 
-
     private PositionCreationResultDTO createLongPosition(Strategy strategy, BarSeries barSeries, Trade entry) {
         CurrencyPairDTO currencyPairDTO = new CurrencyPairDTO(barSeries.getName());
         BigDecimal amount = new BigDecimal(1);
         BigDecimal limitPrice = new BigDecimal(entry.getNetPrice().doubleValue());
         return positionService.createLongPosition(strategy, currencyPairDTO, amount, limitPrice, null);
     }
-
 
 
     private OrderCreationResultDTO closePosition(Strategy strategy, BarSeries barSeries, long positionId, Trade exit) {
@@ -272,7 +303,6 @@ public class TradingBot extends Base {
                 .build();
         return positionService.closePosition(strategy, positionId, tickerDTO);
     }
-
 
 
 }

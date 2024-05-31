@@ -24,6 +24,7 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
@@ -40,22 +41,17 @@ import org.ta4j.core.rules.*;
 import java.util.List;
 
 @Slf4j
+@Component
 public class SimpleMovingMomentumStrategy extends AbstractStrategy implements IIndicatorValue  {
-    BarSeries series = null;
     EMAIndicator shortEma, longEma = null;
 
-    public SimpleMovingMomentumStrategy(BarSeries series) {
-        super(series);
-        //this.series = super.barSeriesWithForecast;
-        this.series = series;
-    }
-
-    public Strategy buildStrategy() {
+    public Strategy buildStrategy(BarSeries series) {
+        super.setInherentExitRule();
         indicatorValues.clear();
-        if (this.series == null) {
+        if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
-
+        super.barSeries = series;
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         OpenPriceIndicator openPrice = new OpenPriceIndicator(series);
         shortEma = new EMAIndicator(openPrice, 10);

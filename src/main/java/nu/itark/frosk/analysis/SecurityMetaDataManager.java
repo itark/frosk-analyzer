@@ -10,7 +10,6 @@ import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.AnalysisCriterion;
 import org.ta4j.core.BarSeries;
@@ -19,7 +18,6 @@ import org.ta4j.core.backtest.BarSeriesManager;
 import org.ta4j.core.criteria.pnl.ReturnCriterion;
 import org.ta4j.core.num.Num;
 
-
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.*;
@@ -27,22 +25,6 @@ import java.util.*;
 @Component
 @Slf4j
 public class SecurityMetaDataManager {
-
-
-    @Value("${frosk.criteria.sqn}")
-    private BigDecimal sqn;
-
-    @Value("${frosk.criteria.expectency}")
-    private BigDecimal expectency;
-
-    @Value("${frosk.criteria.profitable.ratio}")
-    private BigDecimal profitableRatio;
-
-    @Value("${frosk.criteria.numberOfTrades}")
-    private Integer numberOfTrades;
-
-    @Value("${frosk.criteria.open}")
-    private Boolean isOpen;
 
     @Autowired
     BarSeriesService barSeriesService;
@@ -59,40 +41,13 @@ public class SecurityMetaDataManager {
     @Autowired
     SecurityPriceRepository securityPriceRepository;
 
-    /**
-     * Gets all featured strategies, hence per all strategies and all securities.
-     *
-     * @return
-     */
-    public List<FeaturedStrategyDTO> getFeaturedStrategies() {
-        List<FeaturedStrategyDTO> returnList = new ArrayList<>();
-        featuredStrategyRepository.findAll().forEach(fs->{
-                returnList.add(getDTO(fs, false));
-        });
-        return returnList;
-    }
-
-    public List<FeaturedStrategyDTO> getTop10FeaturedStrategies() {
-        List<FeaturedStrategyDTO> returnList = new ArrayList<>();
-        featuredStrategyRepository.findTop10ByOrderByTotalProfitDesc().forEach(fs->{
-            returnList.add(getDTO(fs, false));
-        });
-        return returnList;
-    }
-
-    public List<FeaturedStrategyDTO> getTopFeaturedStrategies() {
-        List<FeaturedStrategyDTO> returnList = new ArrayList<>();
-        featuredStrategyRepository.findTopStrategies(profitableRatio, numberOfTrades, sqn, expectency, isOpen ).forEach(fs->{
-            returnList.add(getDTO(fs, false));
-        });
-        return returnList;
-    }
+    @Autowired
+    StrategiesMap strategiesMap;
 
     public List<SecurityDTO> getSecurityMetaData() {
         List<SecurityDTO> securityDTOList = new ArrayList<SecurityDTO>();
-        DataSet dataset = datasetRepository.findByName(Database.COINBASE.name());
-
-        dataset.getSecurities().forEach(s -> {
+        List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
+        securities.forEach(s -> {
             SecurityDTO securityDTO = new SecurityDTO(s.getName());
             addMetaData(securityDTO);
             securityDTOList.add(securityDTO);
@@ -102,26 +57,26 @@ public class SecurityMetaDataManager {
     }
 
     private void addMetaData(SecurityDTO securityDTO) {
-        securityDTO.setOneDayPercent(getBarPercent(securityDTO.getName(),1));
-        securityDTO.setOneWeekPercent(getBarPercent(securityDTO.getName(),6));
-        securityDTO.setOneMonthPercent(getBarPercent(securityDTO.getName(),29));
-        securityDTO.setThreeMonthPercent(getBarPercent(securityDTO.getName(),89));
-        securityDTO.setSixMonthPercent(getBarPercent(securityDTO.getName(),179));
+        securityDTO.setOneDayPercent(getBarPercent(securityDTO.getName(), 1));
+        securityDTO.setOneWeekPercent(getBarPercent(securityDTO.getName(), 6));
+        securityDTO.setOneMonthPercent(getBarPercent(securityDTO.getName(), 29));
+        securityDTO.setThreeMonthPercent(getBarPercent(securityDTO.getName(), 89));
+        securityDTO.setSixMonthPercent(getBarPercent(securityDTO.getName(), 179));
         securityDTO.setBestStrategy(getBestStrategy(securityDTO.getName()).getName());
     }
 
-    private Strategy getBestStrategy(String securityName)  {
+    private Strategy getBestStrategy(String securityName) {
         BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
-        List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
+        List<Strategy> strategies = strategiesMap.getStrategies(barSeries);
         AnalysisCriterion profitCriterion = new ReturnCriterion();
         BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
         return profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
- }
+    }
 
     public BigDecimal getBarPercent(String securityName, int nrOfBars) {
         BarSeries timeSeries = barSeriesService.getDataSet(securityName, false, false);
         //Sanitycheck
-        if (timeSeries.getBarCount() <= nrOfBars) {
+        if (timeSeries.getBarCount() <= nrOfBars || nrOfBars == 0) {
             return null;
         }
         Num entryOpen = timeSeries.getBar((timeSeries.getBarCount()) - nrOfBars).getOpenPrice();
@@ -138,7 +93,7 @@ public class SecurityMetaDataManager {
     public BigDecimal getBarGrossProfit(String securityName, int nrOfBars) {
         BarSeries timeSeries = barSeriesService.getDataSet(securityName, false, false);
         //Sanitycheck
-        if (timeSeries.getBarCount() <= nrOfBars) {
+        if (timeSeries.getBarCount() <= nrOfBars || nrOfBars == 0) {
             return null;
         }
         Num entryOpen = timeSeries.getBar((timeSeries.getBarCount()) - nrOfBars).getOpenPrice();
@@ -147,6 +102,11 @@ public class SecurityMetaDataManager {
         return BigDecimal.valueOf(grossProfit.doubleValue()).round(new MathContext(2));
     }
 
+    public BigDecimal getPrice(String securityName, Date latestTrade) {
+        final Security security = securityRepository.findByName(securityName);
+        final SecurityPrice securityPrice = securityPriceRepository.findBySecurityIdAndTimestamp(security.getId(), latestTrade);
+        return securityPrice.getOpen();
+    }
 
     public BigDecimal getLatestClose(String securityName) {
         final Security security = securityRepository.findByName(securityName);
@@ -160,7 +120,7 @@ public class SecurityMetaDataManager {
             return dto;
         }
         List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
-        dto.setName(fs.getName().replace("Strategy",""));
+        dto.setName(fs.getName().replace("Strategy", ""));
         dto.setSecurityName(fs.getSecurityName());
         dto.setIcon(IconManager.getIconUrl(fs.getSecurityName()));
         dto.setTotalProfit(fs.getTotalProfit());
@@ -188,7 +148,7 @@ public class SecurityMetaDataManager {
 
         if (includeIndicatorValues) {
             fs.getIndicatorValues().forEach(siv -> {
-                indicatorValues.add(new IndicatorValueDTO(siv.getDate(),siv.getValue(), siv.getIndicator()));
+                indicatorValues.add(new IndicatorValueDTO(siv.getDate(), siv.getValue(), siv.getIndicator()));
             });
             dto.setIndicatorValues(indicatorValues);
         }
@@ -221,4 +181,11 @@ public class SecurityMetaDataManager {
         return trades;
     }
 
+    public BigDecimal getPrice(FeaturedStrategy fs) {
+        Comparator<StrategyTrade> date = (c1, c2) -> Long.valueOf(c1.getDate().getTime()).compareTo(c2.getDate().getTime());
+        return fs.getStrategyTrades().stream()
+                .sorted(date.reversed())
+                .map(st -> st.getPrice())
+                .findFirst().orElseThrow();
+    }
 }

@@ -158,7 +158,8 @@ public class WalkForward {
 
         
         // Building the map of strategies
-        Map<Strategy, String> strategies = StrategiesMap.buildStrategiesMap(timeSeries);
+        StrategiesMap strategiesMap = new StrategiesMap();
+        List<Strategy> strategies = strategiesMap.getStrategies(timeSeries);
 
         // The analysis criterion
         AnalysisCriterion profitCriterion = new ProfitCriterion();
@@ -167,6 +168,7 @@ public class WalkForward {
             // For each sub-series...
 //            System.out.println("Sub-series: " + slice.getSeriesPeriodDescription());
             BarSeriesManager sliceManager = new BarSeriesManager(slice);
+/*
             for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
                 Strategy strategy = entry.getKey();
                 String name = entry.getValue();
@@ -175,8 +177,9 @@ public class WalkForward {
                 double profit = profitCriterion.calculate(slice, tradingRecord).doubleValue();
                 System.out.println("\tProfit for " + name + ": " + profit);
             }
-            Strategy bestStrategy = profitCriterion.chooseBest(sliceManager, new ArrayList<Strategy>(strategies.keySet()));
-            System.out.println("\t\t--> Best strategy: " + strategies.get(bestStrategy) + "\n");
+*/
+            Strategy bestStrategy = profitCriterion.chooseBest(sliceManager, new ArrayList<Strategy>(strategies));
+            System.out.println("\t\t--> Best strategy: " + bestStrategy + "\n");
         }
     }
     

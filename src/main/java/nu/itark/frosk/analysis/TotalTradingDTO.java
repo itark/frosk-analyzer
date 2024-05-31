@@ -12,8 +12,9 @@ public class TotalTradingDTO {
     private Date createDate;
     private String type;
     private BigDecimal initTotalValue;
-    private BigDecimal totalValue;
+    private BigDecimal accountValue;
     private BigDecimal securityValue;
     private BigDecimal positionValue;
     private BigDecimal totalReturnPercentage;
+    private String inherentExitrule;
 }

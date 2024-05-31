@@ -27,6 +27,8 @@ import nu.itark.frosk.bot.bot.strategy.internal.CassandreStrategyInterface;
 import nu.itark.frosk.bot.bot.util.base.configuration.BaseConfiguration;
 import nu.itark.frosk.bot.bot.util.exception.ConfigurationException;
 import nu.itark.frosk.bot.bot.util.parameters.ExchangeParameters;
+import org.bytedeco.opencv.presets.opencv_core;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -111,6 +113,9 @@ public class StrategiesAutoConfiguration extends BaseConfiguration {
     /** Position flux. */
     private final PositionFlux positionFlux;
 
+    @Autowired
+    private StrategiesMap strategiesMap;
+
     /**
      * Search for strategies and runs them.
      */
@@ -121,8 +126,9 @@ public class StrategiesAutoConfiguration extends BaseConfiguration {
         //final Map<String, Object> strategies = applicationContext.getBeansWithAnnotation(CassandreStrategy.class);
         //final Map<String, Object> strategies = applicationContext.getBeansWithAnnotation(CassandreStrategy.class);
 
-        final List<String> strategies = StrategiesMap.buildStrategiesMap();
-
+        final List<String> strategies = strategiesMap.buildStrategiesMap();
+        //TODO
+       // final List<String> strategies = null;
 
         // =============================================================================================================
         // Configuration check.

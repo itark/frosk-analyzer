@@ -64,6 +64,9 @@ public class StrategyAnalysis {
 	StrategyPerformanceRepository strategyPerformanceRepository;
 
 	@Autowired
+	StrategiesMap strategiesMap;
+
+	@Autowired
 	TradingBot tradingBot;
 
 	
@@ -80,7 +83,7 @@ public class StrategyAnalysis {
 	 */
 	public void run(String strategy, Long security_id) throws DataIntegrityViolationException {
 		if (Objects.isNull(strategy)  && Objects.isNull(security_id)) {
-			List<String> strategies = StrategiesMap.buildStrategiesMap();
+			List<String> strategies = strategiesMap.buildStrategiesMap();
 			strategies.forEach(strategyName -> {
 				try {
 					runStrategy(strategyName, barSeriesService.getDataSet());
@@ -120,9 +123,6 @@ public class StrategyAnalysis {
 		
 	}
 	public void runChooseBestStrategy() {
-
-		log.info("WTF feePerTradePercent;"+feePerTradePercent);
-
 		for (BarSeries series : barSeriesService.getDataSet()) {
 			setBestStrategy(series);
 		}
@@ -131,18 +131,22 @@ public class StrategyAnalysis {
 	public void runBot(String strategy, Long security_id) {
 		Strategy strategyToRun = null;
 		BarSeries barSeries = barSeriesService.getDataSet(security_id);
-		strategyToRun = getStrategyToRun(strategy, barSeries);
+		strategyToRun = strategiesMap.getStrategyToRun(strategy, barSeries);
 	//	tradingBot.run(strategyToRun, barSeries);
 		log.info("runBot executing tradingBot.runningPositions");
 		tradingBot.runningPositions(strategyToRun, barSeries);
 	}
 
+	@Deprecated
 	public void runBotPositions(String strategy, Long security_id) {
 		BarSeries barSeries = barSeriesService.getDataSet(security_id);
-		Strategy strategyToRun = getStrategyToRun(strategy, barSeries);
+		Strategy strategyToRun = strategiesMap.getStrategyToRun(strategy, barSeries);
 		tradingBot.runningPositions(strategyToRun, barSeries);
 	}
 
+	public void runningPositions() {
+		tradingBot.runningPositions();
+	}
 
 	private void runStrategy(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException{
 		FeaturedStrategy fs = null;
@@ -153,7 +157,7 @@ public class StrategyAnalysis {
 
 		for (BarSeries series : barSeriesList) {
 			log.info("runStrategy("+strategy+", "+series.getName()+")");
-			strategyToRun = getStrategyToRun(strategy, series);
+			strategyToRun = strategiesMap.getStrategyToRun(strategy, series);
 			if (series.getBarData().isEmpty()){
 				log.warn("Something fishy on {}. BarData isEmpty, continues...", series.getName());
 				continue;
@@ -265,7 +269,7 @@ public class StrategyAnalysis {
 					indicatorValueRepo.delete(iv);
 				});
 			}
-			getIndicatorValues(strategy, null).forEach(iv-> {
+			strategiesMap.getIndicatorValues(strategy, null).forEach(iv-> {
 				iv.setFeaturedStrategy(fsRes);
 				indicatorValueRepo.save(iv);
 			});
@@ -282,7 +286,7 @@ public class StrategyAnalysis {
 				strategyPerformanceRepository.delete(sp);
 			});
 		}
-		List<Strategy> strategies = StrategiesMap.getStrategies(barSeries);
+		List<Strategy> strategies = strategiesMap.getStrategies(barSeries);
 		AnalysisCriterion profitCriterion = new ReturnCriterion();
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
 		BacktestExecutor backtestExecutor = new BacktestExecutor(barSeries);
@@ -318,86 +322,6 @@ public class StrategyAnalysis {
 		return new BigDecimal(pnl).setScale(2, BigDecimal.ROUND_DOWN);
 	}
 
-
-	private List<StrategyIndicatorValue> getIndicatorValues(String strategy, BarSeries series) {
-		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
-			RSI2Strategy strategyReguested = new RSI2Strategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(SimpleMovingMomentumStrategy.class.getSimpleName())) {
-			SimpleMovingMomentumStrategy strategyReguested = new SimpleMovingMomentumStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
-			MovingMomentumStrategy strategyReguested = new MovingMomentumStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
-			GlobalExtremaStrategy strategyReguested = new GlobalExtremaStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
-			CCICorrectionStrategy strategyReguested = new CCICorrectionStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
-			EngulfingStrategy strategyReguested = new EngulfingStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
-			HaramiStrategy strategyReguested = new HaramiStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
-			ThreeBlackWhiteStrategy strategyReguested = new ThreeBlackWhiteStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(ADXStrategy.class.getSimpleName())) {
-			ADXStrategy strategyReguested = new ADXStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(ConvergenceDivergenceStrategy.class.getSimpleName())) {
-			ConvergenceDivergenceStrategy strategyReguested = new ConvergenceDivergenceStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(VWAPStrategy.class.getSimpleName())) {
-			VWAPStrategy strategyReguested = new VWAPStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(RunawayGAPStrategy.class.getSimpleName())) {
-			RunawayGAPStrategy strategyReguested = new RunawayGAPStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else if (strategy.equals(EMATenTwentyStrategy.class.getSimpleName())) {
-			EMATenTwentyStrategy strategyReguested = new EMATenTwentyStrategy(series);
-			return strategyReguested.getIndicatorValues();
-		} else {
-			throw new RuntimeException("Strategy not found!, strategy="+strategy);
-		}
-
-	}
-
-
-	private Strategy getStrategyToRun(String strategy, BarSeries series) {
-		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
-			return new RSI2Strategy(series).buildStrategy();
-		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
-			return new MovingMomentumStrategy(series).buildStrategy();
-		} else if (strategy.equals(SimpleMovingMomentumStrategy.class.getSimpleName())) {
-			return new SimpleMovingMomentumStrategy(series).buildStrategy();
-		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
-			return new GlobalExtremaStrategy(series).buildStrategy();
-		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
-			return new CCICorrectionStrategy(series).buildStrategy();
-		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
-			return new EngulfingStrategy(series).buildStrategy();
-		} else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
-			return new HaramiStrategy(series).buildStrategy();
-		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
-			return new ThreeBlackWhiteStrategy(series).buildStrategy();
-		} else if (strategy.equals(ADXStrategy.class.getSimpleName())) {
-			return new ADXStrategy(series).buildStrategy();
-		} else if (strategy.equals(ConvergenceDivergenceStrategy.class.getSimpleName())) {
-			return new ConvergenceDivergenceStrategy(series).buildStrategy();
-		} else if (strategy.equals(VWAPStrategy.class.getSimpleName())) {
-			return new VWAPStrategy(series).buildStrategy();
-		} else if (strategy.equals(RunawayGAPStrategy.class.getSimpleName())) {
-			return new RunawayGAPStrategy(series).buildStrategy();
-		} else if (strategy.equals(EMATenTwentyStrategy.class.getSimpleName())) {
-			return new EMATenTwentyStrategy(series).buildStrategy();
-		} else {
-			throw new RuntimeException("Strategy not found!, strategy="+strategy);
-		}
-	}
-	
 	private String getPeriod(BarSeries series) {
 	StringBuilder sb = new StringBuilder();
     if (!series.getBarData().isEmpty()) {

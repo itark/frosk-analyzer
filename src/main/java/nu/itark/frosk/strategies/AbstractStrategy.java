@@ -3,6 +3,8 @@ package nu.itark.frosk.strategies;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.bot.bot.strategy.BasicCassandreStrategy;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.service.TradingAccountService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.surus.math.AugmentedDickeyFuller;
@@ -25,24 +27,26 @@ public abstract  class AbstractStrategy {
 
     BarSeriesService barSeriesService = new BarSeriesService();
 
-    @Value("${frosk.inherent.exitrule:true}")
-    public boolean inherentExitRule;
+    public Boolean inherentExitRule;
+
+    @Autowired
+    private TradingAccountService tradingAccountService;
 
     public Boolean stationary;
 
-    AbstractStrategy(BarSeries barSeries) {
-        this.barSeries = barSeries;
-       // this.barSeriesWithForecast = barSeriesService.withArimaForecast(barSeries, 3);
-       // this.stationary = isStationary();
+    void setInherentExitRule() {
+        inherentExitRule= tradingAccountService.getActiveTradingAccount().getAccountType().getInherentExitRule();
     }
+
+
     Rule exitRule() {
         ClosePriceIndicator closePrice = new ClosePriceIndicator(barSeries);
         ParabolicSarIndicator pSar = new ParabolicSarIndicator(barSeries);
-        IsFallingRule pSarIsFallingRule = new IsFallingRule(pSar, 1);
+        IsFallingRule pSarIsFallingRule = new IsFallingRule(pSar, 2);
 
         exitRule = pSarIsFallingRule
-                .or(new StopLossRule(closePrice, 2))
-                .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
+               // .or(new StopLossRule(closePrice, 2));
+               .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
 
         return exitRule;
     }

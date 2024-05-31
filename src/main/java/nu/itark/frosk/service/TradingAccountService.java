@@ -1,22 +1,33 @@
 package nu.itark.frosk.service;
 
+import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.analysis.TotalTradingDTO;
 import nu.itark.frosk.model.AccountType;
 import nu.itark.frosk.model.TradingAccount;
-import nu.itark.frosk.model.dto.AccountTypeDTO;
 import nu.itark.frosk.repo.AccountTypeRepository;
 import nu.itark.frosk.repo.TradingAccountRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.ta4j.core.Position;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
+import static java.math.RoundingMode.FLOOR;
 
 @Component
+@Slf4j
 public class TradingAccountService {
+
+    @Value("${frosk.inherent.exitrule:TRUE}")
+    public Boolean inherentExitRule;
 
     @Value("${frosk.init.total.value}")
     private BigDecimal initTotalValue;
@@ -33,67 +44,132 @@ public class TradingAccountService {
     @Autowired
     AccountTypeRepository accountTypeRepository;
 
-    private  TradingAccount tradingAccount;
+    private  TradingAccount activeTradingAccount;
 
-    public void initTradingAccount() {
-        final AccountType accountType = getAccountType();
-        tradingAccount = getTradingAccount();
-        if (Objects.nonNull(tradingAccount)) {
-            return;
-        }
-        TradingAccount newTradingAccount = new TradingAccount();
-        newTradingAccount.setCreateDate(new Date());
-        newTradingAccount.setType(accountType.getType());
-        newTradingAccount.setInitTotalValue(initTotalValue);
-        newTradingAccount.setPositionValue(positionValue);
-        tradingAccount = tradingAccountRepository.save(newTradingAccount);
+    @Transactional
+    public void initTradingAccounts() {
+        accountTypeRepository.deleteAll();
+        tradingAccountRepository.deleteAll();
+
+        setAccountTypes();
+
+        getAccountTypes().forEach(accountType-> {
+            TradingAccount newTradingAccount = new TradingAccount();
+            newTradingAccount.setCreateDate(new Date());
+            newTradingAccount.setAccountType(accountType);
+            newTradingAccount.setInitTotalValue(initTotalValue);
+            newTradingAccount.setAccountValue(initTotalValue);
+            newTradingAccount.setPositionValue(positionValue);
+            tradingAccountRepository.save(newTradingAccount);
+        });
+        activeTradingAccount = getDefaultActiveTradingAccount();
     }
 
-    private AccountType getAccountType() {
-        if (accountTypeRepository.findAll().isEmpty()) {
-            AccountType accountType = new AccountType();
-            accountType.setCreateDate(new Date());
-            accountType.setType(AccountTypeDTO.valueOf(tradingAccountType));
-            return accountTypeRepository.save(accountType);
-        } else {
-            return (accountTypeRepository.findAll().get(0));
-        }
+    private List<AccountType> getAccountTypes() {
+        return accountTypeRepository.findAll();
     }
 
-    public TradingAccount getTradingAccount() {
-        final AccountType accountType = accountTypeRepository.findAll().get(0); //should only be one.
-        return tradingAccountRepository.findByType(accountType.getType());
+    private void setAccountTypes() {
+        //inherentExitRule
+        AccountType accountType = new AccountType();
+        accountType.setCreateDate(new Date());
+        accountType.setType(tradingAccountType);
+        accountType.setInherentExitRule(inherentExitRule);
+        accountTypeRepository.save(accountType);
+        //!inherentExitRule
+        accountType = new AccountType();
+        accountType.setCreateDate(new Date());
+        accountType.setType(tradingAccountType);
+        accountType.setInherentExitRule(!inherentExitRule);
+        accountTypeRepository.saveAndFlush(accountType);
     }
 
-    public void updateAccountOnProfit(Num profit) {
-        if (Objects.isNull(tradingAccount)) {
+    public TradingAccount getDefaultActiveTradingAccount() {
+       final AccountType accountType = accountTypeRepository.findByTypeAndInherentExitRule(tradingAccountType, inherentExitRule);
+        return tradingAccountRepository.findByAccountType(accountType);
+    }
+
+    public void setActiveTradingAccount(TradingAccount activeTradingAccount) {
+        this.activeTradingAccount = activeTradingAccount;
+    }
+
+    public TradingAccount getActiveTradingAccount() {
+        return activeTradingAccount;
+    }
+
+    public void updateAccount(Position position) {
+        if (Objects.isNull(activeTradingAccount)) {
             throw new RuntimeException("TradingAccount not initiated.");
         }
+
+        setAccountValue(position.getProfit());
+        //setSecurityValue(position);
+        tradingAccountRepository.save(activeTradingAccount);
+
+    }
+
+    private void setSecurityValue(Position position) {
+        Num netPrice = position.getEntry().getNetPrice();
+        Num amount= position.getEntry().getAmount();
+        Num entryPositionValue = netPrice.multipliedBy(amount);
+        final Num currentSecurityValue = DoubleNum.valueOf(activeTradingAccount.getSecurityValue());
+        if(position.getProfit().isPositive()) {
+            final Num newSecurityValue = currentSecurityValue.plus(entryPositionValue);
+            activeTradingAccount.setSecurityValue(BigDecimal.valueOf(newSecurityValue.doubleValue()));
+        } else {
+            final Num newSecurityValue = currentSecurityValue.minus(entryPositionValue.abs());
+            activeTradingAccount.setSecurityValue(BigDecimal.valueOf(newSecurityValue.doubleValue()));
+        }
+    }
+
+    private void setAccountValue(Num profit) {
         if (profit.isZero()) {
             return;
         }
-        Num totValue = DoubleNum.valueOf(tradingAccount.getTotalValue());
+        Num totValue = DoubleNum.valueOf(activeTradingAccount.getAccountValue());
         if(profit.isPositive()) {
             Num posPlus = totValue.plus(profit);
-            tradingAccount.setTotalValue(BigDecimal.valueOf(posPlus.doubleValue()));
+            activeTradingAccount.setAccountValue(BigDecimal.valueOf(posPlus.doubleValue()));
         } else {
             Num posNeg = totValue.minus(profit.abs());  //OBS. the abs()
-            tradingAccount.setTotalValue(BigDecimal.valueOf(posNeg.doubleValue()));
+            activeTradingAccount.setAccountValue(BigDecimal.valueOf(posNeg.doubleValue()));
         }
-        tradingAccountRepository.save(tradingAccount);
+
     }
 
-    public BigDecimal getTotalValue() {
-        //reload
-        tradingAccount = tradingAccountRepository.findByType(tradingAccount.getType());
-        return tradingAccount.getTotalValue();
+    public BigDecimal getAccountValue() {
+        return activeTradingAccount.getAccountValue();
     }
 
-    public void deleteTotalValue() {
-        tradingAccount = tradingAccountRepository.findByType(tradingAccount.getType());
-        tradingAccount.setTotalValue(BigDecimal.ZERO);
-        tradingAccountRepository.save(tradingAccount);
+    public List<TotalTradingDTO> getTradingAccounts() {
+        return tradingAccountRepository.findAll().stream()
+                .map(ent -> convert(ent))
+                .toList();
     }
 
+    private TotalTradingDTO convert(TradingAccount tradingAccount) {
+        return TotalTradingDTO.builder()
+                .createDate(tradingAccount.getCreateDate())
+                .initTotalValue(tradingAccount.getInitTotalValue())
+                .positionValue(tradingAccount.getPositionValue())
+                .securityValue(tradingAccount.getSecurityValue())
+                .accountValue(tradingAccount.getAccountValue())
+                .totalReturnPercentage(tradingAccount.getTotalReturnPercentage())
+                .type(tradingAccount.getAccountType().getType())
+                .inherentExitrule(String.valueOf(tradingAccount.getAccountType().getInherentExitRule()))
+                .build();
+    }
+
+
+    public void updateTotalReturnPercentage() {
+        activeTradingAccount.setTotalReturnPercentage(getTotalReturnPercentage(activeTradingAccount.getInitTotalValue(), activeTradingAccount.getAccountValue()));
+        tradingAccountRepository.save(activeTradingAccount);
+    }
+
+    private BigDecimal getTotalReturnPercentage(BigDecimal initValue, BigDecimal accountValue) {
+        return  ((accountValue.subtract(initValue))
+                .divide(initValue, 4, FLOOR))
+                .multiply(BigDecimal.valueOf(100L));
+    }
 
 }

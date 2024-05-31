@@ -11,17 +11,11 @@ import nu.itark.frosk.bot.bot.repository.StrategyRepository;
 import nu.itark.frosk.bot.bot.repository.TradeRepository;
 import nu.itark.frosk.bot.bot.service.PositionService;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
-import nu.itark.frosk.model.TradingAccount;
-import nu.itark.frosk.model.dto.AccountTypeDTO;
-import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.TradingAccountRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.EngulfingStrategy;
-import nu.itark.frosk.strategies.SimpleMovingMomentumStrategy;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-import org.junit.Before;
+import nu.itark.frosk.strategies.filter.StrategyFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Strategy;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static nu.itark.frosk.bot.bot.dto.position.PositionStatusDTO.CLOSED;
@@ -59,18 +52,15 @@ public class TestJTradingBot extends BaseIntegrationTest {
     PositionService positionService;
 
     @Autowired
-    SecurityMetaDataManager securityMetaDataManager;
-
-    @Autowired
-    TradingAccountRepository tradingAccountRepository;
-
-    @Autowired
     TradingAccountService tradingAccountService;
+
+    @Autowired
+    EngulfingStrategy engulfingStrategy;
 
 
     @BeforeEach
     public void init() {
-        tradingAccountService.initTradingAccount();
+        tradingAccountService.initTradingAccounts();
     }
 
     @Test
@@ -116,54 +106,68 @@ public class TestJTradingBot extends BaseIntegrationTest {
        // tradingAccountRepository.deleteAll();
     }
 
+/*
     @Test
     public void testBotRun() {
       //  clean();
 
-        final List<FeaturedStrategyDTO> topFeaturedStrategies = securityMetaDataManager.getTopFeaturedStrategies();
+        final List<FeaturedStrategyDTO> topFeaturedStrategies = strategyFilter.getTopFeaturedStrategies();
         final String name = topFeaturedStrategies.get(0).getName();
         final String securityName = topFeaturedStrategies.get(0).getSecurityName();
         System.out.println("name:"+name+",securityName:"+securityName);
         Strategy strategy = null;
         BarSeries series = barSeriesService.getDataSet(securityName, false, false);
         if (name.equals("Engulfing")) {
-            EngulfingStrategy strat = new EngulfingStrategy(series);
-            strategy  = strat.buildStrategy();
+            strategy  = engulfingStrategy.buildStrategy(series);
         }
 
        tradingBot.run(strategy, series);
 
     }
+*/
 
 
+/*
     @Test
     public void testBotRunning() {
         clean();
 
-        final List<FeaturedStrategyDTO> topFeaturedStrategies = securityMetaDataManager.getTopFeaturedStrategies();
+        final List<FeaturedStrategyDTO> topFeaturedStrategies = strategyFilter.getTopFeaturedStrategies();
         final String name = topFeaturedStrategies.get(0).getName();
         final String securityName = topFeaturedStrategies.get(0).getSecurityName();
         System.out.println("name:"+name+",securityName:"+securityName);
         Strategy strategy = null;
         BarSeries series = barSeriesService.getDataSet(securityName, false, false);
+
+         topFeaturedStrategies.stream()
+                .filter(fsDto -> fsDto.getName().equals("Engulfing"))
+                 .forEach(eng -> {
+                     Strategy strat  = engulfingStrategy.buildStrategy(series);
+                    // tradingBot.running(strat, series);
+                 });
+
+*/
+/*
         if (name.equals("Engulfing")) {
-            EngulfingStrategy strat = new EngulfingStrategy(series);
-            strategy  = strat.buildStrategy();
+            strategy  = engulfingStrategy.buildStrategy(series);
         }
+*//*
 
-        tradingBot.running(strategy, series);
-
+        tradingBot.running(engulfingStrategy.buildStrategy(series), series);
     }
 
+*/
     @Test
     public void testBotRunningPosition() {
         //to zero
-        TradingAccount tradingAccount = tradingAccountRepository.findByType(AccountTypeDTO.SANDBOX);
-        tradingAccount.setTotalValue(BigDecimal.ZERO);
+/*
+        TradingAccount tradingAccount = tradingAccountRepository.findByAccountType(AccountTypeDTO.SANDBOX);
+        tradingAccount.setAccountValue(BigDecimal.ZERO);
+        tradingAccount.setSecurityValue(BigDecimal.ZERO);
         tradingAccountRepository.saveAndFlush(tradingAccount);
+*/
 
         //TODO kör tradingBot.runningPositions och visa resultat i Card till vänster
-
         //0. Find first 200 bars from database
         //1.run StrategyAnalysis on 200 first bars
         //2. do securityMetaDataManager.getTopFeaturedStrategies()
@@ -172,12 +176,19 @@ public class TestJTradingBot extends BaseIntegrationTest {
         //3.1    BarSeriesUtils.addBars(barSeries, bars);
         //3.2 run below stuff
 
-        final List<FeaturedStrategyDTO> topFeaturedStrategies = securityMetaDataManager.getTopFeaturedStrategies();
+/*
+        final List<FeaturedStrategyDTO> topFeaturedStrategies = strategyFilter.getTopFeaturedStrategies();
         topFeaturedStrategies.stream().forEach(dto-> {
             BarSeries series = barSeriesService.getDataSet( dto.getSecurityName(), false, false);
-            Strategy strategyToRun = StrategiesMap.getStrategyToRun(dto.getName()+"Strategy", series);
+            Strategy strategyToRun = strategiesMap.getStrategyToRun(dto.getName()+"Strategy", series);
             tradingBot.runningPositions(strategyToRun, series);
         });
+*/
+
+        tradingBot.runningPositions();
+
+        //System.out.println("tr:"+tradingAccountService.getTradingAccounts());
+
     }
 
 }

@@ -24,6 +24,7 @@ package nu.itark.frosk.strategies;
 
 import java.util.List;
 
+import org.springframework.stereotype.Component;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
@@ -46,22 +47,16 @@ import org.ta4j.core.rules.UnderIndicatorRule;
  * @see <a href="http://www.investopedia.com/terms/t/three_black_crows.asp">
  *     http://www.investopedia.com/terms/t/three_black_crows.asp</a>
  */
+@Component
 public class ThreeBlackWhiteStrategy extends AbstractStrategy implements IIndicatorValue {
-	BarSeries series = null;
-	public ThreeBlackWhiteStrategy(BarSeries series) {
-        super(series);
-        this.series = series;
-	}	
-	
-	/**
-     * @return a CCI correction strategy
-     */
-    public Strategy buildStrategy() {
+
+    public Strategy buildStrategy(BarSeries series) {
+        super.setInherentExitRule();
 		indicatorValues.clear();
         if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
-
+        super.barSeries = series;
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         setIndicatorValues(closePrice, "closePrice");
         

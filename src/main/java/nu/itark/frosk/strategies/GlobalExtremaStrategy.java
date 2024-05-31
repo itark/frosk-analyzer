@@ -23,6 +23,7 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
@@ -35,28 +36,22 @@ import java.util.List;
 /**
  * Strategies which compares current price to global extrema over a week.
  */
+@Component
 public class GlobalExtremaStrategy extends AbstractStrategy implements IIndicatorValue {
-
     // We assume that there were at least one trade every 5 minutes during the whole week
     private static final int NB_TICKS_PER_WEEK = 12 * 24 * 7;
     private static final int TICKS_PER_WEEK = 24 * 7;
 
-	BarSeries series = null;
-   
-	public GlobalExtremaStrategy(BarSeries series) {
-        super(series);
-        this.series = series;
-	}	
-    
     /**
      * @return a global extrema strategy
      */
-    public Strategy buildStrategy() {
+    public Strategy buildStrategy(BarSeries series) {
+        super.setInherentExitRule();
         indicatorValues.clear();
-        if (this.series == null) {
+        if (series == null) {
             throw new IllegalArgumentException("Series cannot be null");
         }
-
+        super.barSeries = series;
         ClosePriceIndicator closePrices = new ClosePriceIndicator(series);
 
         // Getting the max price over the past week

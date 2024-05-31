@@ -48,6 +48,9 @@ public class TestJStrategyFilter extends BaseIntegrationTest  {
 
     @Autowired
     StrategyFilter strategyFilter;
+
+    @Autowired
+    StrategiesMap strategiesMap;
 	 
     @Test
     public final void testLongTradesOne(){
@@ -78,7 +81,7 @@ public class TestJStrategyFilter extends BaseIntegrationTest  {
 
     @Test
     public final void testOpenTradesAll2(){
-        List<String> strategies = StrategiesMap.buildStrategiesMap();
+        List<String> strategies = strategiesMap.buildStrategiesMap();
         strategies.forEach(s -> {
             final List<TradeDTO> openTrades = strategyFilter.getLongTradesAllStrategies(s);
             openTrades.forEach(System.out::println);

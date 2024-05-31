@@ -22,6 +22,7 @@
  */
 package nu.itark.frosk.strategies;
 
+import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.BarSeriesService;
@@ -52,15 +53,15 @@ public class TestJRSI2Strategy extends BaseIntegrationTest {
 	 
 	 @Autowired
 	 BarSeriesService barSeriesService;
+
+     @Autowired
+    StrategiesMap strategiesMap;
 	 
 
     @Test
     public final void run() throws Exception {
-
 		BarSeries timeSeries = barSeriesService.getDataSet("BTC-EUR", false, false);
-		RSI2Strategy strat = new RSI2Strategy(timeSeries);
-        
-        Strategy strategy = strat.buildStrategy();
+        Strategy strategy = strategiesMap.getRsiStrategy().buildStrategy(timeSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Position> positions = tradingRecord.getPositions();

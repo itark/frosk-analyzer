@@ -202,7 +202,7 @@ public class BarSeriesService  {
 	}
 
 	public Num getAmount(BarSeries barSeries) {
-		TradingAccount tradingAccount = tradingAccountService.getTradingAccount();
+		TradingAccount tradingAccount = tradingAccountService.getDefaultActiveTradingAccount();
 		final BigDecimal positionValue = tradingAccount.getPositionValue();
 		return DoubleNum.valueOf(positionValue).dividedBy(barSeries.getFirstBar().getClosePrice());
 	}

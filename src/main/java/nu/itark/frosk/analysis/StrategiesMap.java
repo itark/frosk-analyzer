@@ -1,130 +1,171 @@
 package nu.itark.frosk.analysis;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
 
+import com.google.common.annotations.VisibleForTesting;
+import lombok.Data;
+import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.BarSeries;
+import scala.sys.process.ProcessBuilderImpl;
 
+@Component
+@Data
 public class StrategiesMap {
 
-	public static Map<Strategy, String> buildStrategiesMap(BarSeries series) {
-		HashMap<Strategy, String> strategies = new HashMap<>();
+	@Value("${frosk.strategies.exclude}")
+	private String[] excludesStrategies;
 
-		ADXStrategy adxStrat = new ADXStrategy(series);
-		strategies.put(adxStrat.buildStrategy(), ADXStrategy.class.getSimpleName());
+	@Autowired
+	private EngulfingStrategy engulfingStrategy;
+	@Autowired
+	private RSI2Strategy rsiStrategy;
+	@Autowired
+	private MovingMomentumStrategy movingMomentumStrategy;
+	@Autowired
+	private SimpleMovingMomentumStrategy simpleMovingMomentumStrategy;
+	@Autowired
+	private GlobalExtremaStrategy globalExtremaStrategy;
+	@Autowired
+	private CCICorrectionStrategy cciCorrectionStrategy;
+	@Autowired
+	private HaramiStrategy haramiStrategy;
+	@Autowired
+	private ThreeBlackWhiteStrategy threeBlackWhiteStrategy;
+	@Autowired
+	private ADXStrategy adxStrategy;
+	@Autowired
+	private ConvergenceDivergenceStrategy convergenceDivergenceStrategy;
+	@Autowired
+	private VWAPStrategy vwapStrategy;
+	@Autowired
+	private RunawayGAPStrategy runawayGAPStrategy;
+	@Autowired
+	private EMATenTwentyStrategy emaTenTwentyStrategy;
 
-		RunawayGAPStrategy baGapStrat = new RunawayGAPStrategy(series);
-		strategies.put(baGapStrat.buildStrategy(), RunawayGAPStrategy.class.getSimpleName());
-
-		CCICorrectionStrategy cciStrat = new CCICorrectionStrategy(series);
-		strategies.put(cciStrat.buildStrategy(), CCICorrectionStrategy.class.getSimpleName());
-
-		ConvergenceDivergenceStrategy cdStrat = new ConvergenceDivergenceStrategy(series);
-		strategies.put(cdStrat.buildStrategy(), ConvergenceDivergenceStrategy.class.getSimpleName());
-
-		EngulfingStrategy engStrat = new EngulfingStrategy(series);
-		strategies.put(engStrat.buildStrategy(), EngulfingStrategy.class.getSimpleName());
-
-/*   Oklar
-		GlobalExtremaStrategy geStrat = new GlobalExtremaStrategy(series);
-		strategies.put(geStrat.buildStrategy(), GlobalExtremaStrategy.class.getSimpleName());
+/*
+	@Autowired
+	private ExitStrategy exitStrategy;
 */
 
-		HaramiStrategy haramisStrat = new HaramiStrategy(series);
-		strategies.put(haramisStrat.buildStrategy(), HaramiStrategy.class.getSimpleName());
+	private List<Strategy> strategies = null;
 
-		MovingMomentumStrategy mmStrat = new MovingMomentumStrategy(series);
-		strategies.put(mmStrat.buildStrategy(), MovingMomentumStrategy.class.getSimpleName());
 
-		RSI2Strategy rsiStrat = new RSI2Strategy(series);
-		strategies.put(rsiStrat.buildStrategy(), RSI2Strategy.class.getSimpleName());
-
-		SimpleMovingMomentumStrategy simpleManStrat = new SimpleMovingMomentumStrategy(series);
-		strategies.put(simpleManStrat.buildStrategy(), SimpleMovingMomentumStrategy.class.getSimpleName());
-
-		ThreeBlackWhiteStrategy threeStrat = new ThreeBlackWhiteStrategy(series);
-		strategies.put(threeStrat.buildStrategy(), ThreeBlackWhiteStrategy.class.getSimpleName());
-
-		VWAPStrategy wvapStrat = new VWAPStrategy(series);
-		strategies.put(wvapStrat.buildStrategy(), VWAPStrategy.class.getSimpleName());
-
-		EMATenTwentyStrategy ema1020Strat = new EMATenTwentyStrategy(series);
-		strategies.put(ema1020Strat.buildStrategy(), EMATenTwentyStrategy.class.getSimpleName());
-
-		return strategies;
-	}
-	
-	public static List<String> buildStrategiesMap() {
+	public List<String> buildStrategiesMap() {
 		List<String> strategies = new ArrayList<String>();
-		strategies.add(ADXStrategy.class.getSimpleName());
-		strategies.add(RunawayGAPStrategy.class.getSimpleName());
-		strategies.add(CCICorrectionStrategy.class.getSimpleName());
-		strategies.add(ConvergenceDivergenceStrategy.class.getSimpleName());
-		strategies.add(EngulfingStrategy.class.getSimpleName());
-//		strategies.add(GlobalExtremaStrategy.class.getSimpleName());
-		strategies.add(HaramiStrategy.class.getSimpleName());
-		strategies.add(MovingMomentumStrategy.class.getSimpleName());
-		strategies.add(RSI2Strategy.class.getSimpleName());
-		strategies.add(SimpleMovingMomentumStrategy.class.getSimpleName());
-		strategies.add(ThreeBlackWhiteStrategy.class.getSimpleName());
-		strategies.add(VWAPStrategy.class.getSimpleName());
-		strategies.add(EMATenTwentyStrategy.class.getSimpleName());
+		strategies.add(adxStrategy.getClass().getSimpleName());
+		strategies.add(runawayGAPStrategy.getClass().getSimpleName());
+		strategies.add(cciCorrectionStrategy.getClass().getSimpleName());
+		strategies.add(convergenceDivergenceStrategy.getClass().getSimpleName());
+		strategies.add(engulfingStrategy.getClass().getSimpleName());
+		strategies.add(globalExtremaStrategy.getClass().getSimpleName());
+		strategies.add(haramiStrategy.getClass().getSimpleName());
+		strategies.add(movingMomentumStrategy.getClass().getSimpleName());
+		strategies.add(rsiStrategy.getClass().getSimpleName());
+		strategies.add(simpleMovingMomentumStrategy.getClass().getSimpleName());
+		strategies.add(threeBlackWhiteStrategy.getClass().getSimpleName());
+		strategies.add(vwapStrategy.getClass().getSimpleName());
+		strategies.add(emaTenTwentyStrategy.getClass().getSimpleName());
+
+		strategies.removeAll(List.of(excludesStrategies));
+
 		return strategies;
 	}
 
-	public static List<Strategy> getStrategies(BarSeries series) {
+	public List<Strategy> getStrategies(BarSeries series) {
+		if (Objects.nonNull(this.strategies)) {
+			return this.strategies;
+		}
 		List<Strategy> strategies = new ArrayList<Strategy>();
-		strategies.add(new ADXStrategy(series).buildStrategy());
-		strategies.add(new RunawayGAPStrategy(series).buildStrategy());
-		strategies.add(new CCICorrectionStrategy(series).buildStrategy());
-		strategies.add(new ConvergenceDivergenceStrategy(series).buildStrategy());
-		strategies.add(new EngulfingStrategy(series).buildStrategy());
-//		strategies.add(new GlobalExtremaStrategy(series).buildStrategy());
-		strategies.add(new HaramiStrategy(series).buildStrategy());
-		strategies.add(new MovingMomentumStrategy(series).buildStrategy());
-		strategies.add(new RSI2Strategy(series).buildStrategy());
-		strategies.add(new SimpleMovingMomentumStrategy(series).buildStrategy());
-		strategies.add(new ThreeBlackWhiteStrategy(series).buildStrategy());
-		strategies.add(new VWAPStrategy(series).buildStrategy());
+		strategies.add(adxStrategy.buildStrategy(series));
+		strategies.add(runawayGAPStrategy.buildStrategy(series));
+		strategies.add(cciCorrectionStrategy.buildStrategy(series));
+		strategies.add(convergenceDivergenceStrategy.buildStrategy(series));
+		strategies.add(engulfingStrategy.buildStrategy(series));
+		strategies.add(globalExtremaStrategy.buildStrategy(series));
+		strategies.add(haramiStrategy.buildStrategy(series));
+		strategies.add(movingMomentumStrategy.buildStrategy(series));
+		strategies.add(rsiStrategy.buildStrategy(series));
+		strategies.add(simpleMovingMomentumStrategy.buildStrategy(series));
+		strategies.add(threeBlackWhiteStrategy.buildStrategy(series));
+		strategies.add(vwapStrategy.buildStrategy(series));
+
+		this.strategies = strategies;
 		return strategies;
 	}
 
-	public static Strategy getStrategyToRun(String strategy, BarSeries series) {
+	public Strategy getStrategyToRun(String strategy, BarSeries series) {
+		if (Objects.isNull(this.strategies)) {
+			this.strategies = getStrategies(series);
+		}
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
-			return new RSI2Strategy(series).buildStrategy();
+			return rsiStrategy.buildStrategy(series);
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
-			return new MovingMomentumStrategy(series).buildStrategy();
+			return movingMomentumStrategy.buildStrategy(series);
 		} else if (strategy.equals(SimpleMovingMomentumStrategy.class.getSimpleName())) {
-			return new SimpleMovingMomentumStrategy(series).buildStrategy();
+			return simpleMovingMomentumStrategy.buildStrategy(series);
 		} else if (strategy.equals(GlobalExtremaStrategy.class.getSimpleName())) {
-			return new GlobalExtremaStrategy(series).buildStrategy();
+			return globalExtremaStrategy.buildStrategy(series);
 		} else if (strategy.equals(CCICorrectionStrategy.class.getSimpleName())) {
-			return new CCICorrectionStrategy(series).buildStrategy();
+			return cciCorrectionStrategy.buildStrategy(series);
 		} else if (strategy.equals(EngulfingStrategy.class.getSimpleName())) {
-			return new EngulfingStrategy(series).buildStrategy();
+			return engulfingStrategy.buildStrategy(series);
 		} else if (strategy.equals(HaramiStrategy.class.getSimpleName())) {
-			return new HaramiStrategy(series).buildStrategy();
+			return haramiStrategy.buildStrategy(series);
 		} else if (strategy.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
-			return new ThreeBlackWhiteStrategy(series).buildStrategy();
+			return threeBlackWhiteStrategy.buildStrategy(series);
 		} else if (strategy.equals(ADXStrategy.class.getSimpleName())) {
-			return new ADXStrategy(series).buildStrategy();
+			return adxStrategy.buildStrategy(series);
 		} else if (strategy.equals(ConvergenceDivergenceStrategy.class.getSimpleName())) {
-			return new ConvergenceDivergenceStrategy(series).buildStrategy();
+			return convergenceDivergenceStrategy.buildStrategy(series);
 		} else if (strategy.equals(VWAPStrategy.class.getSimpleName())) {
-			return new VWAPStrategy(series).buildStrategy();
+			return vwapStrategy.buildStrategy(series);
 		} else if (strategy.equals(RunawayGAPStrategy.class.getSimpleName())) {
-			return new RunawayGAPStrategy(series).buildStrategy();
+			return runawayGAPStrategy.buildStrategy(series);
 		} else if (strategy.equals(EMATenTwentyStrategy.class.getSimpleName())) {
-			return new EMATenTwentyStrategy(series).buildStrategy();
+			return emaTenTwentyStrategy.buildStrategy(series);
 		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
 	}
 
+	public List<StrategyIndicatorValue> getIndicatorValues(String strategyName, BarSeries series) {
+		if (strategyName.equals(RSI2Strategy.class.getSimpleName())) {
+			return rsiStrategy.getIndicatorValues();
+		} else if (strategyName.equals(SimpleMovingMomentumStrategy.class.getSimpleName())) {
+			return simpleMovingMomentumStrategy.getIndicatorValues();
+		} else if (strategyName.equals(MovingMomentumStrategy.class.getSimpleName())) {
+			return movingMomentumStrategy.getIndicatorValues();
+		} else if (strategyName.equals(GlobalExtremaStrategy.class.getSimpleName())) {
+			return globalExtremaStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CCICorrectionStrategy.class.getSimpleName())) {
+			return cciCorrectionStrategy.getIndicatorValues();
+		} else if (strategyName.equals(EngulfingStrategy.class.getSimpleName())) {
+			return engulfingStrategy.getIndicatorValues();
+		} else if (strategyName.equals(HaramiStrategy.class.getSimpleName())) {
+			return haramiStrategy.getIndicatorValues();
+		} else if (strategyName.equals(ThreeBlackWhiteStrategy.class.getSimpleName())) {
+			return threeBlackWhiteStrategy.getIndicatorValues();
+		} else if (strategyName.equals(ADXStrategy.class.getSimpleName())) {
+			return adxStrategy.getIndicatorValues();
+		} else if (strategyName.equals(ConvergenceDivergenceStrategy.class.getSimpleName())) {
+			return convergenceDivergenceStrategy.getIndicatorValues();
+		} else if (strategyName.equals(VWAPStrategy.class.getSimpleName())) {
+			return vwapStrategy.getIndicatorValues();
+		} else if (strategyName.equals(RunawayGAPStrategy.class.getSimpleName())) {
+			return runawayGAPStrategy.getIndicatorValues();
+		} else if (strategyName.equals(EMATenTwentyStrategy.class.getSimpleName())) {
+			return emaTenTwentyStrategy.getIndicatorValues();
+		} else {
+			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);
+		}
+
+	}
 
 
 
