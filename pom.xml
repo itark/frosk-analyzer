@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>nu.itark.frosk</groupId>
 	<artifactId>frosk-analyzer</artifactId>
-	<version>0.3.0</version>
+	<version>0.4.0</version>
 
 	<name>frosk-analyzer</name>
 	<description>Frosk is the thing</description>
@@ -298,12 +298,25 @@
 		        <groupId>org.springframework.boot</groupId>
 		        <artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<executable>true</executable>
 					<image>
+						<name>${project.artifactId}:${project.version}</name>
+						<publish>false</publish>
+						<builder>paketobuildpacks/builder-jammy-base:latest</builder>
 						<env>
-							<BP_JVM_VERSION>17.*</BP_JVM_VERSION>
+							<!-- Disable adding CA certs at runtime to allow for a read-only filesystem -->
+							<!--BP_RUNTIME_CERT_BINDING_DISABLED>true</BP_RUNTIME_CERT_BINDING_DISABLED-->
 						</env>
 					</image>
 				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>build-info</goal>
+							<goal>build-image-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
 		    </plugin>
 			<!-- Compilation (with mapstruct & spring boot processor) -->
 			<plugin>
