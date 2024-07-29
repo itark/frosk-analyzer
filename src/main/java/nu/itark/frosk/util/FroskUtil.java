@@ -13,7 +13,13 @@ import static java.math.RoundingMode.FLOOR;
 public class FroskUtil {
 
 
-    static public BigDecimal percent(double value) {
+    static public String percent(double value) {
+        NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
+        format.setMinimumFractionDigits(1);
+        return format.format(value);
+    }
+
+    static public BigDecimal percentOBS(double value) {
         NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());
         format.setMinimumFractionDigits(1);
         double raw;
@@ -25,6 +31,7 @@ public class FroskUtil {
         value = raw  * 100;
         return new BigDecimal(value).setScale(2, RoundingMode.DOWN);
     }
+
 
     static public BigDecimal getPercentage(BigDecimal initValue, BigDecimal targetValue) {
         return  ((targetValue.subtract(initValue))

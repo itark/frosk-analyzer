@@ -45,12 +45,14 @@ public class TestJHaramiStrategy extends BaseIntegrationTest {
 	 @Autowired
 	 BarSeriesService barSeriesService;
 
+     @Autowired
+     HaramiStrategy haramiStrategy;
+
 
     @Test
     public final void run() throws Exception {
 		BarSeries timeSeries = barSeriesService.getDataSet("SOL-EUR", false, false);
-		HaramiStrategy strat = new HaramiStrategy();
-        Strategy strategy = strat.buildStrategy(timeSeries);
+        Strategy strategy = haramiStrategy.buildStrategy(timeSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Position> positions = tradingRecord.getPositions();

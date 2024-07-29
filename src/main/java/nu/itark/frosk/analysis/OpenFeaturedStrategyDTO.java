@@ -1,5 +1,6 @@
 package nu.itark.frosk.analysis;
 
+import jakarta.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,7 +14,10 @@ public class OpenFeaturedStrategyDTO {
     private String name;
     private BigDecimal openPrice;
     private BigDecimal totalProfit;
-    private BigDecimal totalGrossReturn;
     private String openTradeDate;
+    private String closeTradeDate;
     private BigDecimal closePrice;
+    private BigDecimal sqn;
+    private BigDecimal expectency;
+    private BigDecimal profitableTradesRatio;
 }

@@ -6,8 +6,6 @@ import nu.itark.frosk.model.AccountType;
 import nu.itark.frosk.model.TradingAccount;
 import nu.itark.frosk.repo.AccountTypeRepository;
 import nu.itark.frosk.repo.TradingAccountRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -20,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+
 import static java.math.RoundingMode.FLOOR;
 
 @Component

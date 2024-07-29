@@ -56,13 +56,13 @@ public class EngulfingStrategy extends AbstractStrategy implements IIndicatorVal
         Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
 
         Rule exitRule = new BooleanIndicatorRule(bearish);
-/*
+
         if (!inherentExitRule) {
             exitRule = new BooleanIndicatorRule(bearish); // Bear trend
         } else {
             exitRule = exitRule();
         }
-*/
+
 
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;

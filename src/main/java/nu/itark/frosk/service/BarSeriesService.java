@@ -19,6 +19,9 @@ import org.ta4j.core.analysis.cost.CostModel;
 import org.ta4j.core.analysis.cost.LinearBorrowingCostModel;
 import org.ta4j.core.analysis.cost.LinearTransactionCostModel;
 import org.ta4j.core.backtest.BarSeriesManager;
+import org.ta4j.core.backtest.TradeExecutionModel;
+import org.ta4j.core.backtest.TradeOnCurrentCloseModel;
+import org.ta4j.core.backtest.TradeOnNextOpenModel;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
@@ -192,7 +195,15 @@ public class BarSeriesService  {
 		double borrowingFee = 0.00001;
 		CostModel transactionCostModel = new LinearTransactionCostModel(feePerTradePercent);
 		CostModel borrowingCostModel = new LinearBorrowingCostModel(borrowingFee);
-		BarSeriesManager seriesManager = new BarSeriesManager(barSeries, transactionCostModel, borrowingCostModel);
+		TradeExecutionModel tradeExecutionModel;
+		if ("EngulfingStrategy".equals(strategyToRun.getName())) {
+			tradeExecutionModel = new TradeOnCurrentCloseModel();
+		} else {
+			tradeExecutionModel = new TradeOnNextOpenModel();
+		}
+		//TradeExecutionModel tradeExecutionModel = new TradeOnNextOpenModel();
+		//TradeExecutionModel tradeExecutionModel = new TradeOnCurrentCloseModel();
+		BarSeriesManager seriesManager = new BarSeriesManager(barSeries, transactionCostModel, borrowingCostModel, tradeExecutionModel);
 		if (isBuy) {
 			return seriesManager.run(strategyToRun, Trade.TradeType.BUY);
 		} else if (isBuyAmount) {

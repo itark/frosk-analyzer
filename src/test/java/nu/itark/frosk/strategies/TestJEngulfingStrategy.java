@@ -24,7 +24,6 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
-import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.BarSeriesService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +31,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
 import org.ta4j.core.backtest.BarSeriesManager;
 import org.ta4j.core.criteria.pnl.ProfitCriterion;
+import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.criteria.pnl.ReturnCriterion;
 import org.ta4j.core.num.Num;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 @SpringBootTest
 @Slf4j
@@ -50,7 +49,7 @@ public class TestJEngulfingStrategy extends BaseIntegrationTest {
 
     @Test
     public final void run() throws Exception {
-		BarSeries barSeries = barSeriesService.getDataSet("SOL-EUR", false, false);
+		BarSeries barSeries = barSeriesService.getDataSet("ENS-EUR", false, false);
         Strategy strategy = engulfingStrategy.buildStrategy(barSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
@@ -58,14 +57,14 @@ public class TestJEngulfingStrategy extends BaseIntegrationTest {
      
         for (Position trade : positions) {
         	Bar barEntry = barSeries.getBar(trade.getEntry().getIndex());
-        	log.info(barSeries.getName()+"::barEntry="+barEntry.getDateName());
+        	//log.info(barSeries.getName()+"::barEntry="+barEntry.getDateName());
         	Bar barExit = barSeries.getBar(trade.getExit().getIndex());
-        	log.info(barSeries.getName()+"::barExit="+barExit.getDateName());
+            //log.info(barSeries.getName()+"::barExit="+barExit.getDateName());
             Num closePriceBuy = barEntry.getClosePrice();
             Num closePriceSell = barExit.getClosePrice();
             Num profit = closePriceSell.minus(closePriceBuy);
             
-            log.info("profit="+profit);
+           // log.info("profit="+profit);
             
         }
         
@@ -74,6 +73,9 @@ public class TestJEngulfingStrategy extends BaseIntegrationTest {
         // Analysis
         log.info("Profit: " + new ProfitCriterion().calculate(barSeries, tradingRecord));
         log.info("Return: " + new ReturnCriterion().calculate(barSeries, tradingRecord));
+        log.info("ProfitLossPercentage: " + new ProfitLossPercentageCriterion().calculate(barSeries, tradingRecord));
+
+
 /*
         double totalProfitPercentage = (totalProfit - 1 ) *100;  //TODO minus
         logger.info("Total profit for the strategy (%): "+ totalProfitPercentage);

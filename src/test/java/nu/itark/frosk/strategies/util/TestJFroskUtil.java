@@ -19,7 +19,7 @@ public class TestJFroskUtil {
         //double decimalFormat= 1.17;
         //double decimalFormat= 5.47;
         double decimalFormat= 0.47;
-       BigDecimal percent = FroskUtil.percent(decimalFormat);
+       String percent = FroskUtil.percent(decimalFormat);
         System.out.println("percent:"+percent);
 
         NumberFormat format = NumberFormat.getPercentInstance(Locale.getDefault());

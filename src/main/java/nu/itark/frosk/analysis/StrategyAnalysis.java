@@ -12,8 +12,8 @@ import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.TradingAccountService;
-import nu.itark.frosk.strategies.*;
 import nu.itark.frosk.util.DateTimeManager;
+import nu.itark.frosk.util.FroskUtil;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -132,15 +132,6 @@ public class StrategyAnalysis {
 		Strategy strategyToRun = null;
 		BarSeries barSeries = barSeriesService.getDataSet(security_id);
 		strategyToRun = strategiesMap.getStrategyToRun(strategy, barSeries);
-	//	tradingBot.run(strategyToRun, barSeries);
-		log.info("runBot executing tradingBot.runningPositions");
-		tradingBot.runningPositions(strategyToRun, barSeries);
-	}
-
-	@Deprecated
-	public void runBotPositions(String strategy, Long security_id) {
-		BarSeries barSeries = barSeriesService.getDataSet(security_id);
-		Strategy strategyToRun = strategiesMap.getStrategyToRun(strategy, barSeries);
 		tradingBot.runningPositions(strategyToRun, barSeries);
 	}
 
@@ -198,6 +189,7 @@ public class StrategyAnalysis {
 				strategyTrade.setDate(Date.from(barEntry.getEndTime().toInstant()));
 				strategyTrade.setType(tradingRecord.getCurrentPosition().getEntry().getType().name());
 				strategyTrade.setPrice(BigDecimal.valueOf(tradingRecord.getCurrentPosition().getEntry().getPricePerAsset().doubleValue()));
+				strategyTrade.setAmount(BigDecimal.valueOf(tradingRecord.getCurrentPosition().getEntry().getAmount().doubleValue()));
 				strategyTradeList.add(strategyTrade);
 				latestTradeDate = Date.from(barEntry.getBeginTime().toInstant());
 			}
@@ -230,11 +222,11 @@ public class StrategyAnalysis {
 			fs.setNumberofTrades(new BigDecimal(new NumberOfPositionsCriterion().calculate(series, tradingRecord).doubleValue()).intValue());
 			double profitableTradesRatio =  PositionsRatioCriterion.WinningPositionsRatioCriterion().calculate(series, tradingRecord).doubleValue();
 			if (!Double.isNaN(profitableTradesRatio)) {
-				fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio).setScale(2, RoundingMode.DOWN));
+				fs.setProfitableTradesRatio(new BigDecimal(profitableTradesRatio * 100).setScale(2, RoundingMode.DOWN));
 			}
 			double maximumDrawdownCriterion = new MaximumDrawdownCriterion().calculate(series, tradingRecord).doubleValue();
 			if (!Double.isNaN(maximumDrawdownCriterion)) {
-				fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion).setScale(2, RoundingMode.DOWN));
+				fs.setMaxDD(new BigDecimal(maximumDrawdownCriterion * 100).setScale(2, RoundingMode.DOWN));
 			} else {
 				fs.setMaxDD(BigDecimal.ZERO);
 			}

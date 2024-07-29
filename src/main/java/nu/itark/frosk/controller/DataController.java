@@ -240,9 +240,15 @@ public class DataController {
     }
 
     @GetMapping(value = "/smartSignals")
-    public List<OpenFeaturedStrategyDTO> openSmartSignals() {
-        log.info("/smartSignals");
-        return getOpenSmartSignals();
+    public List<OpenFeaturedStrategyDTO> openSmartSignals(@RequestParam("open") String open) {
+        log.info("/smartSignals?open={}",open);
+        return getSmartSignals(Boolean.valueOf(open));
+    }
+
+    @GetMapping(value = "/openSignals")
+    public List<OpenFeaturedStrategyDTO> openSignals() {
+        log.info("/openSignals");
+        return getOpenSignals();
     }
 
     @GetMapping(value = "/tradingAccounts")
@@ -263,8 +269,12 @@ public class DataController {
         return strategyFilter.getShortTradesAllStrategies();
     }
 
-    private List<OpenFeaturedStrategyDTO> getOpenSmartSignals() {
-        return strategyFilter.getOpenSmartSignals();
+    private List<OpenFeaturedStrategyDTO> getSmartSignals(Boolean open) {
+        return strategyFilter.getSmartSignals(open);
+    }
+
+    private List<OpenFeaturedStrategyDTO> getOpenSignals() {
+        return strategyFilter.getOpenSignals();
     }
 
     private List<TradeDTO> getTrades(String security, String strategy) {

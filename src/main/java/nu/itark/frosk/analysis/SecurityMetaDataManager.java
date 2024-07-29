@@ -188,4 +188,12 @@ public class SecurityMetaDataManager {
                 .map(st -> st.getPrice())
                 .findFirst().orElseThrow();
     }
+
+    public StrategyTrade getLastBuyTrade(FeaturedStrategy fs, int offset) {
+        Comparator<StrategyTrade> date = (c1, c2) -> Long.valueOf(c1.getDate().getTime()).compareTo(c2.getDate().getTime());
+        final List<StrategyTrade> strategyTradeList = fs.getStrategyTrades().stream()
+                .sorted(date).toList();
+        return strategyTradeList.get(strategyTradeList.size()-offset);
+    }
+
 }

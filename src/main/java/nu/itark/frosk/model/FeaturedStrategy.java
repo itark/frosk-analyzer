@@ -82,7 +82,7 @@ public class FeaturedStrategy {
 	private Date latestTrade;
 
 	@Column(name = "open", columnDefinition="BOOLEAN DEFAULT false")
-	private boolean isOpen = false;
+	private boolean open = false;
 	
 	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
 	private Set<StrategyTrade> strategyTrades;

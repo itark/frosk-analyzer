@@ -6,7 +6,6 @@ import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.repo.TopStrategy;
-import nu.itark.frosk.util.DateTimeManager;
 import nu.itark.frosk.util.FroskUtil;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.time.LocalDateTime;
 import java.util.*;
-
-import static java.math.RoundingMode.FLOOR;
 
 @Service
 public class StrategyFilter {
@@ -71,29 +67,66 @@ public class StrategyFilter {
         return returnList;
     }
 
-    public List<OpenFeaturedStrategyDTO> getOpenSmartSignals() {
+    public List<OpenFeaturedStrategyDTO> getSmartSignals(Boolean open) {
         List<OpenFeaturedStrategyDTO>  openFeaturedStrategyDTOList = new ArrayList<>();
-      //  BigDecimal aboveProfTradesRatio= new BigDecimal(0.5);
-       // Integer aboveNrOfTrades= 10;
-        List<FeaturedStrategy> fsList = featuredStrategyRepository.findSmartSignals(profitableRatio, numberOfTrades, sqn, expectency, true);
+        List<FeaturedStrategy> fsList = featuredStrategyRepository.findSmartSignals(profitableRatio, numberOfTrades, sqn, expectency, open);
+        fsList.forEach(fs-> {
+           if (open) {
+                openFeaturedStrategyDTOList.add(getDTO(fs));  //TODO Revisit!
+            } else {
+                openFeaturedStrategyDTOList.add(getDTOClosed(fs));  //TODO Revisit!
+            }
+        });
+        return openFeaturedStrategyDTOList;
+    }
+
+    public List<OpenFeaturedStrategyDTO> getOpenSignals() {
+        List<OpenFeaturedStrategyDTO>  openFeaturedStrategyDTOList = new ArrayList<>();
+        List<FeaturedStrategy> fsList = featuredStrategyRepository.findSmartSignals(BigDecimal.valueOf(0.1), 4, BigDecimal.valueOf(0.5), BigDecimal.valueOf(0.1), true);
         fsList.forEach(fs-> {
             openFeaturedStrategyDTOList.add(getDTO(fs));
         });
         return openFeaturedStrategyDTOList;
     }
 
+
     public OpenFeaturedStrategyDTO getDTO(FeaturedStrategy fs) {
         BigDecimal openPrice = securityMetaDataManager.getPrice(fs);
         BigDecimal closePrice =  securityMetaDataManager.getLatestClose(fs.getSecurityName());
+        StrategyTrade lastBuyTrade = securityMetaDataManager.getLastBuyTrade(fs,1);
         return OpenFeaturedStrategyDTO.builder()
                 .name(fs.getName().replace("Strategy",""))
                 .securityName(fs.getSecurityName())
                 .openPrice(openPrice)
-                .openTradeDate(DateFormatUtils.format(fs.getLatestTrade(), "yyyy-MM-dd"))
+                .openTradeDate(DateFormatUtils.format(lastBuyTrade.getDate(), "yyyy-MM-dd"))
                 .totalProfit(FroskUtil.getPercentage(openPrice, closePrice))
                 .closePrice(closePrice)
+                .sqn(fs.getSqn())
+                .expectency(fs.getExpectency())
+                .profitableTradesRatio(fs.getProfitableTradesRatio())
                 .build();
     }
+
+    public OpenFeaturedStrategyDTO getDTOClosed(FeaturedStrategy fs) {
+        StrategyTrade lastBuyTrade = securityMetaDataManager.getLastBuyTrade(fs, 2);
+        BigDecimal latestClosePrice =  securityMetaDataManager.getLatestClose(fs.getSecurityName());
+
+        StrategyTrade lastSellTrade = securityMetaDataManager.getLastBuyTrade(fs,1);
+
+        return OpenFeaturedStrategyDTO.builder()
+                .name(fs.getName().replace("Strategy",""))
+                .securityName(fs.getSecurityName())
+                .openPrice(lastBuyTrade.getPrice())
+                .openTradeDate(DateFormatUtils.format(lastBuyTrade.getDate(), "yyyy-MM-dd"))
+                .closeTradeDate(DateFormatUtils.format(lastSellTrade.getDate(), "yyyy-MM-dd"))
+                .totalProfit(FroskUtil.getPercentage(lastBuyTrade.getPrice(), lastSellTrade.getPrice()))
+                .closePrice(lastSellTrade.getPrice())
+                .sqn(fs.getSqn())
+                .expectency(fs.getExpectency())
+                .profitableTradesRatio(fs.getProfitableTradesRatio())
+                .build();
+    }
+
 
     public TopStrategyDTO getDTO(TopStrategy ts) {
         return TopStrategyDTO.builder()

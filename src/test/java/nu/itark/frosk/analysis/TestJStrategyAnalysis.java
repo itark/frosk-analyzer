@@ -59,7 +59,7 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Test
 	public final void run2() {
-		Long sec_id = barSeriesService.getSecurityId("BTC-EUR"); //"BTRST-EUR","BTC-EUR"
+		Long sec_id = barSeriesService.getSecurityId("ETC-EUR"); //"BTRST-EUR","BTC-EUR"
 		strategyAnalysis.run(SimpleMovingMomentumStrategy.class.getSimpleName(), sec_id);
 
 		//Verify
@@ -73,8 +73,8 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Test
 	public final void run3() {
-		String strategyName = "EMATenTwentyStrategy";
-		String securityName = "SOL-EUR";
+		String strategyName = "EngulfingStrategy";
+		String securityName = "RNDR-EUR";
 		Long sec_id = barSeriesService.getSecurityId(securityName); //"BTRST-EUR","BTC-EUR","SOL-EUR"
 		strategyAnalysis.run(strategyName, sec_id);
 

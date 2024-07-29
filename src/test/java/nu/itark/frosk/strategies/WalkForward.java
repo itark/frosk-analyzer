@@ -1,18 +1,18 @@
 /**
  * The MIT License (MIT)
- *
+ * <p>
  * Copyright (c) 2014-2017 Marc de Verdelhan & respective authors (see AUTHORS)
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
  * the Software without restriction, including without limitation the rights to
  * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
  * the Software, and to permit persons to whom the Software is furnished to do so,
  * subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -46,14 +46,16 @@ import java.util.logging.Logger;
  */
 @SpringBootTest
 public class WalkForward {
- 
-	Logger logger = Logger.getLogger(WalkForward.class.getName());
-	
-	 
-	 @Autowired
-	 BarSeriesService timeSeriesService;
-	
-	
+
+    Logger logger = Logger.getLogger(WalkForward.class.getName());
+
+    @Autowired
+    BarSeriesService timeSeriesService;
+
+    @Autowired
+    StrategiesMap strategiesMap;
+
+
     /**
      * Builds a list of split indexes from splitDuration.
      * @param series the time series to get split begin indexes of
@@ -65,7 +67,7 @@ public class WalkForward {
 
         int beginIndex = series.getBeginIndex();
         int endIndex = series.getEndIndex();
-        
+
         // Adding the first begin index
         beginIndexes.add(beginIndex);
 
@@ -91,7 +93,7 @@ public class WalkForward {
         }
         return beginIndexes;
     }
-    
+
     /**
      * Returns a new time series which is a view of a subset of the current series.
      * <p>
@@ -151,14 +153,14 @@ public class WalkForward {
     @Test
     public final void run() throws Exception {
         // Splitting the series into slices
-    	BarSeries timeSeries = timeSeriesService.getDataSet("BOL.ST", false, false);
-        
+        BarSeries timeSeries = timeSeriesService.getDataSet("BTC-EUR", false, false);
+
 //        List<TimeSeries> subseries = splitSeries(timeSeries, Duration.ofHours(6), Duration.ofDays(7));
         List<BarSeries> subseries = splitSeries(timeSeries, Duration.ofDays(12), Duration.ofDays(30));
 
-        
+
         // Building the map of strategies
-        StrategiesMap strategiesMap = new StrategiesMap();
+        // StrategiesMap strategiesMap = new StrategiesMap();
         List<Strategy> strategies = strategiesMap.getStrategies(timeSeries);
 
         // The analysis criterion
@@ -179,8 +181,8 @@ public class WalkForward {
             }
 */
             Strategy bestStrategy = profitCriterion.chooseBest(sliceManager, new ArrayList<Strategy>(strategies));
-            System.out.println("\t\t--> Best strategy: " + bestStrategy + "\n");
+            System.out.println("\t\t--> Best strategy: " + bestStrategy.getName() + "\n");
         }
     }
-    
+
 }

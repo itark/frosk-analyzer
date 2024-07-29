@@ -31,6 +31,16 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ *
+ * Oskar?: 734 818 634-2
+ * Rasmus: 8368-3,694 961 403-3
+ *
+ *
+ */
+
+
+
 @SpringBootTest
 public class TestJStrategies extends BaseIntegrationTest {
 
@@ -72,16 +82,18 @@ public class TestJStrategies extends BaseIntegrationTest {
 	public void runAllSingleDataSet() {
 		logger.info("runAllSingleDataSet");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "BTC-EUR";  //FIL-EUR, SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
+		String productId = "RNDR-EUR";  //FIL-EUR, SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
 //		VWAPStrategy vwap = new VWAPStrategy(timeSeries);
 //		run(vwap.buildStrategy(),timeSeries);
 
+/*
 		RSI2Strategy rsi = strategiesMap.getRsiStrategy();
 		rsi.inherentExitRule = true;
 		resultMap.add(run(rsi.buildStrategy(timeSeries),timeSeries));
+*/
 
 //		MovingMomentumStrategy mm =  new MovingMomentumStrategy(timeSeries);
 //		run(mm.buildStrategy(),timeSeries);
@@ -101,17 +113,17 @@ public class TestJStrategies extends BaseIntegrationTest {
 //		CCICorrectionStrategy cci = new CCICorrectionStrategy(timeSeries);
 //		run(cci.buildStrategy(),timeSeries);
 		
+
+		EngulfingStrategy eng = strategiesMap.getEngulfingStrategy();
+		resultMap.add(run(eng.buildStrategy(timeSeries),timeSeries));
+
+
 /*
-		EngulfingStrategy eng = new EngulfingStrategy(timeSeries);
-		run(eng.buildStrategy(),timeSeries);
-*/
-
-
 		HaramiStrategy harami = strategiesMap.getHaramiStrategy();
 		resultMap.add(run(harami.buildStrategy(timeSeries),timeSeries));
-
 		harami.inherentExitRule = false;
 		resultMap.add(run(harami.buildStrategy(timeSeries),timeSeries));
+*/
 
 /*
 		ThreeBlackWhiteStrategy three = new ThreeBlackWhiteStrategy(timeSeries);
@@ -180,9 +192,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 	@Test
 	public void runOneSingleDataSet2() {
 		logger.info("runOneSingleDataSet2");
-	BarSeries series = barSeriesService.getDataSet("BAT-EUR", false, false);
-	Strategy strategy = strategiesMap.getHaramiStrategy().buildStrategy(series);
-	//Strategy strategy = new SimpleMovingMomentumStrategy(series).buildStrategy();
+	BarSeries series = barSeriesService.getDataSet("ETC-EUR", false, false);
+	//Strategy strategy = strategiesMap.getHaramiStrategy().buildStrategy(series);
+	Strategy strategy = new SimpleMovingMomentumStrategy().buildStrategy(series);
 	//Strategy strategy = new ADXStrategy(series).buildStrategy();
 
 

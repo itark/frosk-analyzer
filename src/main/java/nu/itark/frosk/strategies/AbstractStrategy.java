@@ -44,9 +44,14 @@ public abstract  class AbstractStrategy {
         ParabolicSarIndicator pSar = new ParabolicSarIndicator(barSeries);
         IsFallingRule pSarIsFallingRule = new IsFallingRule(pSar, 2);
 
+/*
         exitRule = pSarIsFallingRule
                // .or(new StopLossRule(closePrice, 2));
                .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
+*/
+
+        exitRule = new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2));
+
 
         return exitRule;
     }

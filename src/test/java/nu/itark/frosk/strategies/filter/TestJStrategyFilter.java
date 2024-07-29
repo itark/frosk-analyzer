@@ -90,8 +90,8 @@ public class TestJStrategyFilter extends BaseIntegrationTest  {
 
     @Test
     public void testSmartSignals() {
-        final List<OpenFeaturedStrategyDTO> openSmartSignals = strategyFilter.getOpenSmartSignals();
-        System.out.println("openSmartSignals.size"+openSmartSignals.size());
+        final List<OpenFeaturedStrategyDTO> openSmartSignals = strategyFilter.getSmartSignals(false);
+        System.out.println("openSmartSignals.size:"+openSmartSignals.size());
         openSmartSignals.forEach(signal -> {
             //System.out.println(signal.getLatestTrade() + ", " +signal.getSecurityName() + ", " +signal.getName() + ", "+signal.getTotalProfit() + ", "+signal.getProfitableTradesRatio() + ", "+signal.isOpen()+ ", "+signal.getNumberofTrades());
             System.out.println("signal:" + ReflectionToStringBuilder.toString(signal, ToStringStyle.NO_CLASS_NAME_STYLE));

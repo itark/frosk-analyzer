@@ -13,6 +13,7 @@ import nu.itark.frosk.model.FeaturedStrategy;
 public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrategy, Long>{
 	List<FeaturedStrategy> findByName(String name);
 	List<FeaturedStrategy> findByNameOrderByTotalProfitDesc(String name);
+	List<FeaturedStrategy> findByOpen(Boolean open);
 	FeaturedStrategy findByNameAndSecurityName(String name, String securityName);
 	FeaturedStrategy findTopBySecurityNameOrderByLatestTradeDesc(String security);
 
@@ -22,9 +23,9 @@ public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrate
 			"AND fs.numberofTrades > ?2 " +
 			"AND fs.sqn > ?3 " +
 			"AND fs.expectency > ?4 " +
-			"AND fs.isOpen = ?5 " +
+			"AND fs.open = ?5 " +
 			"ORDER BY totalProfit DESC")
-	List<FeaturedStrategy> findTopStrategies(BigDecimal profitableTradesRatio, Integer nrOfTrades, BigDecimal sqn, BigDecimal expectency, Boolean isOpen);
+	List<FeaturedStrategy> findTopStrategies(BigDecimal profitableTradesRatio, Integer nrOfTrades, BigDecimal sqn, BigDecimal expectency, Boolean open);
 
 	@Query("SELECT fs " +
 			"FROM FeaturedStrategy fs " +
@@ -32,9 +33,9 @@ public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrate
 			"AND fs.numberofTrades > ?2 " +
 			"AND fs.sqn > ?3 " +
 			"AND fs.expectency > ?4 " +
-			"AND fs.isOpen = ?5 " +
+			"AND fs.open = ?5 " +
 			"ORDER BY latestTrade DESC")
-	List<FeaturedStrategy> findSmartSignals(BigDecimal profitableTradesRatio, Integer nrOfTrades, BigDecimal sqn, BigDecimal expectency, Boolean isOpen);
+	List<FeaturedStrategy> findSmartSignals(BigDecimal profitableTradesRatio, Integer nrOfTrades, BigDecimal sqn, BigDecimal expectency, Boolean open);
 
 	@Query("SELECT avg(sqn) as sqn, avg(totalProfit) as totalProfit, name as name " +
 			"FROM FeaturedStrategy " +
