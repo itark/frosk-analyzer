@@ -1,18 +1,17 @@
 package nu.itark.frosk.analysis;
 
-import java.util.*;
-import java.util.stream.Stream;
-
-import com.google.common.annotations.VisibleForTesting;
 import lombok.Data;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.ta4j.core.Strategy;
 import org.ta4j.core.BarSeries;
-import scala.sys.process.ProcessBuilderImpl;
+import org.ta4j.core.Strategy;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @Component
 @Data

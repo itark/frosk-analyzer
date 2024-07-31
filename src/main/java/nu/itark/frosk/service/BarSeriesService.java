@@ -10,7 +10,6 @@ import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.model.TradingAccount;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
-import nu.itark.frosk.strategies.prediction.workday.ArimaModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -63,8 +62,6 @@ public class BarSeriesService  {
 	@Autowired
 	ProductProxy productProxy;
 
-	ArimaModel arimaModel = new ArimaModel();
-
 	/**
 	 * Retrive from {@linkplain SecurityPriceRepository}
 	 * 
@@ -102,40 +99,10 @@ public class BarSeriesService  {
 			barSeries=  getDataSet( getSecurityId(securityName)  );
 		}
 		if (forecast) {
-			return withArimaForecast(barSeries, 3);
+			return null; //TODO
 		} else {
 			return barSeries;
 		}
-	}
-
-	public BarSeries withArimaForecast(BarSeries barSeries, int forecastSize) {
-		BarSeries seriesWithForecast = barSeries;
-
-		double[] closePrices = new double[barSeries.getBarCount()];
-		double[] highPrices = new double[barSeries.getBarCount()];
-		double[] lowPrices = new double[barSeries.getBarCount()];
-		double[] openPrices = new double[barSeries.getBarCount()];
-		double[] volumes = new double[barSeries.getBarCount()];
-
-		for (int i = 0; i < barSeries.getBarCount(); i++) {
-			closePrices[i] = barSeries.getBar(i).getClosePrice().doubleValue();
-			highPrices[i] = barSeries.getBar(i).getHighPrice().doubleValue();
-			lowPrices[i] = barSeries.getBar(i).getLowPrice().doubleValue();
-			openPrices[i] = barSeries.getBar(i).getOpenPrice().doubleValue();
-			volumes[i] = barSeries.getBar(i).getVolume().doubleValue();
-		}
-
-		double[] forecastedClosePrice = arimaModel.forecast(closePrices, forecastSize);
-		double[] forecastedHighPrices = arimaModel.forecast(highPrices, forecastSize);
-		double[] forecastedLowPrices = arimaModel.forecast(lowPrices, forecastSize);
-		double[] forecastedOpenPrices = arimaModel.forecast(openPrices, forecastSize);
-		double[] forecastedVolumes = arimaModel.forecast(volumes, forecastSize);
-
-		for (int i = 0; i < forecastSize; i++) {
-			seriesWithForecast.addBar(barSeries.getLastBar().getEndTime().plusDays(i+1), forecastedOpenPrices[i], forecastedHighPrices[i], forecastedLowPrices[i], forecastedClosePrice[i], forecastedVolumes[i]);
-		}
-
-		return seriesWithForecast;
 	}
 
 	/**

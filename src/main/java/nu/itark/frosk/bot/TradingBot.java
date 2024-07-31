@@ -26,9 +26,6 @@ package nu.itark.frosk.bot;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.analysis.StrategiesMap;
-import nu.itark.frosk.bot.bot.repository.OrderRepository;
-import nu.itark.frosk.bot.bot.repository.StrategyRepository;
-import nu.itark.frosk.bot.bot.util.base.Base;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.model.TradingAccount;
@@ -53,12 +50,7 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class TradingBot extends Base {
-
-/*
-    @Autowired
-    PositionService positionService;
-*/
+public class TradingBot  {
 
     @Autowired
     BarSeriesService barSeriesService;
@@ -67,19 +59,7 @@ public class TradingBot extends Base {
     TradingAccountService tradingAccountService;
 
     @Autowired
-    StrategyRepository strategyRepository;
-
-
-    @Autowired
     StrategyTradeRepository strategyTradeRepository;
-
-/*
-    @Autowired
-    TradeRepository tradeRepository;
-*/
-
-    @Autowired
-    OrderRepository orderRepository;
 
     @Autowired
     TradingAccountRepository tradingAccountRepository;

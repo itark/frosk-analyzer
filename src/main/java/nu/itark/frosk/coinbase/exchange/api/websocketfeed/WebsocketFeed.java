@@ -2,7 +2,6 @@ package nu.itark.frosk.coinbase.exchange.api.websocketfeed;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.*;
 import nu.itark.frosk.crypto.coinbase.security.Signature;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -227,7 +226,7 @@ public class WebsocketFeed {
 
     // TODO - get this into postHandle interceptor.
     public String signObject(Subscribe jsonObj) {
-        Gson gson = new Gson();
+ /*       Gson gson = new Gson();
         String jsonString = gson.toJson(jsonObj);
 
         String timestamp = Instant.now().getEpochSecond() + "";
@@ -237,6 +236,8 @@ public class WebsocketFeed {
         jsonObj.setSignature(signature.generate("", "GET", jsonString, timestamp));
 
         return gson.toJson(jsonObj);
+ */
+    return null;
     }
 
     public <T> T getObject(String json, TypeReference<T> type) {

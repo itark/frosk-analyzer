@@ -1,6 +1,5 @@
 package nu.itark.frosk.crypto.coinbase.api.marketdata;
 
-import nu.itark.frosk.bot.bot.domain.Order;
 import nu.itark.frosk.crypto.coinbase.advanced.Coinbase;
 import org.springframework.core.ParameterizedTypeReference;
 
@@ -34,7 +33,9 @@ public class MarketDataService {
     }
 
 
-    /**
+/*
+    */
+/**
      * https://docs.cloud.coinbase.com/advanced-trade-api/reference/retailbrokerageapi_postorder
      * @param productId
      * @return
@@ -42,7 +43,8 @@ public class MarketDataService {
      * https://api.coinbase.com/api/v3/brokerage/orders
      *
      *
-     */
+     *//*
+
     public Order createOrder(String productId) {
         //TODO fix dummy impl.
         String tradesEndpoint = ORDER_ENDPOINT + "/" + productId + "/trades";
@@ -50,5 +52,6 @@ public class MarketDataService {
         order.setOrderId("666");
         return order;
    }
+*/
 
 }
