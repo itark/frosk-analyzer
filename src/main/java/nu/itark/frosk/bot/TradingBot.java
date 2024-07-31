@@ -26,19 +26,9 @@ package nu.itark.frosk.bot;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.analysis.StrategiesMap;
-import nu.itark.frosk.bot.bot.domain.Order;
-import nu.itark.frosk.bot.bot.dto.market.TickerDTO;
-import nu.itark.frosk.bot.bot.dto.position.PositionCreationResultDTO;
-import nu.itark.frosk.bot.bot.dto.trade.OrderCreationResultDTO;
-import nu.itark.frosk.bot.bot.dto.trade.OrderStatusDTO;
-import nu.itark.frosk.bot.bot.dto.trade.OrderTypeDTO;
-import nu.itark.frosk.bot.bot.dto.util.CurrencyPairDTO;
 import nu.itark.frosk.bot.bot.repository.OrderRepository;
 import nu.itark.frosk.bot.bot.repository.StrategyRepository;
-import nu.itark.frosk.bot.bot.repository.TradeRepository;
-import nu.itark.frosk.bot.bot.service.PositionService;
 import nu.itark.frosk.bot.bot.util.base.Base;
-import nu.itark.frosk.bot.bot.util.jpa.CurrencyAmount;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.model.TradingAccount;
@@ -48,10 +38,8 @@ import nu.itark.frosk.repo.TradingAccountRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.slf4j.Marker;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
 import org.ta4j.core.criteria.pnl.ProfitCriterion;
@@ -60,15 +48,17 @@ import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Slf4j
 public class TradingBot extends Base {
 
+/*
     @Autowired
     PositionService positionService;
+*/
 
     @Autowired
     BarSeriesService barSeriesService;
@@ -83,8 +73,10 @@ public class TradingBot extends Base {
     @Autowired
     StrategyTradeRepository strategyTradeRepository;
 
+/*
     @Autowired
     TradeRepository tradeRepository;
+*/
 
     @Autowired
     OrderRepository orderRepository;
@@ -237,6 +229,9 @@ public class TradingBot extends Base {
         // log.info("TradingInfo : {}", tradingAccountService.getTradingAccounts());
     }
 
+  //Below is only Cassandre stuff
+
+/*
     private void fixOrderStatus(String orderId) {
         final Order order = orderRepository.findByOrderId(orderId).orElseThrow();
         order.setStatus(OrderStatusDTO.CLOSED);
@@ -303,6 +298,6 @@ public class TradingBot extends Base {
                 .build();
         return positionService.closePosition(strategy, positionId, tickerDTO);
     }
-
+*/
 
 }

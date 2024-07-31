@@ -17,8 +17,6 @@ import org.hibernate.Hibernate;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Objects;
-import static nu.itark.frosk.bot.bot.configuration.DatabaseAutoConfiguration.PRECISION;
-import static nu.itark.frosk.bot.bot.configuration.DatabaseAutoConfiguration.SCALE;
 import static nu.itark.frosk.bot.bot.dto.util.CurrencyPairDTO.CURRENCY_PAIR_SEPARATOR;
 
 /**
@@ -44,27 +42,27 @@ public class ImportedCandle {
 
     /** Opening price (first trade) in the bucket interval. */
     @CsvBindByName(column = "OPEN")
-    @Column(name = "OPEN", precision = PRECISION, scale = SCALE)
+    @Column(name = "OPEN")
     private BigDecimal open;
 
     /** Highest price during the bucket interval. */
     @CsvBindByName(column = "HIGH")
-    @Column(name = "HIGH", precision = PRECISION, scale = SCALE)
+    @Column(name = "HIGH")
     private BigDecimal high;
 
     /** Lowest price during the bucket interval. */
     @CsvBindByName(column = "LOW")
-    @Column(name = "LOW", precision = PRECISION, scale = SCALE)
+    @Column(name = "LOW")
     private BigDecimal low;
 
     /** Closing price (last trade) in the bucket interval. */
     @CsvBindByName(column = "CLOSE")
-    @Column(name = "CLOSE", precision = PRECISION, scale = SCALE)
+    @Column(name = "CLOSE")
     private BigDecimal close;
 
     /** Volume of trading activity during the bucket interval. */
     @CsvBindByName(column = "VOLUME")
-    @Column(name = "VOLUME", precision = PRECISION, scale = SCALE)
+    @Column(name = "VOLUME")
     private BigDecimal volume;
 
     /** Bucket start time. */

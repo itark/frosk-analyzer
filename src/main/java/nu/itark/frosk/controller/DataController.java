@@ -1,6 +1,7 @@
 package nu.itark.frosk.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.HighLander;
 import nu.itark.frosk.analysis.*;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
@@ -14,10 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -47,6 +45,9 @@ public class DataController {
 
     @Autowired
     StrategiesMap strategiesMap;
+
+    @Autowired
+    HighLander highLander;
 
 
     /**
@@ -112,6 +113,30 @@ public class DataController {
     public List<String> getStrategies() {
         log.info("/strategies");
         return strategiesMap.buildStrategiesMap();
+    }
+
+
+    @RequestMapping(path = "/actions", method = RequestMethod.GET)
+    public List<String> getActions() {
+        log.info("/actions");
+        return Arrays.stream(HighLander.ACTION.values())
+                .map(Enum::toString) // or .map(Object::toString)
+                .collect(Collectors.toList());
+    }
+
+    @RequestMapping(path = "/runSelectedAction", method = RequestMethod.GET)
+    public void getRunSelectedAction(@RequestParam("action") String action, @RequestParam("security") String security, @RequestParam("strategy") String strategy) {
+        log.info("/runSelectedAction, action:{}, security:{}, strategy:{}",action,security,strategy);
+        if (action.equals("undefined")) return;  //TODO fix
+
+        if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.LOAD_DATA) {
+            log.info("action:{}",action);
+            highLander.addSecurityPriceFromCoinbase(security);
+        }
+        if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.RUN_STRATEGY) {
+            log.info("action:{}",action);
+            highLander.runStrategy(strategy,security);
+        }
     }
 
     /**

@@ -71,6 +71,7 @@ public class DataManager {
 
 		if (database.equals(Database.COINBASE)) {
 			logger.info("About to run coinbaseDataManager.syncronize()...");
+			//if ()
 			coinbaseDataManager.syncronize();
 		}
 
@@ -82,7 +83,7 @@ public class DataManager {
 		if (database.equals(Database.YAHOO)) {
 			yahooDataManager.syncronize(security);
 		} else if (database.equals(Database.COINBASE))
-			coinbaseDataManager.syncronize();
+			coinbaseDataManager.syncronize(security);
 		else {
 			throw new RuntimeException("No database set!");
 		}

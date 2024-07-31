@@ -16,6 +16,7 @@
 	<description>Frosk is the thing</description>
 
 	<properties>
+		<spring-boot.build-image.skip>true</spring-boot.build-image.skip>
 		<maven.test.skip>true</maven.test.skip>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
@@ -306,6 +307,7 @@
 						<env>
 							<!-- Disable adding CA certs at runtime to allow for a read-only filesystem -->
 							<!--BP_RUNTIME_CERT_BINDING_DISABLED>true</BP_RUNTIME_CERT_BINDING_DISABLED-->
+							<BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
 						</env>
 					</image>
 				</configuration>

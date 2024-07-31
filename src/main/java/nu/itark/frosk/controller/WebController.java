@@ -127,21 +127,6 @@ public class WebController {
 	}
 	
 	/**
-	* @Example  http://localhost:8080/frosk-analyzer/fill
-	 */
-	@RequestMapping(value="fill", method={RequestMethod.GET, RequestMethod.POST})
-	@ResponseBody
-	public String fill(Map<String, Object> model) {
-		Logger logger = Logger.getLogger(WebController.class.getName());
-		logger.log(Level.INFO, "fill , COINBASE");
-
-		dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
-		//dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
-
-		return "Security prices inserted from :"+ Database.COINBASE + " and "+Database.YAHOO ;
-	}	
-
-	/**
 	* @Example  http://localhost:8080/frosk-analyzer/run
 	 */
 	@RequestMapping(value="run", method={RequestMethod.GET, RequestMethod.POST})

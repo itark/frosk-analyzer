@@ -3,6 +3,7 @@ package nu.itark.frosk;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.repo.*;
+import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,9 +64,7 @@ public class HighLander {
 	StrategyAnalysis strategyAnalysis;
 
 	@Autowired
-	StrategyFilter strategyFilter;
-
-
+	BarSeriesService barSeriesService;
 
 	/**
 	 * Full setup, addition
@@ -127,6 +126,10 @@ public class HighLander {
 		dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
 	}
 
+	public void addSecurityPriceFromCoinbase(String security) {
+		dataManager.insertSecurityPricesIntoDatabase(Database.COINBASE, security);
+	}
+
 	/**
 	 * Run all stratregies on all securities.
 	 * This will insert result into {@linkplain FeaturedStrategyRepository}
@@ -136,9 +139,17 @@ public class HighLander {
 		strategyAnalysis.run(null, null);
 	}
 
+	public void runStrategy(String strategy, String security) {
+		strategyAnalysis.run(strategy, barSeriesService.getSecurityId(security));
+	}
+
 	private void runChooseBestStrategy() {
 		strategyAnalysis.runChooseBestStrategy();
 	}
 
-	
+	public enum ACTION {
+		LOAD_DATA,
+		RUN_STRATEGY
+	}
+
 }

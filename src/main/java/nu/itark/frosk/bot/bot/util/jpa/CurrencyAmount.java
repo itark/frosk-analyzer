@@ -10,9 +10,6 @@ import org.hibernate.Hibernate;
 import java.math.BigDecimal;
 import java.util.Objects;
 
-import static nu.itark.frosk.bot.bot.configuration.DatabaseAutoConfiguration.PRECISION;
-import static nu.itark.frosk.bot.bot.configuration.DatabaseAutoConfiguration.SCALE;
-
 /**
  * Currency amount (amount value + currency).
  */
@@ -24,7 +21,7 @@ import static nu.itark.frosk.bot.bot.configuration.DatabaseAutoConfiguration.SCA
 public class CurrencyAmount {
 
     /** Amount value. */
-    @Column(precision = PRECISION, scale = SCALE)
+    @Column()
     BigDecimal value;
 
     /** Amount currency. */
