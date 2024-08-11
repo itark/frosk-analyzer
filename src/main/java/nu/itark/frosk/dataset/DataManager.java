@@ -71,7 +71,6 @@ public class DataManager {
 
 		if (database.equals(Database.COINBASE)) {
 			logger.info("About to run coinbaseDataManager.syncronize()...");
-			//if ()
 			coinbaseDataManager.syncronize();
 		}
 

@@ -50,6 +50,9 @@ public class COINBASEDataManager {
         log.info("sync=" + Database.COINBASE.toString()+ " on EUR");
         List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
         log.info("About to sync {} active securities", securities.size());
+        if(securities.size() == 0) {
+            log.error("Something is wrong with securities, total rows of securities:{}", securityRepository.count());
+        }
 
         List<SecurityPrice> spList;
         try {
