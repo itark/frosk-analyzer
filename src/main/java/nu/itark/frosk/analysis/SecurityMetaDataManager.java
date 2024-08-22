@@ -49,7 +49,7 @@ public class SecurityMetaDataManager {
         List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
         securities.forEach(s -> {
             SecurityDTO securityDTO = new SecurityDTO(s.getName());
-            addMetaData(securityDTO);
+           // addMetaData(securityDTO);
             securityDTOList.add(securityDTO);
         });
 

@@ -11,6 +11,8 @@ import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.ThreadUtils;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,10 +50,14 @@ public class COINBASEDataManager {
      */
     public void syncronize() {
         log.info("sync=" + Database.COINBASE.toString()+ " on EUR");
-        List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
+     //   List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
+        List<Security> securities = securityRepository.findByDatabaseAndActive(Database.COINBASE.toString(), true);
+
         log.info("About to sync {} active securities", securities.size());
+        log.error("First security: {}", ReflectionToStringBuilder.toString(securityRepository.findAll().get(0), ToStringStyle.MULTI_LINE_STYLE));
         if(securities.size() == 0) {
             log.error("Something is wrong with securities, total rows of securities:{}", securityRepository.count());
+            log.error("First security: {}", ReflectionToStringBuilder.toString(securityRepository.findAll().get(0), ToStringStyle.MULTI_LINE_STYLE));
         }
 
         List<SecurityPrice> spList;

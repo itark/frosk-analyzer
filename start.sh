@@ -3,7 +3,7 @@
 ./stop.sh
 
 ARTIFACT="frosk-analyzer"
-VERSION="0.4.2"
+VERSION="SNAPSHOT"
 JAR_FILE="$ARTIFACT-$VERSION.jar"
 TAG="test-tag"
 TAG_URL="https://github.com/itark/frosk-analyzer/releases/download/$TAG/$ARTIFACT-$VERSION.jar"
@@ -29,5 +29,5 @@ if [ ! -f "$JAR_FILE" ]; then
 fi
 
 # Start the application
-nohup java -jar "$JAR_FILE" > "$LOG_FILE" 2>&1 &
+nohup java -jar  -Dspring.config.name=$ARTIFACT -Dspring.config.location=./$ARTIFACT-$VERSION.properties "$JAR_FILE" > "$LOG_FILE" 2>&1 &
 echo "JAR file started with nohup. Logs are being written to $LOG_FILE"
