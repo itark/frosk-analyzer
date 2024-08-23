@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>nu.itark.frosk</groupId>
 	<artifactId>frosk-analyzer</artifactId>
-	<version>0.4.2</version>
+	<version>SNAPSHOT</version>
 
 	<name>frosk-analyzer</name>
 	<description>Frosk is the thing</description>
