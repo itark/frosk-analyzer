@@ -46,7 +46,9 @@ public class SecurityMetaDataManager {
 
     public List<SecurityDTO> getSecurityMetaData() {
         List<SecurityDTO> securityDTOList = new ArrayList<SecurityDTO>();
-        List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
+        //List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
+        List<Security> securities = securityRepository.findByDatabase(Database.COINBASE.toString());
+
         securities.forEach(s -> {
             SecurityDTO securityDTO = new SecurityDTO(s.getName());
            // addMetaData(securityDTO);
