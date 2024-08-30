@@ -68,7 +68,8 @@ public class BarSeriesService  {
 	 * @return List<BarSeries> for alla securities in database. Filter on 'EUR'
 	 */
 	public List<BarSeries> getDataSet() {
-		Iterable<Security> spList = securityRepository.findAllByActiveAndQuoteCurrency(true, "EUR");
+		//Iterable<Security> spList = securityRepository.findAllByActiveAndQuoteCurrency(true, "EUR");
+		Iterable<Security> spList = securityRepository.findAllByQuoteCurrency("EUR");
 		List<BarSeries> barSeries = new ArrayList<BarSeries>();
 		
 		spList.forEach(sp -> {

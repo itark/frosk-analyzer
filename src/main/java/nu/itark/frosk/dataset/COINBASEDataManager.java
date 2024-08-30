@@ -51,10 +51,8 @@ public class COINBASEDataManager {
     public void syncronize() {
         log.info("sync=" + Database.COINBASE.toString()+ " on EUR");
      //   List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
-        List<Security> securities = securityRepository.findByDatabaseAndActive(Database.COINBASE.toString(), true);
-
-        log.info("About to sync {} active securities", securities.size());
-        log.error("First security: {}", ReflectionToStringBuilder.toString(securityRepository.findAll().get(0), ToStringStyle.MULTI_LINE_STYLE));
+        List<Security> securities = securityRepository.findByDatabaseAndQuoteCurrency(Database.COINBASE.toString(), "EUR");
+        log.info("About to sync {} EUR securities", securities.size());
         if(securities.size() == 0) {
             log.error("Something is wrong with securities, total rows of securities:{}", securityRepository.count());
             log.error("First security: {}", ReflectionToStringBuilder.toString(securityRepository.findAll().get(0), ToStringStyle.MULTI_LINE_STYLE));

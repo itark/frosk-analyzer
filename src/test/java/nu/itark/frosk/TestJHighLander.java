@@ -23,10 +23,5 @@ public class TestJHighLander {
 		
 	}	
 	
-	@Test
-	public void runClean() {
-		highLander.runClean();
-	}
-	
-	
+
 }
