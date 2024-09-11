@@ -140,6 +140,7 @@ public class StrategyAnalysis {
 	}
 
 	private void runStrategy(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException{
+		log.info("runStrategy("+strategy+")");
 		FeaturedStrategy fs = null;
         double totalProfit;
 		double totalGrossReturn;
@@ -147,7 +148,7 @@ public class StrategyAnalysis {
         Strategy strategyToRun;
 
 		for (BarSeries series : barSeriesList) {
-			log.info("runStrategy("+strategy+", "+series.getName()+")");
+			//log.info("runStrategy("+strategy+", "+series.getName()+")");
 			strategyToRun = strategiesMap.getStrategyToRun(strategy, series);
 			if (series.getBarData().isEmpty()){
 				log.warn("Something fishy on {}. BarData isEmpty, continues...", series.getName());

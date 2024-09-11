@@ -89,6 +89,7 @@ public class DataSetHelper {
 
 		Products products = productProxy.getProducts();
 		for (Product product: products.getProducts()) {
+			if (!product.getQuote_currency_id().equals("EUR")) continue;
 			Security security = securityRepository.findByName(product.getProduct_id());
 			if (Objects.nonNull(security) ) {
 				//logger.info("Security="+security.getName()+ " exist in database:" + database);

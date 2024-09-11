@@ -142,8 +142,7 @@ public class COINBASEDataManager {
             });
         });
 
-        log.info("2. {} candles to update", sp.size());
-
+        log.info("2. Totally {} candles to updated.", sp.size());
         return sp;
     }
 
@@ -170,7 +169,6 @@ public class COINBASEDataManager {
                 if (lastDate.toInstant().isBefore(startTime)) {
                     startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
                     startTime = startTime.plus(1, ChronoUnit.DAYS);
-
                 } else {
                     startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
                     startTime = startTime.plus(1, ChronoUnit.DAYS);
@@ -184,50 +182,9 @@ public class COINBASEDataManager {
                 ThreadUtils.sleep(Duration.ofMillis(1000));
                 candlesMap.put(security.getId(), candles.getCandles());
             } catch (Exception e) {
-                log.error("Could not get candles for:" + security.getName() + ", continue...");
+                log.error("Could not get candles for:" + security.getName() + ", continue... error:{}", e.getMessage());
             }
-
-
         }
-        return candlesMap;
-    }
-
-    private Map<Long, List<Candle>> getCandlesOLD(Iterable<Security> securities, Granularity granularity) throws IOException {
-        Map<Long, List<Candle>> candlesMap = new HashMap<Long, List<Candle>>();
-        Instant endTime = Instant.now();
-
-        if (granularity.equals(Granularity.ONE_DAY)) {
-            log.info("japp");
-            Instant startTime = DateTimeManager.truncatedToDays(Instant.now());
-        } else {
-            throw new RuntimeException("Granularity not supported!");
-        }
-
-
-        securities.forEach(security -> {
-            //Instant startTime = Instant.now();
-            Instant startTime = DateTimeManager.truncatedToDays(Instant.now());
-            SecurityPrice topSp = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
-
-            if (Objects.nonNull(topSp)) {
-                Date lastDate = topSp.getTimestamp();
-                if (lastDate.toInstant().isBefore(startTime)) {
-                    startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
-                } else {
-                    startTime = (Instant) lastDate.toInstant().adjustInto(startTime);
-                    startTime = startTime.plus(1, ChronoUnit.DAYS);
-                }
-            } else {
-                startTime = startTime.minus(nrOfCandles, ChronoUnit.DAYS);
-            }
-
-            try {
-                Candles candles = productProxy.getCandles(security.getName(), startTime, endTime, granularity);
-                candlesMap.put(security.getId(), candles.getCandles());
-            } catch (Exception e) {
-                log.error("Could not get candles for:" + security.getName() + ", continue...");
-            }
-        });
         return candlesMap;
     }
 

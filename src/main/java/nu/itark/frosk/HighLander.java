@@ -73,7 +73,7 @@ public class HighLander {
 	public void runInstall(Database database) {
 		log.info("addDatasetAndSecurities:{}",addDatasetAndSecurities);
 		log.info("addSecuritypricesFromCoinbase:{}",addSecuritypricesFromCoinbase);
-		log.info("runAllStrategies",runAllStrategies);
+		log.info("runAllStrategies:{}",runAllStrategies);
 		log.info("runBot:{}",runBot);
 		if (addDatasetAndSecurities) {
 			addDataSetAndSecurities();

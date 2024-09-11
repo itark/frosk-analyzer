@@ -22,9 +22,11 @@
  */
 package nu.itark.frosk.strategies;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.dataset.TestJYahooDataManager;
 import nu.itark.frosk.service.BarSeriesService;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,10 +39,11 @@ import org.ta4j.core.num.Num;
 import java.util.List;
 import java.util.logging.Logger;
 
+@Slf4j
 @SpringBootTest
 public class TestJHaramiStrategy extends BaseIntegrationTest {
 
-	Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
+//Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
 	 
 	 @Autowired
 	 BarSeriesService barSeriesService;
@@ -57,24 +60,26 @@ public class TestJHaramiStrategy extends BaseIntegrationTest {
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Position> positions = tradingRecord.getPositions();
      
-        for (Position trade : positions) {
-        	Bar barEntry = timeSeries.getBar(trade.getEntry().getIndex());
-        	logger.info(timeSeries.getName()+"::barEntry="+barEntry.getDateName());
-        	Bar barExit = timeSeries.getBar(trade.getExit().getIndex());
-        	logger.info(timeSeries.getName()+"::barExit="+barExit.getDateName());
+        for (Position position : positions) {
+        	Bar barEntry = timeSeries.getBar(position.getEntry().getIndex());
+        	//log.info(timeSeries.getName()+"::barEntry="+barEntry.getDateName());
+        	Bar barExit = timeSeries.getBar(position.getExit().getIndex());
+        	//log.info(timeSeries.getName()+"::barExit="+barExit.getDateName());
             Num closePriceBuy = barEntry.getClosePrice();
             Num closePriceSell = barExit.getClosePrice();
             Num profit = closePriceSell.minus(closePriceBuy);
             
            // logger.info("profit="+profit);
+
+            log.info("Position: {}", ReflectionToStringBuilder.toString(position));
             
         }
         
-        logger.info("Number of positions for the strategy: " + tradingRecord.getPositionCount());
+        log.info("Number of positions for the strategy: " + tradingRecord.getPositionCount());
 
         // Analysis
-        logger.info("Profit: " + new ProfitCriterion().calculate(timeSeries, tradingRecord));
-        logger.info("Return: " + new ReturnCriterion().calculate(timeSeries, tradingRecord));
+        log.info("Profit: " + new ProfitCriterion().calculate(timeSeries, tradingRecord));
+        log.info("Return: " + new ReturnCriterion().calculate(timeSeries, tradingRecord));
     }
 
 }

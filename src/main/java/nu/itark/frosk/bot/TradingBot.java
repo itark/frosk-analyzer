@@ -97,9 +97,11 @@ public class TradingBot  {
 
         BigDecimal totalProfit = sellSum.subtract(buySum);
 
+/*
         System.out.println("buySum:" + buySum);
         System.out.println("sellSum:" + sellSum);
         System.out.println("totalProfit(EUR):" + totalProfit);
+*/
 
 
     }
@@ -115,9 +117,9 @@ public class TradingBot  {
         TradingAccount tradingAccount = tradingAccountRepository.findAll().get(0);
         final BigDecimal totalValueForSecurities = tradingAccount.getSecurityValue();
         final BigDecimal positionValue = tradingAccount.getPositionValue();
-        System.out.println("securityValue:" + totalValueForSecurities);
+ /*       System.out.println("securityValue:" + totalValueForSecurities);
         System.out.println("positionValue:" + positionValue);
-
+*/
         Num positionIn = DoubleNum.valueOf(positionValue);
         Num buyAmount = DoubleNum.valueOf(1);
         log.info("strategy: {}, securityName:{}", strategy.getName(), series.getName());
@@ -170,21 +172,22 @@ public class TradingBot  {
 
 
     public void runningPositions() {
+        log.info("runningPositions");
         final List<FeaturedStrategyDTO> topFeaturedStrategies = strategyFilter.getTopFeaturedStrategies();
-        log.info("**TopFeaturedStrategies** }");
-
+/*
+        log.info("**TopFeaturedStrategies**");
         topFeaturedStrategies.stream()
                 .peek(o -> System.out.println("o.name:" + o.getName() + "o.secName:" + o.getSecurityName()))
                 .toList();
+*/
 
 
         topFeaturedStrategies.stream().forEach(dto -> {
             log.info("FeaturedStrategy: name: {}, security: {}", dto.getName(), dto.getSecurityName());
-            log.info(Marker.ANY_MARKER);
             BarSeries series = barSeriesService.getDataSet(dto.getSecurityName(), false, false);
             List<TradingAccount> tradingAccounts = tradingAccountRepository.findAll();
             tradingAccounts.forEach(tradingAccount -> {
-                log.info("TradingAccount: type:{}, inherentExitRule:{}", tradingAccount.getAccountType().getType(), tradingAccount.getAccountType().getInherentExitRule());
+                //log.info("TradingAccount: type:{}, inherentExitRule:{}", tradingAccount.getAccountType().getType(), tradingAccount.getAccountType().getInherentExitRule());
                 tradingAccountService.setActiveTradingAccount(tradingAccount);
                 Strategy strategyToRun = strategiesMap.getStrategyToRun(dto.getName() + "Strategy", series);
                 runningPositions(strategyToRun, series);
@@ -204,80 +207,10 @@ public class TradingBot  {
         }
         // log.info("Leaving strategy: *** {} ***, accountValue: {}", strategy.getName(), tradingAccountService.getAccountValue());
         tradingAccountService.updateTotalReturnPercentage();
-        log.info("strategy: *** {} ***, securityName:{}, accountValue: {}", strategy.getName(), series.getName(), tradingAccountService.getAccountValue());
+       // log.info("strategy: *** {} ***, securityName:{}, accountValue: {}", strategy.getName(), series.getName(), tradingAccountService.getAccountValue());
 
         // log.info("TradingInfo : {}", tradingAccountService.getTradingAccounts());
     }
 
-  //Below is only Cassandre stuff
-
-/*
-    private void fixOrderStatus(String orderId) {
-        final Order order = orderRepository.findByOrderId(orderId).orElseThrow();
-        order.setStatus(OrderStatusDTO.CLOSED);
-        orderRepository.saveAndFlush(order);
-    }
-
-    private void createTrade(PositionCreationResultDTO longPosition, BarSeries barSeries, Trade entry, OrderTypeDTO type, Num amount) {
-        final Order byOrderId = orderRepository.findByOrderId(longPosition.getPosition().getOpeningOrder().getOrderId()).get();
-        CurrencyPairDTO currencyPairDTO = new CurrencyPairDTO(barSeries.getName());
-        BigDecimal limitPrice = new BigDecimal(entry.getNetPrice().doubleValue());
-
-        CurrencyAmount currencyAmountPrice = new CurrencyAmount();
-        currencyAmountPrice.setValue(limitPrice);
-        currencyAmountPrice.setCurrency(currencyPairDTO.getBaseCurrency().getCurrencyCode());
-
-        CurrencyAmount currencyAmount = new CurrencyAmount();
-        currencyAmount.setValue(BigDecimal.valueOf(amount.doubleValue()));
-        currencyAmount.setCurrency(currencyPairDTO.getBaseCurrency().getCurrencyCode());
-
-        CurrencyAmount currencyFee = new CurrencyAmount();
-        currencyFee.setValue(BigDecimal.valueOf(0.006));
-        currencyFee.setCurrency(currencyPairDTO.getBaseCurrency().getCurrencyCode());
-
-        nu.itark.frosk.bot.bot.domain.Trade newTrade = new nu.itark.frosk.bot.bot.domain.Trade();
-        newTrade.setTradeId(UUID.randomUUID().toString());
-        newTrade.setPrice(currencyAmountPrice);
-        newTrade.setAmount(currencyAmount);
-        newTrade.setOrder(byOrderId);
-        newTrade.setType(type);
-        newTrade.setCurrencyPair(barSeries.getName());
-        newTrade.setTimestamp(ZonedDateTime.now());
-        newTrade.setFee(currencyFee);
-        tradeRepository.save(newTrade);
-
-    }
-
-
-    private void createStrategy(Strategy strategy) {
-        final Optional<nu.itark.frosk.bot.bot.domain.Strategy> strategyInDatabase = strategyRepository.findByStrategyId(strategy.getName());
-        nu.itark.frosk.bot.bot.domain.Strategy newStrategy = new nu.itark.frosk.bot.bot.domain.Strategy();
-        if (!strategyInDatabase.isPresent()) {
-            newStrategy.setStrategyId(strategy.getName());
-            newStrategy.setName(strategy.getName());
-            strategyRepository.saveAndFlush(newStrategy);
-            log.info("Strategy created in database: {}", newStrategy);
-        }
-    }
-
-
-    private PositionCreationResultDTO createLongPosition(Strategy strategy, BarSeries barSeries, Trade entry) {
-        CurrencyPairDTO currencyPairDTO = new CurrencyPairDTO(barSeries.getName());
-        BigDecimal amount = new BigDecimal(1);
-        BigDecimal limitPrice = new BigDecimal(entry.getNetPrice().doubleValue());
-        return positionService.createLongPosition(strategy, currencyPairDTO, amount, limitPrice, null);
-    }
-
-
-    private OrderCreationResultDTO closePosition(Strategy strategy, BarSeries barSeries, long positionId, Trade exit) {
-        CurrencyPairDTO currencyPairDTO = new CurrencyPairDTO(barSeries.getName());
-        BigDecimal netPrice = new BigDecimal(exit.getNetPrice().doubleValue());
-        TickerDTO tickerDTO = TickerDTO.builder()
-                .currencyPair(currencyPairDTO)
-                .last(netPrice)
-                .build();
-        return positionService.closePosition(strategy, positionId, tickerDTO);
-    }
-*/
 
 }
