@@ -61,6 +61,12 @@ public class HighLander {
 	StrategyPerformanceRepository strategyPerformanceRepository;
 
 	@Autowired
+	TradingAccountRepository tradingAccountRepository;
+
+	@Autowired
+	AccountTypeRepository accountTypeRepository;
+
+	@Autowired
 	StrategyAnalysis strategyAnalysis;
 
 	@Autowired

@@ -59,13 +59,15 @@ public class HaramiStrategy extends AbstractStrategy implements IIndicatorValue 
         BullishHaramiIndicator  bullish = new BullishHaramiIndicator(series);
         BearishHaramiIndicator  bearish = new BearishHaramiIndicator(series);
         Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
-        Rule exitRule;
+        Rule exitRule = exitRule();
 
+/*
         if (!inherentExitRule) {
             exitRule = new BooleanIndicatorRule(bearish); // Bear trend
         } else {
             exitRule = exitRule();
         }
+*/
 
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;
