@@ -29,10 +29,16 @@ import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.BarSeries;
+import org.ta4j.core.indicators.ChandelierExitLongIndicator;
 import org.ta4j.core.indicators.candles.BearishHaramiIndicator;
 import org.ta4j.core.indicators.candles.BullishHaramiIndicator;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
+import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.rules.BooleanIndicatorRule;
 import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.TrailingStopLossRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.util.List;
 
@@ -59,7 +65,7 @@ public class HaramiStrategy extends AbstractStrategy implements IIndicatorValue 
         BullishHaramiIndicator  bullish = new BullishHaramiIndicator(series);
         BearishHaramiIndicator  bearish = new BearishHaramiIndicator(series);
         Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
-        Rule exitRule = exitRule();
+        Rule exitRule;
 
 /*
         if (!inherentExitRule) {
@@ -69,8 +75,20 @@ public class HaramiStrategy extends AbstractStrategy implements IIndicatorValue 
         }
 */
 
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(barSeries);
+        OpenPriceIndicator openPrice = new OpenPriceIndicator(barSeries);
+
+        ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(barSeries, 5, 3);
+        // ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series);
+        setIndicatorValues(cel, "cel");
+        exitRule = new UnderIndicatorRule(openPrice, cel)
+                .or(new org.ta4j.core.rules.StopLossRule(closePrice, 2))
+                .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
+
+
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;
+
     }
 
     @Override

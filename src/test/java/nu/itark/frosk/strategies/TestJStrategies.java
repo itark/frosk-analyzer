@@ -82,7 +82,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	public void runAllSingleDataSet() {
 		logger.info("runAllSingleDataSet");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "RNDR-EUR";  //FIL-EUR, SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
+		String productId = "DOGE-EUR";  //FIL-EUR, SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
@@ -192,9 +192,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 	@Test
 	public void runOneSingleDataSet2() {
 		logger.info("runOneSingleDataSet2");
-	BarSeries series = barSeriesService.getDataSet("ETC-EUR", false, false);
-	//Strategy strategy = strategiesMap.getHaramiStrategy().buildStrategy(series);
-	Strategy strategy = new SimpleMovingMomentumStrategy().buildStrategy(series);
+	BarSeries series = barSeriesService.getDataSet("DOGE-EUR", false, false);
+	Strategy strategy = strategiesMap.getEngulfingStrategy().buildStrategy(series);
+	//Strategy strategy = new SimpleMovingMomentumStrategy().buildStrategy(series);
 	//Strategy strategy = new ADXStrategy(series).buildStrategy();
 
 
@@ -209,6 +209,8 @@ public class TestJStrategies extends BaseIntegrationTest {
 		Bar barExit = series.getBar(position.getExit().getIndex());
 		System.out.println(series.getName()+"::barExit="+barExit.getDateName());
 		System.out.println(series.getName()+"::barExit.getClosePrice="+ barExit.getClosePrice());
+		System.out.println(series.getName()+"::getNetPrice="+ position.getEntry().getNetPrice());
+
 		System.out.println("profit(position): " + position.getProfit());
 		System.out.println("Gross return(position, percentage): " + position.getGrossReturn());
 		System.out.println("Gross profit(position): " + position.getGrossProfit());
@@ -302,7 +304,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	ReturnObject run(Strategy strategy, BarSeries series) {
 		BarSeriesManager seriesManager = new BarSeriesManager(series);
-		TradingRecord tradingRecord = seriesManager.run(strategy);
+		TradingRecord tradingRecord = barSeriesService.runConfiguredStrategy(series, strategy);
 		List<Position> trades = tradingRecord.getPositions();
 		ReturnObject returnObject = new ReturnObject(strategy,seriesManager, tradingRecord);
 
