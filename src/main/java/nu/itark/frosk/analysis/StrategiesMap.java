@@ -46,6 +46,8 @@ public class StrategiesMap {
 	private RunawayGAPStrategy runawayGAPStrategy;
 	@Autowired
 	private EMATenTwentyStrategy emaTenTwentyStrategy;
+	@Autowired
+	private EMATenTenStrategy emaTenTenStrategy;
 
 /*
 	@Autowired
@@ -70,6 +72,7 @@ public class StrategiesMap {
 		strategies.add(threeBlackWhiteStrategy.getClass().getSimpleName());
 		strategies.add(vwapStrategy.getClass().getSimpleName());
 		strategies.add(emaTenTwentyStrategy.getClass().getSimpleName());
+		strategies.add(emaTenTenStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -93,6 +96,7 @@ public class StrategiesMap {
 		strategies.add(simpleMovingMomentumStrategy.buildStrategy(series));
 		strategies.add(threeBlackWhiteStrategy.buildStrategy(series));
 		strategies.add(vwapStrategy.buildStrategy(series));
+		strategies.add(emaTenTenStrategy.buildStrategy(series));
 
 		this.strategies = strategies;
 		return strategies;
@@ -128,7 +132,10 @@ public class StrategiesMap {
 			return runawayGAPStrategy.buildStrategy(series);
 		} else if (strategy.equals(EMATenTwentyStrategy.class.getSimpleName())) {
 			return emaTenTwentyStrategy.buildStrategy(series);
-		} else {
+		} else if (strategy.equals(EMATenTenStrategy.class.getSimpleName())) {
+			return emaTenTenStrategy.buildStrategy(series);
+		}
+		else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
 	}
@@ -160,14 +167,13 @@ public class StrategiesMap {
 			return runawayGAPStrategy.getIndicatorValues();
 		} else if (strategyName.equals(EMATenTwentyStrategy.class.getSimpleName())) {
 			return emaTenTwentyStrategy.getIndicatorValues();
-		} else {
+		} else if (strategyName.equals(EMATenTenStrategy.class.getSimpleName())) {
+			return emaTenTenStrategy.getIndicatorValues();
+		}
+		else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);
 		}
 
 	}
-
-
-
-
 
 }

@@ -51,6 +51,7 @@ public class FroskApplication {
     }
 */
 
+
     @Bean
     public MarketDataService initmarketDataService(Coinbase exchange) {
         return new MarketDataService(exchange);
@@ -71,6 +72,7 @@ public class FroskApplication {
         return new PaymentService(exchange);
     }
 
+
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -78,6 +80,7 @@ public class FroskApplication {
         return objectMapper;
     }
 
+/*
     @Bean
     public Signature signature(@Value("${exchange.secret}") String secret) {
         return new Signature(secret);
@@ -94,6 +97,7 @@ public class FroskApplication {
                 objectMapper);
     }
 
+*/
 
     @Bean
     @Deprecated

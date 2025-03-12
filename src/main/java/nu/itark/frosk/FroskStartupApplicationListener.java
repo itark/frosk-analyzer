@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class FroskStartupApplicationListener implements ApplicationListener<ContextRefreshedEvent> {
+public class FroskStartupApplicationListener { //implements ApplicationListener<ContextRefreshedEvent> {
 
     @Value("${frosk.highlander.cleaninstall}")
     private boolean cleanInstall;
@@ -22,6 +22,7 @@ public class FroskStartupApplicationListener implements ApplicationListener<Cont
     @Autowired
     TradingAccountService tradingAccountService;
 
+/*
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         log.info("cleanInstall:{}",cleanInstall);
@@ -32,5 +33,6 @@ public class FroskStartupApplicationListener implements ApplicationListener<Cont
             highLander.runInstall(Database.COINBASE);
         }
     }
+*/
 
 }

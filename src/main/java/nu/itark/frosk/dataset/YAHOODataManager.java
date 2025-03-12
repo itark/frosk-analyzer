@@ -24,6 +24,7 @@ import yahoofinance.YahooFinance;
 import yahoofinance.histquotes.HistoricalQuote;
 import yahoofinance.histquotes.Interval;
 
+
 /**
  * This class is responsible for retrieving and parsing data from yahoo finance.
  * 

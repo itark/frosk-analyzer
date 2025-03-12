@@ -10,10 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import nu.itark.frosk.crypto.coinbase.advanced.Coinbase;
+import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +40,12 @@ public class TestJYahooDataManager {
 	
 	@Autowired
 	SecurityPriceRepository secRepo;
+
+	@MockBean
+	Coinbase coinbase;
+
+	@MockBean
+	ProductService productService;
 	
 	@Test
 	public void syncOne(){
@@ -54,7 +64,7 @@ public class TestJYahooDataManager {
 //		Assert.assertEquals(178.46, sr.getClosing().doubleValue(), 0.001);
 //	}
 	
-	
+
 	
 	
 	@Test

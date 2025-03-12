@@ -82,7 +82,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	public void runAllSingleDataSet() {
 		logger.info("runAllSingleDataSet");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "DOGE-EUR";  //FIL-EUR, SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT
+		String productId = "BTC-EUR";  //FIL-EUR, SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT, DOGE-EUR
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
@@ -145,6 +145,10 @@ public class TestJStrategies extends BaseIntegrationTest {
 		Strategy strategy = new ADXStrategy(timeSeries).buildStrategy();
 		resultMap.add(run(strategy,timeSeries));
 */
+
+
+		EMATenTenStrategy emaTT = strategiesMap.getEmaTenTenStrategy();
+		resultMap.add(run(emaTT.buildStrategy(timeSeries),timeSeries));
 
 
 		printResult(resultMap);
