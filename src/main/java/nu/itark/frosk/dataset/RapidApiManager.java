@@ -1,6 +1,9 @@
 package nu.itark.frosk.dataset;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.rapidapi.yhfinance.model.YahooFinanceResponse;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -24,69 +27,10 @@ import java.util.Collections;
 @Slf4j
 public class RapidApiManager {
 
-    public void get() {
-        WebClient client = WebClient.builder()
-                .baseUrl("https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/quotes?ticker=AAPL%2CMSFT%2C%5ESPX%2C%5ENYA%2CGAZP.ME%2CSIBN.ME%2CGEECEE.NS")
-                .defaultHeader("x-rapidapi-key", "f3c9579c6cmsh5c0657bd7a299b8p18b5a9jsn1cde3a01eef6")
-                .defaultHeader("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com")
-                .build();
-
-
-        final Mono<ResponseEntity<String>> entity = client.get().retrieve().toEntity(String.class);
-
-        log.info("entity :{}", entity);
-
-    }
-
-    public String get2() {
-        WebClient webClient = WebClient.create();
-
-        webClient.get()
-                .uri("https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/quotes?ticker=AAPL%2CMSFT%2C%5ESPX%2C%5ENYA%2CGAZP.ME%2CSIBN.ME%2CGEECEE.NS")
-                .header("x-rapidapi-key", "f3c9579c6cmsh5c0657bd7a299b8p18b5a9jsn1cde3a01eef6")
-                .header("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com")
-                .exchange()
-                .doOnTerminate(() -> System.out.println("Request completed")) // Optional: Prints after request completion
-                .doOnNext(response -> {
-                    // Log status and headers
-                    System.out.println("Status Code: " + response.statusCode());
-                //    response.headers().forEach((key, value) -> System.out.println(key + ": " + value));
-                })
-                .flatMap(response -> {
-                    if (response.statusCode().is2xxSuccessful()) {
-                        // Extract the body only if the response is successful
-                        return response.bodyToMono(String.class);
-                    } else {
-                        // Handle non-2xx responses
-                        return Mono.error(new RuntimeException("Failed to fetch data"));
-                    }
-                })
-                .subscribe(responseBody -> {
-                    // Print the response body
-                    System.out.println("Response Body: " + responseBody);
-                }, error -> {
-                    // Print any error
-                    System.err.println("Error: " + error.getMessage());
-                });
-
-        // To block the main thread (if required, usually for testing/demo purposes)
-        try {
-            Thread.sleep(5000); // Adjust this to give enough time for the request to complete
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-
-
-
-
-    }
-
-    public void get3() throws IOException, InterruptedException {
+    public void getQuotes() throws IOException, InterruptedException {
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/history?symbol=AAPL&interval=5m&diffandsplits=false"))
+                .uri(URI.create("https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/quotes?ticker=AAPL%2CMSFT%2C%5ESPX%2C%5ENYA%2CGAZP.ME%2CSIBN.ME%2CGEECEE.NS"))
                 .header("x-rapidapi-key", "f3c9579c6cmsh5c0657bd7a299b8p18b5a9jsn1cde3a01eef6")
                 .header("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com")
                 .method("GET", HttpRequest.BodyPublishers.noBody())
@@ -96,4 +40,68 @@ public class RapidApiManager {
 
 
     }
+    public void getHistory(String symbol, Interval interval) throws IOException, InterruptedException {
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/history?symbol=+"+symbol+"+&interval=+"+interval.getValue()+"+&diffandsplits=false"))
+                .header("x-rapidapi-key", "f3c9579c6cmsh5c0657bd7a299b8p18b5a9jsn1cde3a01eef6")
+                .header("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com")
+                .method("GET", HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        System.out.println(response.body());
+
+    }
+
+    public void getHistorySpring(String symbol, Interval interval) throws IOException, InterruptedException {
+        String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/history";
+        String uri = "?symbol=+"+symbol+"+&interval=+"+interval.getValue()+"+&diffandsplits=false";
+
+        WebClient webClient = WebClient.builder()
+                .baseUrl(baseUrl)
+                .defaultHeader("x-rapidapi-key", "f3c9579c6cmsh5c0657bd7a299b8p18b5a9jsn1cde3a01eef6")
+                .defaultHeader("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com")
+                .build();
+
+        YahooFinanceResponse response = webClient.get()
+                .uri(uri)
+                .retrieve()
+              //  .bodyToMono(String.class)
+                .bodyToMono(YahooFinanceResponse.class)
+                .block();
+
+        System.out.println(ReflectionToStringBuilder.toString(response, ToStringStyle.MULTI_LINE_STYLE,true));
+
+    }
+
+    enum Interval {
+        FIVE_MINUTES("5m"),
+        FIFTEEN_MINUTES("15m"),
+        THIRTY_MINUTES("30m"),
+        ONE_HOUR("1h"),
+        ONE_DAY("1d"),
+        ONE_WEEK("1wk"),
+        ONE_MONTH("1mo"),
+        THREE_MONTHS("3mo");
+
+        private final String value;
+
+        Interval(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static Interval fromValue(String value) {
+            for (Interval interval : values()) {
+                if (interval.value.equals(value)) {
+                    return interval;
+                }
+            }
+            throw new IllegalArgumentException("Invalid interval: " + value);
+        }
+    }
+
 }

@@ -28,16 +28,20 @@ public class TestJRapidApiManager {
     RapidApiManager rapidApiManager;
 
     @Test
-    public void testGet() throws IOException, InterruptedException {
+    public void testGetQuotes() throws IOException, InterruptedException {
 
-      //  rapidApiManager.get();
-
-      //  rapidApiManager.get2();
-
-
-        rapidApiManager.get3();  //Funkar
+        rapidApiManager.getQuotes();
 
     }
 
+    @Test
+    public void testGetHistory() throws IOException, InterruptedException {
+        rapidApiManager.getHistory("NIBE-B.ST",RapidApiManager.Interval.ONE_DAY);  //Funkar
+    }
+
+    @Test
+    public void testGetHistorySpring() throws IOException, InterruptedException {
+        rapidApiManager.getHistorySpring("NIBE-B.ST",RapidApiManager.Interval.ONE_DAY);  //Funkar
+    }
 
 }
