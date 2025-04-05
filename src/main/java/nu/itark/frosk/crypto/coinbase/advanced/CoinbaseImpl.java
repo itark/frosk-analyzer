@@ -4,15 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.logging.LogLevel;
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.crypto.coinbase.model.Product;
-import nu.itark.frosk.crypto.coinbase.security.Signature;
+import nu.itark.frosk.crypto.coinbase.security.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
@@ -33,25 +33,22 @@ import static java.util.Collections.emptyList;
  *
  *
  */
+@Component
 @Slf4j
 public class CoinbaseImpl implements Coinbase {
 
-    private final String publicKey;
-    private final String baseUrl;
-    private final Signature signature;
-    private final ObjectMapper objectMapper;
-    private final RestTemplate restTemplate;
+    @Autowired
+    private JwtUtil jwtUtil;
 
-    public CoinbaseImpl(final String publicKey,
-                        final String baseUrl,
-                        final Signature signature,
-                        final ObjectMapper objectMapper) {
-        this.publicKey = publicKey;
-        this.baseUrl = baseUrl;
-        this.signature = signature;
-        this.objectMapper = objectMapper;
-        this.restTemplate = new RestTemplate();
-    }
+    @Autowired
+    private ObjectMapper objectMapper;
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${exchange.api.baseUrl}")
+    String baseUrl;
+
+    @Value("${exchange.api.baseEndpoint}")
+    String baseEndpoint;
 
     HttpClient httpClient = HttpClient.create()
             .wiretap(this.getClass().getCanonicalName(), LogLevel.DEBUG, AdvancedByteBufFormat.TEXTUAL);
@@ -147,19 +144,20 @@ public class CoinbaseImpl implements Coinbase {
         return baseUrl;
     }
 
-    @Override
     public HttpEntity<String> securityHeaders(String endpoint, String method, String jsonBody) {
         HttpHeaders headers = new HttpHeaders();
-        String timestamp = String.valueOf(Instant.now().getEpochSecond());
-        String resource = endpoint.replace(getBaseUrl(), "");
-        String requestPath = getBaseUrl().replace("https://api.coinbase.com","") + endpoint;
-        if (requestPath.contains("?")) {
-            requestPath = requestPath.substring(0, requestPath.indexOf('?'));
+        String sJWT;
+        String resource = endpoint.replace(getBaseUrl(), ""); //For curl
+        String fullEndpoint = baseEndpoint + endpoint;
+        String noQueryParamsFullEndPoint = fullEndpoint.split("\\?")[0];
+        try {
+            sJWT = jwtUtil.getSignedJWT(noQueryParamsFullEndPoint);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         headers.add("accept", "application/json");
-        headers.add("CB-ACCESS-KEY", publicKey);
-        headers.add("CB-ACCESS-SIGN", signature.generate(requestPath, method, jsonBody, timestamp));
-        headers.add("CB-ACCESS-TIMESTAMP", timestamp);
+        headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + sJWT);
+
         curlRequest(method, jsonBody, headers, resource);
 
         return new HttpEntity<>(jsonBody, headers);

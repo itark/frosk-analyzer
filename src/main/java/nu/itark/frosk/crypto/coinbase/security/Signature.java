@@ -5,6 +5,7 @@ import org.apache.commons.codec.digest.HmacUtils;
 /**
  * Created by robevansuk on 17/03/2017.
  */
+@Deprecated
 public class Signature {
 
     private final String secretKey;

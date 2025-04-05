@@ -24,9 +24,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.sql.SQLException;
 
 @SpringBootApplication
-//@SpringBootApplication(scanBasePackages = {"se.fast2.doman.arbetsorder"})
 @EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo","nu.itark.frosk.bot.bot.repository"})
-//@EnableJpaRepositories(basePackages = {"nu.itark.frosk.repo"})
 @Slf4j
 public class FroskApplication {
 
@@ -43,14 +41,6 @@ public class FroskApplication {
             log.info("Bean:"+beanName);
         }
     }
-
-/*
-    @Bean(initMethod = "start", destroyMethod = "stop")
-    public Server h2Server() throws SQLException {
-        return Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092");
-    }
-*/
-
 
     @Bean
     public MarketDataService initmarketDataService(Coinbase exchange) {
@@ -79,25 +69,6 @@ public class FroskApplication {
         objectMapper.registerModule(new JavaTimeModule());
         return objectMapper;
     }
-
-/*
-    @Bean
-    public Signature signature(@Value("${exchange.secret}") String secret) {
-        return new Signature(secret);
-    }
-
-    @Bean
-    public Coinbase coinbaseAdvanced(@Value("${exchange.key}") String apiKey,
-                                     @Value("${exchange.api.baseUrl}") String baseUrl,
-                                     @Value("${exchange.secret}") String secretKey,
-                                     ObjectMapper objectMapper) {
-        return new CoinbaseImpl(apiKey,
-                baseUrl,
-                new Signature(secretKey),
-                objectMapper);
-    }
-
-*/
 
     @Bean
     @Deprecated

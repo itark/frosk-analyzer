@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,31 +29,35 @@ public class TestJRapidApiManager {
     @MockBean
     ProductService productService;
 
-
     @Autowired
     RapidApiManager rapidApiManager;
 
     @Test
     public void testGetQuotes() throws IOException, InterruptedException {
         final List<QuotesDTO.Quote> quotesDTO = rapidApiManager.getQuotesReal("NIBE-B.ST, VOLV-B.ST", "STOCKS");
-
         quotesDTO.stream()
                  .forEach(dto -> log.info("dto:{}",dto));
-
     }
 
     @Test
     public void testGetHistory() throws IOException, InterruptedException {
         final Map<String, StockHistoryDTO.StockData> history = rapidApiManager.getHistory("NIBE-B.ST", RapidApiManager.Interval.ONE_DAY);//Funkar
-
         history.forEach((key, value) -> log.info("Key: {}, StockData: {}", key, value));
-
-
-
     }
 
     @Test void testGetTicker() throws IOException, InterruptedException {
         rapidApiManager.getTickers(1, "STOCKS");
     }
+
+    @Test void testSearch() throws IOException, InterruptedException {
+        rapidApiManager.search(".ST");
+    }
+
+/*
+    @Test void testGetStockSymbols() throws IOException, InterruptedException {
+        final List<Map<String, String>> stockSymbols = rapidApiManager.getStockSymbols();
+    }
+*/
+
 
 }

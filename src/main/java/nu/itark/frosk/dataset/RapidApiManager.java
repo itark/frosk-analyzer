@@ -4,12 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.rapidapi.yhfinance.model.QuotesDTO;
 import nu.itark.frosk.rapidapi.yhfinance.model.StockHistoryDTO;
 import nu.itark.frosk.rapidapi.yhfinance.model.TickersDTO;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +22,6 @@ import java.util.Map;
 @Component
 @Slf4j
 public class RapidApiManager {
-
 
     private WebClient webClient(String baseUrl) {
         return WebClient.builder()
@@ -86,6 +88,46 @@ public class RapidApiManager {
                 .block();
         return response.getBody();
     }
+
+
+    public void search(String search) throws IOException, InterruptedException {
+        String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/search";
+        String uri = "?search="+search;
+
+        String response = webClient(baseUrl).get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        System.out.println("respone:"+response);
+
+        //return response.getBody();
+    }
+
+    //Funka inte!
+    public List<Map<String, String>> getStockSymbols() {
+        final String URL = "https://finance.yahoo.com/quote/%5EOMXS30/components/";
+
+        List<Map<String, String>> stocks = new ArrayList<>();
+        try {
+            Document doc = Jsoup.connect(URL).get();
+            Elements rows = doc.select("tbody tr");
+
+            for (Element row : rows) {
+                String symbol = row.select("td:nth-child(1) a").text();
+                String name = row.select("td:nth-child(2)").text();
+                if (!symbol.isEmpty()) {
+                    stocks.add(Map.of("symbol", symbol, "name", name));
+                }
+            }
+            log.info("Fetched {} stocks from Yahoo Finance: {}", stocks.size(), stocks);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to fetch stock symbols", e);
+        }
+        return stocks;
+    }
+
 
     enum Interval {
         FIVE_MINUTES("5m"),
