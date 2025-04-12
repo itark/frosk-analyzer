@@ -2,6 +2,7 @@ package nu.itark.frosk.analysis;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.bot.TradingBot;
+import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.model.StrategyPerformance;
@@ -26,6 +27,7 @@ import org.ta4j.core.criteria.*;
 import org.ta4j.core.criteria.pnl.ProfitCriterion;
 import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
 import org.ta4j.core.criteria.pnl.ReturnCriterion;
+import org.ta4j.core.num.Num;
 import org.ta4j.core.reports.TradingStatement;
 
 import java.math.BigDecimal;
@@ -45,12 +47,12 @@ public class StrategyAnalysis {
 	@Value("${exchange.transaction.feePerTradePercent}")
 	private double feePerTradePercent;
 
+	@Value("${frosk.database.only:YAHOO}")
+	private String databaseOnly;
+
 	@Autowired
 	BarSeriesService barSeriesService;
 
-	@Autowired
-	TradingAccountService tradingAccountService;
-	
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;
 	
@@ -86,7 +88,7 @@ public class StrategyAnalysis {
 			List<String> strategies = strategiesMap.buildStrategiesMap();
 			strategies.forEach(strategyName -> {
 				try {
-					runStrategy(strategyName, barSeriesService.getDataSet());
+					runStrategy(strategyName, barSeriesService.getDataSet(Database.valueOf(databaseOnly)));
 				} catch (DataIntegrityViolationException e) {
 					log.error("Error runStrategy on strategyName="+ strategyName);
 					throw e;
@@ -96,7 +98,7 @@ public class StrategyAnalysis {
 		} 
 		else if (Objects.nonNull(strategy) && Objects.isNull(security_id)) {
 			try {
-				runStrategy(strategy, barSeriesService.getDataSet());
+				runStrategy(strategy, barSeriesService.getDataSet(Database.valueOf(databaseOnly)));
 			} catch (Exception e) {
 				log.error("Error runStrategy on strategy="+ strategy);
 				throw e;
@@ -123,7 +125,7 @@ public class StrategyAnalysis {
 		
 	}
 	public void runChooseBestStrategy() {
-		for (BarSeries series : barSeriesService.getDataSet()) {
+		for (BarSeries series : barSeriesService.getDataSet(Database.valueOf(databaseOnly))) {
 			setBestStrategy(series);
 		}
 	}
@@ -156,6 +158,7 @@ public class StrategyAnalysis {
 			}
 			// Running the strategy
 			TradingRecord tradingRecord = barSeriesService.runConfiguredStrategy(series, strategyToRun);
+			//log.info("tradingRecord:{} ", tradingRecord);
 			Set<StrategyTrade> strategyTradeList = new HashSet<StrategyTrade>();
 			StrategyTrade strategyTrade = null;
 			for (Position position : tradingRecord.getPositions()) {
@@ -172,7 +175,10 @@ public class StrategyAnalysis {
 				Date sellDate = Date.from(barExit.getEndTime().toInstant());
 				String exitType = position.getExit().getType().name();
 				BigDecimal grossProfit = BigDecimal.valueOf(position.getGrossProfit().doubleValue());
-				BigDecimal pnl = new BigDecimal((position.getGrossReturn().doubleValue()-1)*100).setScale(4, BigDecimal.ROUND_DOWN);
+				BigDecimal pnl = BigDecimal.ZERO;
+				if (!Double.isNaN(position.getGrossReturn().doubleValue())) {
+					pnl = new BigDecimal((position.getGrossReturn().doubleValue()-1)*100).setScale(4, BigDecimal.ROUND_DOWN);
+				}
 				strategyTrade = new StrategyTrade();
 				strategyTrade.setDate(sellDate);
 				strategyTrade.setType(exitType);
@@ -270,7 +276,7 @@ public class StrategyAnalysis {
 	}
 
 	protected void setBestStrategy(BarSeries barSeries) {
-		if (barSeries.getBarData().isEmpty()){
+		if (Objects.isNull(barSeries) || barSeries.getBarData().isEmpty()){
 			return;
 		}
 		List<StrategyPerformance>  existSp = strategyPerformanceRepository.findBySecurityNameAndDate(barSeries.getName(),DateTimeManager.get(barSeries.getLastBar().getEndTime()));
@@ -279,25 +285,31 @@ public class StrategyAnalysis {
 				strategyPerformanceRepository.delete(sp);
 			});
 		}
-		List<Strategy> strategies = strategiesMap.getStrategies(barSeries);
-		AnalysisCriterion profitCriterion = new ReturnCriterion();
-		BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
-		BacktestExecutor backtestExecutor = new BacktestExecutor(barSeries);
-		final List<TradingStatement> tradingStatements = backtestExecutor.execute(strategies, barSeriesService.getAmount(barSeries));
-		Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
-
-		StrategyPerformance strategyPerformance = new StrategyPerformance();
-		strategyPerformance.setDate(DateTimeManager.get(barSeries.getLastBar().getEndTime()));
-		strategyPerformance.setBestStrategy(bestStrategy.getName());
-		strategyPerformance.setTotalProfitLoss(getTotalPnLPercentage(tradingStatements, bestStrategy));
-		//strategyPerformance.setTotalProfitLoss(getTotalPnL(tradingStatements, bestStrategy));
-		strategyPerformance.setSecurityName(barSeries.getName());
-
-		try {
-			strategyPerformanceRepository.saveAndFlush(strategyPerformance);
-		} catch (Exception e) {
-			log.error("\nStrategyPerformance entity:"+ ReflectionToStringBuilder.toString(strategyPerformance));
-			throw new RuntimeException(e);
+		if (barSeriesService.getAmount(barSeries) != null) {
+			List<Strategy> strategies = strategiesMap.getStrategies(barSeries);
+			AnalysisCriterion profitCriterion = new ReturnCriterion();
+			BarSeriesManager timeSeriesManager = new BarSeriesManager(barSeries);
+			BacktestExecutor backtestExecutor = new BacktestExecutor(barSeries);
+			List<TradingStatement> tradingStatements;
+			Num amount = null;
+			try {
+				amount = barSeriesService.getAmount(barSeries);
+				tradingStatements = backtestExecutor.execute(strategies, amount);
+			} catch (Exception e) {
+				throw new RuntimeException("amount "+ amount+ ", barSeries.getName " +barSeries.getName(), e);
+			}
+			Strategy bestStrategy = profitCriterion.chooseBest(timeSeriesManager, new ArrayList<Strategy>(strategies));
+			StrategyPerformance strategyPerformance = new StrategyPerformance();
+			strategyPerformance.setDate(DateTimeManager.get(barSeries.getLastBar().getEndTime()));
+			strategyPerformance.setBestStrategy(bestStrategy.getName());
+			strategyPerformance.setTotalProfitLoss(getTotalPnLPercentage(tradingStatements, bestStrategy));
+			strategyPerformance.setSecurityName(barSeries.getName());
+			try {
+				strategyPerformanceRepository.saveAndFlush(strategyPerformance);
+			} catch (Exception e) {
+				log.error("\nStrategyPerformance entity:"+ ReflectionToStringBuilder.toString(strategyPerformance));
+				throw new RuntimeException(e);
+			}
 		}
 	}
 

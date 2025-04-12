@@ -3,17 +3,10 @@ package nu.itark.frosk.coinbase.exchange.api.websocketfeed;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.Queue;
 
 import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderBookMessage;
-import nu.itark.frosk.dataset.DateManager;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -23,7 +16,6 @@ import org.springframework.web.socket.WebSocketSession;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.changedetection.ChangeDetector;
 import nu.itark.frosk.changedetection.LimitOrderImbalance;
-import nu.itark.frosk.coinbase.exchange.api.websocketfeed.message.OrderReceived;
 import nu.itark.frosk.crypto.coinbase.MarketDataProxy;
 
 /**

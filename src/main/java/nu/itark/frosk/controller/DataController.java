@@ -11,6 +11,7 @@ import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
@@ -21,6 +22,9 @@ import java.util.stream.Collectors;
 @RestController
 @Slf4j
 public class DataController {
+
+    @Value("${frosk.database.only:YAHOO}")
+    private String databaseOnly;
 
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
@@ -167,7 +171,7 @@ public class DataController {
     @RequestMapping(path = "/metadata", method = RequestMethod.GET)
     public List<SecurityDTO> getMetaData() {
         log.info("/metadata");
-        return securityMetaDataManager.getSecurityMetaData();
+        return securityMetaDataManager.getSecurityMetaData(databaseOnly);
     }
 
     /**

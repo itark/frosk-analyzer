@@ -33,13 +33,8 @@ public class DataManager {
 	@Autowired
 	COINBASEDataManager coinbaseDataManager;
 
-	/**
-	 * Insert securities from all cvs-files.
-	 */
 	public void addDatasetSecuritiesIntoDatabase(){
-		//TODO
-		//dataSetHelper.addDatasetSecuritiesFromCvsFile();
-
+		dataSetHelper.addDatasetSecuritiesFromCvsFile();
 		dataSetHelper.addDatasetSecuritiesForCoinBase();
 	}
 	

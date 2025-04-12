@@ -31,12 +31,14 @@ import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.ChandelierExitLongIndicator;
+import org.ta4j.core.indicators.ChopIndicator;
 import org.ta4j.core.indicators.candles.BearishEngulfingIndicator;
 import org.ta4j.core.indicators.candles.BullishEngulfingIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.rules.BooleanIndicatorRule;
+import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.TrailingStopLossRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
@@ -55,30 +57,26 @@ public class EngulfingStrategy extends AbstractStrategy implements IIndicatorVal
             throw new IllegalArgumentException("Series cannot be null");
         }
         super.barSeries = series;
-        BullishEngulfingIndicator  bullish = new BullishEngulfingIndicator(series);
-        BearishEngulfingIndicator  bearish = new BearishEngulfingIndicator(series);
-        Rule entryRule = new BooleanIndicatorRule(bullish); // Bull trend
-        Rule exitRule ;
-
-/*
-        if (!inherentExitRule) {
-            exitRule = new BooleanIndicatorRule(bearish); // Bear trend
-        } else {
-            exitRule = exitRule();
-        }
-*/
-
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(barSeries);
         OpenPriceIndicator openPrice = new OpenPriceIndicator(barSeries);
 
+        BullishEngulfingIndicator  bullish = new BullishEngulfingIndicator(series);
+        ChopIndicator chopIndicator = new ChopIndicator(series, 14, 100);
+        Rule entryRule = new BooleanIndicatorRule(bullish)
+                .and(new UnderIndicatorRule(chopIndicator, series.numOf(38.2)));
+        //   .and(new IsRisingRule(openPrice, 1));
+
         ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(barSeries, 5, 3);
         // ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series);
-        setIndicatorValues(cel, "cel");
-        exitRule = new UnderIndicatorRule(openPrice, cel)
+        //setIndicatorValues(cel, "cel");
+        //setIndicatorValues(chopIndicator, "cel");
+
+        Rule exitRule = new UnderIndicatorRule(closePrice, cel)
                 .or(new org.ta4j.core.rules.StopLossRule(closePrice, 2))
                 .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));
 
+        exitRule = ExitStrategy.exitRule(barSeries);
 
         Strategy strategy = new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
         return strategy;

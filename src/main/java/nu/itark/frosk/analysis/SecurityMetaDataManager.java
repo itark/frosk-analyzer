@@ -1,15 +1,13 @@
 package nu.itark.frosk.analysis;
 
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.*;
-import nu.itark.frosk.repo.DataSetRepository;
-import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.AnalysisCriterion;
 import org.ta4j.core.BarSeries;
@@ -30,12 +28,6 @@ public class SecurityMetaDataManager {
     BarSeriesService barSeriesService;
 
     @Autowired
-    DataSetRepository datasetRepository;
-
-    @Autowired
-    FeaturedStrategyRepository featuredStrategyRepository;
-
-    @Autowired
     SecurityRepository securityRepository;
 
     @Autowired
@@ -44,13 +36,18 @@ public class SecurityMetaDataManager {
     @Autowired
     StrategiesMap strategiesMap;
 
-    public List<SecurityDTO> getSecurityMetaData() {
+    @Value("${frosk.database.only:YAHOO}")
+    private String databaseOnly;
+
+    public List<SecurityDTO> getSecurityMetaData(String databaseOnly) {
         List<SecurityDTO> securityDTOList = new ArrayList<SecurityDTO>();
         //List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
-        List<Security> securities = securityRepository.findByDatabaseAndQuoteCurrency(Database.COINBASE.toString(), "EUR");
+        //List<Security> securities = securityRepository.findByDatabaseAndQuoteCurrency(Database.COINBASE.toString(), "EUR");
+        //List<Security> securities = securityRepository.findAll();
+        List<Security> securities = securityRepository.findByDatabase(databaseOnly);
 
         securities.forEach(s -> {
-            SecurityDTO securityDTO = new SecurityDTO(s.getName());
+            SecurityDTO securityDTO = new SecurityDTO(s.getName(), s.getDescription());
            // addMetaData(securityDTO);
             securityDTOList.add(securityDTO);
         });
@@ -121,7 +118,7 @@ public class SecurityMetaDataManager {
         if (Objects.isNull(fs)) {
             return dto;
         }
-        List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
+         List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
         dto.setName(fs.getName().replace("Strategy", ""));
         dto.setSecurityName(fs.getSecurityName());
         dto.setIcon(IconManager.getIconUrl(fs.getSecurityName()));

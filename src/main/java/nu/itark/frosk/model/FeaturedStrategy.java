@@ -91,12 +91,6 @@ public class FeaturedStrategy {
 	@OrderBy(clause = "date")
 	private Set<StrategyIndicatorValue> indicatorValues;
 
-/*
-	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
-	private Set<Order> orders;
-*/
-
-
 	public FeaturedStrategy () {}
 
 

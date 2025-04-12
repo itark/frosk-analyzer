@@ -3,6 +3,7 @@ package nu.itark.frosk.strategies;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
+import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
@@ -158,7 +159,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	@Test
 	public void runAllDataSetList() {
 		List<ReturnObject> resultMap = new ArrayList<>();
-		List<BarSeries> timeSeriesList = barSeriesService.getDataSet();
+		List<BarSeries> timeSeriesList = barSeriesService.getDataSet(Database.COINBASE);
 		timeSeriesList.forEach(ts -> {
 //			RSI2Strategy rsi = new RSI2Strategy(ts);
 //			resultMap.add(run(rsi.buildStrategy(), ts));
@@ -396,7 +397,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 		String highestProfitNameNrTrade = "";
 		String highestProfitNameStrategyNrTrade = "";
 
-		List<BarSeries> timeSeriesList = barSeriesService.getDataSet();
+		List<BarSeries> timeSeriesList = barSeriesService.getDataSet(Database.COINBASE);
 		// The analysis criterion
 		AnalysisCriterion profitCriterion = new ReturnCriterion();
 		// The analysis criterion

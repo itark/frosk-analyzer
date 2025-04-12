@@ -50,7 +50,7 @@ public class TestJYahooDataManager {
 	@Test
 	public void syncOne(){
 		
-		tsManager.syncronize("NDA-SE.ST");
+		tsManager.syncronize("GC=F");
 //		tsManager.syncronize("VOLV-B.ST");
 	}
 	

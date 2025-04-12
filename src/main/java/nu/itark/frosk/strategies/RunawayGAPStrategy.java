@@ -31,6 +31,7 @@ import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.BooleanIndicatorRule;
 import org.ta4j.core.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.rules.TrailingStopLossRule;
@@ -56,8 +57,9 @@ public class RunawayGAPStrategy extends AbstractStrategy implements IIndicatorVa
         Rule entryRule = new BooleanIndicatorRule(runawayGAPIndicator);
 
         Rule exitRule;
+        Num lossPercentage = DoubleNum.valueOf(2);
         if (!inherentExitRule) {
-            exitRule = new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2));
+            exitRule = new TrailingStopLossRule(closePrice, lossPercentage, 3);
         } else {
             exitRule = exitRule();
         }

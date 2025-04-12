@@ -1,6 +1,7 @@
 package nu.itark.frosk.service;
 
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
+import nu.itark.frosk.dataset.Database;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,7 +34,7 @@ public class TestJBarSeriesService extends BaseIntegrationTest {
 	
 	@Test
 	public void testGetDataSet() throws Exception {
-		List<BarSeries> sec = barSeriesService.getDataSet();
+		List<BarSeries> sec = barSeriesService.getDataSet(Database.COINBASE);
 		assertNotNull(sec);
 		System.out.println("size="+sec.size());
 

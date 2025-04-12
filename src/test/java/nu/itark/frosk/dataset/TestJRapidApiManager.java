@@ -1,6 +1,7 @@
 package nu.itark.frosk.dataset;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.FroskStartupApplicationListener;
 import nu.itark.frosk.crypto.coinbase.advanced.Coinbase;
 import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
 import nu.itark.frosk.rapidapi.yhfinance.model.QuotesDTO;
@@ -29,12 +30,15 @@ public class TestJRapidApiManager {
     @MockBean
     ProductService productService;
 
+    @MockBean
+    private FroskStartupApplicationListener myEventListener;
+
     @Autowired
     RapidApiManager rapidApiManager;
 
     @Test
     public void testGetQuotes() throws IOException, InterruptedException {
-        final List<QuotesDTO.Quote> quotesDTO = rapidApiManager.getQuotesReal("NIBE-B.ST, VOLV-B.ST", "STOCKS");
+        final List<QuotesDTO.Quote> quotesDTO = rapidApiManager.getQuotesReal("NIBE-B.ST", "STOCKS");
         quotesDTO.stream()
                  .forEach(dto -> log.info("dto:{}",dto));
     }

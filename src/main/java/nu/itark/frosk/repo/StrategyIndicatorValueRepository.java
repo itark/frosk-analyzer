@@ -12,11 +12,5 @@ import nu.itark.frosk.model.StrategyTrade;
 
 @Repository
 public interface StrategyIndicatorValueRepository extends JpaRepository<StrategyIndicatorValue, Long>{
-	List<StrategyIndicatorValue> findByFeaturedStrategy(FeaturedStrategy fs);
-	List<StrategyIndicatorValue> findByFeaturedStrategyOrderByDate(FeaturedStrategy fs);
-
-	StrategyIndicatorValue findByDate(Date date);
-	StrategyIndicatorValue findByDateAndFeaturedStrategyId(Date date, Long fsId);
-	
 	List<StrategyIndicatorValue> findByFeaturedStrategyId(Long featuredStrategyId);
 }

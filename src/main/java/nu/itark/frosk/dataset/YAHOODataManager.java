@@ -2,11 +2,13 @@ package nu.itark.frosk.dataset;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.time.Instant;
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import nu.itark.frosk.rapidapi.yhfinance.model.StockHistoryDTO;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,8 +41,6 @@ import yahoofinance.histquotes.Interval;
 @Service
 @Slf4j
 public class YAHOODataManager  {
-//	Logger logger = Logger.getLogger(YAHOODataManager.class.getName());
-	
 	@Value("${frosk.download.years}")
 	public int years;	
 
@@ -49,17 +49,18 @@ public class YAHOODataManager  {
 
 	@Autowired
 	SecurityRepository securityRepository;
-	
+
 	@Autowired
-	DataSetHelper dataSetHelper;
-	
+	RapidApiManager rapidApiManager;
+
+
 	/**
 	 * Download prices and insert into database.
 	 */
 	public void syncronize() {
 		log.info("sync="+Database.YAHOO.toString());
 		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.YAHOO.toString(), true);
-		
+
 		securities.forEach(sec -> log.info("NAME="+ sec.getName()));
 		
 		List<SecurityPrice> spList;
@@ -114,44 +115,31 @@ public class YAHOODataManager  {
 	
 	private List<SecurityPrice> getDataSet(Iterable<Security> securities) throws IOException {
 		log.info("getDataSet(Iterable<Security> names)");
-		List<SecurityPrice> sp = new ArrayList<>();
-		Map<Long, List<HistoricalQuote>> stockQuotes = getStocks(securities);
+		List<SecurityPrice> securityPrices = new ArrayList<>();
+		final Map<Long, Collection<StockHistoryDTO.StockData>> stockQuotes = getStocks(securities);
 
 		if (stockQuotes != null) {
-
 			stockQuotes.forEach((sec_id, quote) -> {
 				quote.forEach(row -> {
-					Date date = Date.from(Instant.ofEpochMilli(row.getDate().getTimeInMillis()));
-					SecurityPrice securityPrice = null;
-					if (date != null && row.getOpen() != null && row.getHigh() != null && row.getLow() != null
-							&& row.getClose() != null && row.getVolume() != null) {
-						securityPrice = new SecurityPrice(sec_id, date, row.getOpen(), row.getHigh(), row.getLow(),
-								row.getClose(), row.getVolume());
-						sp.add(securityPrice);
-					}
+					SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+                    Date date;
+                    try {
+                        date = formatter.parse(row.getDate());
+                    } catch (ParseException e) {
+                        throw new RuntimeException(e);
+                    }
+                    SecurityPrice securityPrice = new SecurityPrice(sec_id, date, BigDecimal.valueOf(row.getOpen()),  BigDecimal.valueOf(row.getHigh()), BigDecimal.valueOf(row.getLow()),
+							BigDecimal.valueOf(row.getClose()), row.getVolume());
+					securityPrices.add(securityPrice);
 				});
-
 			});
-
 		}
-
-		return sp;
-
+		return securityPrices;
 	}
 	
-	
-	/**
-	 * Get DAILY Stocks on provided Securities.
-	 * 
-	 * @param securities
-	 * @return Map<String, Stock>
-	 * @throws IOException
-	 */
-	private Map<Long, List<HistoricalQuote>> getStocks(Iterable<Security> securities) throws IOException {
+	private Map<Long, Collection<StockHistoryDTO.StockData>> getStocks(Iterable<Security> securities) throws IOException {
 		log.info("getStocks(Iterable<Security> securities");
-		Map<Long, List<HistoricalQuote>> stocks = new HashMap<Long, List<HistoricalQuote>>();
-
-		Calendar to = Calendar.getInstance(TimeZone.getDefault());
+		Map<Long, Collection<StockHistoryDTO.StockData>> stocks = new HashMap<Long, Collection<StockHistoryDTO.StockData>>();
 
 		securities.forEach((security) -> {
 			Calendar from = Calendar.getInstance(TimeZone.getDefault());
@@ -181,10 +169,11 @@ public class YAHOODataManager  {
 				log.info("Retrieving history for " + security.getName() + " from " + from.getTime());
 				Stock stock;
 				try {
-					stock = YahooFinance.get(security.getName());
-					List<HistoricalQuote> histQuotes = stock.getHistory(from, to, Interval.DAILY);
-					stocks.put(security.getId(), histQuotes);
-
+					final Map<String, StockHistoryDTO.StockData> history = rapidApiManager.getHistory(security.getName(), RapidApiManager.Interval.ONE_DAY);
+					if (Objects.nonNull(history)) {
+						Map<String, StockHistoryDTO.StockData> filterFromHistory= filterFromHistory(from, history);
+						stocks.put(security.getId(), filterFromHistory.values());
+					}
 				} catch (FileNotFoundException fe) {
 					log.info("Not found: "+ fe.getMessage() + " continues...");
 					// continue
@@ -202,16 +191,19 @@ public class YAHOODataManager  {
 
 	}
 
-	private boolean isFriday(Date date) {
-		Calendar c1 = Calendar.getInstance();
-		c1.setTime(date);
-		if ((c1.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY) ) { 
-			return true;
-		} else {
-			return false;
-		}
-
+	private Map<String, StockHistoryDTO.StockData> filterFromHistory(Calendar from, Map<String, StockHistoryDTO.StockData> history) {
+		SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+		return history.entrySet().stream()
+				.filter(entry -> {
+					try {
+						Date date = formatter.parse(entry.getValue().getDate());
+						return date.after(from.getTime());
+					} catch (ParseException e) {
+						throw new RuntimeException("Invalid date format: " + entry.getValue().getDate(), e);
+					}
+				})
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 	}
-	
+
 	
 }

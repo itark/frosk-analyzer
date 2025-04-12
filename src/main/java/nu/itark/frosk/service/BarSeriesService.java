@@ -5,6 +5,7 @@ import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import nu.itark.frosk.crypto.coinbase.model.Candle;
 import nu.itark.frosk.crypto.coinbase.model.Candles;
 import nu.itark.frosk.crypto.coinbase.model.Granularity;
+import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.model.TradingAccount;
@@ -67,9 +68,10 @@ public class BarSeriesService  {
 	 * 
 	 * @return List<BarSeries> for alla securities in database. Filter on 'EUR'
 	 */
-	public List<BarSeries> getDataSet() {
+	public List<BarSeries> getDataSet(Database database) {
 		//Iterable<Security> spList = securityRepository.findAllByActiveAndQuoteCurrency(true, "EUR");
-		Iterable<Security> spList = securityRepository.findAllByQuoteCurrency("EUR");
+		//Iterable<Security> spList = securityRepository.findAllByQuoteCurrency("EUR");
+		Iterable<Security> spList = securityRepository.findByDatabase(database.name());
 		List<BarSeries> barSeries = new ArrayList<BarSeries>();
 		
 		spList.forEach(sp -> {

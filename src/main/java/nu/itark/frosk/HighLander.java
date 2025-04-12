@@ -30,6 +30,9 @@ public class HighLander {
 	@Value("${frosk.addsecuritypricesfromcoinbase}")
 	private boolean addSecuritypricesFromCoinbase;
 
+	@Value("${frosk.addsecuritypricesfromyahoo}")
+	private boolean addSecuritypricesFromYahoo;
+
 	@Value("${frosk.runallstrategies}")
 	private boolean runAllStrategies;
 
@@ -61,12 +64,6 @@ public class HighLander {
 	StrategyPerformanceRepository strategyPerformanceRepository;
 
 	@Autowired
-	TradingAccountRepository tradingAccountRepository;
-
-	@Autowired
-	AccountTypeRepository accountTypeRepository;
-
-	@Autowired
 	StrategyAnalysis strategyAnalysis;
 
 	@Autowired
@@ -79,6 +76,7 @@ public class HighLander {
 	public void runInstall(Database database) {
 		log.info("addDatasetAndSecurities:{}",addDatasetAndSecurities);
 		log.info("addSecuritypricesFromCoinbase:{}",addSecuritypricesFromCoinbase);
+		log.info("addSecuritypricesFromYahooo:{}",addSecuritypricesFromYahoo);
 		log.info("runAllStrategies:{}",runAllStrategies);
 		log.info("runBot:{}",runBot);
 		if (addDatasetAndSecurities) {
@@ -87,10 +85,13 @@ public class HighLander {
 		if (addSecuritypricesFromCoinbase) {
 			addSecurityPricesFromCoinbase();
 		}
+		if (addSecuritypricesFromYahoo) {
+			addSecurityPricesFromYahoo();
+		}
 		if (runAllStrategies) {
 			runAllStrategies();
 		}
-		runChooseBestStrategy();
+		//runChooseBestStrategy();
 		if (runBot) {
 			strategyAnalysis.runningPositions();
 		}

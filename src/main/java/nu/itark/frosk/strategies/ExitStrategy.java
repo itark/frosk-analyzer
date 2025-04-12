@@ -14,7 +14,7 @@ import org.ta4j.core.rules.TrailingStopLossRule;
 
 public class ExitStrategy {
 
-    public Rule exitRule(BarSeries barSeries) {
+    public static Rule exitRule(BarSeries barSeries) {
         ClosePriceIndicator closePrice = new ClosePriceIndicator(barSeries);
         ParabolicSarIndicator pSar = new ParabolicSarIndicator(barSeries);
         IsFallingRule pSarIsFallingRule = new IsFallingRule(pSar, 2);
