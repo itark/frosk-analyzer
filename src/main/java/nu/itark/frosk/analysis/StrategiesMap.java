@@ -3,6 +3,9 @@ package nu.itark.frosk.analysis;
 import lombok.Data;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.*;
+import nu.itark.frosk.strategies.hedge.CrudeOilStrategy;
+import nu.itark.frosk.strategies.hedge.HedgeIndexStrategy;
+import nu.itark.frosk.strategies.hedge.VIXStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -48,14 +51,14 @@ public class StrategiesMap {
 	private EMATenTwentyStrategy emaTenTwentyStrategy;
 	@Autowired
 	private EMATenTenStrategy emaTenTenStrategy;
-
-/*
 	@Autowired
-	private ExitStrategy exitStrategy;
-*/
+	private HedgeIndexStrategy hedgeIndexStrategy;
+	@Autowired
+	private VIXStrategy vixStrategy;
+	@Autowired
+	private CrudeOilStrategy crudeOilStrategy;
 
 	private List<Strategy> strategies = null;
-
 
 	public List<String> buildStrategiesMap() {
 		List<String> strategies = new ArrayList<String>();
@@ -73,6 +76,9 @@ public class StrategiesMap {
 		strategies.add(vwapStrategy.getClass().getSimpleName());
 		strategies.add(emaTenTwentyStrategy.getClass().getSimpleName());
 		strategies.add(emaTenTenStrategy.getClass().getSimpleName());
+		strategies.add(hedgeIndexStrategy.getClass().getSimpleName());
+		strategies.add(vixStrategy.getClass().getSimpleName());
+		strategies.add(crudeOilStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -97,6 +103,9 @@ public class StrategiesMap {
 		strategies.add(threeBlackWhiteStrategy.buildStrategy(series));
 		strategies.add(vwapStrategy.buildStrategy(series));
 		strategies.add(emaTenTenStrategy.buildStrategy(series));
+		strategies.add(hedgeIndexStrategy.buildStrategy(series));
+		strategies.add(vixStrategy.buildStrategy());
+		strategies.add(crudeOilStrategy.buildStrategy());
 
 		this.strategies = strategies;
 		return strategies;
@@ -134,6 +143,12 @@ public class StrategiesMap {
 			return emaTenTwentyStrategy.buildStrategy(series);
 		} else if (strategy.equals(EMATenTenStrategy.class.getSimpleName())) {
 			return emaTenTenStrategy.buildStrategy(series);
+		} else if (strategy.equals(HedgeIndexStrategy.class.getSimpleName())) {
+			return hedgeIndexStrategy.buildStrategy(series);
+		} else if (strategy.equals(VIXStrategy.class.getSimpleName())) {
+			return vixStrategy.buildStrategy();
+		} else if (strategy.equals(CrudeOilStrategy.class.getSimpleName())) {
+			return crudeOilStrategy.buildStrategy();
 		}
 		else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
@@ -169,6 +184,12 @@ public class StrategiesMap {
 			return emaTenTwentyStrategy.getIndicatorValues();
 		} else if (strategyName.equals(EMATenTenStrategy.class.getSimpleName())) {
 			return emaTenTenStrategy.getIndicatorValues();
+		} else if (strategyName.equals(HedgeIndexStrategy.class.getSimpleName())) {
+			return hedgeIndexStrategy.getIndicatorValues();
+		} else if (strategyName.equals(VIXStrategy.class.getSimpleName())) {
+			return vixStrategy.getIndicatorValues(); //TODO
+		} else if (strategyName.equals(CrudeOilStrategy.class.getSimpleName())) {
+			return crudeOilStrategy.getIndicatorValues(); //TODO
 		}
 		else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);

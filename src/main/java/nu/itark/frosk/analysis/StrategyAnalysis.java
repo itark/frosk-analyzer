@@ -12,9 +12,10 @@ import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
-import nu.itark.frosk.service.TradingAccountService;
+import nu.itark.frosk.service.HedgeIndexService;
+import nu.itark.frosk.strategies.hedge.CrudeOilStrategy;
+import nu.itark.frosk.strategies.hedge.VIXStrategy;
 import nu.itark.frosk.util.DateTimeManager;
-import nu.itark.frosk.util.FroskUtil;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,7 +72,10 @@ public class StrategyAnalysis {
 	@Autowired
 	TradingBot tradingBot;
 
-	
+	@Autowired
+	HedgeIndexService hedgeIndexService;
+
+
 	/**
 	 * This is the thing !!
 	 * 
@@ -139,6 +143,22 @@ public class StrategyAnalysis {
 
 	public void runningPositions() {
 		tradingBot.runningPositions();
+	}
+
+	public void runHedgeIndexStrategies() {
+		runVix();
+		runCrudeOil();
+		hedgeIndexService.update();
+	}
+
+	private void runVix() {
+		Long sec_id = barSeriesService.getSecurityId("^VIX");
+		run(VIXStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runCrudeOil() {
+		Long sec_id = barSeriesService.getSecurityId("CL=F");
+		run(CrudeOilStrategy.class.getSimpleName(), sec_id);
 	}
 
 	private void runStrategy(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException{

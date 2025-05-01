@@ -50,7 +50,7 @@ public class TestJYahooDataManager {
 	@Test
 	public void syncOne(){
 		
-		tsManager.syncronize("GC=F");
+		tsManager.syncronize("CL=F");
 //		tsManager.syncronize("VOLV-B.ST");
 	}
 	
@@ -60,7 +60,7 @@ public class TestJYahooDataManager {
 //		StockID apple = new StockID("AAPL", "NASDAQ");
 //		StockData sd = Context.getStockData(apple, new YahooReader());
 //		logger.info("{size=}"+sd.getHistory().size());
-//		IStockRecord sr = sd.getValue(Context.date("2012-01-10"));
+//		IStockRecord sr = sd.getPrice(Context.date("2012-01-10"));
 //		Assert.assertEquals(178.46, sr.getClosing().doubleValue(), 0.001);
 //	}
 	

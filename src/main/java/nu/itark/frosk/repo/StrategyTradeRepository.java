@@ -1,5 +1,6 @@
 package nu.itark.frosk.repo;
 
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,7 +13,6 @@ import nu.itark.frosk.model.StrategyTrade;
 @Repository
 public interface StrategyTradeRepository extends JpaRepository<StrategyTrade, Long>{
 	List<StrategyTrade> findByFeaturedStrategy(FeaturedStrategy fs);
-	//@Query("SELECT st FROM StrategyTrade st WHERE st.type = ?1")
 	List<StrategyTrade> findTopByType(String type);
 	List<StrategyTrade> findByFeaturedStrategyId(Long featuredStrategyId);
 
@@ -25,5 +25,6 @@ public interface StrategyTradeRepository extends JpaRepository<StrategyTrade, Lo
 			"WHERE featured_strategy_id = ?1 " , nativeQuery = true)
 	Profit findTotalGrossProfitForStrategy(Long featuredStrategyId);
 
+	List<StrategyTrade> findByFeaturedStrategyIdAndDateAfter(Long featuredStrategyId, Date date);
 
 }

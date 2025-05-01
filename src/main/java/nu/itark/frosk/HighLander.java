@@ -1,11 +1,9 @@
 package nu.itark.frosk;
 
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.analysis.FeaturedStrategyDTO;
 import nu.itark.frosk.repo.*;
 import nu.itark.frosk.service.BarSeriesService;
-import nu.itark.frosk.service.TradingAccountService;
-import nu.itark.frosk.strategies.filter.StrategyFilter;
+import nu.itark.frosk.service.HedgeIndexService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -13,8 +11,6 @@ import org.springframework.stereotype.Component;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
-
-import java.util.List;
 
 /**
  * There could be only one...
@@ -38,6 +34,9 @@ public class HighLander {
 
 	@Value("${frosk.runbot}")
 	private boolean runBot;
+
+	@Value("${frosk.updatehedgeindex}")
+	private boolean updateHedgeIndex;
 
 	@Autowired
 	DataManager dataManager;
@@ -69,6 +68,9 @@ public class HighLander {
 	@Autowired
 	BarSeriesService barSeriesService;
 
+	@Autowired
+	HedgeIndexService hedgeIndexService;
+
 	/**
 	 * Full setup, addition
 	 * 
@@ -79,6 +81,8 @@ public class HighLander {
 		log.info("addSecuritypricesFromYahooo:{}",addSecuritypricesFromYahoo);
 		log.info("runAllStrategies:{}",runAllStrategies);
 		log.info("runBot:{}",runBot);
+		log.info("runHedgeIndexStrategies:{}",updateHedgeIndex);
+
 		if (addDatasetAndSecurities) {
 			addDataSetAndSecurities();
 		}
@@ -92,6 +96,9 @@ public class HighLander {
 			runAllStrategies();
 		}
 		//runChooseBestStrategy();
+		if (updateHedgeIndex) {
+			strategyAnalysis.runHedgeIndexStrategies();
+		}
 		if (runBot) {
 			strategyAnalysis.runningPositions();
 		}

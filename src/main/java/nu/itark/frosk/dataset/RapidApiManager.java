@@ -23,10 +23,11 @@ import java.util.Map;
 @Slf4j
 public class RapidApiManager {
 
+    /*kalle*/
     private WebClient webClient(String baseUrl) {
         return WebClient.builder()
                 .baseUrl(baseUrl)
-                .defaultHeader("x-rapidapi-key", "f3c9579c6cmsh5c0657bd7a299b8p18b5a9jsn1cde3a01eef6")
+                .defaultHeader("x-rapidapi-key", "")
                 .defaultHeader("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com")
                 .build();
     }

@@ -27,7 +27,7 @@ import java.util.Date;
 @Component
 public abstract  class AbstractStrategy {
     private Rule exitRule;
-    BarSeries barSeries;
+    protected  BarSeries barSeries;
     BarSeries barSeriesWithForecast;
     public Boolean inherentExitRule;
 

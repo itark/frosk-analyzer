@@ -74,7 +74,7 @@ public class TestJMarketDataProxy extends BaseIntegrationTest {
     	//The limit order imbalance measurement
     	MarketData best50 = marketDataProxy.getMarketDataOrderBook("BTC-EUR", 2);
    		Double loiObservation = loi.calculate(midMarket, best50);
-   		log.info("***LOI value: {}",loiObservation);
+   		log.info("***LOI price: {}",loiObservation);
 
     }
     
@@ -91,7 +91,7 @@ public class TestJMarketDataProxy extends BaseIntegrationTest {
 //		List<Trade> tradeList = marketDataProxy.getTrades("BTC-EUR");
 //		tradeList.forEach(trade -> {
 //			log.info("price {}, time {}" , trade.getPrice(), trade.getTime());
-//			log.info("p-value {}", adf.getPValue(trade.getPrice().doubleValue()));
+//			log.info("p-price {}", adf.getPValue(trade.getPrice().doubleValue()));
 //
 //		});
 //	}
@@ -111,7 +111,7 @@ public class TestJMarketDataProxy extends BaseIntegrationTest {
 	   
 	 //  List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", "2019-02-22T00:00:00.00000Z","2019-02-23T00:00:00.00000Z", "3600" );
 	  // List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, "3600" );
-// 	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getValue() );
+// 	   List<HistoricRate> candlesList= marketDataProxy.getMarketDataCandles("BTC-EUR", start,end, MarketDataProxy.GranularityEnum.FIFTEEN_MINUTES.getPrice() );
 //	   candlesList.forEach(candle -> {
 //		   log.info(ReflectionToStringBuilder.toString(candle));
 //

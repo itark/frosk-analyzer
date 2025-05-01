@@ -10,6 +10,7 @@ import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.Profit;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.strategies.hedge.VIXStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,9 +84,16 @@ public class TestJStrategies extends BaseIntegrationTest {
 	public void runAllSingleDataSet() {
 		logger.info("runAllSingleDataSet");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "BTC-EUR";  //FIL-EUR, SHPING-EUR, BTC-EUR,BTC-USDT, BCH-EUR, AAVE-EUR, ETC-EUR, WLUNA-EUR,WLUNA-USDT, BTRST-EUR, SPELL-USDT, DOGE-EUR
+		String productId = "^VIX";
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
+
+		VIXStrategy vix = strategiesMap.getVixStrategy();
+		resultMap.add(run(vix.buildStrategy(),timeSeries));
+
+/*		HedgeIndexStrategy hedge = strategiesMap.getHedgeIndexStrategy();
+		resultMap.add(run(hedge.buildStrategy(timeSeries),timeSeries));*/
+
 
 //		VWAPStrategy vwap = new VWAPStrategy(timeSeries);
 //		run(vwap.buildStrategy(),timeSeries);
@@ -115,8 +123,10 @@ public class TestJStrategies extends BaseIntegrationTest {
 //		run(cci.buildStrategy(),timeSeries);
 		
 
+/*
 		EngulfingStrategy eng = strategiesMap.getEngulfingStrategy();
 		resultMap.add(run(eng.buildStrategy(timeSeries),timeSeries));
+*/
 
 
 /*
@@ -148,8 +158,10 @@ public class TestJStrategies extends BaseIntegrationTest {
 */
 
 
+/*
 		EMATenTenStrategy emaTT = strategiesMap.getEmaTenTenStrategy();
 		resultMap.add(run(emaTT.buildStrategy(timeSeries),timeSeries));
+*/
 
 
 		printResult(resultMap);
@@ -159,7 +171,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 	@Test
 	public void runAllDataSetList() {
 		List<ReturnObject> resultMap = new ArrayList<>();
-		List<BarSeries> timeSeriesList = barSeriesService.getDataSet(Database.COINBASE);
+		List<BarSeries> timeSeriesList = barSeriesService.getDataSet(Database.YAHOO);
 		timeSeriesList.forEach(ts -> {
 //			RSI2Strategy rsi = new RSI2Strategy(ts);
 //			resultMap.add(run(rsi.buildStrategy(), ts));
@@ -184,8 +196,12 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 
 		//	ADXStrategy adx = new ADXStrategy();
-			resultMap.add(run(strategiesMap.getAdxStrategy().buildStrategy(ts), ts));
-
+			try {
+				resultMap.add(run(strategiesMap.getHedgeIndexStrategy().buildStrategy(ts), ts));
+			} catch (Exception e) {
+				System.out.println("getHedgeIndexStrategy().buildStrategy(ts), Name:"+ts.getName());
+				throw new RuntimeException(e);
+			}
 
 
 		});
@@ -335,7 +351,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 		BarSeriesManager timeSeriesManager = new BarSeriesManager(timeSeries, costs.getTransactionCostModel(), costs.getBorrowingCostModel());
 		for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
 			Strategy strategy = entry.getKey();
-			String name = entry.getValue();
+			String name = entry.getPrice();
 			TradingRecord tradingRecord = timeSeriesManager.run(strategy);
 			double profit = profitCriterion.calculate(timeSeries, tradingRecord).doubleValue();
 			System.out.println("\tGross return(%) for " + name + ": " + percent(profit));
@@ -353,7 +369,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 /*
 		for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
 			Strategy strategy = entry.getKey();
-			String name = entry.getValue();
+			String name = entry.getPrice();
 			TradingRecord tradingRecord = timeSeriesManager.run(strategy);
 			double profit = criterion.calculate(timeSeries, tradingRecord).doubleValue();
 			System.out.println("\tcriterion "+ criterion.getClass().getName() + ", for " + name + ": " + profit);
@@ -409,7 +425,7 @@ public class TestJStrategies extends BaseIntegrationTest {
 /*
 			for (Map.Entry<Strategy, String> entry : strategies.entrySet()) {
 				Strategy strategy = entry.getKey();
-				String name = entry.getValue();
+				String name = entry.getPrice();
 				TradingRecord tradingRecord = timeSeriesManager.run(strategy);
 				double profitProfit = profitCriterion.calculate(timeSeries, tradingRecord).doubleValue();
 				if (profitProfit > highestProfitProfit) {

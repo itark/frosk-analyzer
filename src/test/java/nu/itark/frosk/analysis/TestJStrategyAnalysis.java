@@ -5,9 +5,11 @@ import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.HedgeIndexRepository;
 import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.*;
+import nu.itark.frosk.strategies.hedge.VIXStrategy;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -35,6 +37,9 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;
+
+	@Autowired
+	HedgeIndexRepository hedgeIndexRepository;
 
 	@Test
 	public void run1() {
@@ -68,6 +73,26 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 		fs.getStrategyTrades().forEach(t-> {
 			System.out.println(ReflectionToStringBuilder.toString(t));
 		});
+
+	}
+
+	@Test
+	public final void runRunVixManually() {
+		Long sec_id = barSeriesService.getSecurityId("^VIX");
+		strategyAnalysis.run(VIXStrategy.class.getSimpleName(), sec_id);
+
+		//Verify
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(VIXStrategy.class.getSimpleName(), "^VIX");
+		fs.getStrategyTrades().stream()
+				.sorted(Comparator.comparing(StrategyTrade::getDate))
+				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t)))
+				.collect(Collectors.toSet());
+
+	}
+
+	@Test
+	public void runHedgeIndexStrategies() {
+		strategyAnalysis.runHedgeIndexStrategies();
 
 	}
 

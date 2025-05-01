@@ -19,7 +19,6 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.*;
 
 @Data
-//@Builder
 @NoArgsConstructor
 @Entity
 @Table(name = "strategy_trade", uniqueConstraints={@UniqueConstraint(columnNames={"date", "type", "featured_strategy_id"})})
