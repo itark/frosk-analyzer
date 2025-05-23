@@ -12,7 +12,7 @@ import org.ta4j.core.num.Num;
  * Part of Risk-off score
  *
  */
-public class VixRiskOffIndicator extends CachedIndicator<Boolean> {
+public class VixRiskIndicator extends CachedIndicator<Boolean> {
     Num threshold = DoubleNum.valueOf(25);
 
     /**
@@ -20,23 +20,15 @@ public class VixRiskOffIndicator extends CachedIndicator<Boolean> {
      *
      * @param series a bar series
      */
-    public VixRiskOffIndicator(BarSeries series) {
+    public VixRiskIndicator(BarSeries series) {
          super(series);
      }
 
     @Override
     protected Boolean calculate(int index) {
-        if (index < 1) {
-            // GAP is a 2-candle pattern
-            return false;
-        }
         Bar currBar = getBarSeries().getBar(index);
-        if (currBar.isBullish()) {
-            return currBar.getClosePrice().isGreaterThanOrEqual(threshold);
-        }
-        return false;
+        return currBar.isBullish() && currBar.getClosePrice().isGreaterThanOrEqual(threshold);
     }
-
 
     @Override
     public int getUnstableBars() {

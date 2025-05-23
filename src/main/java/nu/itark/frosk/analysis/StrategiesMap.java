@@ -3,9 +3,7 @@ package nu.itark.frosk.analysis;
 import lombok.Data;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.*;
-import nu.itark.frosk.strategies.hedge.CrudeOilStrategy;
-import nu.itark.frosk.strategies.hedge.HedgeIndexStrategy;
-import nu.itark.frosk.strategies.hedge.VIXStrategy;
+import nu.itark.frosk.strategies.hedge.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -57,6 +55,10 @@ public class StrategiesMap {
 	private VIXStrategy vixStrategy;
 	@Autowired
 	private CrudeOilStrategy crudeOilStrategy;
+	@Autowired
+	private GoldStrategy goldStrategy;
+	@Autowired
+	private SP500Strategy sp500Strategy;
 
 	private List<Strategy> strategies = null;
 
@@ -79,6 +81,8 @@ public class StrategiesMap {
 		strategies.add(hedgeIndexStrategy.getClass().getSimpleName());
 		strategies.add(vixStrategy.getClass().getSimpleName());
 		strategies.add(crudeOilStrategy.getClass().getSimpleName());
+		strategies.add(goldStrategy.getClass().getSimpleName());
+		strategies.add(sp500Strategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -106,6 +110,7 @@ public class StrategiesMap {
 		strategies.add(hedgeIndexStrategy.buildStrategy(series));
 		strategies.add(vixStrategy.buildStrategy());
 		strategies.add(crudeOilStrategy.buildStrategy());
+		strategies.add(goldStrategy.buildStrategy());
 
 		this.strategies = strategies;
 		return strategies;
@@ -149,6 +154,11 @@ public class StrategiesMap {
 			return vixStrategy.buildStrategy();
 		} else if (strategy.equals(CrudeOilStrategy.class.getSimpleName())) {
 			return crudeOilStrategy.buildStrategy();
+		} else if (strategy.equals(GoldStrategy.class.getSimpleName())) {
+			return goldStrategy.buildStrategy();
+		}
+		else if (strategy.equals(SP500Strategy.class.getSimpleName())) {
+			return goldStrategy.buildStrategy();
 		}
 		else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
@@ -190,6 +200,10 @@ public class StrategiesMap {
 			return vixStrategy.getIndicatorValues(); //TODO
 		} else if (strategyName.equals(CrudeOilStrategy.class.getSimpleName())) {
 			return crudeOilStrategy.getIndicatorValues(); //TODO
+		} else if (strategyName.equals(GoldStrategy.class.getSimpleName())) {
+			return goldStrategy.getIndicatorValues(); //TODO
+		} else if (strategyName.equals(SP500Strategy.class.getSimpleName())) {
+			return sp500Strategy.getIndicatorValues(); //TODO
 		}
 		else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);

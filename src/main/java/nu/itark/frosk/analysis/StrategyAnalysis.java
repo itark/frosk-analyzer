@@ -14,6 +14,8 @@ import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
 import nu.itark.frosk.strategies.hedge.CrudeOilStrategy;
+import nu.itark.frosk.strategies.hedge.GoldStrategy;
+import nu.itark.frosk.strategies.hedge.SP500Strategy;
 import nu.itark.frosk.strategies.hedge.VIXStrategy;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -50,6 +52,9 @@ public class StrategyAnalysis {
 
 	@Value("${frosk.database.only:YAHOO}")
 	private String databaseOnly;
+
+	@Value("${frosk.strategies.hedge.strategy}")
+	private String[] excludeHedgeStrategies;
 
 	@Autowired
 	BarSeriesService barSeriesService;
@@ -90,6 +95,8 @@ public class StrategyAnalysis {
 	public void run(String strategy, Long security_id) throws DataIntegrityViolationException {
 		if (Objects.isNull(strategy)  && Objects.isNull(security_id)) {
 			List<String> strategies = strategiesMap.buildStrategiesMap();
+			strategies.removeAll(List.of(excludeHedgeStrategies));
+
 			strategies.forEach(strategyName -> {
 				try {
 					runStrategy(strategyName, barSeriesService.getDataSet(Database.valueOf(databaseOnly)));
@@ -148,6 +155,8 @@ public class StrategyAnalysis {
 	public void runHedgeIndexStrategies() {
 		runVix();
 		runCrudeOil();
+		runGold();
+		runSP500();
 		hedgeIndexService.update();
 	}
 
@@ -159,6 +168,16 @@ public class StrategyAnalysis {
 	private void runCrudeOil() {
 		Long sec_id = barSeriesService.getSecurityId("CL=F");
 		run(CrudeOilStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runGold() {
+		Long sec_id = barSeriesService.getSecurityId("GC=F");
+		run(GoldStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runSP500() {
+		Long sec_id = barSeriesService.getSecurityId("^GSPC");
+		run(SP500Strategy.class.getSimpleName(), sec_id);
 	}
 
 	private void runStrategy(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException{
@@ -178,7 +197,6 @@ public class StrategyAnalysis {
 			}
 			// Running the strategy
 			TradingRecord tradingRecord = barSeriesService.runConfiguredStrategy(series, strategyToRun);
-			//log.info("tradingRecord:{} ", tradingRecord);
 			Set<StrategyTrade> strategyTradeList = new HashSet<StrategyTrade>();
 			StrategyTrade strategyTrade = null;
 			for (Position position : tradingRecord.getPositions()) {

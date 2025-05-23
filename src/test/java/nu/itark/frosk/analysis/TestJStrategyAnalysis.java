@@ -9,6 +9,8 @@ import nu.itark.frosk.repo.HedgeIndexRepository;
 import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.*;
+import nu.itark.frosk.strategies.hedge.CrudeOilStrategy;
+import nu.itark.frosk.strategies.hedge.GoldStrategy;
 import nu.itark.frosk.strategies.hedge.VIXStrategy;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -89,6 +91,36 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 				.collect(Collectors.toSet());
 
 	}
+
+	@Test
+	public final void runRunCrudOilManually() {
+		Long sec_id = barSeriesService.getSecurityId("CL=F");  //CL=F
+		strategyAnalysis.run(CrudeOilStrategy.class.getSimpleName(), sec_id);
+
+		//Verify
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(CrudeOilStrategy.class.getSimpleName(), "CL=F");
+		fs.getStrategyTrades().stream()
+				.sorted(Comparator.comparing(StrategyTrade::getDate))
+				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t)))
+				.collect(Collectors.toSet());
+
+	}
+
+	@Test
+	public final void runRunGoldManually() {
+		Long sec_id = barSeriesService.getSecurityId("GC=F");
+		strategyAnalysis.run(GoldStrategy.class.getSimpleName(), sec_id);
+
+		//Verify
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(GoldStrategy.class.getSimpleName(), "GC=F");
+		fs.getStrategyTrades().stream()
+				.sorted(Comparator.comparing(StrategyTrade::getDate))
+				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t)))
+				.collect(Collectors.toSet());
+
+	}
+
+
 
 	@Test
 	public void runHedgeIndexStrategies() {

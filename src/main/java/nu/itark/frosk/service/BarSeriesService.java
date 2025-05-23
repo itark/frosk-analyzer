@@ -1,6 +1,7 @@
 package nu.itark.frosk.service;
 
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import nu.itark.frosk.crypto.coinbase.model.Candle;
 import nu.itark.frosk.crypto.coinbase.model.Candles;
@@ -37,6 +38,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class BarSeriesService  {
 
 	@Value("${exchange.transaction.feePerTradePercent}")
@@ -127,8 +129,9 @@ public class BarSeriesService  {
 		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityIdOrderByTimestamp(security.get().getId());
 		
 		securityPrices.forEach(row -> {
-			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());		
-		     series.addBar(dateTime, row.getOpen(), row.getHigh(),  row.getLow(), row.getClose(), row.getVolume());			
+		//	log.info("row.getId():{}, row.getTimestamp():{}, row.getOpen():{}", row.getId(), row.getTimestamp(), row.getOpen());
+			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());
+		     series.addBar(dateTime, row.getOpen(), row.getHigh(),  row.getLow(), row.getClose(), row.getVolume());
 		});
 		
 		return series;
@@ -168,7 +171,11 @@ public class BarSeriesService  {
 		TradeExecutionModel tradeExecutionModel;
 		if ("EngulfingStrategy".equals(strategyToRun.getName())) {
 			tradeExecutionModel = new TradeOnCurrentCloseModel();
-		} else {
+		}
+		else if ("GoldStrategy".equals(strategyToRun.getName())) {
+			tradeExecutionModel = new TradeOnCurrentCloseModel();
+		}
+		else {
 			tradeExecutionModel = new TradeOnNextOpenModel();
 		}
 		//TradeExecutionModel tradeExecutionModel = new TradeOnNextOpenModel();

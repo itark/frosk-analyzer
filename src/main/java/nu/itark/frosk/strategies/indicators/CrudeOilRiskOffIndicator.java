@@ -38,6 +38,7 @@ public class CrudeOilRiskOffIndicator extends CachedIndicator<Boolean> {
             prevBar = getBarSeries().getBar(index - 5);
             currBar = getBarSeries().getBar(index);
         } catch (Exception e) {
+            log.error("index:{} for name:{}",index, getBarSeries().getName());
             throw new RuntimeException(e);
         }
         final Num percentage = prevBar.getClosePrice().minus(currBar.getClosePrice()).dividedBy(prevBar.getClosePrice()).multipliedBy(DoubleNum.valueOf(100));

@@ -48,14 +48,14 @@ public class TestJHedgeIndexRepository extends BaseIntegrationTest {
 
 	@Test
 	public void delete() {
-		hedgeIndexRepository.deleteAll();
+		//hedgeIndexRepository.deleteAll();
 	}
 
 
 	@Test
 	public void testX() {
 		List<HedgeIndex> vix = hedgeIndexRepository.findByIndicator("VIX");
-		System.out.println("vix.size" + vix.size());
+		System.out.println("vix.size:s" + vix.size());
 
 		vix.stream()
 				.sorted(Comparator.comparing(HedgeIndex::getDate))
@@ -68,6 +68,15 @@ public class TestJHedgeIndexRepository extends BaseIntegrationTest {
 					}
 				})
 				.collect(Collectors.toSet());
+	}
+
+	@Test
+	public void testSummarizeRisk() {
+		for (HedgeIndexRepository.RiskSummary riskSummary : hedgeIndexRepository.summarizeRiskByDateDTO()) {
+			System.out.println("indicator:"+riskSummary.getIndicator()+",date:"+riskSummary.getDate()+",risk:"+riskSummary.getRiskCount()+", price:"+riskSummary.getPrice());
+		}
+
+
 	}
 
 }

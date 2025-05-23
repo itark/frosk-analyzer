@@ -4,8 +4,8 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
 import nu.itark.frosk.strategies.IIndicatorValue;
-import nu.itark.frosk.strategies.indicators.VixRiskOffIndicator;
-import nu.itark.frosk.strategies.indicators.VixRiskOnIndicator;
+import nu.itark.frosk.strategies.indicators.VixRiskIndicator;
+import nu.itark.frosk.strategies.indicators.VixLowRiskIndicator;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
@@ -27,11 +27,13 @@ public class VIXStrategy implements IIndicatorValue {
 
     public Strategy buildStrategy() {
         BarSeries barSeries = barSeriesService.getDataSet("^VIX", false, false);
-        VixRiskOnIndicator vixOnIndicator = new VixRiskOnIndicator(barSeries, hedgeIndexService);
-        Rule onRule = new BooleanIndicatorRule(vixOnIndicator);
-        VixRiskOffIndicator vixOffIndicator = new VixRiskOffIndicator(barSeries);
-        Rule offRule = new BooleanIndicatorRule(vixOffIndicator);
-        return new BaseStrategy(this.getClass().getSimpleName(), onRule, offRule);
+        VixLowRiskIndicator vixLowRiskIndicator = new VixLowRiskIndicator(barSeries, hedgeIndexService);
+        //BUY, low risk
+        Rule lowRiskRule = new BooleanIndicatorRule(vixLowRiskIndicator);
+        VixRiskIndicator vixOffIndicator = new VixRiskIndicator(barSeries);
+        //SELL, risk
+        Rule riskRule = new BooleanIndicatorRule(vixOffIndicator);
+        return new BaseStrategy(this.getClass().getSimpleName(), lowRiskRule, riskRule);
     }
 
     @Override

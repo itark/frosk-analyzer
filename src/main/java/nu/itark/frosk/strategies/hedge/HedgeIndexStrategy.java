@@ -42,11 +42,10 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class HedgeIndexStrategy  implements IIndicatorValue {
-    //final BarSeries barSeries;
     final HedgeIndexService hedgeIndexService;
 
     /**
-     * OBS Now only EMATenTwentyStrategy
+     * OBS ongoing
      * @param barSeries
      * @return
      */

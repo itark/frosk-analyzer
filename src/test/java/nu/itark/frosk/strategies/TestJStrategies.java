@@ -10,6 +10,7 @@ import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.Profit;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.strategies.hedge.GoldStrategy;
 import nu.itark.frosk.strategies.hedge.VIXStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,12 +85,20 @@ public class TestJStrategies extends BaseIntegrationTest {
 	public void runAllSingleDataSet() {
 		logger.info("runAllSingleDataSet");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "^VIX";
+		String productId = "GC=F";  //^VIX
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
+		GoldStrategy gold = strategiesMap.getGoldStrategy();
+		resultMap.add(run(gold.buildStrategy(),timeSeries));
+
+
+/*
 		VIXStrategy vix = strategiesMap.getVixStrategy();
 		resultMap.add(run(vix.buildStrategy(),timeSeries));
+*/
+
+
 
 /*		HedgeIndexStrategy hedge = strategiesMap.getHedgeIndexStrategy();
 		resultMap.add(run(hedge.buildStrategy(timeSeries),timeSeries));*/

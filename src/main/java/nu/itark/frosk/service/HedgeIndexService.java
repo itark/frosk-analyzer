@@ -28,6 +28,8 @@ public class HedgeIndexService {
     public void update() {
         updateHedgeIndex("VIXStrategy", "^VIX", this::convertToVixHedgeIndexes);
         updateHedgeIndex("CrudeOilStrategy", "CL=F", this::convertToCrudeOilStrategyHedgeIndexes);
+        updateHedgeIndex("GoldStrategy", "GC=F", this::convertToGoldStrategyHedgeIndexes);
+        updateHedgeIndex("SP500Strategy", "^GSPC", this::convertToSP500StrategyHedgeIndexes);
     }
 
     private void updateHedgeIndex(String strategyName, String securityName, java.util.function.Function<List<StrategyTrade>, List<HedgeIndex>> converter) {
@@ -81,6 +83,37 @@ public class HedgeIndexService {
         return hedgeIndexList;
     }
 
+    private List<HedgeIndex> convertToGoldStrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("Commodities");
+            hedgeIndex.setIndicator("Gold");
+            hedgeIndex.setRuleDesc("Breaks above 10-day high");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
+    private List<HedgeIndex> convertToSP500StrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("Equities");
+            hedgeIndex.setIndicator("S&P 500");
+            hedgeIndex.setRuleDesc("Below 200-day MA");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
+
     /**
      * Return risk, hence if risk < threshold go long
      * if risk > threshold, go short.
@@ -92,10 +125,10 @@ public class HedgeIndexService {
     public boolean risk(ZonedDateTime indexDate, String name) {
        //log.info("name:{}",name);
         final List<HedgeIndex> hedgeIndexByDateList = hedgeIndexRepository.findByDate(Date.from(indexDate.toInstant()));
-        log.info("hedgeIndexByDateList:{}",hedgeIndexByDateList);
+       // log.info("hedgeIndexByDateList:{}",hedgeIndexByDateList);
         int risks = countRisksIndicators(hedgeIndexByDateList);
         if (risks > 2) {
-            log.info("risks:{}",risks);
+            //log.info("name:{}, risks:{}",name,risks);
             return true;
         } else {
             return false;
