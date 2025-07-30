@@ -122,18 +122,16 @@ public class HedgeIndexService {
      * @param name
      * @return true id risk
      */
-    public boolean risk(ZonedDateTime indexDate, String name) {
-       //log.info("name:{}",name);
+    public boolean risk(ZonedDateTime indexDate) {
         final List<HedgeIndex> hedgeIndexByDateList = hedgeIndexRepository.findByDate(Date.from(indexDate.toInstant()));
-       // log.info("hedgeIndexByDateList:{}",hedgeIndexByDateList);
         int risks = countRisksIndicators(hedgeIndexByDateList);
+        log.info("risks:{}",risks);
+        //TODO add risk-threshold in application.properties
         if (risks > 2) {
-            //log.info("name:{}, risks:{}",name,risks);
             return true;
         } else {
             return false;
         }
-
     }
 
 

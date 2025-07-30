@@ -13,10 +13,7 @@ import nu.itark.frosk.repo.StrategyPerformanceRepository;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
-import nu.itark.frosk.strategies.hedge.CrudeOilStrategy;
-import nu.itark.frosk.strategies.hedge.GoldStrategy;
-import nu.itark.frosk.strategies.hedge.SP500Strategy;
-import nu.itark.frosk.strategies.hedge.VIXStrategy;
+import nu.itark.frosk.strategies.hedge.*;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -157,7 +154,16 @@ public class StrategyAnalysis {
 		runCrudeOil();
 		runGold();
 		runSP500();
+		//TODO: Equities NASDAQ:S&P NASDAQ underperforms S&P over 30 days
+		//TODO: FX USD/JPY Rising above 150
+		//TODO: FX AUD/USD Drops >2% in last 5 days
+		//TODO: FX DXY Above 105 and rising
+		//TODO: Inflation US CPI YoY CPI > 3.5% and rising
+		//TODO: Inflation Core CPI MoM > 0.4%
+		//TODO: Interest Rates 10Y Treasury Yield > 4.5% and rising
+		//TODO: Yield Curve 2Y - 10Y Spread < -50 bps (deep inversion)
 		hedgeIndexService.update();
+		log.info("runHedgeIndexStrategies executed");
 	}
 
 	private void runVix() {
@@ -178,6 +184,11 @@ public class StrategyAnalysis {
 	private void runSP500() {
 		Long sec_id = barSeriesService.getSecurityId("^GSPC");
 		run(SP500Strategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runNasdaqVsSP() {
+		//Long sec_id = barSeriesService.getSecurityId("^GSPC");
+		run(NasdaqVsSPStrategy.class.getSimpleName(), null);
 	}
 
 	private void runStrategy(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException{

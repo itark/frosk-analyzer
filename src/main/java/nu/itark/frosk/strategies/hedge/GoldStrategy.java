@@ -28,6 +28,10 @@ public class GoldStrategy implements IIndicatorValue {
         this.hedgeIndexService = hedgeIndexService;
     }
 
+    /**
+     * Breaks above 10-day high
+     * @return
+     */
     public Strategy buildStrategy() {
         BarSeries barSeries = barSeriesService.getDataSet("GC=F", false, false);
         ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(barSeries);

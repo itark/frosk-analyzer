@@ -37,8 +37,18 @@ public class TestJSecurityRepository extends BaseIntegrationTest {
 
 	@Test
 	public final void testFindByName() {
-		log.info("hello="+ ReflectionToStringBuilder.toString(securityRepo.findByName("SHPING-EUR")));
+		log.info("hello="+ ReflectionToStringBuilder.toString(securityRepo.findByName("ABB.ST")));
 	}
+
+	@Test
+	public final void testUpdate() {
+		Security security = securityRepo.findByName("ABB.ST");
+		security.setYoyGrowth(16.0);
+		security.setPegRatio(1.1);
+		securityRepo.save(security);
+		log.info("hello update="+ ReflectionToStringBuilder.toString(securityRepo.findByName("ABB.ST")));
+	}
+
 
 	@Test
 	public final void findAllByActiveAndQuoteCurrency() {

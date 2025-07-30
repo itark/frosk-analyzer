@@ -21,8 +21,12 @@ public class TestJHighLander extends BaseIntegrationTest {
 	@Test
 	public void runCleanInstall() {
 		highLander.runCleanInstall(Database.YAHOO);
-		
-	}	
-	
+	}
+
+	@Test
+	public void updateSecurityMetaData() {
+		highLander.updateSecurityMetaData();
+	}
+
 
 }

@@ -1,5 +1,6 @@
 package nu.itark.frosk.dataset;
 
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,7 @@ import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 
 @SpringBootTest
-public class TestJDataSetHelper {
+public class TestJDataSetHelper  extends BaseIntegrationTest {
 
 	@Autowired
 	DataSetHelper dataSetHelper;
@@ -26,6 +27,12 @@ public class TestJDataSetHelper {
 	@Test
 	public final void runAddFromFile() {
 		dataSetHelper.addDatasetSecuritiesFromCvsFile();
+	}
+
+	@Test
+	public final void runSaveYahooSwedishListToRepo() {
+		Security sec =dataSetHelper.getYahooSwedishSecurity("NIBE-B.ST", "nibe", "YAHOO");
+		System.out.println("sec"+sec);
 	}
 
 	@Test
@@ -73,8 +80,14 @@ public class TestJDataSetHelper {
 		System.out.println("datasetDesc="+datasetDesc);
 
 		
-	}	
-	
+	}
+
+	@Test
+	public void testModifyFile() {
+		dataSetHelper.modifyCustomListFile();
+
+
+	}
 	
 	
 }

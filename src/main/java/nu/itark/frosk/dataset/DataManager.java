@@ -2,6 +2,7 @@ package nu.itark.frosk.dataset;
 
 import java.util.logging.Logger;
 
+import nu.itark.frosk.repo.SecurityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +33,9 @@ public class DataManager {
 
 	@Autowired
 	COINBASEDataManager coinbaseDataManager;
+
+	@Autowired
+	SecurityRepository securityRepository;
 
 	public void addDatasetSecuritiesIntoDatabase(){
 		dataSetHelper.addDatasetSecuritiesFromCvsFile();
@@ -71,9 +75,14 @@ public class DataManager {
 
 
 	}
-	
-	public void insertSecurityPricesIntoDatabase(Database database, String security) {
 
+	public void updateSecurityMetaData(Database database) {
+		if (database.equals(Database.YAHOO)) {
+			yahooDataManager.updateSecurityMetaData();
+		}
+	}
+
+	public void insertSecurityPricesIntoDatabase(Database database, String security) {
 		if (database.equals(Database.YAHOO)) {
 			yahooDataManager.syncronize(security);
 		} else if (database.equals(Database.COINBASE))
@@ -81,8 +90,9 @@ public class DataManager {
 		else {
 			throw new RuntimeException("No database set!");
 		}
+	}
 
-	}	
+
 	
 	
 	

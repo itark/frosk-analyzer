@@ -38,6 +38,9 @@ public class HighLander {
 	@Value("${frosk.updatehedgeindex}")
 	private boolean updateHedgeIndex;
 
+	@Value("${frosk.updatesecuritymetadata}")
+	private boolean updateSecurityMetaData;
+
 	@Autowired
 	DataManager dataManager;
 	
@@ -79,6 +82,7 @@ public class HighLander {
 		log.info("addDatasetAndSecurities:{}",addDatasetAndSecurities);
 		log.info("addSecuritypricesFromCoinbase:{}",addSecuritypricesFromCoinbase);
 		log.info("addSecuritypricesFromYahooo:{}",addSecuritypricesFromYahoo);
+		log.info("updateSecurityMetaData:{}",updateSecurityMetaData);
 		log.info("runAllStrategies:{}",runAllStrategies);
 		log.info("runBot:{}",runBot);
 		log.info("runHedgeIndexStrategies:{}",updateHedgeIndex);
@@ -91,6 +95,9 @@ public class HighLander {
 		}
 		if (addSecuritypricesFromYahoo) {
 			addSecurityPricesFromYahoo();
+		}
+		if (updateSecurityMetaData) {
+			updateSecurityMetaData();
 		}
 		if (runAllStrategies) {
 			runAllStrategies();
@@ -119,13 +126,20 @@ public class HighLander {
 	 * 
 	 */
 	public void runClean() {
-		dataSetRepository.deleteAll();
-		securityRepository.deleteAll();
-		securityPriceRepository.deleteAll();
-		strategyIndicatorValueRepository.deleteAll();
-		tradesRepository.deleteAll();
-		featuredStrategyRepository.deleteAll();
-		strategyPerformanceRepository.deleteAll();
+		dataSetRepository.deleteAllInBatch();
+		log.info("dataSetRepository deleted");
+		securityRepository.deleteAllInBatch();
+		log.info("securityRepository deleted");
+		securityPriceRepository.deleteAllInBatch();
+		log.info("securityPriceRepository deleted");
+		strategyIndicatorValueRepository.deleteAllInBatch();
+		log.info("strategyIndicatorValueRepository deleted");
+		tradesRepository.deleteAllInBatch();
+		log.info("tradesRepository deleted");
+		featuredStrategyRepository.deleteAllInBatch();
+		log.info("featuredStrategyRepository deleted");
+		strategyPerformanceRepository.deleteAllInBatch();
+		log.info("featuredStrategyRepository deleted");
 	}
 	
 	/**
@@ -134,18 +148,25 @@ public class HighLander {
 	 */
 	private void addDataSetAndSecurities() {
 		dataManager.addDatasetSecuritiesIntoDatabase();
+		log.info("addDataSetAndSecurities executed");
 	}
 	
 	private void addSecurityPricesFromYahoo() {
 		dataManager.addSecurityPricesIntoDatabase(Database.YAHOO);
+		log.info("addSecurityPricesFromYahoo executed");
 	}
 
 	private void addSecurityPricesFromCoinbase() {
 		dataManager.addSecurityPricesIntoDatabase(Database.COINBASE);
+		log.info("addSecurityPricesFromCoinbase executed");
 	}
 
 	public void addSecurityPriceFromCoinbase(String security) {
 		dataManager.insertSecurityPricesIntoDatabase(Database.COINBASE, security);
+	}
+
+	public void updateSecurityMetaData() {
+		dataManager.updateSecurityMetaData(Database.YAHOO);
 	}
 
 	/**

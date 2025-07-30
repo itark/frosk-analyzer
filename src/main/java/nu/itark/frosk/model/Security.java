@@ -38,14 +38,24 @@ public class Security {
 	@Column(name = "quote_currency")
 	private String quoteCurrency;
 
+	@Column(name = "yoy_growth")
+	private Double yoyGrowth;
+
+	@Column(name = "peg_ratio")
+	private Double pegRatio;
+
+	@Column(name = "beta")
+	private Double beta;
+
 	@Column(name = "active", columnDefinition="BOOLEAN DEFAULT true")
 	private boolean active = true;
-	
+
     @ManyToMany(fetch = FetchType.EAGER, mappedBy = "securities")
 	private List<DataSet> datasets = new ArrayList<>();
 
 	protected Security() {
 	}
+
 
 	public Security(String name, String description, String database, String quoteCurrency) {
 		this.name = name;

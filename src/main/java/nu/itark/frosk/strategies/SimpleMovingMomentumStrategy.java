@@ -66,7 +66,7 @@ public class SimpleMovingMomentumStrategy extends AbstractStrategy implements II
         Rule exitRule;
         ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series, 5, 3);
         // ChandelierExitLongIndicator cel = new ChandelierExitLongIndicator(series);
-        setIndicatorValues(cel, "cel");
+        //setIndicatorValues(cel, "cel");
         exitRule = new UnderIndicatorRule(openPrice,cel)
                 .or(new StopLossRule(closePrice, 2))
                 .or(new TrailingStopLossRule(closePrice, DoubleNum.valueOf(2)));

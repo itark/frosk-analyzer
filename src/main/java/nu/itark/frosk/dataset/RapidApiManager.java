@@ -1,18 +1,14 @@
 package nu.itark.frosk.dataset;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.rapidapi.yhfinance.model.QuotesDTO;
-import nu.itark.frosk.rapidapi.yhfinance.model.StockHistoryDTO;
-import nu.itark.frosk.rapidapi.yhfinance.model.TickersDTO;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import nu.itark.frosk.rapidapi.yhfinance.model.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,12 +19,18 @@ import java.util.Map;
 @Slf4j
 public class RapidApiManager {
 
-    /*kalle*/
+    @Value("${rapid.api.key}")
+    String apiKey;
+    @Value("${rapid.api.host}")
+    String apiHost;
+
+    ObjectMapper objectMapper = new ObjectMapper();
+
     private WebClient webClient(String baseUrl) {
         return WebClient.builder()
                 .baseUrl(baseUrl)
-                .defaultHeader("x-rapidapi-key", "")
-                .defaultHeader("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com")
+                .defaultHeader("x-rapidapi-key", apiKey)
+                .defaultHeader("x-rapidapi-host", apiHost)
                 .build();
     }
 
@@ -79,7 +81,7 @@ public class RapidApiManager {
      * @throws IOException
      * @throws InterruptedException
      */
-    public Map<String, StockHistoryDTO.StockData> getHistory(String symbol, Interval interval) throws IOException, InterruptedException {
+    public Map<String, StockHistoryDTO.StockData> getHistory(String symbol, Interval interval)  {
         String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/history";
         String uri = "?symbol=+"+symbol+"+&interval=+"+interval.getValue()+"+&diffandsplits=false";
         StockHistoryDTO response = webClient(baseUrl).get()
@@ -90,7 +92,45 @@ public class RapidApiManager {
         return response.getBody();
     }
 
+    public Body getModuleIncomeStatement(String symbol) throws JsonProcessingException {
+        String module = "income-statement";
+        String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/modules";
+        String uri = "?ticker="+symbol+"&module="+module;
+        String json = webClient(baseUrl).get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        FinancialDataResponseDTO response = objectMapper.readValue(json, FinancialDataResponseDTO.class);
+        return response.getBody();
+    }
 
+    public StatisticsBody getModuleStatistics(String symbol) throws JsonProcessingException {
+        String module = "statistics";
+        String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/modules";
+        String uri = "?ticker="+symbol+"&module="+module;
+        String json = webClient(baseUrl).get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        YahooFinanceResponseDTO response = objectMapper.readValue(json, YahooFinanceResponseDTO.class);
+        return response.getBody();
+    }
+
+    public String getModuleRaw(String symbol, String module) throws JsonProcessingException {
+        String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/modules";
+        String uri = "?ticker="+symbol+"&module="+module;
+        String json = webClient(baseUrl).get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        return json;
+    }
+
+
+    //TODO
     public void search(String search) throws IOException, InterruptedException {
         String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/search";
         String uri = "?search="+search;
@@ -105,30 +145,6 @@ public class RapidApiManager {
 
         //return response.getBody();
     }
-
-    //Funka inte!
-    public List<Map<String, String>> getStockSymbols() {
-        final String URL = "https://finance.yahoo.com/quote/%5EOMXS30/components/";
-
-        List<Map<String, String>> stocks = new ArrayList<>();
-        try {
-            Document doc = Jsoup.connect(URL).get();
-            Elements rows = doc.select("tbody tr");
-
-            for (Element row : rows) {
-                String symbol = row.select("td:nth-child(1) a").text();
-                String name = row.select("td:nth-child(2)").text();
-                if (!symbol.isEmpty()) {
-                    stocks.add(Map.of("symbol", symbol, "name", name));
-                }
-            }
-            log.info("Fetched {} stocks from Yahoo Finance: {}", stocks.size(), stocks);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to fetch stock symbols", e);
-        }
-        return stocks;
-    }
-
 
     enum Interval {
         FIVE_MINUTES("5m"),

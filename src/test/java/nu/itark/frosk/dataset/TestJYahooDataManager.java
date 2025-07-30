@@ -8,17 +8,17 @@ import java.net.CookiePolicy;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
+import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.crypto.coinbase.advanced.Coinbase;
 import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
+import nu.itark.frosk.model.Security;
+import nu.itark.frosk.repo.SecurityRepository;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.repo.SecurityPriceRepository;
@@ -32,14 +32,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 @Slf4j
-public class TestJYahooDataManager {
-//	Logger logger = Logger.getLogger(TestJYahooDataManager.class.getName());
+public class TestJYahooDataManager extends BaseIntegrationTest  {
+
+	@Autowired
+	YAHOODataManager yahooDataManager;
 	
 	@Autowired
-	YAHOODataManager tsManager;
-	
+	SecurityPriceRepository securityPriceRepository;
+
 	@Autowired
-	SecurityPriceRepository secRepo;
+	SecurityRepository securityRepository;
 
 	@MockBean
 	Coinbase coinbase;
@@ -50,8 +52,8 @@ public class TestJYahooDataManager {
 	@Test
 	public void syncOne(){
 		
-		tsManager.syncronize("CL=F");
-//		tsManager.syncronize("VOLV-B.ST");
+		yahooDataManager.syncronize("ALFA.ST"); //	ALFA.ST
+//		yahooDataManager.syncronize("VOLV-B.ST");
 	}
 	
 //	@Test
@@ -151,9 +153,9 @@ public class TestJYahooDataManager {
 	
 	@Test
 	public void testSyncronize() {
-		tsManager.syncronize();
+		yahooDataManager.syncronize();
 	 
-		log.info("count="+secRepo.count());
+		log.info("count="+ securityPriceRepository.count());
 		
 	}	
 
@@ -175,9 +177,9 @@ public class TestJYahooDataManager {
 	
 //	@Test
 //	public void testGetDataSet() throws IOException {
-//		tsManager.getDataSet(Arrays.asList(new Security("GOOG", "desc", Database.YAHOO.toString()) ));
+//		yahooDataManager.getDataSet(Arrays.asList(new Security("GOOG", "desc", Database.YAHOO.toString()) ));
 //	 
-//		logger.info("count="+secRepo.count());
+//		logger.info("count="+securityPriceRepository.count());
 //		
 //	}	
 		
@@ -221,13 +223,14 @@ public class TestJYahooDataManager {
 		log.info("from="+from.getTime());
 		
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+	@Test
+	public void testUpdateMetaData(){
+		final Security security = securityRepository.findByName("ABB.ST");
+		log.info("security:{}",security);
+		yahooDataManager.updateWithMetaData(security);
+		final Security securityUpdate = securityRepository.findByName("ABB.ST");
+		log.info("securityUpdate:{}",securityUpdate);
+	}
+
 }

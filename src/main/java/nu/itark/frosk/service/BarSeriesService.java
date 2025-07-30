@@ -86,7 +86,11 @@ public class BarSeriesService  {
 
 	
 	public Long getSecurityId(String securityName) {
-		return securityRepository.findByName(securityName).getId();
+		final Security byName = securityRepository.findByName(securityName);
+		if (byName == null) {
+			throw new RuntimeException("Could not find Security: "+securityName+ " in database");
+		}
+		return byName.getId();
 	}
 	
 	/**
@@ -124,7 +128,6 @@ public class BarSeriesService  {
 		}
 
 		BarSeries series = new BaseBarSeriesBuilder().withName(security.get().getName()).withNumTypeOf(DoubleNum.class).build();
-		//BarSeries series = new BaseBarSeriesBuilder().withName(security.get().getName()).withNumTypeOf(DecimalNum.class).build();
 
 		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityIdOrderByTimestamp(security.get().getId());
 		

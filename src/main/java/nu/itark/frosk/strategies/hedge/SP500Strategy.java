@@ -29,6 +29,10 @@ public class SP500Strategy implements IIndicatorValue {
         this.hedgeIndexService = hedgeIndexService;
     }
 
+    /**
+     * S&P 500 Below 200-day MA
+     * @return
+     */
     public Strategy buildStrategy() {
         BarSeries barSeries = barSeriesService.getDataSet("^GSPC", false, false);
         ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(barSeries);

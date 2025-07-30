@@ -21,7 +21,9 @@ public class Scheduler {
 	@Scheduled(cron="${download.schedule}")
 	public void runDownload() {
 		log.info("::Scheduler::runDownload() about to execute");
-		highLander.runInstall(Database.COINBASE);
+		//highLander.runInstall(Database.COINBASE);
+		highLander.runInstall(Database.YAHOO);
+
 	}
 
 }

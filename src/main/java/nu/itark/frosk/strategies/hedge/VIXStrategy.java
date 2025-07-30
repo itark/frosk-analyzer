@@ -25,6 +25,10 @@ public class VIXStrategy implements IIndicatorValue {
         this.hedgeIndexService = hedgeIndexService;
     }
 
+    /**
+     * VIX > 25 and rising
+     * @return
+     */
     public Strategy buildStrategy() {
         BarSeries barSeries = barSeriesService.getDataSet("^VIX", false, false);
         VixLowRiskIndicator vixLowRiskIndicator = new VixLowRiskIndicator(barSeries, hedgeIndexService);

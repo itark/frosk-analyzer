@@ -1,5 +1,6 @@
 package nu.itark.frosk.strategies;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
@@ -10,6 +11,7 @@ import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.Profit;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.strategies.hedge.BetaStrategy;
 import nu.itark.frosk.strategies.hedge.GoldStrategy;
 import nu.itark.frosk.strategies.hedge.VIXStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -45,9 +47,8 @@ import java.util.stream.Collectors;
 
 
 @SpringBootTest
+@Slf4j
 public class TestJStrategies extends BaseIntegrationTest {
-
-	Logger logger = Logger.getLogger(TestJStrategies.class.getName());
 
 	@Autowired
 	BarSeriesService barSeriesService;
@@ -83,14 +84,25 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void runAllSingleDataSet() {
-		logger.info("runAllSingleDataSet");
 		List<ReturnObject> resultMap = new ArrayList<>();
-		String productId = "GC=F";  //^VIX
+		String productId = "FRAG.ST"; //"FRAG.ST", "ABB.ST"
+		log.info("runAllSingleDataSet, productId:{}", productId);
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
+		HighLanderStrategy hl = strategiesMap.getHighLanderStrategy();
+		resultMap.add(run(hl.buildStrategy(timeSeries),timeSeries));
+
+
+/*
+		BetaStrategy beta = strategiesMap.getBetaStrategy();
+		resultMap.add(run(beta.buildStrategy(timeSeries),timeSeries));
+*/
+
+/*
 		GoldStrategy gold = strategiesMap.getGoldStrategy();
 		resultMap.add(run(gold.buildStrategy(),timeSeries));
+*/
 
 
 /*
@@ -101,7 +113,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 
 /*		HedgeIndexStrategy hedge = strategiesMap.getHedgeIndexStrategy();
-		resultMap.add(run(hedge.buildStrategy(timeSeries),timeSeries));*/
+		resultMap.add(run(hedge.buildStrategy(timeSeries),timeSeries));
+
+*/
 
 
 //		VWAPStrategy vwap = new VWAPStrategy(timeSeries);
@@ -205,13 +219,21 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 
 		//	ADXStrategy adx = new ADXStrategy();
+/*
 			try {
 				resultMap.add(run(strategiesMap.getHedgeIndexStrategy().buildStrategy(ts), ts));
 			} catch (Exception e) {
 				System.out.println("getHedgeIndexStrategy().buildStrategy(ts), Name:"+ts.getName());
 				throw new RuntimeException(e);
 			}
+*/
 
+			try {
+				resultMap.add(run(strategiesMap.getHighLanderStrategy().buildStrategy(ts), ts));
+			} catch (Exception e) {
+				System.out.println("getHighLanderStrategy().buildStrategy(ts), Name:"+ts.getName());
+				throw new RuntimeException(e);
+			}
 
 		});
 		printResult(resultMap);
@@ -221,17 +243,28 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Test
 	public void runOneSingleDataSet2() {
-		logger.info("runOneSingleDataSet2");
-	BarSeries series = barSeriesService.getDataSet("DOGE-EUR", false, false);
-	Strategy strategy = strategiesMap.getEngulfingStrategy().buildStrategy(series);
+	log.info("runOneSingleDataSet2");
+	String securityName = "FRAG.ST";
+
+	BarSeries series = barSeriesService.getDataSet(securityName, false, false);
+	for (int i = 0; i < series.getBarCount(); i++) {
+		Bar bar = series.getBar(i);
+		log.info("series.ClosePrice:{}, EndTime:{}", bar.getClosePrice().toString(), bar.getEndTime());
+	}
+
+	BarSeries adjustedSeries = StockSplitAdjustedBarSeries.adjust(series);
+	for (int i = 0; i < adjustedSeries.getBarCount(); i++) {
+		Bar bar = adjustedSeries.getBar(i);
+		log.info("adjustedSeries.ClosePrice:{}, EndTime:{}", bar.getClosePrice().toString(), bar.getEndTime());
+	}
+
+	Strategy strategy = strategiesMap.getHighLanderStrategy().buildStrategy(adjustedSeries);
+	// Strategy strategy = strategiesMap.getHighLanderStrategy().buildStrategy(series);
+	//Strategy strategy = strategiesMap.getEngulfingStrategy().buildStrategy(series);
 	//Strategy strategy = new SimpleMovingMomentumStrategy().buildStrategy(series);
 	//Strategy strategy = new ADXStrategy(series).buildStrategy();
 
-
-	BarSeriesManager seriesManager = new BarSeriesManager(series);
 	TradingRecord tradingRecord = barSeriesService.runConfiguredStrategy(series, strategy);
-
-
 	for (Position position : tradingRecord.getPositions()) {
 		Bar barEntry = series.getBar(position.getEntry().getIndex());
 		System.out.println(series.getName()+"::barEntry="+barEntry.getEndTime());

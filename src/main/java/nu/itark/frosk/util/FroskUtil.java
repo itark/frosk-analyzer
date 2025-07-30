@@ -34,9 +34,16 @@ public class FroskUtil {
 
 
     static public BigDecimal getPercentage(BigDecimal initValue, BigDecimal targetValue) {
-        return  ((targetValue.subtract(initValue))
-                .divide(initValue, 4, FLOOR))
-                .multiply(BigDecimal.valueOf(100L));
+        if (initValue.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            return  ((targetValue.subtract(initValue))
+                    .divide(initValue, 4, FLOOR))
+                    .multiply(BigDecimal.valueOf(100L));
+        } catch (Exception e) {
+            throw new RuntimeException("initValue:"+initValue,e);
+        }
     }
 
 

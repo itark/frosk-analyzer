@@ -44,11 +44,6 @@ import java.util.List;
 public class HedgeIndexStrategy  implements IIndicatorValue {
     final HedgeIndexService hedgeIndexService;
 
-    /**
-     * OBS ongoing
-     * @param barSeries
-     * @return
-     */
     public Strategy buildStrategy(BarSeries barSeries) {
         Rule entryRule = new HedgeIndexRiskOnRule(barSeries, hedgeIndexService);
         Rule exitRule = new HedgeIndexRiskOffRule(barSeries, hedgeIndexService);

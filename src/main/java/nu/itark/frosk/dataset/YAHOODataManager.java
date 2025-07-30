@@ -1,14 +1,14 @@
 package nu.itark.frosk.dataset;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.SecurityPrice;
+import nu.itark.frosk.rapidapi.yhfinance.model.Body;
+import nu.itark.frosk.rapidapi.yhfinance.model.SimpleFinancialValue;
+import nu.itark.frosk.rapidapi.yhfinance.model.StatisticsBody;
 import nu.itark.frosk.rapidapi.yhfinance.model.StockHistoryDTO;
+import nu.itark.frosk.repo.SecurityPriceRepository;
+import nu.itark.frosk.repo.SecurityRepository;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,15 +16,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.model.Security;
-import nu.itark.frosk.model.SecurityPrice;
-import nu.itark.frosk.repo.SecurityPriceRepository;
-import nu.itark.frosk.repo.SecurityRepository;
-import yahoofinance.Stock;
-import yahoofinance.YahooFinance;
-import yahoofinance.histquotes.HistoricalQuote;
-import yahoofinance.histquotes.Interval;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -42,7 +39,10 @@ import yahoofinance.histquotes.Interval;
 @Slf4j
 public class YAHOODataManager  {
 	@Value("${frosk.download.years}")
-	public int years;	
+	public int years;
+
+	@Value("${rapid.api.enabled}")
+	boolean apiEnabled;
 
 	@Autowired
 	SecurityPriceRepository securityPriceRepository;		
@@ -53,15 +53,21 @@ public class YAHOODataManager  {
 	@Autowired
 	RapidApiManager rapidApiManager;
 
+	SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
 
 	/**
 	 * Download prices and insert into database.
 	 */
 	public void syncronize() {
+		if (!apiEnabled) {
+			log.info("sync="+Database.YAHOO.toString()+" apiEnabled="+apiEnabled+", aborting.");
+			return;
+		}
 		log.info("sync="+Database.YAHOO.toString());
 		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.YAHOO.toString(), true);
 
-		securities.forEach(sec -> log.info("NAME="+ sec.getName()));
+		// securities.forEach(sec -> log.info("NAME="+ sec.getName()));
 		
 		List<SecurityPrice> spList;
 		try {
@@ -71,6 +77,7 @@ public class YAHOODataManager  {
 			throw new RuntimeException(e);
 		}
 
+		log.info("Adding:{} days",spList.size());
 		spList.forEach((sp) -> {
 			try {
 				securityPriceRepository.save(sp);
@@ -102,6 +109,7 @@ public class YAHOODataManager  {
 			throw new RuntimeException(e);
 		}
 
+		log.info("Adding:{} days",spList.size());
 		spList.forEach((sp) -> {
 			try {
 				securityPriceRepository.save(sp);
@@ -121,8 +129,7 @@ public class YAHOODataManager  {
 		if (stockQuotes != null) {
 			stockQuotes.forEach((sec_id, quote) -> {
 				quote.forEach(row -> {
-					SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
-                    Date date;
+					Date date;
                     try {
                         date = formatter.parse(row.getDate());
                     } catch (ParseException e) {
@@ -137,9 +144,9 @@ public class YAHOODataManager  {
 		return securityPrices;
 	}
 	
-	private Map<Long, Collection<StockHistoryDTO.StockData>> getStocks(Iterable<Security> securities) throws IOException {
+	private Map<Long, Collection<StockHistoryDTO.StockData>> getStocks(Iterable<Security> securities)  {
 		log.info("getStocks(Iterable<Security> securities");
-		Map<Long, Collection<StockHistoryDTO.StockData>> stocks = new HashMap<Long, Collection<StockHistoryDTO.StockData>>();
+		Map<Long, Collection<StockHistoryDTO.StockData>> stocks = new HashMap<>();
 
 		securities.forEach((security) -> {
 			Calendar from = Calendar.getInstance(TimeZone.getDefault());
@@ -167,16 +174,12 @@ public class YAHOODataManager  {
 
 			if (!isToday) {
 				log.info("Retrieving history for " + security.getName() + " from " + from.getTime());
-				Stock stock;
 				try {
 					final Map<String, StockHistoryDTO.StockData> history = rapidApiManager.getHistory(security.getName(), RapidApiManager.Interval.ONE_DAY);
 					if (Objects.nonNull(history)) {
 						Map<String, StockHistoryDTO.StockData> filterFromHistory= filterFromHistory(from, history);
 						stocks.put(security.getId(), filterFromHistory.values());
 					}
-				} catch (FileNotFoundException fe) {
-					log.info("Not found: "+ fe.getMessage() + " continues...");
-					// continue
 				} catch (Exception e) {
 					log.error("ERROR:", e);
 					// throw e;
@@ -192,7 +195,6 @@ public class YAHOODataManager  {
 	}
 
 	private Map<String, StockHistoryDTO.StockData> filterFromHistory(Calendar from, Map<String, StockHistoryDTO.StockData> history) {
-		SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
 		return history.entrySet().stream()
 				.filter(entry -> {
 					try {
@@ -205,5 +207,97 @@ public class YAHOODataManager  {
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 	}
 
-	
+
+	public void updateSecurityMetaData() {
+		if (!apiEnabled) {
+			log.info("updateSecurityMetaData, apiEnabled="+apiEnabled+", aborting.");
+			return;
+		}
+		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.YAHOO.toString(), true);
+		securities.forEach((security -> {
+			if (security.getName().contains("^") || security.getName().contains("=")) return;
+			updateWithMetaData(security);
+		}));
+	}
+
+	void updateWithMetaData(Security security) {
+		double yoyGrowth = 0;
+		try {
+			Body module = rapidApiManager.getModuleIncomeStatement(security.getName());
+			if (module.getIncomeStatementHistory().getIncomeStatementHistory().size() >= 2) {
+				double totalRevenueThisYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(0).getTotalRevenue().getRaw();
+				double totalRevenueLastYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(1).getTotalRevenue().getRaw();
+				yoyGrowth =  ((totalRevenueThisYear - totalRevenueLastYear) / totalRevenueLastYear) * 100.0;
+			}
+		} catch (Exception e) {
+			log.error("Error in IncomeStatement for:{}",security, e);
+		}
+		security.setYoyGrowth(yoyGrowth);
+
+		StatisticsBody moduleStatistics;
+		double pegRatio = 0;
+		double beta = 0;
+		try {
+			moduleStatistics = rapidApiManager.getModuleStatistics(security.getName());
+
+			if (moduleStatistics.getPegRatio().length == 0) {
+				// This gives you ONLY 1-year growth estimate
+				double forwardPE = (double) moduleStatistics.getForwardPE().getRaw();
+				double forwardEps = (double) moduleStatistics.getForwardEps().getRaw();
+				double trailingEps = (double) moduleStatistics.getTrailingEps().getRaw();
+				double oneYearGrowthRate = ((forwardEps - trailingEps) / trailingEps) * 100;
+				pegRatio = forwardPE / oneYearGrowthRate;
+			} else {
+				pegRatio = (double) moduleStatistics.getPegRatio()[0];
+			}
+
+			if (moduleStatistics.getBeta() != null) {
+				beta = (double) moduleStatistics.getBeta().getRaw();
+			}
+
+		} catch (Exception e) {
+			log.error("Error in Statistics for:{}",security.getName(), e);
+		}
+		security.setPegRatio(pegRatio);
+		security.setBeta(beta);
+		securityRepository.save(security);
+	}
+
+
+/*
+	public Double getYoYGrowth(String symbol) {
+		double yoyGrowth = 0;
+		try {
+			Body module = rapidApiManager.getModuleIncomeStatement(symbol);
+			if (module.getIncomeStatementHistory().getIncomeStatementHistory().size() < 2) return yoyGrowth;
+			double totalRevenueThisYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(0).getTotalRevenue().getRaw();
+			double totalRevenueLastYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(1).getTotalRevenue().getRaw();
+			yoyGrowth =  ((totalRevenueThisYear - totalRevenueLastYear) / totalRevenueLastYear) * 100.0;
+		} catch (Exception e) {
+			log.error("Error in IncomeStatementHistory for:{}",symbol, e);
+			}
+		return yoyGrowth;
+	}
+
+	public double getPegRatio(String symbol) {
+		double pegRatio = 0;
+		try {
+			StatisticsBody module = rapidApiManager.getModuleStatistics(symbol);
+			if (module.getPegRatio().length == 0) {
+				// This gives you ONLY 1-year growth estimate
+				double forwardPE = (double) module.getForwardPE().getRaw();
+				double forwardEps = (double) module.getForwardEps().getRaw();
+				double trailingEps = (double) module.getTrailingEps().getRaw();
+				double oneYearGrowthRate = ((forwardEps - trailingEps) / trailingEps) * 100;
+				pegRatio = forwardPE / oneYearGrowthRate;
+			} else {
+				pegRatio = (double) module.getPegRatio()[0];
+			}
+
+		} catch (Exception e) {
+			log.error("Error in PegRatio for:{}",symbol, e);
+		}
+		return pegRatio;
+	}
+*/
 }

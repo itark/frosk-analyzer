@@ -22,6 +22,10 @@ public class CrudeOilStrategy implements IIndicatorValue {
     final BarSeriesService barSeriesService;
     final String securityName = "CL=F";
 
+    /**
+     * Drops >5% in last 5 days
+     * @return
+     */
     public Strategy buildStrategy() {
         final BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
         CrudeOilRiskOnIndicator crudeOilRiskOnIndicator = new CrudeOilRiskOnIndicator(barSeries);

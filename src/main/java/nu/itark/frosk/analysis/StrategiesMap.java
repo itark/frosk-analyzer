@@ -59,6 +59,10 @@ public class StrategiesMap {
 	private GoldStrategy goldStrategy;
 	@Autowired
 	private SP500Strategy sp500Strategy;
+	@Autowired
+	private BetaStrategy betaStrategy;
+	@Autowired
+	private HighLanderStrategy highLanderStrategy;
 
 	private List<Strategy> strategies = null;
 
@@ -83,6 +87,8 @@ public class StrategiesMap {
 		strategies.add(crudeOilStrategy.getClass().getSimpleName());
 		strategies.add(goldStrategy.getClass().getSimpleName());
 		strategies.add(sp500Strategy.getClass().getSimpleName());
+		strategies.add(betaStrategy.getClass().getSimpleName());
+		strategies.add(highLanderStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -111,6 +117,9 @@ public class StrategiesMap {
 		strategies.add(vixStrategy.buildStrategy());
 		strategies.add(crudeOilStrategy.buildStrategy());
 		strategies.add(goldStrategy.buildStrategy());
+		strategies.add(sp500Strategy.buildStrategy());
+		strategies.add(betaStrategy.buildStrategy(series));
+		strategies.add(highLanderStrategy.buildStrategy(series));
 
 		this.strategies = strategies;
 		return strategies;
@@ -156,9 +165,12 @@ public class StrategiesMap {
 			return crudeOilStrategy.buildStrategy();
 		} else if (strategy.equals(GoldStrategy.class.getSimpleName())) {
 			return goldStrategy.buildStrategy();
-		}
-		else if (strategy.equals(SP500Strategy.class.getSimpleName())) {
-			return goldStrategy.buildStrategy();
+		} else if (strategy.equals(SP500Strategy.class.getSimpleName())) {
+			return sp500Strategy.buildStrategy();
+		} else if (strategy.equals(BetaStrategy.class.getSimpleName())) {
+			return betaStrategy.buildStrategy(series);
+		} else if (strategy.equals(HighLanderStrategy.class.getSimpleName())) {
+			return highLanderStrategy.buildStrategy(series);
 		}
 		else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
@@ -204,6 +216,10 @@ public class StrategiesMap {
 			return goldStrategy.getIndicatorValues(); //TODO
 		} else if (strategyName.equals(SP500Strategy.class.getSimpleName())) {
 			return sp500Strategy.getIndicatorValues(); //TODO
+		} else if (strategyName.equals(BetaStrategy.class.getSimpleName())) {
+			return betaStrategy.getIndicatorValues(); //TODO
+		} else if (strategyName.equals(HighLanderStrategy.class.getSimpleName())) {
+			return highLanderStrategy.getIndicatorValues(); //TODO
 		}
 		else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);

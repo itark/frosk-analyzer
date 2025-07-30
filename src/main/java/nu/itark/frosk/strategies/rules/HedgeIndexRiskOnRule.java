@@ -44,7 +44,7 @@ public class HedgeIndexRiskOnRule extends AbstractRule {
      */
     @Override
     public boolean isSatisfied(int index, TradingRecord tradingRecord) {
-        return !hedgeIndexService.risk(barSeries.getBar(index).getEndTime(), barSeries.getName());
+        return !hedgeIndexService.risk(barSeries.getBar(index).getEndTime());
     }
 
 }
