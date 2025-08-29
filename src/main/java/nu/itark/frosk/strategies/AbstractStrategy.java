@@ -45,14 +45,20 @@ public abstract  class AbstractStrategy {
         return exitRule;
     }
 
-    public double getPEGRatio(String symbol) {
+    public Double getPEGRatio(String symbol) {
         final Security security = securityRepository.findByName(symbol);
-        return security.getPegRatio();
+        return security.getPegRatio() != null ? security.getPegRatio() : Double.valueOf(0.0);
     }
 
-    public double getYoYGrowth(String symbol) {
+    public Double getBeta(String symbol) {
         final Security security = securityRepository.findByName(symbol);
-        return security.getYoyGrowth();
+        return security.getBeta() != null ? security.getBeta() : Double.valueOf(0.0);
+    }
+
+
+    public Double getYoYGrowth(String symbol) {
+        final Security security = securityRepository.findByName(symbol);
+        return security.getYoyGrowth() != null ? security.getYoyGrowth() : Double.valueOf(0.0);
     }
 
 

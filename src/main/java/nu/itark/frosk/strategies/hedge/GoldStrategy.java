@@ -1,5 +1,6 @@
 package nu.itark.frosk.strategies.hedge;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.service.BarSeriesService;
@@ -17,16 +18,11 @@ import org.ta4j.core.num.Num;
 import java.util.List;
 
 @Component
-@Slf4j
+@RequiredArgsConstructor
 public class GoldStrategy implements IIndicatorValue {
     final BarSeriesService barSeriesService;
     final HedgeIndexService hedgeIndexService;
     int lookbackPeriod = 10;
-
-    public GoldStrategy(BarSeriesService barSeriesService, HedgeIndexService hedgeIndexService) {
-        this.barSeriesService = barSeriesService;
-        this.hedgeIndexService = hedgeIndexService;
-    }
 
     /**
      * Breaks above 10-day high

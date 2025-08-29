@@ -41,6 +41,9 @@ public class FeaturedStrategy {
 	@Column(name = "security_name")
 	private String securityName;
 
+	@Column(name = "security_desc")
+	private String securityDesc;
+
 	@Column(name = "total_profit")
 	private BigDecimal totalProfit;
 

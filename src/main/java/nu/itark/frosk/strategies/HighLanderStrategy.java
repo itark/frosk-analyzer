@@ -2,9 +2,7 @@ package nu.itark.frosk.strategies;
 
 import lombok.RequiredArgsConstructor;
 import nu.itark.frosk.model.StrategyIndicatorValue;
-import nu.itark.frosk.strategies.hedge.BetaStrategy;
-import nu.itark.frosk.strategies.hedge.HedgeIndexStrategy;
-import nu.itark.frosk.strategies.hedge.SimplePEGRatioStrategy;
+import nu.itark.frosk.strategies.hedge.*;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
@@ -17,7 +15,9 @@ import java.util.List;
 public class HighLanderStrategy extends AbstractStrategy implements IIndicatorValue {
     private final HedgeIndexStrategy hedgeIndexStrategy;
     private final BetaStrategy betaStrategy;
-    private final SimplePEGRatioStrategy simplePEGRatioStrategy;
+    private final YoYRevenueGrowthStrategy yoYRevenueGrowthStrategy;
+    private final PEGRatioStrategy pegRatioStrategy;
+    private final GoldenCrossRelativeStrengthStrategy goldenCrossRelativeStrengthStrategy;
 
     /**
      * Builds a composite trading strategy by combining hedge index and beta strategies.
@@ -27,12 +27,12 @@ public class HighLanderStrategy extends AbstractStrategy implements IIndicatorVa
      *   <li>Beta strategy - provides beta-based trading signals</li>
      *   <li>Uses logical AND operation to combine both strategies</li>
      *   <li>Both conditions from both strategies must be satisfied for trades to execute</li>
-     *   @todo Revenue Growth (YoY)
-     *   @todo PEG Ratio:
      *   @todo Price above 50D & 200D MA
      *   @todo Outperformance vs. SPY over 3 months
-     *   @todo RSI: 55–70 preferred
-     * </ul>
+     *   VVIX > 110 and rising
+     *   SKEW > 140
+     *   SDEX > 110 or rising fast
+       * </ul>
      *
      * <p>The method performs the following operations:</p>
      * <ul>
@@ -61,13 +61,15 @@ public class HighLanderStrategy extends AbstractStrategy implements IIndicatorVa
         super.setInherentExitRule();
         indicatorValues.clear();
         if (series == null) {
-            throw new IllegalArgumentException("Series cannot be null");
+            throw new IllegalArgumentException("Series cannot be null, for:"+series.getName());
         }
         super.barSeries = series;
 
         Strategy strategy = hedgeIndexStrategy.buildStrategy(series)
                             .and(betaStrategy.buildStrategy(series))
-                            .and(simplePEGRatioStrategy.buildStrategy(series));
+                            .and(pegRatioStrategy.buildStrategy(series))
+                            .and(goldenCrossRelativeStrengthStrategy.buildStrictGoldenCrossStrategy(series))
+                            .and(yoYRevenueGrowthStrategy.buildStrategy(series));
         return strategy;
     }
 

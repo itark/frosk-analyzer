@@ -52,8 +52,8 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 	@Test
 	public void syncOne(){
 		
-		yahooDataManager.syncronize("ALFA.ST"); //	ALFA.ST
-//		yahooDataManager.syncronize("VOLV-B.ST");
+		yahooDataManager.syncronize("ESSITY-B.ST"); //	ALFA.ST, AAK.ST
+		//yahooDataManager.syncronize("VOLV-B.ST");
 	}
 	
 //	@Test
@@ -226,10 +226,11 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 
 	@Test
 	public void testUpdateMetaData(){
-		final Security security = securityRepository.findByName("ABB.ST");
+		String securityName = "ABB.ST"; //ABB.ST, ESSITY-B.ST, MER.ST
+		final Security security = securityRepository.findByName(securityName);
 		log.info("security:{}",security);
 		yahooDataManager.updateWithMetaData(security);
-		final Security securityUpdate = securityRepository.findByName("ABB.ST");
+		final Security securityUpdate = securityRepository.findByName(securityName);
 		log.info("securityUpdate:{}",securityUpdate);
 	}
 

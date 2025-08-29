@@ -11,6 +11,7 @@ import java.util.Date;
 @Builder
 public class OpenFeaturedStrategyDTO {
     private String securityName;
+    private String securityDesc;
     private String name;
     private BigDecimal openPrice;
     private BigDecimal totalProfit;

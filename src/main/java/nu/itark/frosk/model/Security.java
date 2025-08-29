@@ -47,6 +47,18 @@ public class Security {
 	@Column(name = "beta")
 	private Double beta;
 
+	@Column(name = "trailing_eps")
+	private Double trailingEps;
+
+	@Column(name = "forward_eps")
+	private Double forwardEps;
+
+	@Column(name = "trailing_pe")
+	private Double trailingPe;
+
+	@Column(name = "forward_pe")
+	private Double forwardPe;
+
 	@Column(name = "active", columnDefinition="BOOLEAN DEFAULT true")
 	private boolean active = true;
 
@@ -62,7 +74,6 @@ public class Security {
 		this.description = description;
 		this.database = database;
 		this.quoteCurrency = quoteCurrency;
-		this.active = true;
 	}
 
 }

@@ -7,10 +7,7 @@ import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.model.StrategyPerformance;
 import nu.itark.frosk.model.StrategyTrade;
-import nu.itark.frosk.repo.FeaturedStrategyRepository;
-import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
-import nu.itark.frosk.repo.StrategyPerformanceRepository;
-import nu.itark.frosk.repo.StrategyTradeRepository;
+import nu.itark.frosk.repo.*;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
 import nu.itark.frosk.strategies.hedge.*;
@@ -50,6 +47,9 @@ public class StrategyAnalysis {
 	@Value("${frosk.database.only:YAHOO}")
 	private String databaseOnly;
 
+	@Value("${frosk.strategy.only}")
+	private String strategyOnly;
+
 	@Value("${frosk.strategies.hedge.strategy}")
 	private String[] excludeHedgeStrategies;
 
@@ -58,6 +58,9 @@ public class StrategyAnalysis {
 
 	@Autowired
 	FeaturedStrategyRepository featuredStrategyRepository;
+
+	@Autowired
+	SecurityRepository securityRepository;
 	
 	@Autowired
     StrategyTradeRepository tradesRepository;
@@ -93,7 +96,9 @@ public class StrategyAnalysis {
 		if (Objects.isNull(strategy)  && Objects.isNull(security_id)) {
 			List<String> strategies = strategiesMap.buildStrategiesMap();
 			strategies.removeAll(List.of(excludeHedgeStrategies));
-
+			if (strategyOnly != null) {
+				strategies = List.of(strategyOnly);
+			}
 			strategies.forEach(strategyName -> {
 				try {
 					runStrategy(strategyName, barSeriesService.getDataSet(Database.valueOf(databaseOnly)));
@@ -151,10 +156,11 @@ public class StrategyAnalysis {
 
 	public void runHedgeIndexStrategies() {
 		runVix();
+		runVVix();
 		runCrudeOil();
 		runGold();
 		runSP500();
-		//TODO: Equities NASDAQ:S&P NASDAQ underperforms S&P over 30 days
+		runNasdaqVsSP();
 		//TODO: FX USD/JPY Rising above 150
 		//TODO: FX AUD/USD Drops >2% in last 5 days
 		//TODO: FX DXY Above 105 and rising
@@ -169,6 +175,11 @@ public class StrategyAnalysis {
 	private void runVix() {
 		Long sec_id = barSeriesService.getSecurityId("^VIX");
 		run(VIXStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runVVix() {
+		Long sec_id = barSeriesService.getSecurityId("^VVIX");
+		run(VVIXStrategy.class.getSimpleName(), sec_id);
 	}
 
 	private void runCrudeOil() {
@@ -187,8 +198,8 @@ public class StrategyAnalysis {
 	}
 
 	private void runNasdaqVsSP() {
-		//Long sec_id = barSeriesService.getSecurityId("^GSPC");
-		run(NasdaqVsSPStrategy.class.getSimpleName(), null);
+		Long sec_id = barSeriesService.getSecurityId("^IXIC");
+		run(NasdaqVsSPStrategy.class.getSimpleName(), sec_id);
 	}
 
 	private void runStrategy(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException{
@@ -254,6 +265,7 @@ public class StrategyAnalysis {
 				fs = new FeaturedStrategy();
 				fs.setName(strategy);
 				fs.setSecurityName(series.getName());
+				fs.setSecurityDesc(securityRepository.findByName(series.getName()).getDescription());
 			}
 			fs.setPeriod(getPeriod(series));
 			fs.setLatestTrade(latestTradeDate);

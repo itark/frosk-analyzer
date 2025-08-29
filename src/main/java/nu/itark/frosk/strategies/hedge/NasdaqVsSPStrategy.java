@@ -1,5 +1,6 @@
 package nu.itark.frosk.strategies.hedge;
 
+import lombok.RequiredArgsConstructor;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.IIndicatorValue;
@@ -15,24 +16,22 @@ import org.ta4j.core.rules.UnderIndicatorRule;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class NasdaqVsSPStrategy implements IIndicatorValue {
-
     private final BarSeriesService barSeriesService;
-
-    public NasdaqVsSPStrategy(BarSeriesService barSeriesService) {
-        this.barSeriesService = barSeriesService;
-    }
 
     /**
      * Rule: NASDAQ underperforms S&P over 30 days.
      * Entry signal when NASDAQ return over 30 bars < S&P return over 30 bars.
+     *
+     *
      */
     public Strategy buildStrategy() {
         BarSeries nasdaqSeries = barSeriesService.getDataSet("^IXIC", false, false);
         BarSeries sp500Series = barSeriesService.getDataSet("^GSPC", false, false);
 
         // Align both series by timestamp and truncate to match
-        List<BarSeries> aligned = BarSeriesAligner.alignAndTruncate(List.of(nasdaqSeries, sp500Series), 250);
+        List<BarSeries> aligned = BarSeriesAligner.alignAndTruncate(List.of(nasdaqSeries, sp500Series),  nasdaqSeries.getBarCount());
         BarSeries alignedNasdaq = aligned.get(0);
         BarSeries alignedSP500 = aligned.get(1);
 

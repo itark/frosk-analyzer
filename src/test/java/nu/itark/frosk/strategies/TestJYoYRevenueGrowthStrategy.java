@@ -3,6 +3,8 @@ package nu.itark.frosk.strategies;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
+import nu.itark.frosk.strategies.hedge.PEGRatioStrategy;
+import nu.itark.frosk.strategies.hedge.YoYRevenueGrowthStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,19 +19,18 @@ import java.util.List;
 
 @Slf4j
 @SpringBootTest
-public class TestJHighLanderStrategy extends BaseIntegrationTest {
+public class TestJYoYRevenueGrowthStrategy extends BaseIntegrationTest {
 
     @Autowired
     BarSeriesService barSeriesService;
 
     @Autowired
-    HighLanderStrategy highLanderStrategy;
+    YoYRevenueGrowthStrategy yoYRevenueGrowthStrategy;
 
     @Test
     public final void run() throws Exception {
-        String securityName = "ESSITY-B.ST";
-        BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
-        Strategy strategy = highLanderStrategy.buildStrategy(barSeries);
+        BarSeries barSeries = barSeriesService.getDataSet("AAK.ST", false, false);
+        Strategy strategy = yoYRevenueGrowthStrategy.buildStrategy(barSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Position> positions = tradingRecord.getPositions();
@@ -43,7 +44,7 @@ public class TestJHighLanderStrategy extends BaseIntegrationTest {
             Num closePriceSell = barExit.getClosePrice();
             Num profit = closePriceSell.minus(closePriceBuy);
 
-            log.info("profit="+profit);
+            // logger.info("profit="+profit);
 
             log.info("Position: {}", ReflectionToStringBuilder.toString(position));
 

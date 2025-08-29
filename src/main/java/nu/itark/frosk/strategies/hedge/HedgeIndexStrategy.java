@@ -41,7 +41,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class HedgeIndexStrategy  implements IIndicatorValue {
+public class HedgeIndexStrategy implements IIndicatorValue {
     final HedgeIndexService hedgeIndexService;
 
     public Strategy buildStrategy(BarSeries barSeries) {

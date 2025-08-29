@@ -29,7 +29,7 @@ public class TestJBetaStrategy extends BaseIntegrationTest {
 
     @Test
     public final void run() throws Exception {
-        BarSeries barSeries = barSeriesService.getDataSet("ABB.ST", false, false);
+        BarSeries barSeries = barSeriesService.getDataSet("AAK.ST", false, false);
         Strategy strategy = betaStrategy.buildStrategy(barSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);

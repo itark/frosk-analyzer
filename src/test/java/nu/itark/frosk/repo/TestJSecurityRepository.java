@@ -42,11 +42,13 @@ public class TestJSecurityRepository extends BaseIntegrationTest {
 
 	@Test
 	public final void testUpdate() {
-		Security security = securityRepo.findByName("ABB.ST");
+		String name = "AAK.ST";
+		Security security = securityRepo.findByName(name);
 		security.setYoyGrowth(16.0);
 		security.setPegRatio(1.1);
+		security.setBeta(1.6);
 		securityRepo.save(security);
-		log.info("hello update="+ ReflectionToStringBuilder.toString(securityRepo.findByName("ABB.ST")));
+		log.info("hello update="+ ReflectionToStringBuilder.toString(securityRepo.findByName(name)));
 	}
 
 
@@ -59,22 +61,5 @@ public class TestJSecurityRepository extends BaseIntegrationTest {
 
 	}
 
-
-//	@Test
-//	public void testFindBySEcurity() {
-//	Security security = securityRepo.findById(new Long(2418800));
-//	if (security != null) {
-//		
-//		logger.info("security="+security.getName());
-//	}
-//	FeaturedStrategy fs = fsRepo.findBySecurity(security);
-//	Assert.assertNotNull(fs);
-//	logger.info("fs"+fs);
-	
-	
-//	}		
-	
-	
-	
 	
 }

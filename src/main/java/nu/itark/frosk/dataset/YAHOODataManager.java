@@ -220,8 +220,21 @@ public class YAHOODataManager  {
 		}));
 	}
 
+
+	/**
+	 * Includes call to Yahoo Finance using RapidApiManager
+	 * @param security
+	 */
 	void updateWithMetaData(Security security) {
 		double yoyGrowth = 0;
+		double pegRatio = 0;
+		double beta = 0;
+
+		double trailingEps = 0;
+		double forwardEps = 0;
+		double trailingPe = 0;
+		double forwardPe = 0;
+
 		try {
 			Body module = rapidApiManager.getModuleIncomeStatement(security.getName());
 			if (module.getIncomeStatementHistory().getIncomeStatementHistory().size() >= 2) {
@@ -235,24 +248,32 @@ public class YAHOODataManager  {
 		security.setYoyGrowth(yoyGrowth);
 
 		StatisticsBody moduleStatistics;
-		double pegRatio = 0;
-		double beta = 0;
 		try {
 			moduleStatistics = rapidApiManager.getModuleStatistics(security.getName());
-
 			if (moduleStatistics.getPegRatio().length == 0) {
-				// This gives you ONLY 1-year growth estimate
-				double forwardPE = (double) moduleStatistics.getForwardPE().getRaw();
-				double forwardEps = (double) moduleStatistics.getForwardEps().getRaw();
-				double trailingEps = (double) moduleStatistics.getTrailingEps().getRaw();
-				double oneYearGrowthRate = ((forwardEps - trailingEps) / trailingEps) * 100;
-				pegRatio = forwardPE / oneYearGrowthRate;
+				// This gives only 1-year growth estimate
+				double forwardPERaw  = (double) ((LinkedHashMap) moduleStatistics.getForwardPE()).get("raw");
+				double forwardEpsRaw = (double) ((LinkedHashMap) moduleStatistics.getForwardEps()).get("raw");
+				double trailingEpsRaw = getDoubleFromRaw(((LinkedHashMap) moduleStatistics.getTrailingEps()).get("raw"));
+				double oneYearGrowthRate = ((forwardEpsRaw - trailingEpsRaw) / trailingEpsRaw) * 100;
+				pegRatio = forwardPERaw / oneYearGrowthRate;
 			} else {
 				pegRatio = (double) moduleStatistics.getPegRatio()[0];
 			}
-
 			if (moduleStatistics.getBeta() != null) {
-				beta = (double) moduleStatistics.getBeta().getRaw();
+				beta = (double)  ((LinkedHashMap) moduleStatistics.getBeta()).get("raw");
+			}
+			if (moduleStatistics.getTrailingEps() != null) {
+				trailingEps = (double)  ((LinkedHashMap) moduleStatistics.getTrailingEps()).get("raw");
+			}
+			if (moduleStatistics.getForwardEps() != null) {
+				forwardEps = (double)  ((LinkedHashMap) moduleStatistics.getForwardEps()).get("raw");
+			}
+			if (moduleStatistics.getTrailingPE() != null) {
+				trailingPe = (double)  ((LinkedHashMap) moduleStatistics.getTrailingPE()).get("raw");
+			}
+			if (moduleStatistics.getForwardPE() != null) {
+				forwardPe = (double)  ((LinkedHashMap) moduleStatistics.getForwardPE()).get("raw");
 			}
 
 		} catch (Exception e) {
@@ -260,44 +281,32 @@ public class YAHOODataManager  {
 		}
 		security.setPegRatio(pegRatio);
 		security.setBeta(beta);
+		security.setTrailingEps(trailingEps);
+		security.setForwardEps(forwardEps);
+		security.setTrailingPe(trailingPe);
+		security.setForwardPe(forwardPe);
 		securityRepository.save(security);
 	}
 
-
-/*
-	public Double getYoYGrowth(String symbol) {
-		double yoyGrowth = 0;
-		try {
-			Body module = rapidApiManager.getModuleIncomeStatement(symbol);
-			if (module.getIncomeStatementHistory().getIncomeStatementHistory().size() < 2) return yoyGrowth;
-			double totalRevenueThisYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(0).getTotalRevenue().getRaw();
-			double totalRevenueLastYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(1).getTotalRevenue().getRaw();
-			yoyGrowth =  ((totalRevenueThisYear - totalRevenueLastYear) / totalRevenueLastYear) * 100.0;
-		} catch (Exception e) {
-			log.error("Error in IncomeStatementHistory for:{}",symbol, e);
-			}
-		return yoyGrowth;
-	}
-
-	public double getPegRatio(String symbol) {
-		double pegRatio = 0;
-		try {
-			StatisticsBody module = rapidApiManager.getModuleStatistics(symbol);
-			if (module.getPegRatio().length == 0) {
-				// This gives you ONLY 1-year growth estimate
-				double forwardPE = (double) module.getForwardPE().getRaw();
-				double forwardEps = (double) module.getForwardEps().getRaw();
-				double trailingEps = (double) module.getTrailingEps().getRaw();
-				double oneYearGrowthRate = ((forwardEps - trailingEps) / trailingEps) * 100;
-				pegRatio = forwardPE / oneYearGrowthRate;
-			} else {
-				pegRatio = (double) module.getPegRatio()[0];
-			}
-
-		} catch (Exception e) {
-			log.error("Error in PegRatio for:{}",symbol, e);
+	public static double getDoubleFromRaw(Object rawValue) {
+		if (rawValue == null) {
+			return 0.0; // or Double.NaN, or throw, depending on your needs
 		}
-		return pegRatio;
+		// If it's already a Number, cast and return
+		if (rawValue instanceof Number) {
+			return ((Number) rawValue).doubleValue();
+		}
+		// If it's a String, try to parse it
+		if (rawValue instanceof String) {
+			try {
+				return Double.parseDouble((String) rawValue);
+			} catch (NumberFormatException e) {
+				return 0.0;
+			}
+		}
+		// Handle other unexpected types
+		log.warn("Unexpected type for 'raw': " + rawValue.getClass().getSimpleName() + " value: " + rawValue);
+		return 0.0;
 	}
-*/
+
 }

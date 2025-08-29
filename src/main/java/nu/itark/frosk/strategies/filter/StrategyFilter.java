@@ -97,6 +97,7 @@ public class StrategyFilter {
         return OpenFeaturedStrategyDTO.builder()
                 .name(fs.getName().replace("Strategy",""))
                 .securityName(fs.getSecurityName())
+                .securityDesc(fs.getSecurityDesc())
                 .openPrice(openPrice)
                 .openTradeDate(DateFormatUtils.format(lastBuyTrade.getDate(), "yyyy-MM-dd"))
                 .totalProfit(FroskUtil.getPercentage(openPrice, closePrice))

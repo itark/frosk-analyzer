@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.List;
+import java.util.Map;
+
 @Data
 public class StatisticsBody {
 
@@ -18,18 +21,20 @@ public class StatisticsBody {
     private FinancialValue netIncomeToCommon;
 
     // Simple financial values (raw + fmt only)
-    private SimpleFinancialValue forwardPE;
-    private SimpleFinancialValue profitMargins;
-    private SimpleFinancialValue heldPercentInsiders;
-    private SimpleFinancialValue heldPercentInstitutions;
-    private SimpleFinancialValue beta;
-    private SimpleFinancialValue bookValue;
-    private SimpleFinancialValue priceToBook;
-    private SimpleFinancialValue trailingEps;
-    private SimpleFinancialValue forwardEps;
-    private SimpleFinancialValue enterpriseToRevenue;
-    private SimpleFinancialValue enterpriseToEbitda;
-    private SimpleFinancialValue lastDividendValue;
+    private Object forwardPE;
+    private Object trailingPE;
+
+    private Object profitMargins;
+    private Object heldPercentInsiders;
+    private Object heldPercentInstitutions;
+    private Object beta;
+    private Object bookValue;
+    private Object priceToBook;
+    private Object trailingEps;
+    private Object forwardEps;
+    private Object enterpriseToRevenue;
+    private Object enterpriseToEbitda;
+    private Object lastDividendValue;
 
     // Percentage change values
     @JsonProperty("52WeekChange")

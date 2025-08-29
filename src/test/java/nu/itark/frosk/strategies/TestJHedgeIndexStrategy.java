@@ -45,7 +45,7 @@ public class TestJHedgeIndexStrategy  extends BaseIntegrationTest {
 
             // logger.info("profit="+profit);
 
-            log.info("Position: {}", ReflectionToStringBuilder.toString(position));
+           // log.info("Position: {}", ReflectionToStringBuilder.toString(position));
 
         }
 

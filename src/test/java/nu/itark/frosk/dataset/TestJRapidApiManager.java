@@ -60,12 +60,22 @@ public class TestJRapidApiManager extends BaseIntegrationTest  {
     }
 
     @Test void testGetModuleIncomeStatementStatistics() throws IOException, InterruptedException {
-        String symbol = "ABB.ST"; //NIBE-B.ST   ABB.ST
+        String symbol = "ABB.ST"; //NIBE-B.ST   ABB.ST, FRAG.ST
         String result = rapidApiManager.getModuleRaw(symbol, "statistics");
         log.info("result:{}",result);
 
-        StatisticsBody result2 = rapidApiManager.getModuleStatistics(symbol);
-        log.info("result2:{}",result2);
+        StatisticsBody moduleStatistics = rapidApiManager.getModuleStatistics(symbol);
+
+        log.info("trailingEPS:{}",moduleStatistics.getTrailingEps());
+        log.info("forwardEPS:{}",moduleStatistics.getForwardEps());
+
+
+        log.info("trailingPE:{}",moduleStatistics.getTrailingPE());
+        log.info("forwardPE:{}",moduleStatistics.getForwardPE());
+
+
+
+        log.info("result2:{}",moduleStatistics);
 
     }
 

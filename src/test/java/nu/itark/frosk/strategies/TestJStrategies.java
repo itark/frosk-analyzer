@@ -229,6 +229,10 @@ public class TestJStrategies extends BaseIntegrationTest {
 */
 
 			try {
+				if (ts.isEmpty()) {
+					//log.info("ts:{} is empty",ts.getName());
+					return;
+				}
 				resultMap.add(run(strategiesMap.getHighLanderStrategy().buildStrategy(ts), ts));
 			} catch (Exception e) {
 				System.out.println("getHighLanderStrategy().buildStrategy(ts), Name:"+ts.getName());

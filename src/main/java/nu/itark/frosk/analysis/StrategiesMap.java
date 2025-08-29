@@ -54,11 +54,15 @@ public class StrategiesMap {
 	@Autowired
 	private VIXStrategy vixStrategy;
 	@Autowired
+	private VVIXStrategy vvixStrategy;
+	@Autowired
 	private CrudeOilStrategy crudeOilStrategy;
 	@Autowired
 	private GoldStrategy goldStrategy;
 	@Autowired
 	private SP500Strategy sp500Strategy;
+	@Autowired
+	private NasdaqVsSPStrategy nasdaqVsSPStrategy;
 	@Autowired
 	private BetaStrategy betaStrategy;
 	@Autowired
@@ -161,12 +165,16 @@ public class StrategiesMap {
 			return hedgeIndexStrategy.buildStrategy(series);
 		} else if (strategy.equals(VIXStrategy.class.getSimpleName())) {
 			return vixStrategy.buildStrategy();
+		} else if (strategy.equals(VVIXStrategy.class.getSimpleName())) {
+			return vvixStrategy.buildStrategy();
 		} else if (strategy.equals(CrudeOilStrategy.class.getSimpleName())) {
 			return crudeOilStrategy.buildStrategy();
 		} else if (strategy.equals(GoldStrategy.class.getSimpleName())) {
 			return goldStrategy.buildStrategy();
 		} else if (strategy.equals(SP500Strategy.class.getSimpleName())) {
 			return sp500Strategy.buildStrategy();
+		} else if (strategy.equals(NasdaqVsSPStrategy.class.getSimpleName())) {
+			return nasdaqVsSPStrategy.buildStrategy();
 		} else if (strategy.equals(BetaStrategy.class.getSimpleName())) {
 			return betaStrategy.buildStrategy(series);
 		} else if (strategy.equals(HighLanderStrategy.class.getSimpleName())) {
@@ -210,12 +218,16 @@ public class StrategiesMap {
 			return hedgeIndexStrategy.getIndicatorValues();
 		} else if (strategyName.equals(VIXStrategy.class.getSimpleName())) {
 			return vixStrategy.getIndicatorValues(); //TODO
+		} else if (strategyName.equals(VVIXStrategy.class.getSimpleName())) {
+			return vvixStrategy.getIndicatorValues(); //TODO
 		} else if (strategyName.equals(CrudeOilStrategy.class.getSimpleName())) {
 			return crudeOilStrategy.getIndicatorValues(); //TODO
 		} else if (strategyName.equals(GoldStrategy.class.getSimpleName())) {
 			return goldStrategy.getIndicatorValues(); //TODO
 		} else if (strategyName.equals(SP500Strategy.class.getSimpleName())) {
 			return sp500Strategy.getIndicatorValues(); //TODO
+		} else if (strategyName.equals(NasdaqVsSPStrategy.class.getSimpleName())) {
+			return nasdaqVsSPStrategy.getIndicatorValues(); //TODO
 		} else if (strategyName.equals(BetaStrategy.class.getSimpleName())) {
 			return betaStrategy.getIndicatorValues(); //TODO
 		} else if (strategyName.equals(HighLanderStrategy.class.getSimpleName())) {
