@@ -59,25 +59,33 @@ public class TestJRapidApiManager extends BaseIntegrationTest  {
         log.info("yoyGrowth:{}",yoyGrowth);
     }
 
-    @Test void testGetModuleIncomeStatementStatistics() throws IOException, InterruptedException {
+    @Test void testGetModuleStatistics() throws IOException, InterruptedException {
         String symbol = "ABB.ST"; //NIBE-B.ST   ABB.ST, FRAG.ST
         String result = rapidApiManager.getModuleRaw(symbol, "statistics");
         log.info("result:{}",result);
 
         StatisticsBody moduleStatistics = rapidApiManager.getModuleStatistics(symbol);
-
         log.info("trailingEPS:{}",moduleStatistics.getTrailingEps());
         log.info("forwardEPS:{}",moduleStatistics.getForwardEps());
-
-
         log.info("trailingPE:{}",moduleStatistics.getTrailingPE());
         log.info("forwardPE:{}",moduleStatistics.getForwardPE());
-
-
 
         log.info("result2:{}",moduleStatistics);
 
     }
+
+    @Test void testGetModuleRecommendationTrende() throws IOException, InterruptedException {
+        String symbol = "ABB.ST"; //NIBE-B.ST   ABB.ST, FRAG.ST
+        String result = rapidApiManager.getModuleRaw(symbol, "recommendation-trend");
+        log.info("result:{}",result);
+
+        RecommendationBody moduleRecommendationTrend = rapidApiManager.getModuleRecommendationTrend(symbol);
+
+        log.info("moduleRecommendationTrend:{}",moduleRecommendationTrend);
+
+    }
+
+
 
 
     @Test void testGetTicker() throws IOException, InterruptedException {

@@ -118,6 +118,23 @@ public class RapidApiManager {
         return response.getBody();
     }
 
+
+    public RecommendationBody getModuleRecommendationTrend(String symbol) throws JsonProcessingException {
+        String module = "recommendation-trend";
+        String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/modules";
+        String uri = "?ticker="+symbol+"&module="+module;
+        String json = webClient(baseUrl).get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        //String json = "{\"meta\":{\"version\":\"v1.0\",\"status\":200,\"copywrite\":\"https:\\/\\/steadyapi.com\",\"symbol\":\"ABB.ST\",\"processedTime\":\"2025-08-29T09:40:35.616223Z\",\"modules\":\"recommendation-trend\"},\"body\":{\"trend\":[{\"period\":\"0m\",\"strongBuy\":1,\"buy\":2,\"hold\":0,\"sell\":0,\"strongSell\":0},{\"period\":\"-1m\",\"strongBuy\":1,\"buy\":2,\"hold\":0,\"sell\":0,\"strongSell\":0},{\"period\":\"-2m\",\"strongBuy\":1,\"buy\":3,\"hold\":0,\"sell\":0,\"strongSell\":0}],\"maxAge\":86400}}";
+
+        FinancialRecommendationResponseDTO response = objectMapper.readValue(json, FinancialRecommendationResponseDTO.class);
+        return response.getBody();
+    }
+
     public String getModuleRaw(String symbol, String module) throws JsonProcessingException {
         String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/modules";
         String uri = "?ticker="+symbol+"&module="+module;

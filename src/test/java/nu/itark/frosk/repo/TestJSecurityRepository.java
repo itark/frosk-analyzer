@@ -3,6 +3,7 @@ package nu.itark.frosk.repo;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
+import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.Security;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,14 @@ public class TestJSecurityRepository extends BaseIntegrationTest {
 		security.setBeta(1.6);
 		securityRepo.save(security);
 		log.info("hello update="+ ReflectionToStringBuilder.toString(securityRepo.findByName(name)));
+	}
+
+	@Test
+	public final void testInsert() {
+		String name = "DOFG.OL";
+		Security security = new Security(name,"DOf Group", Database.YAHOO.toString(), null);
+		securityRepo.save(security);
+		log.info("hello insert="+ ReflectionToStringBuilder.toString(securityRepo.findByName(name)));
 	}
 
 

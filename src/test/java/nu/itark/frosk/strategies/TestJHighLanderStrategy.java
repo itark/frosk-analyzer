@@ -27,7 +27,7 @@ public class TestJHighLanderStrategy extends BaseIntegrationTest {
 
     @Test
     public final void run() throws Exception {
-        String securityName = "ESSITY-B.ST";
+        String securityName = "DOFG.OL";
         BarSeries barSeries = barSeriesService.getDataSet(securityName, false, false);
         Strategy strategy = highLanderStrategy.buildStrategy(barSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(barSeries);

@@ -29,7 +29,7 @@ public class TestJGoldenCrossRelativeStengtStrategy extends BaseIntegrationTest 
 
     @Test
     public final void run() throws Exception {
-        BarSeries barSeries = barSeriesService.getDataSet("AAK.ST", false, false);
+        BarSeries barSeries = barSeriesService.getDataSet("DOFG.OL", false, false);
         //Strategy strategy = goldenCrossRelativeStrengthStrategy.buildStrategy(barSeries);
         Strategy strategy = goldenCrossRelativeStrengthStrategy.buildStrictGoldenCrossStrategy(barSeries);
 

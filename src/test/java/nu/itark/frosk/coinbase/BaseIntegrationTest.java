@@ -16,10 +16,6 @@ import org.springframework.test.context.TestPropertySource;
  */
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {
         FroskApplication.class})
-
-
-
-
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:file:~/itark/froskH2DBTestFile",
         "spring.datasource.username=sa",

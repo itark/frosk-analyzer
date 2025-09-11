@@ -12,7 +12,9 @@ import java.util.Map;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.crypto.coinbase.advanced.Coinbase;
 import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
+import nu.itark.frosk.model.RecommendationTrend;
 import nu.itark.frosk.model.Security;
+import nu.itark.frosk.repo.RecommendationTrendRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,10 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 	@Autowired
 	SecurityRepository securityRepository;
 
+	@Autowired
+	RecommendationTrendRepository recommendationTrendRepository;
+	
+
 	@MockBean
 	Coinbase coinbase;
 
@@ -52,7 +58,7 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 	@Test
 	public void syncOne(){
 		
-		yahooDataManager.syncronize("ESSITY-B.ST"); //	ALFA.ST, AAK.ST
+		yahooDataManager.syncronize("DOFG.OL"); //	ALFA.ST, AAK.ST, DOFG.OL
 		//yahooDataManager.syncronize("VOLV-B.ST");
 	}
 	
@@ -226,12 +232,17 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 
 	@Test
 	public void testUpdateMetaData(){
-		String securityName = "ABB.ST"; //ABB.ST, ESSITY-B.ST, MER.ST
+		String securityName = "BIOA-B.ST"; //ABB.ST, ESSITY-B.ST, MER.ST, BICO-B.ST
 		final Security security = securityRepository.findByName(securityName);
 		log.info("security:{}",security);
 		yahooDataManager.updateWithMetaData(security);
 		final Security securityUpdate = securityRepository.findByName(securityName);
 		log.info("securityUpdate:{}",securityUpdate);
+
+		List<RecommendationTrend> bySecurityOrderByPeriod = recommendationTrendRepository.findBySecurityOrderByPeriod(security);
+		log.info("bySecurityOrderByPeriod:{}",bySecurityOrderByPeriod);
+
 	}
+
 
 }
