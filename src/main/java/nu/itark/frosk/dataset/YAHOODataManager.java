@@ -127,9 +127,10 @@ public class YAHOODataManager {
     }
 
     private List<SecurityPrice> getDataSet(Iterable<Security> securities) throws IOException {
-        log.info("getDataSet(Iterable<Security> names)");
+        log.info("getDataSet(Iterable<Security> securities)");
         List<SecurityPrice> securityPrices = new ArrayList<>();
         final Map<Long, Collection<StockHistoryDTO.StockData>> stockQuotes = getStocks(securities);
+        log.info("Added stockdata for {} stocks", stockQuotes.keySet().size());
 
         if (stockQuotes != null) {
             stockQuotes.forEach((sec_id, quote) -> {
@@ -183,6 +184,7 @@ public class YAHOODataManager {
                     final Map<String, StockHistoryDTO.StockData> history = rapidApiManager.getHistory(security.getName(), RapidApiManager.Interval.ONE_DAY);
                     if (Objects.nonNull(history)) {
                         Map<String, StockHistoryDTO.StockData> filterFromHistory = filterFromHistory(from, history);
+                        log.info("Adding:{} stockdata for :{}", filterFromHistory.values().size(), security.getName());
                         stocks.put(security.getId(), filterFromHistory.values());
                     }
                 } catch (Exception e) {
@@ -240,43 +242,102 @@ public class YAHOODataManager {
     }
 
     private void setStatisticsData(Security security) {
-        double pegRatio = 0;
-        double beta = 0;
-        double trailingEps = 0;
-        double forwardEps = 0;
-        double trailingPe = 0;
-        double forwardPe = 0;
+        double pegRatio = 0.0;
+        double beta = 0.0;
+        double trailingEps = 0.0;
+        double forwardEps = 0.0;
+        double trailingPe = 0.0;
+        double forwardPe = 0.0;
+
+        double forwardPERaw = 0.0;
+        double forwardEpsRaw = 0.0;
+        double trailingEpsRaw = 0.0;
+
         StatisticsBody moduleStatistics;
         try {
             moduleStatistics = rapidApiManager.getModuleStatistics(security.getName());
-            if (moduleStatistics.getPegRatio().length == 0) {
+            if (moduleStatistics != null && moduleStatistics.getPegRatio().length == 0) {
                 // This gives only 1-year growth estimate
-                double forwardPERaw = (double) ((LinkedHashMap) moduleStatistics.getForwardPE()).get("raw");
-                double forwardEpsRaw = (double) ((LinkedHashMap) moduleStatistics.getForwardEps()).get("raw");
-                double trailingEpsRaw = getDoubleFromRaw(((LinkedHashMap) moduleStatistics.getTrailingEps()).get("raw"));
-                double oneYearGrowthRate = ((forwardEpsRaw - trailingEpsRaw) / trailingEpsRaw) * 100;
-                pegRatio = forwardPERaw / oneYearGrowthRate;
+                if (moduleStatistics.getForwardPE() != null && moduleStatistics.getForwardEps() != null) {
+
+                    Object forwardPEObj = moduleStatistics.getForwardPE();
+                    Object forwardEpsObj = moduleStatistics.getForwardEps();
+                    Object trailingEpsObj = moduleStatistics.getTrailingEps();
+
+                    if (forwardPEObj instanceof Map) {
+                        Map<?, ?> map = (Map<?, ?>) forwardPEObj;
+                        Object rawValue = map.get("raw");
+                        if (rawValue instanceof Number) {
+                            forwardPERaw = ((Number) rawValue).doubleValue();
+                            forwardPe = forwardPERaw;
+                        } else {
+                            throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
+                        }
+                    }
+                    if (forwardEpsObj instanceof Map) {
+                        Map<?, ?> map = (Map<?, ?>) forwardEpsObj;
+                        Object rawValue = map.get("raw");
+                        if (rawValue instanceof Number) {
+                            forwardEpsRaw = ((Number) rawValue).doubleValue();
+                            forwardEps = forwardEpsRaw;
+                        } else {
+                            throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
+                        }
+                    }
+                    if (trailingEpsObj instanceof Map) {
+                        Map<?, ?> map = (Map<?, ?>) trailingEpsObj;
+                        Object rawValue = map.get("raw");
+                        if (rawValue instanceof Number) {
+                            trailingEpsRaw = ((Number) rawValue).doubleValue();
+                            trailingEps = trailingEpsRaw;
+                        } else {
+                            throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
+                        }
+                    }
+                    double oneYearGrowthRate = ((forwardEpsRaw - trailingEpsRaw) / trailingEpsRaw) * 100;
+                    pegRatio = forwardPERaw / oneYearGrowthRate;
+                }
             } else {
                 pegRatio = (double) moduleStatistics.getPegRatio()[0];
             }
             if (moduleStatistics.getBeta() != null) {
-                beta = (double) ((LinkedHashMap) moduleStatistics.getBeta()).get("raw");
+                Object betaObj = moduleStatistics.getBeta();
+                if (betaObj instanceof Map) {
+                    Map<?, ?> map = (Map<?, ?>) betaObj;
+                    Object rawValue = map.get("raw");
+                    if (rawValue instanceof Number) {
+                        beta = ((Number) rawValue).doubleValue();
+                    } else {
+                        throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
+                    }
+                }
             }
             if (moduleStatistics.getTrailingEps() != null) {
-                trailingEps = (double) ((LinkedHashMap) moduleStatistics.getTrailingEps()).get("raw");
-            }
-            if (moduleStatistics.getForwardEps() != null) {
-                forwardEps = (double) ((LinkedHashMap) moduleStatistics.getForwardEps()).get("raw");
+                Object trailingEpsObj = moduleStatistics.getTrailingEps();
+                if (trailingEpsObj instanceof Map) {
+                    Map<?, ?> map = (Map<?, ?>) trailingEpsObj;
+                    Object rawValue = map.get("raw");
+                    if (rawValue instanceof Number) {
+                        trailingEps = ((Number) rawValue).doubleValue();
+                    } else {
+                        throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
+                    }
+                }
             }
             if (moduleStatistics.getTrailingPE() != null) {
-                trailingPe = (double) ((LinkedHashMap) moduleStatistics.getTrailingPE()).get("raw");
+                Object trailingPEObj = moduleStatistics.getTrailingPE();
+                if (trailingPEObj instanceof Map) {
+                    Map<?, ?> map = (Map<?, ?>) trailingPEObj;
+                    Object rawValue = map.get("raw");
+                    if (rawValue instanceof Number) {
+                        trailingPe = ((Number) rawValue).doubleValue();
+                    } else {
+                        throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
+                    }
+                }
             }
-            if (moduleStatistics.getForwardPE() != null) {
-                forwardPe = (double) ((LinkedHashMap) moduleStatistics.getForwardPE()).get("raw");
-            }
-
         } catch (Exception e) {
-            log.error("Error in Statistics for:{}", security.getName(), e);
+            log.error("Error in Statistics for:{}", security.getName(), e.getMessage());
         }
         security.setPegRatio(pegRatio);
         security.setBeta(beta);
@@ -290,13 +351,15 @@ public class YAHOODataManager {
         double yoyGrowth = 0;
         try {
             Body module = rapidApiManager.getModuleIncomeStatement(security.getName());
-            if (module.getIncomeStatementHistory().getIncomeStatementHistory().size() >= 2) {
-                double totalRevenueThisYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(0).getTotalRevenue().getRaw();
-                double totalRevenueLastYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(1).getTotalRevenue().getRaw();
-                yoyGrowth = ((totalRevenueThisYear - totalRevenueLastYear) / totalRevenueLastYear) * 100.0;
-            }
+            if (module != null && module.getIncomeStatementHistory() != null) {
+                if (module.getIncomeStatementHistory().getIncomeStatementHistory().size() >= 2) {
+                    double totalRevenueThisYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(0).getTotalRevenue().getRaw();
+                    double totalRevenueLastYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(1).getTotalRevenue().getRaw();
+                    yoyGrowth = ((totalRevenueThisYear - totalRevenueLastYear) / totalRevenueLastYear) * 100.0;
+                }
+            };
         } catch (Exception e) {
-            log.error("Error in IncomeStatement for:{}", security, e);
+            log.error("Error in IncomeStatement for:{}", security, e.getMessage());
         }
         security.setYoyGrowth(yoyGrowth);
     }
@@ -305,19 +368,20 @@ public class YAHOODataManager {
         recommendationTrendRepository.deleteBySecurity(security);
         try {
             RecommendationBody moduleRecommendationTrend = rapidApiManager.getModuleRecommendationTrend(security.getName());
-            moduleRecommendationTrend.getTrend().forEach(trend -> {
-                RecommendationTrend recommendationTrend = RecommendationTrend.builder()
-                        .security(security)
-                        .period(trend.getPeriod())
-                        .strongBuy(trend.getStrongBuy())
-                        .buy(trend.getBuy())
-                        .hold(trend.getHold())
-                        .sell(trend.getSell())
-                        .strongSell(trend.getStrongSell())
-                        .build();
-                recommendationTrendRepository.save(recommendationTrend);
-            });
-
+            if (moduleRecommendationTrend != null && !moduleRecommendationTrend.getTrend().isEmpty()){
+                moduleRecommendationTrend.getTrend().forEach(trend -> {
+                    RecommendationTrend recommendationTrend = RecommendationTrend.builder()
+                            .security(security)
+                            .period(trend.getPeriod())
+                            .strongBuy(trend.getStrongBuy())
+                            .buy(trend.getBuy())
+                            .hold(trend.getHold())
+                            .sell(trend.getSell())
+                            .strongSell(trend.getStrongSell())
+                            .build();
+                    recommendationTrendRepository.save(recommendationTrend);
+                });
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

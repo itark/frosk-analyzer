@@ -44,7 +44,18 @@ public class SecurityMetaDataManager {
         List<Security> securities = securityRepository.findByDatabase(databaseOnly);
 
         securities.forEach(s -> {
-            SecurityDTO securityDTO = new SecurityDTO(s.getName(), s.getDescription());
+           //s log.info("s:{}",s);
+            SecurityDTO securityDTO = SecurityDTO.builder()
+                    .name(s.getName())
+                    .desc(s.getDescription())
+                    .yoyGrowth(s.getYoyGrowth() != null ? Math.round(s.getYoyGrowth() * 100.0) / 100.0 : null)
+                    .pegRatio(s.getPegRatio() != null ? Math.round(s.getPegRatio() * 100.0) / 100.0 : null)
+                    .beta(s.getBeta() != null ? Math.round(s.getBeta() * 100.0) / 100.0 : null)
+                    .trailingEps(s.getTrailingEps() != null ? Math.round(s.getTrailingEps() * 100.0) / 100.0 : null)
+                    .forwardEps(s.getForwardEps() != null ? Math.round(s.getForwardEps() * 100.0) / 100.0 : null)
+                    .trailingPe(s.getTrailingPe() != null ? Math.round(s.getTrailingPe() * 100.0) / 100.0 : null)
+                    .forwardPe(s.getForwardPe() != null ? Math.round(s.getForwardPe() * 100.0) / 100.0 : null)
+                    .build();
            // addMetaData(securityDTO);
             securityDTOList.add(securityDTO);
         });

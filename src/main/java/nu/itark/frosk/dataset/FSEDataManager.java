@@ -8,7 +8,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import com.jimmoores.quandl.TabularResult;
 
-import nu.itark.frosk.controller.WebController;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
@@ -24,7 +22,6 @@ import nu.itark.frosk.repo.SecurityRepository;
 
 @Service("fseTimeSeriesManager")
 public class FSEDataManager extends TimeSeriesManager {
-	Logger logger = Logger.getLogger(WebController.class.getName());
 
 	@Value("${frosk.download.years}")
 	public int years;	

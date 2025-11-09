@@ -3,6 +3,7 @@ package nu.itark.frosk.controller;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.HighLander;
 import nu.itark.frosk.analysis.*;
+import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.DataSetRepository;
@@ -128,18 +129,19 @@ public class DataController {
                 .collect(Collectors.toList());
     }
 
-    @RequestMapping(path = "/runSelectedAction", method = RequestMethod.GET)
-    public void getRunSelectedAction(@RequestParam("action") String action, @RequestParam("security") String security, @RequestParam("strategy") String strategy) {
-        log.info("/runSelectedAction, action:{}, security:{}, strategy:{}",action,security,strategy);
+    @RequestMapping(path = "/runAction", method = RequestMethod.GET)
+    public void getAction(@RequestParam("action") String action, @RequestParam("security") String security) {
+        log.info("/runSelectedAction, action:{}, security:{}",action,security);
         if (action.equals("undefined")) return;  //TODO fix
 
         if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.LOAD_DATA) {
             log.info("action:{}",action);
-            highLander.addSecurityPriceFromCoinbase(security);
+            highLander.addSecurityPriceFromDatabase(security, Database.YAHOO);
+            highLander.runStrategy(null, security);
         }
         if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.RUN_STRATEGY) {
             log.info("action:{}",action);
-            highLander.runStrategy(strategy,security);
+         //   highLander.runStrategy(strategy,security);
         }
     }
 
@@ -149,9 +151,8 @@ public class DataController {
      */
     @RequestMapping(path = "/prices", method = RequestMethod.GET)
     public List<DailyPriceDTO> getPrices(@RequestParam("security") String security) {
-        log.info("/prices for security=" + security);
+        log.info("/prices for security:{}",security);
         DailyPriceDTO dailyPrices = null;
-        SecurityDTO frosk = null;
         List<DailyPriceDTO> dpList = new ArrayList<DailyPriceDTO>();
 
         BarSeries timeSeries = barSeriesService.getDataSet(security, false, false);

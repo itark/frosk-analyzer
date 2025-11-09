@@ -241,15 +241,25 @@ public class DataSetHelper {
 	}
 
 	private double getYahooMetaData(String name) {
-        try {
-			final Body module = rapidApiManager.getModuleIncomeStatement(name);
-			final double totalRevenueThisYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(0).getTotalRevenue().getRaw();
-			final double totalRevenueLastYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(1).getTotalRevenue().getRaw();
+		double totalRevenueThisYear = 0;
+		double totalRevenueLastYear = 0;
+		Body module = null;
+		try {
+			module = rapidApiManager.getModuleIncomeStatement(name);
+			if (module == null) {
+				return 0;
+			}
+			if (module.getIncomeStatementHistory() != null && !module.getIncomeStatementHistory().getIncomeStatementHistory().isEmpty()) {
+				totalRevenueThisYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(0).getTotalRevenue().getRaw();
+				if (module.getIncomeStatementHistory().getIncomeStatementHistory().size() > 1) {
+					totalRevenueLastYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(1).getTotalRevenue().getRaw();
+				}
+			}
 			return ((totalRevenueThisYear - totalRevenueLastYear) / totalRevenueLastYear) * 100.0;
 		} catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-   	}
+			throw new RuntimeException(e);
+		}
+	}
 
 	private void checkIfAddToDataset(String datasetName, DataSet dataset, Security security) {
 		boolean match = security.getDatasets()

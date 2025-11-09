@@ -2,8 +2,10 @@ package nu.itark.frosk.rapidapi.yhfinance.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,14 +15,23 @@ public class StatisticsBody {
     private int maxAge;
 
     // Financial values with full formatting
+    @JsonIgnore
     private FinancialValue priceHint;
+    @JsonIgnore
     private FinancialValue enterpriseValue;
+    @JsonIgnore
     private FinancialValue floatShares;
+    @JsonIgnore
     private FinancialValue sharesOutstanding;
+    @JsonIgnore
     private FinancialValue impliedSharesOutstanding;
+    @JsonIgnore
     private FinancialValue netIncomeToCommon;
 
     // Simple financial values (raw + fmt only)
+    //@JsonProperty("forwardPE")
+    //@JsonDeserialize(as = LinkedHashMap.class)
+    //private Map<String, Object> forwardPE;
     private Object forwardPE;
     private Object trailingPE;
 

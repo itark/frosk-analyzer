@@ -66,7 +66,7 @@ public class HedgeIndexService {
         updateHedgeIndex("NasdaqVsSPStrategy", "^IXIC", this::convertToNasdaqVsSPStrategyHedgeIndexes);
     }
 
-    private void updateHedgeIndex(String strategyName, String securityName, java.util.function.Function<List<StrategyTrade>, List<HedgeIndex>> converter) {
+    private void updateHedgeIndex_OLD(String strategyName, String securityName, java.util.function.Function<List<StrategyTrade>, List<HedgeIndex>> converter) {
         FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategyName, securityName);
         if (featuredStrategy != null) {
             Optional<HedgeIndex> hedgeIndexLatestDate = hedgeIndexRepository.findTopByIndicatorOrderByDateDesc(securityName);
@@ -80,7 +80,37 @@ public class HedgeIndexService {
             }
             List<HedgeIndex> hedgeIndexList = converter.apply(strategyTrades);
             hedgeIndexRepository.saveAllAndFlush(hedgeIndexList);
-            log.info("HedgeIndex updated for: {} with strategyTrades:{}",strategyName,strategyTrades.size());
+            //log.info("HedgeIndex updated for: {} with strategyTrades:{}",strategyName,strategyTrades.size());
+        } else {
+            log.error("Warning: FeaturedStrategy not found for name: " + strategyName + ", security: " + securityName);
+        }
+    }
+
+    private void updateHedgeIndex(String strategyName, String securityName,
+                                  java.util.function.Function<List<StrategyTrade>, List<HedgeIndex>> converter) {
+        FeaturedStrategy featuredStrategy = featuredStrategyRepository.findByNameAndSecurityName(strategyName, securityName);
+        if (featuredStrategy != null) {
+            Optional<HedgeIndex> hedgeIndexLatestDate = hedgeIndexRepository.findTopByIndicatorOrderByDateDesc(securityName);
+            Date latestDate;
+            List<StrategyTrade> strategyTrades;
+
+            if (hedgeIndexLatestDate.isPresent()) {
+               // log.info("hedgeIndexLatestDate: {}", hedgeIndexLatestDate);
+                latestDate = hedgeIndexLatestDate.get().getDate();
+                strategyTrades = strategyTradeRepository.findByFeaturedStrategyIdAndDateGreaterThan(
+                        featuredStrategy.getId(), latestDate);
+            } else {
+                strategyTrades = strategyTradeRepository.findByFeaturedStrategyId(featuredStrategy.getId());
+            }
+
+            // Only save if there are new trades to process
+            if (!strategyTrades.isEmpty()) {
+                List<HedgeIndex> hedgeIndexList = converter.apply(strategyTrades);
+                hedgeIndexRepository.saveAllAndFlush(hedgeIndexList);
+                //log.info("HedgeIndex updated for: {} with strategyTrades: {}", strategyName, strategyTrades.size());
+            } else {
+                //log.info("No new trades to process for: {}", strategyName);
+            }
         } else {
             log.error("Warning: FeaturedStrategy not found for name: " + strategyName + ", security: " + securityName);
         }
@@ -92,7 +122,7 @@ public class HedgeIndexService {
             HedgeIndex hedgeIndex = new HedgeIndex();
             hedgeIndex.setDate(trade.getDate());
             hedgeIndex.setCategory("Volatility");
-            hedgeIndex.setIndicator("VIX");
+            hedgeIndex.setIndicator("^VIX");
             hedgeIndex.setRuleDesc("VIX > 25 and rising");
             hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
             hedgeIndex.setPrice(trade.getPrice());
@@ -107,7 +137,7 @@ public class HedgeIndexService {
             HedgeIndex hedgeIndex = new HedgeIndex();
             hedgeIndex.setDate(trade.getDate());
             hedgeIndex.setCategory("VIX Volatility");
-            hedgeIndex.setIndicator("VVIX");
+            hedgeIndex.setIndicator("^VVIX");
             hedgeIndex.setRuleDesc("VVIX > 110 and rising");
             hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
             hedgeIndex.setPrice(trade.getPrice());
@@ -123,8 +153,8 @@ public class HedgeIndexService {
             HedgeIndex hedgeIndex = new HedgeIndex();
             hedgeIndex.setDate(trade.getDate());
             hedgeIndex.setCategory("Commodities");
-            hedgeIndex.setIndicator("Crude oil");
-            hedgeIndex.setRuleDesc("Drops >5% in last 5 days");
+            hedgeIndex.setIndicator("CL=F");
+            hedgeIndex.setRuleDesc("Crude oil drops >5% in last 5 days");
             hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
             hedgeIndex.setPrice(trade.getPrice());
             hedgeIndexList.add(hedgeIndex);
@@ -138,8 +168,8 @@ public class HedgeIndexService {
             HedgeIndex hedgeIndex = new HedgeIndex();
             hedgeIndex.setDate(trade.getDate());
             hedgeIndex.setCategory("Commodities");
-            hedgeIndex.setIndicator("Gold");
-            hedgeIndex.setRuleDesc("Breaks above 10-day high");
+            hedgeIndex.setIndicator("CL=F");
+            hedgeIndex.setRuleDesc("Gold breaks above 10-day high");
             hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
             hedgeIndex.setPrice(trade.getPrice());
             hedgeIndexList.add(hedgeIndex);
@@ -153,8 +183,8 @@ public class HedgeIndexService {
             HedgeIndex hedgeIndex = new HedgeIndex();
             hedgeIndex.setDate(trade.getDate());
             hedgeIndex.setCategory("Equities");
-            hedgeIndex.setIndicator("S&P 500");
-            hedgeIndex.setRuleDesc("Below 200-day MA");
+            hedgeIndex.setIndicator("^GSPC");
+            hedgeIndex.setRuleDesc("S&P 500 below 200-day MA");
             hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
             hedgeIndex.setPrice(trade.getPrice());
             hedgeIndexList.add(hedgeIndex);
@@ -168,7 +198,7 @@ public class HedgeIndexService {
             HedgeIndex hedgeIndex = new HedgeIndex();
             hedgeIndex.setDate(trade.getDate());
             hedgeIndex.setCategory("Equities");
-            hedgeIndex.setIndicator("NASDAQ");
+            hedgeIndex.setIndicator("^IXIC");
             hedgeIndex.setRuleDesc("NASDAQ 30-day return < S&P 30-day return");
             hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
             hedgeIndex.setPrice(trade.getPrice());

@@ -66,6 +66,9 @@ public class HighLander {
 	StrategyPerformanceRepository strategyPerformanceRepository;
 
 	@Autowired
+	RecommendationTrendRepository recommendationTrendRepository;
+
+	@Autowired
 	StrategyAnalysis strategyAnalysis;
 
 	@Autowired
@@ -102,7 +105,7 @@ public class HighLander {
 		if (runAllStrategies) {
 			runAllStrategies();
 		}
-		//runChooseBestStrategy();
+		//runChooseBestStrategy(); //TODO fix index-problem
 		if (updateHedgeIndex) {
 			strategyAnalysis.runHedgeIndexStrategies();
 		}
@@ -128,6 +131,8 @@ public class HighLander {
 	public void runClean() {
 		dataSetRepository.deleteAllInBatch();
 		log.info("dataSetRepository deleted");
+		recommendationTrendRepository.deleteAllInBatch();
+		log.info("recommendationTrendRepository deleted");
 		securityRepository.deleteAllInBatch();
 		log.info("securityRepository deleted");
 		securityPriceRepository.deleteAllInBatch();
@@ -140,6 +145,7 @@ public class HighLander {
 		log.info("featuredStrategyRepository deleted");
 		strategyPerformanceRepository.deleteAllInBatch();
 		log.info("featuredStrategyRepository deleted");
+
 	}
 	
 	/**
@@ -161,8 +167,8 @@ public class HighLander {
 		log.info("addSecurityPricesFromCoinbase executed");
 	}
 
-	public void addSecurityPriceFromCoinbase(String security) {
-		dataManager.insertSecurityPricesIntoDatabase(Database.COINBASE, security);
+	public void addSecurityPriceFromDatabase(String security, Database database) {
+		dataManager.insertSecurityPricesIntoDatabase(database, security);
 	}
 
 	public void updateSecurityMetaData() {

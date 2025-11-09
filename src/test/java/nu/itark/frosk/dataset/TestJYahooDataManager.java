@@ -14,6 +14,7 @@ import nu.itark.frosk.crypto.coinbase.advanced.Coinbase;
 import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
 import nu.itark.frosk.model.RecommendationTrend;
 import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.RecommendationTrendRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -57,24 +58,18 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 	
 	@Test
 	public void syncOne(){
-		
-		yahooDataManager.syncronize("DOFG.OL"); //	ALFA.ST, AAK.ST, DOFG.OL
-		//yahooDataManager.syncronize("VOLV-B.ST");
+		String securityName = "HTRO.ST";
+		yahooDataManager.syncronize(securityName); //	ALFA.ST, AAK.ST, DOFG.OL, "DOFG.OL", VOLCAR-B.ST, ESSITY-B.ST,BILL.ST,ALLEI.ST,HTRO.ST
+
+		final Security security = securityRepository.findByName(securityName);
+		final List<SecurityPrice> bySecurityIdOrderByTimestamp = securityPriceRepository.findBySecurityIdOrderByTimestamp(security.getId());
+
+		final SecurityPrice securityPrice = bySecurityIdOrderByTimestamp.get(bySecurityIdOrderByTimestamp.size()-1);
+		log.info("securityPrice:{}",ReflectionToStringBuilder.toString(securityPrice));
+
 	}
 	
-//	@Test
-//	public void testYahooApple() {
-//		Context.setCachingActive(false);
-//		StockID apple = new StockID("AAPL", "NASDAQ");
-//		StockData sd = Context.getStockData(apple, new YahooReader());
-//		logger.info("{size=}"+sd.getHistory().size());
-//		IStockRecord sr = sd.getPrice(Context.date("2012-01-10"));
-//		Assert.assertEquals(178.46, sr.getClosing().doubleValue(), 0.001);
-//	}
-	
 
-	
-	
 	@Test
 	public void test() throws IOException {
 
@@ -232,7 +227,7 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 
 	@Test
 	public void testUpdateMetaData(){
-		String securityName = "BIOA-B.ST"; //ABB.ST, ESSITY-B.ST, MER.ST, BICO-B.ST
+		String securityName = "ABB.ST"; //ABB.ST, ESSITY-B.ST, MER.ST, BICO-B.ST, AIK-B.ST, AGTIRA-B.ST, KAV.ST, BRIX
 		final Security security = securityRepository.findByName(securityName);
 		log.info("security:{}",security);
 		yahooDataManager.updateWithMetaData(security);

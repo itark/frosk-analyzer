@@ -96,7 +96,7 @@ public class StrategyAnalysis {
 		if (Objects.isNull(strategy)  && Objects.isNull(security_id)) {
 			List<String> strategies = strategiesMap.buildStrategiesMap();
 			strategies.removeAll(List.of(excludeHedgeStrategies));
-			if (strategyOnly != null) {
+			if (strategyOnly != null && !strategyOnly.isEmpty()) {
 				strategies = List.of(strategyOnly);
 			}
 			strategies.forEach(strategyName -> {
@@ -107,17 +107,29 @@ public class StrategyAnalysis {
 					throw e;
 				}
 			});
-			
-		} 
-		else if (Objects.nonNull(strategy) && Objects.isNull(security_id)) {
+		}
+		else if (Objects.isNull(strategy)  && Objects.nonNull(security_id)) {
+			List<String> strategies = strategiesMap.buildStrategiesMap();
+			strategies.removeAll(List.of(excludeHedgeStrategies));
+			if (strategyOnly != null && !strategyOnly.isEmpty()) {
+				strategies = List.of(strategyOnly);
+			}
+			strategies.forEach(strategyName -> {
+				try {
+					runStrategy(strategyName, List.of(barSeriesService.getDataSet(security_id)));
+				} catch (DataIntegrityViolationException e) {
+					log.error("Error runStrategy on strategyName="+ strategyName);
+					throw e;
+				}
+			});
+		} else if (Objects.nonNull(strategy) && Objects.isNull(security_id)) {
 			try {
 				runStrategy(strategy, barSeriesService.getDataSet(Database.valueOf(databaseOnly)));
 			} catch (Exception e) {
 				log.error("Error runStrategy on strategy="+ strategy);
 				throw e;
 			}
-		} 
-		else if (Objects.nonNull(strategy) && security_id != null) {
+		} else if (Objects.nonNull(strategy) && security_id != null) {
 			List<BarSeries> barSeriesList = new ArrayList<BarSeries>();
 			BarSeries BarSeries = barSeriesService.getDataSet(security_id);
 			//Sanity check

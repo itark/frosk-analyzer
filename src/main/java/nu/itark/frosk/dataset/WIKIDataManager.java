@@ -9,7 +9,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +17,6 @@ import org.threeten.bp.LocalDate;
 
 import com.jimmoores.quandl.TabularResult;
 
-import nu.itark.frosk.controller.WebController;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.SecurityPriceRepository;
@@ -27,7 +25,6 @@ import nu.itark.frosk.repo.SecurityRepository;
 //@Deprecated  //WIKI databas is invalid, see mail
 @Service("wikiTimeSeriesManager")
 public class WIKIDataManager {
-	Logger logger = Logger.getLogger(WebController.class.getName());
 
 	@Value("${frosk.download.years}")
 	public int years;	
@@ -42,15 +39,12 @@ public class WIKIDataManager {
 	DataSetHelper dataSetHelper;		
 	
 	public void syncronize() {
-		logger.info("sync="+Database.WIKI.toString());
 		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.WIKI.toString(), true);
 		
-		securities.forEach(sec -> logger.info("NAME="+ sec.getName()));
 		List<SecurityPrice> spList;
 		try {
 			spList = getDataSet(securities);
 		} catch (IOException e) {
-			logger.severe("Could not retrieve dataset");
 			throw new RuntimeException(e);
 		}
 

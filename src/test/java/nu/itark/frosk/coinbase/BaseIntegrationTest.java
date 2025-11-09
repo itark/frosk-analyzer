@@ -16,12 +16,14 @@ import org.springframework.test.context.TestPropertySource;
  */
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {
         FroskApplication.class})
+/*
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:file:~/itark/froskH2DBTestFile",
         "spring.datasource.username=sa",
         "spring.datasource.password=Fredrik10121",
         "spring.datasource.driver-class-name=org.h2.Driver"
 })
+*/
 public abstract class BaseIntegrationTest {
 
     @Autowired

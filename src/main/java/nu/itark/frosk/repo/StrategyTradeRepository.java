@@ -27,4 +27,5 @@ public interface StrategyTradeRepository extends JpaRepository<StrategyTrade, Lo
 
 	List<StrategyTrade> findByFeaturedStrategyIdAndDateAfter(Long featuredStrategyId, Date date);
 
+	List<StrategyTrade> findByFeaturedStrategyIdAndDateGreaterThan(long featuredStrategyId, Date latestDate);
 }
