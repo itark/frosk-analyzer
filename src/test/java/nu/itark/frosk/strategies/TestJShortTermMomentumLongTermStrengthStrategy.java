@@ -23,7 +23,6 @@
 package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.FroskApplication;
 import nu.itark.frosk.analysis.StrategiesMap;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
@@ -33,15 +32,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.ta4j.core.*;
 import org.ta4j.core.backtest.BarSeriesManager;
 import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
-import org.ta4j.core.criteria.pnl.ReturnCriterion;
-import org.ta4j.core.num.Num;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @SpringBootTest
 @Slf4j
-public class TestJSimpleMovingMomentumStrategy extends BaseIntegrationTest {
+public class TestJShortTermMomentumLongTermStrengthStrategy extends BaseIntegrationTest {
 
     @Autowired
     BarSeriesService barSeriesService;
@@ -52,7 +48,7 @@ public class TestJSimpleMovingMomentumStrategy extends BaseIntegrationTest {
     @Test
     public final void run() throws Exception {
         BarSeries timeSeries = barSeriesService.getDataSet("ABB.ST", false, false);
-        Strategy strategy = strategiesMap.getSimpleMovingMomentumStrategy().buildStrategy(timeSeries);
+        Strategy strategy = strategiesMap.getShortTermMomentumLongTermStrengthStrategy().buildStrategy(timeSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(timeSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
 

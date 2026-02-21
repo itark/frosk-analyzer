@@ -67,6 +67,8 @@ public class StrategiesMap {
 	private BetaStrategy betaStrategy;
 	@Autowired
 	private HighLanderStrategy highLanderStrategy;
+	@Autowired
+	private ShortTermMomentumLongTermStrengthStrategy shortTermMomentumLongTermStrengthStrategy;
 
 	private List<Strategy> strategies = null;
 
@@ -93,6 +95,7 @@ public class StrategiesMap {
 		strategies.add(sp500Strategy.getClass().getSimpleName());
 		strategies.add(betaStrategy.getClass().getSimpleName());
 		strategies.add(highLanderStrategy.getClass().getSimpleName());
+		strategies.add(shortTermMomentumLongTermStrengthStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -124,15 +127,18 @@ public class StrategiesMap {
 		strategies.add(sp500Strategy.buildStrategy());
 		strategies.add(betaStrategy.buildStrategy(series));
 		strategies.add(highLanderStrategy.buildStrategy(series));
+		strategies.add(shortTermMomentumLongTermStrengthStrategy.buildStrategy(series));
 
 		this.strategies = strategies;
 		return strategies;
 	}
 
 	public Strategy getStrategyToRun(String strategy, BarSeries series) {
+/*
 		if (Objects.isNull(this.strategies)) {
 			this.strategies = getStrategies(series);
 		}
+*/
 		if (strategy.equals(RSI2Strategy.class.getSimpleName())) {
 			return rsiStrategy.buildStrategy(series);
 		} else if (strategy.equals(MovingMomentumStrategy.class.getSimpleName())) {
@@ -179,6 +185,8 @@ public class StrategiesMap {
 			return betaStrategy.buildStrategy(series);
 		} else if (strategy.equals(HighLanderStrategy.class.getSimpleName())) {
 			return highLanderStrategy.buildStrategy(series);
+		} else if (strategy.equals(ShortTermMomentumLongTermStrengthStrategy.class.getSimpleName())) {
+			return shortTermMomentumLongTermStrengthStrategy.buildStrategy(series);
 		}
 		else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
@@ -232,6 +240,8 @@ public class StrategiesMap {
 			return betaStrategy.getIndicatorValues(); //TODO
 		} else if (strategyName.equals(HighLanderStrategy.class.getSimpleName())) {
 			return highLanderStrategy.getIndicatorValues(); //TODO
+		} else if (strategyName.equals(ShortTermMomentumLongTermStrengthStrategy.class.getSimpleName())) {
+			return shortTermMomentumLongTermStrengthStrategy.getIndicatorValues(); //TODO
 		}
 		else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);

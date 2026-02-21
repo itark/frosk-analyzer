@@ -1,5 +1,6 @@
 package nu.itark.frosk.strategies.hedge;
 
+import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.AbstractStrategy;
 import nu.itark.frosk.strategies.IIndicatorValue;
@@ -37,6 +38,7 @@ import java.util.List;
  */
 
 
+@Slf4j
 public class BetaStrategy extends AbstractStrategy implements IIndicatorValue {
     /**
      * Beta (5Y Monthly): > 1.3
@@ -46,6 +48,7 @@ public class BetaStrategy extends AbstractStrategy implements IIndicatorValue {
 
     public Strategy buildStrategy(BarSeries series) {
         Double beta = getBeta(series.getName());
+        log.info("beta: {} for {}", beta, series.getName());
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         SMAIndicator shortSma = new SMAIndicator(closePrice, 10);
         SMAIndicator longSma = new SMAIndicator(closePrice, 30);

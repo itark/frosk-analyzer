@@ -8,6 +8,7 @@ import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.HedgeIndexRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
 
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,6 +31,9 @@ public class DataController {
 
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
+
+    @Autowired
+    HedgeIndexRepository hedgeIndexRepository;
 
     @Autowired
     DataSetRepository datasetRepository;
@@ -130,18 +135,18 @@ public class DataController {
     }
 
     @RequestMapping(path = "/runAction", method = RequestMethod.GET)
-    public void getAction(@RequestParam("action") String action, @RequestParam("security") String security) {
-        log.info("/runSelectedAction, action:{}, security:{}",action,security);
-        if (action.equals("undefined")) return;  //TODO fix
+    public void runAction(@RequestParam("action") String action, @RequestParam("security") String securityId, @RequestParam("strategy") String strategy) {
+        log.info("/runAction, action:{}, securityId:{}",action,securityId);
+        if (action.equals("undefined")) return;
 
         if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.LOAD_DATA) {
             log.info("action:{}",action);
-            highLander.addSecurityPriceFromDatabase(security, Database.YAHOO);
-            highLander.runStrategy(null, security);
+            highLander.addSecurityPriceFromDatabase(securityId, Database.YAHOO);
+            highLander.updateSecurityMetaData(securityId);
         }
         if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.RUN_STRATEGY) {
             log.info("action:{}",action);
-         //   highLander.runStrategy(strategy,security);
+            highLander.runStrategy(strategy,Long.valueOf(securityId));
         }
     }
 
@@ -176,6 +181,15 @@ public class DataController {
     }
 
     /**
+     * @return
+     * @Example http://localhost:8080/frosk-analyzer/security?name=ABB.ST
+     */
+    @RequestMapping(path = "/security", method = RequestMethod.GET)
+    public SecurityDTO getSecurity(@RequestParam("name") String name) {
+        return securityMetaDataManager.getSecurity(name);
+    }
+
+    /**
      *
      * @Example http://localhost:8080/frosk-analyzer/topStrategies
      */
@@ -188,6 +202,22 @@ public class DataController {
                         .totalProfit(dto.getTotalProfit())
                         .sqn(dto.getSqn())
                         .sqnRaw(dto.getSqnRaw())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     *
+     * @Example http://localhost:8080/frosk-analyzer/riskCumulative
+     */
+    @RequestMapping(path = "/riskCumulative", method = RequestMethod.GET)
+    public List<RiskCumulativeDTO> getRiskCumulative() {
+        log.info("/riskCumulative");
+        return hedgeIndexRepository.summarizeCumulativeRiskPerDate().stream()
+                .map(dto -> RiskCumulativeDTO.builder()
+                        .dayDate(dto.getDayDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                        .riskyCount(dto.getRiskyCount())
+                        .nonRiskyCount(dto.getNonRiskyCount())
                         .build())
                 .collect(Collectors.toList());
     }

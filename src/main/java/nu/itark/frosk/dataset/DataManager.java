@@ -82,6 +82,12 @@ public class DataManager {
 		}
 	}
 
+	public void updateSecurityMetaData(Database database, String security) {
+		if (database.equals(Database.YAHOO)) {
+			yahooDataManager.updateSecurityMetaData(security);
+		}
+	}
+
 	public void insertSecurityPricesIntoDatabase(Database database, String security) {
 		if (database.equals(Database.YAHOO)) {
 			yahooDataManager.syncronize(security);
@@ -92,8 +98,4 @@ public class DataManager {
 		}
 	}
 
-
-	
-	
-	
 }

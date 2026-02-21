@@ -58,8 +58,8 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 	
 	@Test
 	public void syncOne(){
-		String securityName = "HTRO.ST";
-		yahooDataManager.syncronize(securityName); //	ALFA.ST, AAK.ST, DOFG.OL, "DOFG.OL", VOLCAR-B.ST, ESSITY-B.ST,BILL.ST,ALLEI.ST,HTRO.ST
+		String securityName = "OPSYH.ST";
+		yahooDataManager.syncronize(securityName); //	ALFA.ST, AAK.ST, DOFG.OL, "DOFG.OL", VOLCAR-B.ST, ESSITY-B.ST,BILL.ST,ALLEI.ST,HTRO.ST, OPSYH.ST
 
 		final Security security = securityRepository.findByName(securityName);
 		final List<SecurityPrice> bySecurityIdOrderByTimestamp = securityPriceRepository.findBySecurityIdOrderByTimestamp(security.getId());
@@ -227,7 +227,7 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 
 	@Test
 	public void testUpdateMetaData(){
-		String securityName = "ABB.ST"; //ABB.ST, ESSITY-B.ST, MER.ST, BICO-B.ST, AIK-B.ST, AGTIRA-B.ST, KAV.ST, BRIX
+		String securityName = "OODA.ST"; //ABB.ST, ESSITY-B.ST, MER.ST, BICO-B.ST, AIK-B.ST, AGTIRA-B.ST, KAV.ST, BRIX, OODA.ST
 		final Security security = securityRepository.findByName(securityName);
 		log.info("security:{}",security);
 		yahooDataManager.updateWithMetaData(security);

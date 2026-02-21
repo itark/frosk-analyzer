@@ -18,6 +18,7 @@ public class HighLanderStrategy extends AbstractStrategy implements IIndicatorVa
     private final YoYRevenueGrowthStrategy yoYRevenueGrowthStrategy;
     private final PEGRatioStrategy pegRatioStrategy;
     private final GoldenCrossRelativeStrengthStrategy goldenCrossRelativeStrengthStrategy;
+    private final RecommendationStrategy recommendationStrategy;
 
     /**
      * Builds a composite trading strategy by combining hedge index and beta strategies.
@@ -67,9 +68,10 @@ public class HighLanderStrategy extends AbstractStrategy implements IIndicatorVa
 
         Strategy strategy = hedgeIndexStrategy.buildStrategy(series)
                             .and(betaStrategy.buildStrategy(series))
-                            .and(pegRatioStrategy.buildStrategy(series))
-                            .and(goldenCrossRelativeStrengthStrategy.buildStrictGoldenCrossStrategy(series))
-                            .and(yoYRevenueGrowthStrategy.buildStrategy(series));
+                            .and(pegRatioStrategy.buildStrategy(series));
+                          //  .and(goldenCrossRelativeStrengthStrategy.buildStrictGoldenCrossStrategy(series))
+                          //  .and(yoYRevenueGrowthStrategy.buildStrategy(series));
+                           // .and(recommendationStrategy.buildStrategy(series));
         return strategy;
     }
 

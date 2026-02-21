@@ -46,6 +46,7 @@ public class SecurityMetaDataManager {
         securities.forEach(s -> {
            //s log.info("s:{}",s);
             SecurityDTO securityDTO = SecurityDTO.builder()
+                    .id(s.getId())
                     .name(s.getName())
                     .desc(s.getDescription())
                     .yoyGrowth(s.getYoyGrowth() != null ? Math.round(s.getYoyGrowth() * 100.0) / 100.0 : null)
@@ -61,6 +62,22 @@ public class SecurityMetaDataManager {
         });
 
         return securityDTOList;
+    }
+
+    public SecurityDTO getSecurity(String securityName) {
+        Security security = securityRepository.findByName(securityName);
+        return SecurityDTO.builder()
+                .id(security.getId())
+                .name(security.getName())
+                .desc(security.getDescription())
+                .yoyGrowth(security.getYoyGrowth() != null ? Math.round(security.getYoyGrowth() * 100.0) / 100.0 : null)
+                .pegRatio(security.getPegRatio() != null ? Math.round(security.getPegRatio() * 100.0) / 100.0 : null)
+                .beta(security.getBeta() != null ? Math.round(security.getBeta() * 100.0) / 100.0 : null)
+                .trailingEps(security.getTrailingEps() != null ? Math.round(security.getTrailingEps() * 100.0) / 100.0 : null)
+                .forwardEps(security.getForwardEps() != null ? Math.round(security.getForwardEps() * 100.0) / 100.0 : null)
+                .trailingPe(security.getTrailingPe() != null ? Math.round(security.getTrailingPe() * 100.0) / 100.0 : null)
+                .forwardPe(security.getForwardPe() != null ? Math.round(security.getForwardPe() * 100.0) / 100.0 : null)
+                .build();
     }
 
     private void addMetaData(SecurityDTO securityDTO) {

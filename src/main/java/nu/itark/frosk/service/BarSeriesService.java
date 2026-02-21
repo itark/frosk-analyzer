@@ -28,6 +28,7 @@ import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -65,26 +66,18 @@ public class BarSeriesService  {
 	@Autowired
 	ProductProxy productProxy;
 
-	/**
-	 * Retrive from {@linkplain SecurityPriceRepository}
-	 * 
-	 * @return List<BarSeries> for alla securities in database. Filter on 'EUR'
-	 */
 	public List<BarSeries> getDataSet(Database database) {
-		//Iterable<Security> spList = securityRepository.findAllByActiveAndQuoteCurrency(true, "EUR");
-		//Iterable<Security> spList = securityRepository.findAllByQuoteCurrency("EUR");
-		Iterable<Security> spList = securityRepository.findByDatabase(database.name());
+		//Iterable<Security> securities = securityRepository.findByDatabase(database.name());
+		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(database.name(), true);
 		List<BarSeries> barSeries = new ArrayList<BarSeries>();
 		
-		spList.forEach(sp -> {
-			barSeries.add(getDataSet( getSecurityId(sp.getName())  ));
+		securities.forEach(security -> {
+			barSeries.add(getDataSet(security.getId()));
 		});
-		
 		return barSeries;
-		
-	}	
+	}
 
-	
+
 	public Long getSecurityId(String securityName) {
 		final Security byName = securityRepository.findByName(securityName);
 		if (byName == null) {
@@ -121,22 +114,17 @@ public class BarSeriesService  {
 	 * @return BarSeries
 	 */
 	public BarSeries getDataSet(Long security_id) {
-		Optional<Security> security = securityRepository.findById(security_id);
-		//Sanity check
-		if (security == null){
-			throw new RuntimeException("Security is null");
-		}
-
-		BarSeries series = new BaseBarSeriesBuilder().withName(security.get().getName()).withNumTypeOf(DoubleNum.class).build();
-
-		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityIdOrderByTimestamp(security.get().getId());
-		
+		//log.info("Getting dataset for security_id={}", security_id);
+		Security security = securityRepository.findById(security_id).orElse(null);
+		BarSeries series = new BaseBarSeriesBuilder().withName(security_id.toString()).withNumTypeOf(DoubleNum.class).build();
+		//log.info("Database call...on security_id={}, security_name={}", security.getId(), security.getName());
+		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityIdOrderByTimestamp(security_id);
+		//log.info("Database call ready.");
 		securityPrices.forEach(row -> {
-		//	log.info("row.getId():{}, row.getTimestamp():{}, row.getOpen():{}", row.getId(), row.getTimestamp(), row.getOpen());
 			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());
 		     series.addBar(dateTime, row.getOpen(), row.getHigh(),  row.getLow(), row.getClose(), row.getVolume());
 		});
-		
+		//log.info("Returning dataset for security_id={}", security_id);
 		return series;
 		
 	}	

@@ -17,5 +17,6 @@ public interface SecurityRepository extends JpaRepository<Security, Long>{
 	List<Security> findAllByActiveAndQuoteCurrency(boolean active, String quoteCurrency);
 	List<Security> findAllByQuoteCurrency(String quoteCurrency);
 	boolean existsByName(String name);
-	
+
+    Iterable<Security> findTop3ByDatabaseAndActive(String string, boolean b);
 }

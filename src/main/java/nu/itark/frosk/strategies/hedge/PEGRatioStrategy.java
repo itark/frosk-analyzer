@@ -21,6 +21,18 @@ import java.util.List;
 
 /**
  * From https://claude.ai/
+ *
+ * What is PEG Ratio?
+ *
+ * PEG = (P/E Ratio) / (EPS Growth Rate)
+ *
+ * P/E: Price / Earnings
+ *
+ * EPS Growth Rate: Usually forward-looking (% expected annual growth)
+ *
+ *
+ * PEG = (P/E ratio) / (5Y EPS growth in %)
+ * For example, if peRatio = 30 and expected EPS growth = 25% → PEG = 30 / 25 = 1.2.
  */
 @Component
 public class PEGRatioStrategy extends AbstractStrategy implements IIndicatorValue  {

@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 @AllArgsConstructor
 public class SecurityDTO {
+    private Long id;
     private String name;
     private String desc;
     private Double yoyGrowth;

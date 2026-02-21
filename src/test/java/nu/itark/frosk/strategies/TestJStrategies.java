@@ -90,8 +90,14 @@ public class TestJStrategies extends BaseIntegrationTest {
 		addFormat();
 		BarSeries timeSeries = barSeriesService.getDataSet(productId, false, false);
 
+		ShortTermMomentumLongTermStrengthStrategy stlt = strategiesMap.getShortTermMomentumLongTermStrengthStrategy();
+		resultMap.add(run(stlt.buildStrategy(timeSeries),timeSeries));
+
+
+/*
 		HighLanderStrategy hl = strategiesMap.getHighLanderStrategy();
 		resultMap.add(run(hl.buildStrategy(timeSeries),timeSeries));
+*/
 
 
 /*

@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-@SpringBootTest(classes = {FroskApplication.class})
 public class TestJStrategyAnalysis extends BaseIntegrationTest {
 	Logger logger = Logger.getLogger(TestJStrategyAnalysis.class.getName());
 	
@@ -42,6 +41,11 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 
 	@Autowired
 	HedgeIndexRepository hedgeIndexRepository;
+
+	@Test
+	public final void runNullNull() {
+		strategyAnalysis.run(null, null);
+	}
 
 	@Test
 	public void run1() {
@@ -111,12 +115,14 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 		Long sec_id = barSeriesService.getSecurityId("GC=F");
 		strategyAnalysis.run(GoldStrategy.class.getSimpleName(), sec_id);
 
+/*
 		//Verify
 		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(GoldStrategy.class.getSimpleName(), "GC=F");
 		fs.getStrategyTrades().stream()
 				.sorted(Comparator.comparing(StrategyTrade::getDate))
 				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t)))
 				.collect(Collectors.toSet());
+*/
 
 	}
 
@@ -196,6 +202,36 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 				.sorted(Comparator.comparing(StrategyTrade::getDate))
 				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t, ToStringStyle.MULTI_LINE_STYLE)))
 				.collect(Collectors.toSet());
+
+	}
+
+	@Test
+	public void runSTLT() {
+		String strategyName = "ShortTermMomentumLongTermStrengthStrategy";
+		String securityName = "GRNG.ST"; //GRNG.ST
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		strategyAnalysis.run(strategyName, sec_id);
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, securityName);
+		fs.getStrategyTrades().stream()
+				.sorted(Comparator.comparing(StrategyTrade::getDate))
+				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t, ToStringStyle.MULTI_LINE_STYLE)))
+				.collect(Collectors.toSet());
+
+	}
+
+	@Test
+	public void runGeneric() {
+		String strategyName = "EngulfingStrategy";
+		String securityName = "NYAB.ST";
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		strategyAnalysis.run(strategyName, sec_id);
+/*
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName(strategyName, securityName);
+		fs.getStrategyTrades().stream()
+				.sorted(Comparator.comparing(StrategyTrade::getDate))
+				.peek(t-> System.out.println(ReflectionToStringBuilder.toString(t, ToStringStyle.MULTI_LINE_STYLE)))
+				.collect(Collectors.toSet());
+*/
 
 	}
 

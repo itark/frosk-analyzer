@@ -30,6 +30,7 @@ import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.BarSeries;
+import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
@@ -58,24 +59,24 @@ public class RSI2Strategy extends AbstractStrategy implements IIndicatorValue {
         }
         super.barSeries = series;
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-        SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
-		setIndicatorValues(shortSma, "shortSma");
-        SMAIndicator longSma = new SMAIndicator(closePrice, 200);
-        setIndicatorValues(longSma, "longSma");
+        EMAIndicator shortEma = new EMAIndicator(closePrice, 5);
+		setIndicatorValues(shortEma, "shortEma");
+        EMAIndicator longEma = new EMAIndicator(closePrice, 200);
+        setIndicatorValues(longEma, "longEma");
         rsi = new RSIIndicator(closePrice, 2);
 		setIndicatorValues(rsi, "rsi");
         // Entry rule
         // The long-term trend is up when a security is above its 200-period SMA.
-        Rule entryRule = new OverIndicatorRule(shortSma, longSma) // Trend
+        Rule entryRule = new OverIndicatorRule(shortEma, longEma) // Trend
                .and(new CrossedDownIndicatorRule(rsi, 10)) // Signal 1
-                .and(new OverIndicatorRule(shortSma, closePrice)); // Signal 2
+                .and(new OverIndicatorRule(shortEma, closePrice)); // Signal 2
 
         Rule exitRule;
         if (!inherentExitRule) {
             // The long-term trend is down when a security is below its 200-period SMA.
-            exitRule = new UnderIndicatorRule(shortSma, longSma) // Trend
+            exitRule = new UnderIndicatorRule(shortEma, longEma) // Trend
                     .and(new CrossedUpIndicatorRule(rsi, 80)) // Signal 1
-                    .and(new UnderIndicatorRule(shortSma, closePrice)); // Signal 2
+                    .and(new UnderIndicatorRule(shortEma, closePrice)); // Signal 2
         } else {
             exitRule = exitRule();
         }

@@ -17,7 +17,6 @@ public class StatisticsBody {
     // Financial values with full formatting
     @JsonIgnore
     private FinancialValue priceHint;
-    @JsonIgnore
     private FinancialValue enterpriseValue;
     @JsonIgnore
     private FinancialValue floatShares;

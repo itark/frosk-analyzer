@@ -3,8 +3,8 @@ package nu.itark.frosk.strategies;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.service.BarSeriesService;
-import nu.itark.frosk.strategies.hedge.PEGRatioStrategy;
-import nu.itark.frosk.strategies.hedge.SimplePEGRatioStrategy;
+import nu.itark.frosk.strategies.hedge.RecommendationStrategy;
+import nu.itark.frosk.strategies.hedge.RecommendationTrendStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,18 +19,18 @@ import java.util.List;
 
 @Slf4j
 @SpringBootTest
-public class TestJPEGRatioStrategy extends BaseIntegrationTest {
+public class TestJRecommendationStrategy extends BaseIntegrationTest {
 
     @Autowired
     BarSeriesService barSeriesService;
 
     @Autowired
-    PEGRatioStrategy pegRatioStrategy;
+    RecommendationStrategy recommendationStrategy;
 
     @Test
     public final void run() throws Exception {
         BarSeries barSeries = barSeriesService.getDataSet("ABB.ST", false, false);
-        Strategy strategy = pegRatioStrategy.buildStrategy(barSeries);
+        Strategy strategy = recommendationStrategy.buildStrategy(barSeries);
         BarSeriesManager seriesManager = new BarSeriesManager(barSeries);
         TradingRecord tradingRecord = seriesManager.run(strategy);
         List<Position> positions = tradingRecord.getPositions();

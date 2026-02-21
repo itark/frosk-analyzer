@@ -3,19 +3,13 @@ package nu.itark.frosk.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Value;
 
 @Data
 @Entity
@@ -59,15 +53,23 @@ public class Security {
 	@Column(name = "forward_pe")
 	private Double forwardPe;
 
+	@Column(name = "enterprise_value")
+	private Long enterpriseValue;
+
 	@Column(name = "active", columnDefinition="BOOLEAN DEFAULT true")
 	private boolean active = true;
+
+	@PrePersist
+	@PreUpdate
+	private void syncActiveWithEnterpriseValue() {
+		this.active = (this.enterpriseValue != null && this.enterpriseValue > 500000000);
+	}
 
     @ManyToMany(fetch = FetchType.EAGER, mappedBy = "securities")
 	private List<DataSet> datasets = new ArrayList<>();
 
 	protected Security() {
 	}
-
 
 	public Security(String name, String description, String database, String quoteCurrency) {
 		this.name = name;

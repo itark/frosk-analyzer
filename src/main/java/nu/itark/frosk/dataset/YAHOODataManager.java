@@ -5,10 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.RecommendationTrend;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
-import nu.itark.frosk.rapidapi.yhfinance.model.Body;
-import nu.itark.frosk.rapidapi.yhfinance.model.RecommendationBody;
-import nu.itark.frosk.rapidapi.yhfinance.model.StatisticsBody;
-import nu.itark.frosk.rapidapi.yhfinance.model.StockHistoryDTO;
+import nu.itark.frosk.rapidapi.yhfinance.model.*;
 import nu.itark.frosk.repo.RecommendationTrendRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
@@ -17,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
@@ -46,6 +45,9 @@ public class YAHOODataManager {
     @Value("${rapid.api.enabled}")
     boolean apiEnabled;
 
+    @Value("${enterprise.value.threshold:500000000}")
+    int enterpriseValueThreshold;
+
     @Autowired
     SecurityPriceRepository securityPriceRepository;
 
@@ -71,8 +73,8 @@ public class YAHOODataManager {
         }
         log.info("sync=" + Database.YAHOO.toString());
         Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.YAHOO.toString(), true);
-
-        // securities.forEach(sec -> log.info("NAME="+ sec.getName()));
+  //    Iterable<Security> securities = securityRepository.findTop3ByDatabaseAndActive(Database.YAHOO.toString(), true);
+        securities.forEach(sc -> log.info("NAME=" + sc.getName()));
 
         List<SecurityPrice> spList;
         try {
@@ -85,13 +87,23 @@ public class YAHOODataManager {
         log.info("Adding:{} days", spList.size());
         spList.forEach((sp) -> {
             try {
-                securityPriceRepository.save(sp);
+                saveSingle(sp);
             } catch (DataIntegrityViolationException e) {
                 log.error("Delivered duplicates on sp.getSecurityId(): " + sp.getSecurityId() + ", continues....");
                 //sort of ok, continue
             }
         });
+        log.info("Updated:{} security_price", spList.size());
 
+    }
+
+    /**
+     * Saves a single SecurityPrice in its own transaction and commits immediately.
+     * Exceptions will rollback this single transaction only.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public SecurityPrice saveSingle(SecurityPrice sp) {
+        return securityPriceRepository.save(sp);
     }
 
     /**
@@ -117,7 +129,7 @@ public class YAHOODataManager {
         log.info("Adding:{} days", spList.size());
         spList.forEach((sp) -> {
             try {
-                securityPriceRepository.save(sp);
+                saveSingle(sp);
             } catch (DataIntegrityViolationException e) {
                 log.error("Duplicate ." + e);
                 //continue
@@ -227,6 +239,14 @@ public class YAHOODataManager {
         }));
     }
 
+    public void updateSecurityMetaData(String securityName) {
+        if (!apiEnabled) {
+            log.info("updateSecurityMetaData, apiEnabled=" + apiEnabled + ", aborting.");
+            return;
+        }
+        Security security = securityRepository.findByName(securityName);
+        updateWithMetaData(security);
+    }
 
     /**
      * Includes call to Yahoo Finance using RapidApiManager
@@ -252,6 +272,8 @@ public class YAHOODataManager {
         double forwardPERaw = 0.0;
         double forwardEpsRaw = 0.0;
         double trailingEpsRaw = 0.0;
+
+        long enterpriseValueRaw = 0;
 
         StatisticsBody moduleStatistics;
         try {
@@ -336,8 +358,12 @@ public class YAHOODataManager {
                     }
                 }
             }
+            if (moduleStatistics.getEnterpriseValue() != null) {
+                FinancialValue enterpriseValue = moduleStatistics.getEnterpriseValue();
+                enterpriseValueRaw  = enterpriseValue.getRaw();
+            }
         } catch (Exception e) {
-            log.error("Error in Statistics for:{}", security.getName(), e.getMessage());
+            log.error("Error in Statistics for:{}, error:{}", security.getName(), e.getMessage());
         }
         security.setPegRatio(pegRatio);
         security.setBeta(beta);
@@ -345,6 +371,10 @@ public class YAHOODataManager {
         security.setForwardEps(forwardEps);
         security.setTrailingPe(trailingPe);
         security.setForwardPe(forwardPe);
+        security.setEnterpriseValue(enterpriseValueRaw);
+        if (enterpriseValueRaw < enterpriseValueThreshold) {
+            security.setActive(false);
+        }
     }
 
     private void setIncomeStatementData(Security security) {

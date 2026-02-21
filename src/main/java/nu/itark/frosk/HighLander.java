@@ -175,6 +175,10 @@ public class HighLander {
 		dataManager.updateSecurityMetaData(Database.YAHOO);
 	}
 
+	public void updateSecurityMetaData(String security) {
+		dataManager.updateSecurityMetaData(Database.YAHOO, security);
+	}
+
 	/**
 	 * Run all stratregies on all securities.
 	 * This will insert result into {@linkplain FeaturedStrategyRepository}
@@ -184,8 +188,8 @@ public class HighLander {
 		strategyAnalysis.run(null, null);
 	}
 
-	public void runStrategy(String strategy, String security) {
-		strategyAnalysis.run(strategy, barSeriesService.getSecurityId(security));
+	public void runStrategy(String strategy, Long securityId) {
+		strategyAnalysis.run(strategy, securityId);
 	}
 
 	private void runChooseBestStrategy() {

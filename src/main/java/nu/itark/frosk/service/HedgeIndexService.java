@@ -80,7 +80,6 @@ public class HedgeIndexService {
             }
             List<HedgeIndex> hedgeIndexList = converter.apply(strategyTrades);
             hedgeIndexRepository.saveAllAndFlush(hedgeIndexList);
-            //log.info("HedgeIndex updated for: {} with strategyTrades:{}",strategyName,strategyTrades.size());
         } else {
             log.error("Warning: FeaturedStrategy not found for name: " + strategyName + ", security: " + securityName);
         }
@@ -95,7 +94,6 @@ public class HedgeIndexService {
             List<StrategyTrade> strategyTrades;
 
             if (hedgeIndexLatestDate.isPresent()) {
-               // log.info("hedgeIndexLatestDate: {}", hedgeIndexLatestDate);
                 latestDate = hedgeIndexLatestDate.get().getDate();
                 strategyTrades = strategyTradeRepository.findByFeaturedStrategyIdAndDateGreaterThan(
                         featuredStrategy.getId(), latestDate);
@@ -107,9 +105,7 @@ public class HedgeIndexService {
             if (!strategyTrades.isEmpty()) {
                 List<HedgeIndex> hedgeIndexList = converter.apply(strategyTrades);
                 hedgeIndexRepository.saveAllAndFlush(hedgeIndexList);
-                //log.info("HedgeIndex updated for: {} with strategyTrades: {}", strategyName, strategyTrades.size());
             } else {
-                //log.info("No new trades to process for: {}", strategyName);
             }
         } else {
             log.error("Warning: FeaturedStrategy not found for name: " + strategyName + ", security: " + securityName);
@@ -168,7 +164,7 @@ public class HedgeIndexService {
             HedgeIndex hedgeIndex = new HedgeIndex();
             hedgeIndex.setDate(trade.getDate());
             hedgeIndex.setCategory("Commodities");
-            hedgeIndex.setIndicator("CL=F");
+            hedgeIndex.setIndicator("GC=F");
             hedgeIndex.setRuleDesc("Gold breaks above 10-day high");
             hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
             hedgeIndex.setPrice(trade.getPrice());
@@ -207,8 +203,6 @@ public class HedgeIndexService {
         return hedgeIndexList;
     }
 
-
-
     /**
      * Return risk, hence if risk < threshold go long
      * if risk > threshold, go short.
@@ -219,14 +213,12 @@ public class HedgeIndexService {
     public boolean risk(ZonedDateTime indexDate) {
         final List<HedgeIndex> hedgeIndexByDateList = hedgeIndexRepository.findByDate(Date.from(indexDate.toInstant()));
         int risks = countRisksIndicators(hedgeIndexByDateList);
-        //log.info("risks:{}",risks);
         if (risks > riskThreshold) {
             return true;
         } else {
             return false;
         }
     }
-
 
     private int countRisksIndicators(List<HedgeIndex> hedgeIndexList) {
         int count = 0;

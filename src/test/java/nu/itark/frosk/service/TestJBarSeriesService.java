@@ -33,7 +33,7 @@ public class TestJBarSeriesService extends BaseIntegrationTest {
 	}	
 	
 	@Test
-	public void testGetDataSet() throws Exception {
+	public void testGetDataSetCoinBase() throws Exception {
 		List<BarSeries> sec = barSeriesService.getDataSet(Database.COINBASE);
 		assertNotNull(sec);
 		System.out.println("size="+sec.size());
@@ -43,6 +43,13 @@ public class TestJBarSeriesService extends BaseIntegrationTest {
 				.findFirst()
 				.get();
 		assertNotNull(barSeries);
+
+	}
+
+	@Test
+	public void testGetDataSetYahoo() throws Exception {
+		List<BarSeries> sec = barSeriesService.getDataSet(Database.YAHOO);
+		System.out.println("size="+sec.size());
 
 	}
 

@@ -2,17 +2,12 @@ package nu.itark.frosk.repo;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.coinbase.BaseIntegrationTest;
-import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.HedgeIndex;
-import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.service.HedgeIndexService;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.ta4j.core.Trade;
 
 import java.util.Comparator;
 import java.util.List;
@@ -76,7 +71,28 @@ public class TestJHedgeIndexRepository extends BaseIntegrationTest {
 			System.out.println("indicator:"+riskSummary.getIndicator()+",date:"+riskSummary.getDate()+",risk:"+riskSummary.getRiskCount()+", price:"+riskSummary.getPrice());
 		}
 
-
 	}
+
+	@Test
+	public void testSummarizeRisk2() {
+		for (HedgeIndexRepository.RiskSummaryProjection riskSummary : hedgeIndexRepository.summarizeRiskPerIndicatorAndDate()) {
+			System.out.println("indicator:"+riskSummary.getIndicator()+",day:"+riskSummary.getDayDate()+",risk:"+riskSummary.getRiskyCount()+", risk %:"+riskSummary.getRiskyPercent());
+		}
+	}
+
+	@Test
+	public void testSummarizeRisk3() {
+		for (HedgeIndexRepository.RiskSummaryByDateProjection riskSummary : hedgeIndexRepository.summarizeRiskPerDate()) {
+			System.out.println("count:" + riskSummary.getTotalCount() + ",day:" + riskSummary.getDayDate() + ",risk:" + riskSummary.getRiskyCount() + ", non-risk:" + riskSummary.getNonRiskyCount());
+		}
+	}
+
+	@Test
+	public void testSummarizeRisk4() {
+		for (HedgeIndexRepository.RiskCumulativeProjection riskSummary : hedgeIndexRepository.summarizeCumulativeRiskPerDate()) {
+			System.out.println("count:" + riskSummary.getTotalCount() + ",day:" + riskSummary.getDayDate() + ",risk:" + riskSummary.getRiskyCount() + ", non-risk:" + riskSummary.getNonRiskyCount());
+		}
+	}
+
 
 }

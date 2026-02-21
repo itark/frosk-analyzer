@@ -11,14 +11,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 @Configuration
-@EnableScheduling
+//@EnableScheduling
 @Slf4j
 public class Scheduler {
 
 	@Autowired
 	private HighLander highLander;
 
-	@Scheduled(cron="${download.schedule}")
+	//@Scheduled(cron="${download.schedule}")
 	public void runDownload() {
 		log.info("::Scheduler::runDownload() about to execute");
 		//highLander.runInstall(Database.COINBASE);
