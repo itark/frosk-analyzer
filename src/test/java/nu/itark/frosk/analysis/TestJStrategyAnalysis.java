@@ -222,7 +222,7 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 	@Test
 	public void runGeneric() {
 		String strategyName = "EngulfingStrategy";
-		String securityName = "NYAB.ST";
+		String securityName = "ABB.ST";
 		Long sec_id = barSeriesService.getSecurityId(securityName);
 		strategyAnalysis.run(strategyName, sec_id);
 /*

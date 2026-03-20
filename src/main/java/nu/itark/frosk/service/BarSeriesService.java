@@ -1,6 +1,7 @@
 package nu.itark.frosk.service;
 
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import nu.itark.frosk.crypto.coinbase.model.Candle;
@@ -68,7 +69,8 @@ public class BarSeriesService  {
 
 	public List<BarSeries> getDataSet(Database database) {
 		//Iterable<Security> securities = securityRepository.findByDatabase(database.name());
-		Iterable<Security> securities = securityRepository.findByDatabaseAndActive(database.name(), true);
+		@NonNull Iterable<Security> securities = securityRepository.findByDatabaseAndActive(database.name(), true);
+		//log.info("Getting data set for database {},  size{}" , database.name(), securities.spliterator().getExactSizeIfKnown());
 		List<BarSeries> barSeries = new ArrayList<BarSeries>();
 		
 		securities.forEach(security -> {

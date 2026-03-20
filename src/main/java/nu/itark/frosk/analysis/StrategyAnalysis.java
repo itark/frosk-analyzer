@@ -102,6 +102,8 @@ public class StrategyAnalysis {
 		log.info("run("+strategy+","+security_id+")");
 		if (Objects.isNull(strategy)  && Objects.isNull(security_id)) {
 				List<String> strategies = strategiesMap.buildStrategiesMap();
+
+			log.info("{} strategies to run. Before exclude ",strategies.size());
 			strategies.removeAll(List.of(excludeHedgeStrategies));
 			if (strategyOnly != null && !strategyOnly.isEmpty()) {
 				strategies = List.of(strategyOnly);
@@ -160,72 +162,74 @@ public class StrategyAnalysis {
 	}
 
 
+	@Transactional
 	public void run(String strategy, Long security_id) throws DataIntegrityViolationException {
 		log.info("run({},{})", strategy, security_id);
-
-		try {
-			List<String> strategies = getStrategiesToRun(strategy);
-			List<BarSeries> dataset = getDataset(security_id);
-
-			if (strategy == null) {
-				strategies.forEach(strategyName -> runStrategyWithErrorHandling(strategyName, dataset));
-			} else {
-				validateDataset(dataset, security_id);
-				runStrategyWithErrorHandling(strategy, dataset);
+		if (Objects.isNull(strategy) && Objects.isNull(security_id)) {
+			// Case 1: both null - run all strategies on all securities
+			List<String> strategies = strategiesMap.buildStrategiesMap();
+			strategies.removeAll(List.of(excludeHedgeStrategies));
+			if (strategyOnly != null && !strategyOnly.isEmpty()) {
+				strategies = List.of(strategyOnly);
+			}
+			log.info("{} strategies to run. ", strategies.size());
+			strategies.forEach(strategyName -> {
+				try {
+					runStrategy(strategyName, barSeriesService.getDataSet(Database.valueOf(databaseOnly)));
+				} catch (DataIntegrityViolationException e) {
+					log.error("Error runStrategy on strategyName={}", strategyName);
+					throw e;
+				}
+			});
+		}
+		else if (Objects.isNull(strategy) && Objects.nonNull(security_id)) {
+			// Case 2: strategy null, security_id set - run all strategies on one security
+			List<String> strategies = strategiesMap.buildStrategiesMap();
+			strategies.removeAll(List.of(excludeHedgeStrategies));
+			if (strategyOnly != null && !strategyOnly.isEmpty()) {
+				strategies = List.of(strategyOnly);
+			}
+			strategies.forEach(strategyName -> {
+				try {
+					runStrategy(strategyName, List.of(barSeriesService.getDataSet(security_id)));
+				} catch (DataIntegrityViolationException e) {
+					log.error("Error runStrategy on strategyName={}", strategyName);
+					throw e;
+				}
+			});
+		}
+		else if (Objects.nonNull(strategy) && Objects.isNull(security_id)) {
+			// Case 3: strategy set, security_id null - run one strategy on all securities
+			try {
+				runStrategy(strategy, barSeriesService.getDataSet(Database.valueOf(databaseOnly)));
+			} catch (Exception e) {
+				log.error("Error runStrategy on strategy={}", strategy);
+				throw e;
 			}
 		}
-		catch (IndexOutOfBoundsException e) {
-			log.error("IndexOutOfBoundsException running strategy={}, security_id={}. This may be a ta4j library bug with indicator calculation at series boundaries.",
-					strategy, security_id, e);
-			throw new DataIntegrityViolationException("Strategy execution failed due to index out of bounds", e);
+		else if (Objects.nonNull(strategy) && security_id != null) {
+			// Case 4: both set - run one strategy on one security
+			List<BarSeries> barSeriesList = new ArrayList<BarSeries>();
+			BarSeries barSeries = barSeriesService.getDataSet(security_id);
+			// Sanity check
+			if (Objects.isNull(barSeries) || barSeries.isEmpty()) {
+				throw new RuntimeException("BarSeries is null or empty. Download security prices.");
+			}
+			barSeriesList.add(barSeries);
+			try {
+				runStrategy(strategy, barSeriesList);
+			} catch (Exception e) {
+				log.error("Error runStrategy on strategy={} and security_id={}", strategy, security_id);
+				throw e;
+			}
 		}
-
+		else {
+			throw new UnsupportedOperationException("kalle anka");
+		}
 		log.info("run({},{}) READY", strategy, security_id);
 	}
 
-	private List<String> getStrategiesToRun(String strategy) {
-		if (strategy != null) {
-			return List.of(strategy);
-		}
-
-		if (strategyOnly != null && !strategyOnly.isEmpty()) {
-			return List.of(strategyOnly);
-		}
-
-		List<String> strategies = strategiesMap.buildStrategiesMap();
-		strategies.removeAll(List.of(excludeHedgeStrategies));
-		log.info("{} strategies to run.", strategies.size());
-		return strategies;
-	}
-
-	private List<BarSeries> getDataset(Long security_id) {
-		if (security_id != null) {
-			return List.of(barSeriesService.getDataSet(security_id));
-		}
-		return barSeriesService.getDataSet(Database.valueOf(databaseOnly));
-	}
-
-	private void validateDataset(List<BarSeries> dataset, Long security_id) {
-		if (security_id != null && (dataset == null || dataset.isEmpty() || dataset.get(0).isEmpty())) {
-			throw new RuntimeException("BarSeries is null or empty. Download security prices.");
-		}
-	}
-
-	private void runStrategyWithErrorHandling(String strategyName, List<BarSeries> dataset) {
-		try {
-			runStrategy(strategyName, dataset);
-		} catch (IndexOutOfBoundsException e) {
-			log.error("IndexOutOfBoundsException in strategy={} - possibly a ta4j indicator bug accessing series boundaries, continues...",
-					strategyName, e);
-		}
-		catch (DataIntegrityViolationException e) {
-			log.error("Error runStrategy on strategyName={}", strategyName);
-			throw e;
-		} catch (Exception e) {
-			log.error("Error runStrategy on strategy={}", strategyName);
-			throw e;
-		}
-	}
+	// ...existing code...
 
 	public void runChooseBestStrategy() {
 		for (BarSeries series : barSeriesService.getDataSet(Database.valueOf(databaseOnly))) {
@@ -308,6 +312,7 @@ public class StrategyAnalysis {
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 //	@Async
 	private void runStrategy(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException{
+		log.info("runStrategy strategy={}, size={}", strategy, barSeriesList.size());
 		AtomicReference<FeaturedStrategy> fs = new AtomicReference<>();
         AtomicReference<Double> totalProfit = new AtomicReference<>((double) 0);
 		AtomicReference<Double> totalGrossReturn = new AtomicReference<>((double) 0);
@@ -317,14 +322,14 @@ public class StrategyAnalysis {
 		barSeriesList.stream().forEach(series -> {
 
 		//barSeriesList.parallelStream().forEach(series -> {
-			//log.info("runStrategy("+strategy+", "+series.getName()+")");
+			log.info("runStrategy("+strategy+", "+series.getName()+")");
             try {
                 strategyToRun.set(strategiesMap.getStrategyToRun(strategy, series));
             } catch (IndexOutOfBoundsException e) {
                 throw new RuntimeException("continue on: "+e);
             }
             Security security = securityRepository.findById(Long.valueOf(series.getName())).orElse(null);
-			//log.info("Running strategy {} on security {} - {}", strategy, security.getId(), security.getName());
+			log.info("Running strategy {} on security {} - {}", strategy, security.getId(), security.getName());
 			if (series.getBarData().isEmpty()){
 				log.warn("Something fishy on {}. BarData isEmpty, continues...", series.getName());
 				security.setActive(false);

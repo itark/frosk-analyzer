@@ -59,7 +59,6 @@ public class Security {
 	@Column(name = "active", columnDefinition="BOOLEAN DEFAULT true")
 	private boolean active = true;
 
-	@PrePersist
 	@PreUpdate
 	private void syncActiveWithEnterpriseValue() {
 		this.active = (this.enterpriseValue != null && this.enterpriseValue > 500000000);
