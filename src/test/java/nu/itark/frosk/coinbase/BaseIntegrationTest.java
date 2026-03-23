@@ -17,7 +17,7 @@ import org.springframework.test.context.TestPropertySource;
  */
 
 @SpringBootTest(classes = {FroskApplication.class})
-@ActiveProfiles("prod")
+@ActiveProfiles("test")
 public abstract class BaseIntegrationTest {
 
     @Autowired

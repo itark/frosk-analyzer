@@ -35,7 +35,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -68,15 +70,29 @@ public class BarSeriesService  {
 	ProductProxy productProxy;
 
 	public List<BarSeries> getDataSet(Database database) {
-		//Iterable<Security> securities = securityRepository.findByDatabase(database.name());
 		@NonNull Iterable<Security> securities = securityRepository.findByDatabaseAndActive(database.name(), true);
-		//log.info("Getting data set for database {},  size{}" , database.name(), securities.spliterator().getExactSizeIfKnown());
-		List<BarSeries> barSeries = new ArrayList<BarSeries>();
-		
-		securities.forEach(security -> {
-			barSeries.add(getDataSet(security.getId()));
-		});
-		return barSeries;
+		List<Security> securityList = new ArrayList<>();
+		securities.forEach(securityList::add);
+
+		// Batch-load all prices in a single query instead of N individual queries
+		List<Long> ids = securityList.stream().map(Security::getId).collect(Collectors.toList());
+		List<SecurityPrice> allPrices = securityPriceRepository.findBySecurityIdInOrderBySecurityIdAscTimestampAsc(ids);
+
+		// Group prices by security_id
+		Map<Long, List<SecurityPrice>> pricesBySecurityId = allPrices.stream()
+				.collect(Collectors.groupingBy(SecurityPrice::getSecurityId));
+
+		List<BarSeries> barSeriesList = new ArrayList<>();
+		for (Security security : securityList) {
+			BarSeries series = new BaseBarSeriesBuilder().withName(security.getId().toString()).withNumTypeOf(DoubleNum.class).build();
+			List<SecurityPrice> prices = pricesBySecurityId.getOrDefault(security.getId(), Collections.emptyList());
+			prices.forEach(row -> {
+				ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(), ZoneId.systemDefault());
+				series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
+			});
+			barSeriesList.add(series);
+		}
+		return barSeriesList;
 	}
 
 

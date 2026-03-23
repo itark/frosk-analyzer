@@ -275,5 +275,15 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 		strategyAnalysis.runBot(strategy,sec_id );
 	}
 
+	@Test
+	public void runGenericAllAndOne() {
+		String strategy = "SimpleMovingMomentumStrategy";
+		String securityName = "BTC-EUR";
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		strategyAnalysis.run(strategy,sec_id );
+	}
+
+
+
 
 }

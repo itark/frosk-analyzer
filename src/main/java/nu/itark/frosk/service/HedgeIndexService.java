@@ -64,6 +64,7 @@ public class HedgeIndexService {
         updateHedgeIndex("GoldStrategy", "GC=F", this::convertToGoldStrategyHedgeIndexes);
         updateHedgeIndex("SP500Strategy", "^GSPC", this::convertToSP500StrategyHedgeIndexes);
         updateHedgeIndex("NasdaqVsSPStrategy", "^IXIC", this::convertToNasdaqVsSPStrategyHedgeIndexes);
+        clearCache(); // invalidate after data update
     }
 
     private void updateHedgeIndex_OLD(String strategyName, String securityName, java.util.function.Function<List<StrategyTrade>, List<HedgeIndex>> converter) {
@@ -203,21 +204,61 @@ public class HedgeIndexService {
         return hedgeIndexList;
     }
 
+    // In-memory cache: date millis → risk count. Loaded lazily on first risk() call.
+    private volatile Map<Long, Integer> riskCache = null;
+
+    /**
+     * Pre-loads the entire HedgeIndex table into memory so that per-bar rule
+     * evaluation does not hit the database for every bar of every security.
+     * Call this once before running a batch of strategies, or it is loaded
+     * lazily on the first {@link #risk} call.
+     */
+    public synchronized void warmCache() {
+        if (riskCache == null) {
+            buildCache();
+        }
+    }
+
+    /** Clears the cache (call after HedgeIndex data is updated). */
+    public synchronized void clearCache() {
+        riskCache = null;
+    }
+
+    private void buildCache() {
+        List<HedgeIndex> all = hedgeIndexRepository.findAll();
+        Map<Long, Integer> cache = new HashMap<>();
+        for (HedgeIndex hi : all) {
+            if (hi.getDate() != null) {
+                long key = hi.getDate().getTime();
+                if (hi.getRisk()) {
+                    cache.merge(key, 1, Integer::sum);
+                } else {
+                    cache.putIfAbsent(key, 0);
+                }
+            }
+        }
+        riskCache = cache;
+        log.info("HedgeIndex cache warmed: {} distinct dates loaded", cache.size());
+    }
+
     /**
      * Return risk, hence if risk < threshold go long
      * if risk > threshold, go short.
      *
      * @param indexDate
-     * @return true id risk
+     * @return true if risk
      */
     public boolean risk(ZonedDateTime indexDate) {
-        final List<HedgeIndex> hedgeIndexByDateList = hedgeIndexRepository.findByDate(Date.from(indexDate.toInstant()));
-        int risks = countRisksIndicators(hedgeIndexByDateList);
-        if (risks > riskThreshold) {
-            return true;
-        } else {
-            return false;
+        if (riskCache == null) {
+            synchronized (this) {
+                if (riskCache == null) {
+                    buildCache();
+                }
+            }
         }
+        long key = Date.from(indexDate.toInstant()).getTime();
+        int risks = riskCache.getOrDefault(key, 0);
+        return risks > riskThreshold;
     }
 
     private int countRisksIndicators(List<HedgeIndex> hedgeIndexList) {

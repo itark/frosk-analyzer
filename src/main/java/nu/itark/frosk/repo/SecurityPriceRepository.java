@@ -12,5 +12,6 @@ public interface SecurityPriceRepository extends JpaRepository<SecurityPrice, Lo
 	List<SecurityPrice> findBySecurityIdOrderByTimestamp(long securityId);
 	SecurityPrice findTopBySecurityIdOrderByTimestampDesc(long id);
 	SecurityPrice findBySecurityIdAndTimestamp(long securityId, Date timestamp);
+	List<SecurityPrice> findBySecurityIdInOrderBySecurityIdAscTimestampAsc(List<Long> securityIds);
 
 }
