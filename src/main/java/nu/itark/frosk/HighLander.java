@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.repo.*;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
+import nu.itark.frosk.service.PortfolioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -35,8 +36,14 @@ public class HighLander {
 	@Value("${frosk.runbot}")
 	private boolean runBot;
 
+	@Value("${frosk.buildportfolio}")
+	private boolean buildPortfolio;
+
 	@Value("${frosk.updatehedgeindex}")
 	private boolean updateHedgeIndex;
+
+	@Value("${frosk.run.omxs30swing}")
+	private boolean runOMXS30Swing;
 
 	@Value("${frosk.updatesecuritymetadata}")
 	private boolean updateSecurityMetaData;
@@ -77,6 +84,9 @@ public class HighLander {
 	@Autowired
 	HedgeIndexService hedgeIndexService;
 
+	@Autowired
+	PortfolioService portfolioService;
+
 	/**
 	 * Full setup, addition
 	 * 
@@ -89,6 +99,8 @@ public class HighLander {
 		log.info("runAllStrategies:{}",runAllStrategies);
 		log.info("runBot:{}",runBot);
 		log.info("runHedgeIndexStrategies:{}",updateHedgeIndex);
+		log.info("buildPortfolio:{}",buildPortfolio);
+		log.info("runOMXS30Swing:{}",runOMXS30Swing);
 
 		if (addDatasetAndSecurities) {
 			addDataSetAndSecurities();
@@ -111,6 +123,13 @@ public class HighLander {
 		}
 		if (runBot) {
 			strategyAnalysis.runningPositions();
+		}
+		if (buildPortfolio) {
+			portfolioService.build();
+			log.info("Portfolio snapshot built.");
+		}
+		if (runOMXS30Swing) {
+			strategyAnalysis.runOMXS30Swing();
 		}
 	}
 

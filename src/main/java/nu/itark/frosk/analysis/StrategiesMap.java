@@ -69,6 +69,8 @@ public class StrategiesMap {
 	private HighLanderStrategy highLanderStrategy;
 	@Autowired
 	private ShortTermMomentumLongTermStrengthStrategy shortTermMomentumLongTermStrengthStrategy;
+	@Autowired
+	private OMXS30SwingStrategy omxs30SwingStrategy;
 
 	private List<Strategy> strategies = null;
 
@@ -96,6 +98,7 @@ public class StrategiesMap {
 		strategies.add(betaStrategy.getClass().getSimpleName());
 		strategies.add(highLanderStrategy.getClass().getSimpleName());
 		strategies.add(shortTermMomentumLongTermStrengthStrategy.getClass().getSimpleName());
+		strategies.add(omxs30SwingStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -128,6 +131,7 @@ public class StrategiesMap {
 		strategies.add(betaStrategy.buildStrategy(series));
 		strategies.add(highLanderStrategy.buildStrategy(series));
 		strategies.add(shortTermMomentumLongTermStrengthStrategy.buildStrategy(series));
+		strategies.add(omxs30SwingStrategy.buildStrategy(series));
 
 		this.strategies = strategies;
 		return strategies;
@@ -187,8 +191,9 @@ public class StrategiesMap {
 			return highLanderStrategy.buildStrategy(series);
 		} else if (strategy.equals(ShortTermMomentumLongTermStrengthStrategy.class.getSimpleName())) {
 			return shortTermMomentumLongTermStrengthStrategy.buildStrategy(series);
-		}
-		else {
+		} else if (strategy.equals(OMXS30SwingStrategy.class.getSimpleName())) {
+			return omxs30SwingStrategy.buildStrategy(series);
+		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
 	}
@@ -241,9 +246,10 @@ public class StrategiesMap {
 		} else if (strategyName.equals(HighLanderStrategy.class.getSimpleName())) {
 			return highLanderStrategy.getIndicatorValues(); //TODO
 		} else if (strategyName.equals(ShortTermMomentumLongTermStrengthStrategy.class.getSimpleName())) {
-			return shortTermMomentumLongTermStrengthStrategy.getIndicatorValues(); //TODO
-		}
-		else {
+			return shortTermMomentumLongTermStrengthStrategy.getIndicatorValues();
+		} else if (strategyName.equals(OMXS30SwingStrategy.class.getSimpleName())) {
+			return omxs30SwingStrategy.getIndicatorValues();
+		} else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);
 		}
 

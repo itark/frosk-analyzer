@@ -84,7 +84,7 @@ public class BarSeriesService  {
 
 		List<BarSeries> barSeriesList = new ArrayList<>();
 		for (Security security : securityList) {
-			BarSeries series = new BaseBarSeriesBuilder().withName(security.getId().toString()).withNumTypeOf(DoubleNum.class).build();
+			BarSeries series = new BaseBarSeriesBuilder().withName(String.valueOf(security.getId())).withNumTypeOf(DoubleNum.class).build();
 			List<SecurityPrice> prices = pricesBySecurityId.getOrDefault(security.getId(), Collections.emptyList());
 			prices.forEach(row -> {
 				ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(), ZoneId.systemDefault());

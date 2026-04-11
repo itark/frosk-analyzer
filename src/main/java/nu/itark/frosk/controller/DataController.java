@@ -3,6 +3,7 @@ package nu.itark.frosk.controller;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.HighLander;
 import nu.itark.frosk.analysis.*;
+import nu.itark.frosk.service.PortfolioService;
 import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
@@ -58,6 +59,9 @@ public class DataController {
 
     @Autowired
     HighLander highLander;
+
+    @Autowired
+    PortfolioService portfolioService;
 
 
     /**
@@ -309,6 +313,47 @@ public class DataController {
     public List<OpenFeaturedStrategyDTO> openSignals() {
         log.info("/openSignals");
         return getOpenSignals();
+    }
+
+    /**
+     * Build a new portfolio snapshot from currently open FeaturedStrategy positions.
+     * @Example POST http://localhost:8080/portfolio/build
+     */
+    @PostMapping(value = "/portfolio/build")
+    public PortfolioDTO buildPortfolio() {
+        log.info("POST /portfolio/build");
+        portfolioService.build();
+        return portfolioService.getCurrent();
+    }
+
+    /**
+     * Get the most recent portfolio snapshot with all positions.
+     * @Example GET http://localhost:8080/portfolio
+     */
+    @GetMapping(value = "/portfolio")
+    public PortfolioDTO getPortfolio() {
+        log.info("GET /portfolio");
+        return portfolioService.getCurrent();
+    }
+
+    /**
+     * Get all historical portfolio snapshots (header only, no positions).
+     * @Example GET http://localhost:8080/portfolio/history
+     */
+    @GetMapping(value = "/portfolio/history")
+    public List<PortfolioDTO> getPortfolioHistory() {
+        log.info("GET /portfolio/history");
+        return portfolioService.getHistory();
+    }
+
+    /**
+     * Get a specific historical portfolio snapshot with full positions.
+     * @Example GET http://localhost:8080/portfolio/42
+     */
+    @GetMapping(value = "/portfolio/{id}")
+    public PortfolioDTO getPortfolioById(@PathVariable("id") Long id) {
+        log.info("GET /portfolio/{}", id);
+        return portfolioService.getById(id);
     }
 
     @GetMapping(value = "/tradingAccounts")

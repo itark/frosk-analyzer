@@ -58,7 +58,7 @@ public class TestJYahooDataManager extends BaseIntegrationTest  {
 	
 	@Test
 	public void syncOne(){
-		String securityName = "OPSYH.ST";
+		String securityName = "^OMX";
 		yahooDataManager.syncronize(securityName); //	ALFA.ST, AAK.ST, DOFG.OL, "DOFG.OL", VOLCAR-B.ST, ESSITY-B.ST,BILL.ST,ALLEI.ST,HTRO.ST, OPSYH.ST
 
 		final Security security = securityRepository.findByName(securityName);

@@ -8,6 +8,7 @@ import nu.itark.frosk.model.*;
 import nu.itark.frosk.repo.*;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
+import nu.itark.frosk.strategies.OMXS30SwingStrategy;
 import nu.itark.frosk.strategies.hedge.*;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -229,6 +230,12 @@ public class StrategyAnalysis {
 		yahooDataManager.syncronize(securityName);
 		Long sec_id = barSeriesService.getSecurityId(securityName);
 		run(SP500Strategy.class.getSimpleName(), sec_id);
+	}
+
+	public void runOMXS30Swing() {
+		String securityName = "^OMX";
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		run(OMXS30SwingStrategy.class.getSimpleName(), sec_id);
 	}
 
 	private void runNasdaqVsSP() {
