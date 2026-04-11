@@ -56,6 +56,9 @@ public class Security {
 	@Column(name = "enterprise_value")
 	private Long enterpriseValue;
 
+	@Column(name = "sector")
+	private String sector;
+
 	@Column(name = "active", columnDefinition="BOOLEAN DEFAULT true")
 	private boolean active = true;
 

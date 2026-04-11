@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.repo.*;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
+import nu.itark.frosk.service.PortfolioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
+import nu.itark.frosk.dataset.YAHOODataManager;
 
 /**
  * There could be only one...
@@ -35,8 +37,17 @@ public class HighLander {
 	@Value("${frosk.runbot}")
 	private boolean runBot;
 
+	@Value("${frosk.buildportfolio}")
+	private boolean buildPortfolio;
+
 	@Value("${frosk.updatehedgeindex}")
 	private boolean updateHedgeIndex;
+
+	@Value("${frosk.run.omxs30swing}")
+	private boolean runOMXS30Swing;
+
+	@Value("${frosk.run.dagstrategin:false}")
+	private boolean runDagstrategin;
 
 	@Value("${frosk.updatesecuritymetadata}")
 	private boolean updateSecurityMetaData;
@@ -77,6 +88,12 @@ public class HighLander {
 	@Autowired
 	HedgeIndexService hedgeIndexService;
 
+	@Autowired
+	PortfolioService portfolioService;
+
+	@Autowired
+	YAHOODataManager yahooDataManager;
+
 	/**
 	 * Full setup, addition
 	 * 
@@ -89,6 +106,9 @@ public class HighLander {
 		log.info("runAllStrategies:{}",runAllStrategies);
 		log.info("runBot:{}",runBot);
 		log.info("runHedgeIndexStrategies:{}",updateHedgeIndex);
+		log.info("buildPortfolio:{}",buildPortfolio);
+		log.info("runOMXS30Swing:{}",runOMXS30Swing);
+		log.info("runDagstrategin:{}",runDagstrategin);
 
 		if (addDatasetAndSecurities) {
 			addDataSetAndSecurities();
@@ -112,12 +132,54 @@ public class HighLander {
 		if (runBot) {
 			strategyAnalysis.runningPositions();
 		}
+		if (buildPortfolio) {
+			portfolioService.build();
+			log.info("Portfolio snapshot built.");
+		}
+		if (runOMXS30Swing) {
+			strategyAnalysis.runOMXS30Swing();
+		}
+		if (runDagstrategin) {
+			strategyAnalysis.runDagstrateginStrategies();
+		}
+	}
+
+	/**
+	 * Tier 1 — Daily (MON-FRI after market close).
+	 * Syncs OMXS30 constituents + runs HedgeIndex strategies (which syncs macro tickers).
+	 */
+	public void syncTier1() {
+		log.info("syncTier1 started");
+		yahooDataManager.syncronizeByDataset("OMX30");
+		strategyAnalysis.runHedgeIndexStrategies();
+		strategyAnalysis.runDagstrateginStrategies();
+		log.info("syncTier1 completed");
+	}
+
+	/**
+	 * Tier 2 — Weekly (SAT morning).
+	 * Syncs price history for all active YAHOO securities.
+	 */
+	public void syncTier2() {
+		log.info("syncTier2 started");
+		addSecurityPricesFromYahoo();
+		log.info("syncTier2 completed");
+	}
+
+	/**
+	 * Tier 3 — Monthly (1st of month).
+	 * Updates fundamental metadata (Beta, PEG, sector, etc.) for all active stocks.
+	 */
+	public void syncTier3() {
+		log.info("syncTier3 started");
+		updateSecurityMetaData();
+		log.info("syncTier3 completed");
 	}
 
 	/**
 	 * Full setup, from scratch
 	 * Kill them all before.
-	 * 
+	 *
 	 */
 	public void runCleanInstall(Database database) {
 		runClean();

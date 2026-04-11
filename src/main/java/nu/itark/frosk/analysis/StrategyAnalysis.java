@@ -8,6 +8,15 @@ import nu.itark.frosk.model.*;
 import nu.itark.frosk.repo.*;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
+import nu.itark.frosk.strategies.OMXS30SwingStrategy;
+import nu.itark.frosk.strategies.DailyBreakoutStrategy;
+import nu.itark.frosk.strategies.DailyOversoldBounceStrategy;
+import nu.itark.frosk.strategies.hedge.EURUSDStrategy;
+import nu.itark.frosk.strategies.hedge.USDJPYStrategy;
+import nu.itark.frosk.strategies.hedge.AUDUSDStrategy;
+import nu.itark.frosk.strategies.hedge.DXYStrategy;
+import nu.itark.frosk.strategies.hedge.VSTOXXStrategy;
+import nu.itark.frosk.strategies.hedge.OMXvsSTOXX50Strategy;
 import nu.itark.frosk.strategies.hedge.*;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -79,6 +88,9 @@ public class StrategyAnalysis {
 
 	@Autowired
 	YAHOODataManager yahooDataManager;
+
+	@Autowired
+	nu.itark.frosk.repo.DataSetRepository dataSetRepository;
 
 
 	/**
@@ -185,13 +197,14 @@ public class StrategyAnalysis {
 		runGold();
 		runSP500();
 		runNasdaqVsSP();
-		//TODO: FX USD/JPY Rising above 150
-		//TODO: FX AUD/USD Drops >2% in last 5 days
-		//TODO: FX DXY Above 105 and rising
-		//TODO: Inflation US CPI YoY CPI > 3.5% and rising
-		//TODO: Inflation Core CPI MoM > 0.4%
-		//TODO: Interest Rates 10Y Treasury Yield > 4.5% and rising
-		//TODO: Yield Curve 2Y - 10Y Spread < -50 bps (deep inversion)
+		runEURUSD();
+		runUSDJPY();
+		runAUDUSD();
+		runDXY();
+		runVSTOXX();
+		runOMXvsSTOXX50();
+		runTreasuryYield();
+		runYieldCurveSpread();
 		hedgeIndexService.update();
 		log.info("runHedgeIndexStrategies executed");
 	}
@@ -231,11 +244,95 @@ public class StrategyAnalysis {
 		run(SP500Strategy.class.getSimpleName(), sec_id);
 	}
 
+	public void runOMXS30Swing() {
+		String securityName = "^OMX";
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		run(OMXS30SwingStrategy.class.getSimpleName(), sec_id);
+	}
+
 	private void runNasdaqVsSP() {
 		String securityName = "^IXIC";
 		yahooDataManager.syncronize(securityName);
 		Long sec_id = barSeriesService.getSecurityId("^IXIC"	);
 		run(NasdaqVsSPStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runEURUSD() {
+		String securityName = "EURUSD=X";
+		yahooDataManager.syncronize(securityName);
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		run(EURUSDStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runUSDJPY() {
+		String securityName = "JPY=X";
+		yahooDataManager.syncronize(securityName);
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		run(USDJPYStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runAUDUSD() {
+		String securityName = "AUDUSD=X";
+		yahooDataManager.syncronize(securityName);
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		run(AUDUSDStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runDXY() {
+		String securityName = "DX-Y.NYB";
+		yahooDataManager.syncronize(securityName);
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		run(DXYStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runVSTOXX() {
+		String securityName = "^V2TX";
+		yahooDataManager.syncronize(securityName);
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		run(VSTOXXStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runOMXvsSTOXX50() {
+		// ^STOXX50E needs to be current; ^OMX is already synced via the SWEDISH dataset
+		yahooDataManager.syncronize("^STOXX50E");
+		Long sec_id = barSeriesService.getSecurityId("^STOXX50E");
+		run(OMXvsSTOXX50Strategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runTreasuryYield() {
+		String securityName = "^TNX";
+		yahooDataManager.syncronize(securityName);
+		Long sec_id = barSeriesService.getSecurityId(securityName);
+		run(TreasuryYieldStrategy.class.getSimpleName(), sec_id);
+	}
+
+	private void runYieldCurveSpread() {
+		// ^TNX already synced by runTreasuryYield; sync ^IRX here
+		yahooDataManager.syncronize("^IRX");
+		Long sec_id = barSeriesService.getSecurityId("^TNX");
+		run(YieldCurveSpreadStrategy.class.getSimpleName(), sec_id);
+	}
+
+	/**
+	 * Dagstrategin — runs DailyBreakoutStrategy and DailyOversoldBounceStrategy
+	 * across all OMXS30 constituents (OMX30 dataset).
+	 * Called from HighLander.syncTier1() after the daily price sync.
+	 */
+	public void runDagstrateginStrategies() {
+		log.info("runDagstrateginStrategies()");
+		nu.itark.frosk.model.DataSet omx30 = dataSetRepository.findByName("OMX30");
+		if (omx30 == null) {
+			log.warn("OMX30 dataset not found — skipping Dagstrategin");
+			return;
+		}
+		List<BarSeries> barSeriesList = omx30.getSecurities().stream()
+				.map(sec -> barSeriesService.getDataSet(sec.getId()))
+				.filter(bs -> bs != null && !bs.isEmpty())
+				.collect(java.util.stream.Collectors.toList());
+		log.info("Dagstrategin: running on {} OMX30 securities", barSeriesList.size());
+		strategyExecutor.execute(DailyBreakoutStrategy.class.getSimpleName(), barSeriesList);
+		strategyExecutor.execute(DailyOversoldBounceStrategy.class.getSimpleName(), barSeriesList);
+		log.info("runDagstrateginStrategies() READY");
 	}
 
 

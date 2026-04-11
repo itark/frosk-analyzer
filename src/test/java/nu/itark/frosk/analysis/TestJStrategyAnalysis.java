@@ -236,6 +236,16 @@ public class TestJStrategyAnalysis extends BaseIntegrationTest {
 	}
 
 	@Test
+	public void runOMXS30Swing() {
+		strategyAnalysis.runOMXS30Swing();
+		FeaturedStrategy fs = featuredStrategyRepository.findByNameAndSecurityName("OMXS30SwingStrategy", "^OMX");
+		fs.getStrategyTrades().stream()
+				.sorted(Comparator.comparing(StrategyTrade::getDate))
+				.peek(t-> System.out.println("date:"+t.getDate().toGMTString()+",type:"+t.getType()+",price:"+t.getPrice()+",pnl-%:"+t.getPnl()))
+				.collect(Collectors.toSet());
+	}
+
+	@Test
 	public void runAll() {
 		logger.info("All");
 		strategyAnalysis.run(null, null);
