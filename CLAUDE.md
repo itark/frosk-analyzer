@@ -96,21 +96,21 @@ Sweden is the primary market. US indicators are retained where they drive global
 | Category | Indicator | Description | Rule / Trigger | Points | Implemented |
 |---|---|---|---|---|---|
 | Volatility | **VIX** | CBOE Volatility Index — the primary global fear gauge; spikes in US implied vol propagate immediately to Swedish equities | VIX > 25 AND rising (5-day ROC positive) | +1 | ✅ |
-| Volatility | **VSTOXX** | Euro Stoxx 50 Volatility Index (`^V2TX`) — European equivalent of VIX; more directly relevant to OMXS30 than US vol alone | VSTOXX > 25 AND rising (5-day ROC positive) | +1 | ❌ |
+| Volatility | **VSTOXX** | Euro Stoxx 50 Volatility Index (`^V2TX`) — European equivalent of VIX; more directly relevant to OMXS30 than US vol alone | VSTOXX > 25 AND rising (5-day ROC positive) | +1 | ✅ |
 | Commodities | **Crude Oil (WTI)** | West Texas Intermediate crude price — sharp drops signal demand destruction or global recession fears | Drops > 8% in last 5 trading days | +1 | ✅ |
 | Commodities | **Gold** | Safe-haven asset — breakouts to new highs signal capital rotating out of risk assets into protection | Closes above previous 20-day high (breakout) | +1 | ✅ |
 | Equities | **S&P 500** | Broad US equity benchmark — trading below the 200-day SMA signals a global long-term downtrend; OMXS30 historically follows within days | Close below 200-day SMA | +1 | ✅ |
-| Equities | **OMX vs STOXX50** | Relative performance of Swedish vs. European equities — when OMXS30 meaningfully underperforms Euro Stoxx 50, domestic risk-off is leading the broader market | OMXS30 30-day return < STOXX50 30-day return by more than 3 percentage points | +1 | ❌ |
-| FX | **EUR/USD** | Sweden's largest trading partner is the Eurozone — EUR weakness directly compresses Swedish exporter margins and signals Eurozone fragility | EUR/USD drops > 3% in last 10 trading days OR closes below 1-year low | +1 | ❌ |
-| FX | **USD/JPY** | Japanese yen is a safe-haven currency — sharp USD/JPY moves signal global carry unwind and broad risk-off positioning | USD/JPY 5-day ROC > +2% (rapid yen weakening = carry unwind risk) | +1 | ❌ |
-| FX | **AUD/USD** | Australian dollar is a global growth/commodity proxy — sharp drops signal declining global risk appetite and falling commodity demand | Drops > 2% in last 5 trading days | +1 | ❌ |
-| FX | **DXY (USD Index)** | US Dollar Index — a strong rising dollar tightens global financial conditions, pressures EM and export-driven economies including Sweden | DXY > 105 AND rising (5-day ROC positive) | +1 | ❌ |
+| Equities | **OMX vs STOXX50** | Relative performance of Swedish vs. European equities — when OMXS30 meaningfully underperforms Euro Stoxx 50, domestic risk-off is leading the broader market | OMXS30 30-day return < STOXX50 30-day return by more than 3 percentage points | +1 | ✅ |
+| FX | **EUR/USD** | Sweden's largest trading partner is the Eurozone — EUR weakness directly compresses Swedish exporter margins and signals Eurozone fragility | EUR/USD drops > 3% in last 10 trading days OR closes below 1-year low | +1 | ✅ |
+| FX | **USD/JPY** | Japanese yen is a safe-haven currency — sharp USD/JPY moves signal global carry unwind and broad risk-off positioning | USD/JPY 5-day ROC > +2% (rapid yen weakening = carry unwind risk) | +1 | ✅ |
+| FX | **AUD/USD** | Australian dollar is a global growth/commodity proxy — sharp drops signal declining global risk appetite and falling commodity demand | Drops > 2% in last 5 trading days | +1 | ✅ |
+| FX | **DXY (USD Index)** | US Dollar Index — a strong rising dollar tightens global financial conditions, pressures EM and export-driven economies including Sweden | DXY > 105 AND rising (5-day ROC positive) | +1 | ✅ |
 | Inflation | **Swedish KPIF YoY** | Riksbank's primary inflation target — skipped; no Yahoo Finance ticker available | — | ⏭️ |
-| Interest Rates | **10Y Treasury Yield** | US 10-year yield drives global discount rates — high and rising US rates lift Swedish long rates via global bond market linkage | 10Y > 4.5% AND rising (5-day ROC positive) | +1 | ❌ |
-| Yield Curve | **2Y–10Y Spread** | US yield curve spread — deep inversion historically precedes global recessions by 6–18 months; reliable leading indicator even for non-US markets | 2Y–10Y < −50 bps (deep inversion) | +1 | ❌ |
+| Interest Rates | **10Y Treasury Yield** | US 10-year yield drives global discount rates — high and rising US rates lift Swedish long rates via global bond market linkage | 10Y > 4.5% AND rising (5-day ROC positive) | +1 | ✅ |
+| Yield Curve | **2Y–10Y Spread** | US yield curve spread — deep inversion historically precedes global recessions by 6–18 months; reliable leading indicator even for non-US markets. Uses `^TNX` − `^IRX` as proxy for 10Y − 3M spread | 10Y − 13W < −50 bps (deep inversion) | +1 | ✅ |
 | Market Breadth | **Advance/Decline** | NYSE Advance/Decline line — broad US market participation; a sustained decline signals the rally is narrowing globally, not just in the US | A/D line falling for 5+ consecutive days | +1 | ❌ |
-| Credit Stress | **High-Yield OAS** | US High-Yield Option-Adjusted Spread — wide spreads signal global corporate stress and risk aversion; historically correlates with Swedish credit conditions | HY OAS > 500 bps | +1 | ❌ |
-| Liquidity | **TED Spread** | SOFR–T-bill spread (3-month) — modern equivalent of the classic TED spread after LIBOR was replaced by SOFR in June 2023; spikes signal interbank stress | SOFR–T-bill spread > 50 bps | +1 | ❌ |
+| Credit Stress | **High-Yield OAS** | US High-Yield Option-Adjusted Spread — not available via Yahoo Finance15 API; would need a dedicated data source | HY OAS > 500 bps | +1 | ⏭️ |
+| Liquidity | **TED Spread** | SOFR–T-bill spread — not available via Yahoo Finance15 API; would need a dedicated data source | SOFR–T-bill spread > 50 bps | +1 | ⏭️ |
 
 > **Note:** thresholds are starting points — tune to your universe and regime. Use smoothed/ROC versions to avoid single-day noise. Use `BarSeriesAligner` to align time series when comparing assets.
 >
@@ -214,20 +214,20 @@ Securities are registered in the DB via `DataSetHelper.addDatasetSecuritiesFromC
 | `YAHOO-OSCAR-The Money Machine.csv` | comma-separated | `OSCAR` | Small curated portfolio | 4 |
 
 **`YAHOO-INDEX-World indexes.csv` — current tickers:**
-`^FTSE`, `^GDAXI`, `^FCHI`, `^GSPC` (S&P 500), `^IXIC` (NASDAQ), `^N225`, `^MXX`, `^NYA`, `^VIX`, `^VVIX`, `^SDEX`, `^DJI`, `CL=F` (WTI Crude), `BZ=F` (Brent), `GC=F` (Gold)
+`^FTSE`, `^GDAXI`, `^FCHI`, `^GSPC` (S&P 500), `^IXIC` (NASDAQ), `^N225`, `^MXX`, `^NYA`, `^VIX`, `^VVIX`, `^SDEX`, `^DJI`, `CL=F` (WTI Crude), `BZ=F` (Brent), `GC=F` (Gold), `^STOXX50E`, `^V2TX`, `DX-Y.NYB`, `EURUSD=X`, `JPY=X`, `AUDUSD=X`
 
 **Tickers missing from all CSV files — must be added to `YAHOO-INDEX-World indexes.csv` before use:**
 
 | Ticker | Description | Needed for |
 |---|---|---|
-| `^STOXX50E` | Euro Stoxx 50 index | OMX vs STOXX50 HedgeIndex indicator |
-| `^V2TX` | VSTOXX (Euro volatility) | VSTOXX HedgeIndex indicator |
-| `DX-Y.NYB` | DXY US Dollar Index | DXY HedgeIndex indicator |
-| `^TNX` | US 10Y Treasury yield | 10Y + 2Y–10Y spread HedgeIndex indicators |
-| `^IRX` | US 13-week T-bill yield | 2Y–10Y spread (proxy for short end) |
-| `EURUSD=X` | EUR/USD | EUR/USD HedgeIndex indicator |
-| `JPY=X` | USD/JPY | USD/JPY HedgeIndex indicator |
-| `AUDUSD=X` | AUD/USD | AUD/USD HedgeIndex indicator |
+| `^STOXX50E` | Euro Stoxx 50 index | OMX vs STOXX50 HedgeIndex indicator — ✅ added to CSV |
+| `^V2TX` | VSTOXX (Euro volatility) | VSTOXX HedgeIndex indicator — ✅ added to CSV |
+| `DX-Y.NYB` | DXY US Dollar Index | DXY HedgeIndex indicator — ✅ added to CSV |
+| `^TNX` | US 10Y Treasury yield | 10Y + 2Y–10Y spread HedgeIndex indicators — ✅ added to CSV |
+| `^IRX` | US 13-week T-bill yield | 2Y–10Y spread (proxy for short end) — ✅ added to CSV |
+| `EURUSD=X` | EUR/USD | EUR/USD HedgeIndex indicator — ✅ added to CSV |
+| `JPY=X` | USD/JPY | USD/JPY HedgeIndex indicator — ✅ added to CSV |
+| `AUDUSD=X` | AUD/USD | AUD/USD HedgeIndex indicator — ✅ added to CSV |
 
 **Adding a new HedgeIndex indicator requires two steps:**
 1. Add the ticker to `YAHOO-INDEX-World indexes.csv`
@@ -278,7 +278,7 @@ Current plan (yahoo-finance15 via RapidAPI):
 
 **Budget: ~6,280 / 10,000 req/month** — leaves ~3,700 headroom for manual runs and growth.
 
-**Note:** `Scheduler.java` currently has `@Scheduled` commented out — uncomment and set cron expressions above to activate. Skip logic is built in: `YAHOODataManager.syncronize()` checks the latest stored date per security and skips if already current.
+**Note:** `Scheduler.java` has `@EnableScheduling` enabled with three methods (`tier1DailySync`, `tier2WeeklySync`, `tier3MonthlyMetadata`) driven by `scheduler.tier1.cron`, `scheduler.tier2.cron`, `scheduler.tier3.cron` properties. Skip logic is built in: `YAHOODataManager.syncronize()` checks the latest stored date per security and skips if already current.
 
 ---
 
@@ -329,22 +329,28 @@ The system already holds years of Swedish stock price history. The goal is to us
 
 **Goal:** Hold 15–25 quality Swedish large/mid-cap stocks, rebalanced quarterly. Beat OMXS30 over 3–5 years.
 
+**Universe:** Active Swedish stocks (`active=true AND name LIKE '%.ST'`). The `active` flag filters to `enterpriseValue > 500M` — this is appropriate for a large/mid-cap strategy and requires no override.
+
 **Selection factors — Swedish adaptation of the equity model:**
 
-| Factor | ta4j Implementation | Notes |
-|---|---|---|
-| 6-month momentum | `ROCIndicator(closePriceSeries, 126)` | 126 trading days ≈ 6 months |
-| 12-month momentum | `ROCIndicator(closePriceSeries, 252)` | Skip most recent month to avoid reversal |
-| Low volatility | `StandardDeviationIndicator(closePriceSeries, 252)` | Penalise high-vol names |
-| Golden Cross | Price > SMA(50) AND Price > SMA(200) | Momentum confirmation |
-| Relative strength vs OMXS30 | `ROCIndicator(stock, 63)` > `ROCIndicator(^OMX, 63)` | 3-month outperformance |
-| Composite score | Weighted rank-normalised average of all factors | Entry/exit threshold configurable |
+| Factor | ta4j Implementation | Weight | Notes |
+|---|---|---|---|
+| 6-month momentum | `ROCIndicator(closePriceSeries, 126)` | 30% | 126 trading days ≈ 6 months |
+| 12-month momentum (12-1) | `(close[t-21] - close[t-252]) / close[t-252]` | 30% | Skips most recent month to avoid short-term reversal — **not** `ROCIndicator(series, 252)` which includes the reversal month |
+| Low volatility | `StandardDeviationIndicator(closePriceSeries, 252)` | 20% | Inverted in composite score — lower vol = higher score |
+| Relative strength vs OMXS30 | `ROCIndicator(stock, 63)` minus `ROCIndicator(^OMX, 63)` | 20% | 3-month outperformance vs benchmark |
+| Golden Cross | Price > SMA(50) AND Price > SMA(200) | Hard filter | Binary — stock excluded from ranking if not met |
+| Dividend yield | From `Security.dividendYield` once populated | Optional | Add as 10% weight once `/stock/get-statistics` is backfilled; redistribute other weights |
+
+**Composite score:** Each factor is rank-normalised across the candidate universe (rank 1 = worst, rank N = best), then weighted and summed. Stocks failing the Golden Cross hard filter are excluded before ranking.
 
 **Entry/exit rules:**
-- Entry: stock enters the top-N ranked list at quarterly rebalance date AND Golden Cross condition met
-- Exit: stock drops below rank threshold OR composite score falls below minimum OR death cross (price < SMA200)
-- Max weight per stock: 10%; max per sector: 30% *(requires sector field — see TODO below)*
-- HedgeIndex gate: score 0–3 → full allocation; score 4–7 → reduce new entries by 50%; score 8+ → no new entries, trim weakest positions
+- Entry: stock enters top-N ranked list at quarterly rebalance date (first trading day of Jan, Apr, Jul, Oct) AND Golden Cross condition met
+- Exit: stock drops below rank threshold OR composite score falls below bottom quartile OR death cross (close < SMA200)
+- Max weight per stock: 10%; max per sector: 30% (requires `sector` field — see below)
+- HedgeIndex gate: score 0–3 → full allocation (top-N positions); score 4–7 → reduce to top-N/2 positions, no new entries into lowest-ranked half; score 8+ → no new entries, trim bottom 25% of positions
+
+**Quarterly rebalance implementation note:** ta4j runs bar-by-bar so quarterly date detection requires a helper — check if `bar.getEndTime().getMonth()` is in {Jan, Apr, Jul, Oct} AND `bar.getEndTime().getDayOfMonth() <= 5` (first week of quarter) to approximate the rebalance trigger.
 
 **New class to create:** `SwedishLongTermMomentumStrategy extends AbstractStrategy implements IIndicatorValue`
 
@@ -352,7 +358,7 @@ The system already holds years of Swedish stock price history. The goal is to us
 
 **New property:** `frosk.swedish.longterm.topN` (default: 20) — number of stocks to hold.
 
-**Sector field:** `sector` (`String`) column added to `Security`. Populated via `RapidApiManager` `updateSecurityMetaData()` — `/stock/get-statistics` returns `sector`. Run `updateSecurityMetaData()` once to backfill all existing stocks before using the 30%-per-sector cap.
+**Sector field:** `sector` (`String`) column on `Security`. Populated via `RapidApiManager.getModuleAssetProfile()` (`asset-profile` module) called inside `YAHOODataManager.updateSecurityMetaData()`. Run `updateSecurityMetaData()` once to backfill all existing stocks before the 30%-per-sector cap in `PortfolioService` takes effect.
 
 ---
 
@@ -378,12 +384,14 @@ The system already holds years of Swedish stock price history. The goal is to us
 
 Captures multi-day momentum moves when a stock breaks out of a consolidation range on elevated volume.
 
-- Signal: daily close breaks above the 20-day high AND volume on signal bar > 1.5× 20-bar average volume
+- Precondition: close > SMA(200) — only trade breakouts in long-term uptrends
+- Signal: daily close > 20-day high by at least 0.5% AND volume on signal bar > 1.5× 20-bar average volume
 - Entry: open of next trading day after signal
 - Stop loss: lowest low of the prior 5 days
 - Target: entry + 2× (entry − stop) — RR 2:1
-- Exit also triggered by: death cross (close < SMA200) OR HedgeIndex score ≥ 8
-- Next-morning watchlist: stocks with signal fired on today's close, ranked by composite score
+- HedgeIndex gate: score 0–3 → full size; score 4–7 → half size; score ≥ 8 → no new entries, exit open positions
+- Max concurrent open positions: 5 across all OMXS30 tickers
+- Next-morning watchlist: stocks where signal fired on today's close, ranked by volume ratio (signal bar volume ÷ 20-bar average) — strongest volume confirmation first
 
 **New class:** `DailyBreakoutStrategy extends AbstractStrategy implements IIndicatorValue`
 
@@ -394,13 +402,13 @@ Captures multi-day momentum moves when a stock breaks out of a consolidation ran
 Captures mean-reversion moves after sharp pullbacks in otherwise uptrending stocks.
 
 - Precondition: close > SMA(200) — stock must be in a long-term uptrend
-- Signal: RSI(14) < 35 AND close < lower Bollinger Band (20, 2σ) AND close > prior 52-week low × 1.05
+- Signal: RSI(14) < 30 AND close < lower Bollinger Band (20, 2σ) AND close > prior 52-week low × 1.10 AND volume on signal bar > 1.2× 20-bar average (confirms selling exhaustion, not just drift)
 - Entry: open of next trading day after signal
-- Stop loss: prior day's low
-- Target: SMA(20) OR RSI(14) > 55, whichever comes first
-- Max 1 open position per stock at a time
+- Stop loss: lowest low of the prior 3 days (wider than prior day's low to avoid noise stop-outs on daily bars)
+- Target: SMA(20) at time of signal OR RSI(14) > 55, whichever comes first
+- Max 1 open position per stock at a time; max 3 concurrent open positions across all tickers
 - Exit also triggered by: HedgeIndex score ≥ 8
-- Next-morning watchlist: stocks with signal fired on today's close, ranked by distance below SMA(20)
+- Next-morning watchlist: stocks where signal fired on today's close, ranked by distance of close below SMA(20) — deepest pullback first
 
 **New class:** `DailyOversoldBounceStrategy extends AbstractStrategy implements IIndicatorValue`
 
@@ -427,24 +435,53 @@ Read the following before starting implementation: `HedgeIndexService` (which of
 Add `EURUSD=X`, `JPY=X`, `AUDUSD=X` to `YAHOO-INDEX-World indexes.csv`. Restart the app (or call `DataSetHelper.addDatasetSecuritiesFromCvsFile()`) to register them, then trigger a price history sync. Add scoring rules to `HedgeIndexService`. Validate that the regime distribution does not shift more than ±1 tier after each addition before proceeding.
 
 **Step 2 — HedgeIndex: DXY + European volatility + OMX vs STOXX50** (3 indicators)
-Add `DX-Y.NYB`, `^V2TX`, and `^STOXX50E` to `YAHOO-INDEX-World indexes.csv`. Register and sync prices. Update the volatility cluster rule to fire on VIX + VSTOXX co-trigger. `^OMX` is already in the DB (YAHOO-SWEDISH dataset) — no action needed there.
+Add `DX-Y.NYB`, `^V2TX`, and `^STOXX50E` to `YAHOO-INDEX-World indexes.csv`. Register and sync prices. Add scoring rules for DXY, VSTOXX, and the OMX vs STOXX50 relative comparison. Update the volatility cluster rule to fire on VIX + VSTOXX co-trigger. `^OMX` is already in the DB (YAHOO-SWEDISH dataset) — no action needed there.
 
 **Step 3 — HedgeIndex: rates, credit, breadth** (4 indicators)
-Add `^TNX`, `^IRX` to `YAHOO-INDEX-World indexes.csv` and sync. For HY OAS and SOFR–T-bill spread, verify ticker availability via `RapidApiManager` before implementing — these may need a dedicated API endpoint rather than the standard history call.
+Add `^TNX` and `^IRX` to `YAHOO-INDEX-World indexes.csv` and sync. Implement 10Y Treasury threshold rule and 2Y–10Y spread rule using `^TNX` minus `^IRX`. For HY OAS and SOFR–T-bill spread, verify ticker availability via `RapidApiManager` before implementing — these may need a dedicated endpoint rather than the standard history call.
 
 **Step 4 — HedgeIndex: Swedish KPIF** — skipped; no Yahoo Finance ticker available.
 
 **Step 5 — Månadsportföljen (price-only)**
-`^OMX` is already in DB (YAHOO-SWEDISH dataset). Create `SwedishLongTermMomentumStrategy` with 6M + 12M momentum (`ROCIndicator`), low-volatility filter (`StandardDeviationIndicator`), Golden Cross (SMA50/200), and 3-month relative strength vs `^OMX`. Wire into `StrategiesMap` (all 5 registration points). Add to `PortfolioService` filter. Run backtest and compare `totalGrossReturn` / `sqn` / `profitableTradesRatio` vs OMXS30.
+`^OMX` is already in DB (YAHOO-SWEDISH dataset). Create `SwedishLongTermMomentumStrategy` with the following specifics:
+- **6-month momentum:** `ROCIndicator(closePriceSeries, 126)` — weight 30%
+- **12-month momentum (12-1):** `(close[t-21] - close[t-252]) / close[t-252]` — weight 30%. Do NOT use `ROCIndicator(series, 252)` which includes the reversal month
+- **Low volatility:** `StandardDeviationIndicator(closePriceSeries, 252)` — weight 20%, inverted (lower vol = higher rank)
+- **Relative strength vs OMXS30:** `ROCIndicator(stock, 63)` minus `ROCIndicator(^OMX, 63)` — weight 20%
+- **Golden Cross:** price > SMA(50) AND price > SMA(200) — hard filter, exclude stock from ranking if not met
+- **Composite score:** rank-normalise each factor across the active universe (rank 1 = worst, rank N = best), apply weights, sum
+- **Quarterly rebalance trigger:** check `bar.getEndTime().getMonth()` ∈ {Jan, Apr, Jul, Oct} AND `bar.getEndTime().getDayOfMonth() <= 5`
+- **HedgeIndex gate:** score 0–3 → full top-N; score 4–7 → top-N/2 positions only, no new entries to lowest-ranked half; score 8+ → no new entries, trim bottom 25%
+- Wire into `StrategiesMap` (all 5 registration points). Add to `PortfolioService` filter. Add property `frosk.swedish.longterm.topN` (default: 20).
 
 **Step 6 — Månadsportföljen: sector cap + fundamentals**
-Add `sector` (`String`) column to `Security` entity. Populate via `RapidApiManager` `/stock/get-statistics` (already returns `sector`). Add 30%-per-sector position cap to `SwedishLongTermMomentumStrategy`. Then extend composite score with Beta and PEG ratio from existing `Security` fields.
+Add `sector` (`String`) column to `Security` entity. Populate via `RapidApiManager` `asset-profile` module. Enforce 30%-per-sector cap in `SwedishLongTermMomentumStrategy`. Then extend composite score: add dividend yield (10% weight, redistribute other weights proportionally) and Beta as a tilt factor once `/stock/get-statistics` data is confirmed populated.
 
 **Step 7 — Activate Scheduler**
-Uncomment `@Scheduled` in `Scheduler.java` and set cron expressions per the Tier 1 / Tier 2 / Tier 3 schedule defined in the Data Layer section. Verify OMXS30 constituents (~30 tickers) are included in the Tier 1 daily sync so Dagstrategin has fresh data each evening.
+Uncomment `@Scheduled` in `Scheduler.java` and set cron expressions per the Tier 1 / Tier 2 / Tier 3 schedule defined in the Data Layer section. Verify OMXS30 constituents (~30 tickers from `YAHOO-OMX30` dataset) are included in the Tier 1 daily sync so Dagstrategin has fresh data each evening.
 
 **Step 8 — Dagstrategin**
-Implement `DailyBreakoutStrategy` and `DailyOversoldBounceStrategy` using the existing daily `BarSeries` — no new data infrastructure needed. Wire both into `StrategiesMap` (all 5 registration points). Add `GET /dagstrategin/watchlist` REST endpoint to `DataController` returning next-morning candidates ranked by signal strength. No data accumulation wait required — multi-year daily history already exists.
+Implement both strategies using existing daily `BarSeries` — no new data infrastructure needed. Wire both into `StrategiesMap`. Add `GET /dagstrategin/watchlist` REST endpoint to `DataController`.
+
+*Sub-strategy A — `DailyBreakoutStrategy`:*
+- Precondition: close > SMA(200)
+- Signal: close > `HighestValueIndicator(high, 20)` by ≥ 0.5% AND volume > 1.5× `SMAIndicator(volume, 20)`
+- Entry: next-day open (use `TradeOnNextOpenModel`)
+- Stop: `LowestValueIndicator(low, 5)` at signal bar
+- Target: entry + 2× (entry − stop)
+- HedgeIndex gate: score 0–3 → full size; score 4–7 → half size; score ≥ 8 → no new entries, close open positions
+- Max 5 concurrent open positions across universe
+- Watchlist ranking: by volume ratio (signal bar volume ÷ 20-bar average volume), descending
+
+*Sub-strategy B — `DailyOversoldBounceStrategy`:*
+- Precondition: close > SMA(200)
+- Signal: `RSIIndicator(14)` < 30 AND close < `BollingerBandsLowerIndicator(20, 2)` AND close > `LowestValueIndicator(close, 252)` × 1.10 AND volume > 1.2× `SMAIndicator(volume, 20)`
+- Entry: next-day open (use `TradeOnNextOpenModel`)
+- Stop: `LowestValueIndicator(low, 3)` at signal bar
+- Target: `SMAIndicator(close, 20)` value at signal bar OR RSI(14) > 55
+- Max 1 open position per stock; max 3 concurrent across universe
+- HedgeIndex gate: score ≥ 8 → exit all open positions, no new entries
+- Watchlist ranking: by distance of close below SMA(20) at signal bar, descending
 
 **Step 9 — Hedging layer**
 Implement options strategy sizing gated on HedgeIndex regime score: Protective Put for score 4–7; Bear Put Spread and/or long VIX exposure for score 8+. Size positions as a percentage of the relevant equity exposure tier.

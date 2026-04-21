@@ -147,6 +147,20 @@ public class RapidApiManager {
     }
 
 
+    public AssetProfileBody getModuleAssetProfile(String symbol) throws JsonProcessingException {
+        String module = "asset-profile";
+        String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/modules";
+        String uri = "?ticker=" + symbol + "&module=" + module;
+        String json = webClient(baseUrl).get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        if (json == null || json.contains("No data found")) return null;
+        AssetProfileResponseDTO response = objectMapper.readValue(json, AssetProfileResponseDTO.class);
+        return response.getBody();
+    }
+
     //TODO
     public void search(String search) throws IOException, InterruptedException {
         String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/search";

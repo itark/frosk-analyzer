@@ -6,6 +6,7 @@ import nu.itark.frosk.model.RecommendationTrend;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.rapidapi.yhfinance.model.*;
+import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.RecommendationTrendRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
@@ -53,6 +54,9 @@ public class YAHOODataManager {
 
     @Autowired
     SecurityRepository securityRepository;
+
+    @Autowired
+    DataSetRepository dataSetRepository;
 
     @Autowired
     RecommendationTrendRepository recommendationTrendRepository;
@@ -104,6 +108,23 @@ public class YAHOODataManager {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SecurityPrice saveSingle(SecurityPrice sp) {
         return securityPriceRepository.save(sp);
+    }
+
+    /**
+     * Sync prices for all active securities belonging to the named dataset.
+     */
+    public void syncronizeByDataset(String datasetName) {
+        if (!apiEnabled) {
+            log.info("syncronizeByDataset={}, apiEnabled={}, aborting.", datasetName, apiEnabled);
+            return;
+        }
+        nu.itark.frosk.model.DataSet dataSet = dataSetRepository.findByName(datasetName);
+        if (dataSet == null) {
+            log.warn("Dataset not found: {}", datasetName);
+            return;
+        }
+        log.info("syncronizeByDataset={}, securities={}", datasetName, dataSet.getSecurities().size());
+        dataSet.getSecurities().forEach(security -> syncronize(security.getName()));
     }
 
     /**
@@ -257,6 +278,7 @@ public class YAHOODataManager {
         setIncomeStatementData(security);
         setStatisticsData(security);
         setRecommendationTrend(security);
+        setSectorData(security);
 
         securityRepository.save(security);
     }
@@ -414,6 +436,18 @@ public class YAHOODataManager {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setSectorData(Security security) {
+        try {
+            nu.itark.frosk.rapidapi.yhfinance.model.AssetProfileBody profile =
+                    rapidApiManager.getModuleAssetProfile(security.getName());
+            if (profile != null && profile.getSector() != null && !profile.getSector().isBlank()) {
+                security.setSector(profile.getSector());
+            }
+        } catch (Exception e) {
+            log.error("Error in AssetProfile for:{}, error:{}", security.getName(), e.getMessage());
         }
     }
 
