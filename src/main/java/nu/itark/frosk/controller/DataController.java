@@ -356,6 +356,26 @@ public class DataController {
         return portfolioService.getById(id);
     }
 
+    /**
+     * Dagstrategin next-morning watchlist.
+     * Returns OMXS30 stocks with an open DailyBreakout or DailyOversoldBounce signal,
+     * ranked by SQN descending (highest quality signal first).
+     *
+     * @Example GET http://localhost:8080/dagstrategin/watchlist
+     */
+    @GetMapping(value = "/dagstrategin/watchlist")
+    public List<FeaturedStrategyDTO> getDagstrateginWatchlist() {
+        log.info("GET /dagstrategin/watchlist");
+        List<nu.itark.frosk.model.FeaturedStrategy> candidates =
+                featuredStrategyRepository.findByNameInAndOpenOrderBySqnDesc(
+                        List.of("DailyBreakoutStrategy", "DailyOversoldBounceStrategy"),
+                        Boolean.TRUE);
+        log.info("Dagstrategin watchlist: {} open signals", candidates.size());
+        return candidates.stream()
+                .map(fs -> securityMetaDataManager.getDTO(fs, false))
+                .collect(Collectors.toList());
+    }
+
     @GetMapping(value = "/tradingAccounts")
     public List<TotalTradingDTO> tradingAccounts() {
         log.info("/tradingAccounts");

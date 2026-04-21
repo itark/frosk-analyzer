@@ -71,6 +71,28 @@ public class StrategiesMap {
 	private ShortTermMomentumLongTermStrengthStrategy shortTermMomentumLongTermStrengthStrategy;
 	@Autowired
 	private OMXS30SwingStrategy omxs30SwingStrategy;
+	@Autowired
+	private EURUSDStrategy eurusdStrategy;
+	@Autowired
+	private USDJPYStrategy usdjpyStrategy;
+	@Autowired
+	private AUDUSDStrategy audusdStrategy;
+	@Autowired
+	private DXYStrategy dxyStrategy;
+	@Autowired
+	private VSTOXXStrategy vstoxxStrategy;
+	@Autowired
+	private OMXvsSTOXX50Strategy omxvsSTOXX50Strategy;
+	@Autowired
+	private SwedishLongTermMomentumStrategy swedishLongTermMomentumStrategy;
+	@Autowired
+	private TreasuryYieldStrategy treasuryYieldStrategy;
+	@Autowired
+	private YieldCurveSpreadStrategy yieldCurveSpreadStrategy;
+	@Autowired
+	private DailyBreakoutStrategy dailyBreakoutStrategy;
+	@Autowired
+	private DailyOversoldBounceStrategy dailyOversoldBounceStrategy;
 
 	private List<Strategy> strategies = null;
 
@@ -99,6 +121,17 @@ public class StrategiesMap {
 		strategies.add(highLanderStrategy.getClass().getSimpleName());
 		strategies.add(shortTermMomentumLongTermStrengthStrategy.getClass().getSimpleName());
 		strategies.add(omxs30SwingStrategy.getClass().getSimpleName());
+		strategies.add(eurusdStrategy.getClass().getSimpleName());
+		strategies.add(usdjpyStrategy.getClass().getSimpleName());
+		strategies.add(audusdStrategy.getClass().getSimpleName());
+		strategies.add(dxyStrategy.getClass().getSimpleName());
+		strategies.add(vstoxxStrategy.getClass().getSimpleName());
+		strategies.add(omxvsSTOXX50Strategy.getClass().getSimpleName());
+		strategies.add(swedishLongTermMomentumStrategy.getClass().getSimpleName());
+		strategies.add(treasuryYieldStrategy.getClass().getSimpleName());
+		strategies.add(yieldCurveSpreadStrategy.getClass().getSimpleName());
+		strategies.add(dailyBreakoutStrategy.getClass().getSimpleName());
+		strategies.add(dailyOversoldBounceStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -132,6 +165,17 @@ public class StrategiesMap {
 		strategies.add(highLanderStrategy.buildStrategy(series));
 		strategies.add(shortTermMomentumLongTermStrengthStrategy.buildStrategy(series));
 		strategies.add(omxs30SwingStrategy.buildStrategy(series));
+		strategies.add(eurusdStrategy.buildStrategy());
+		strategies.add(usdjpyStrategy.buildStrategy());
+		strategies.add(audusdStrategy.buildStrategy());
+		strategies.add(dxyStrategy.buildStrategy());
+		strategies.add(vstoxxStrategy.buildStrategy());
+		strategies.add(omxvsSTOXX50Strategy.buildStrategy());
+		strategies.add(swedishLongTermMomentumStrategy.buildStrategy(series));
+		strategies.add(treasuryYieldStrategy.buildStrategy());
+		strategies.add(yieldCurveSpreadStrategy.buildStrategy());
+		strategies.add(dailyBreakoutStrategy.buildStrategy(series));
+		strategies.add(dailyOversoldBounceStrategy.buildStrategy(series));
 
 		this.strategies = strategies;
 		return strategies;
@@ -193,6 +237,28 @@ public class StrategiesMap {
 			return shortTermMomentumLongTermStrengthStrategy.buildStrategy(series);
 		} else if (strategy.equals(OMXS30SwingStrategy.class.getSimpleName())) {
 			return omxs30SwingStrategy.buildStrategy(series);
+		} else if (strategy.equals(EURUSDStrategy.class.getSimpleName())) {
+			return eurusdStrategy.buildStrategy();
+		} else if (strategy.equals(USDJPYStrategy.class.getSimpleName())) {
+			return usdjpyStrategy.buildStrategy();
+		} else if (strategy.equals(AUDUSDStrategy.class.getSimpleName())) {
+			return audusdStrategy.buildStrategy();
+		} else if (strategy.equals(DXYStrategy.class.getSimpleName())) {
+			return dxyStrategy.buildStrategy();
+		} else if (strategy.equals(VSTOXXStrategy.class.getSimpleName())) {
+			return vstoxxStrategy.buildStrategy();
+		} else if (strategy.equals(OMXvsSTOXX50Strategy.class.getSimpleName())) {
+			return omxvsSTOXX50Strategy.buildStrategy();
+		} else if (strategy.equals(SwedishLongTermMomentumStrategy.class.getSimpleName())) {
+			return swedishLongTermMomentumStrategy.buildStrategy(series);
+		} else if (strategy.equals(TreasuryYieldStrategy.class.getSimpleName())) {
+			return treasuryYieldStrategy.buildStrategy();
+		} else if (strategy.equals(YieldCurveSpreadStrategy.class.getSimpleName())) {
+			return yieldCurveSpreadStrategy.buildStrategy();
+		} else if (strategy.equals(DailyBreakoutStrategy.class.getSimpleName())) {
+			return dailyBreakoutStrategy.buildStrategy(series);
+		} else if (strategy.equals(DailyOversoldBounceStrategy.class.getSimpleName())) {
+			return dailyOversoldBounceStrategy.buildStrategy(series);
 		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
@@ -249,6 +315,28 @@ public class StrategiesMap {
 			return shortTermMomentumLongTermStrengthStrategy.getIndicatorValues();
 		} else if (strategyName.equals(OMXS30SwingStrategy.class.getSimpleName())) {
 			return omxs30SwingStrategy.getIndicatorValues();
+		} else if (strategyName.equals(EURUSDStrategy.class.getSimpleName())) {
+			return eurusdStrategy.getIndicatorValues();
+		} else if (strategyName.equals(USDJPYStrategy.class.getSimpleName())) {
+			return usdjpyStrategy.getIndicatorValues();
+		} else if (strategyName.equals(AUDUSDStrategy.class.getSimpleName())) {
+			return audusdStrategy.getIndicatorValues();
+		} else if (strategyName.equals(DXYStrategy.class.getSimpleName())) {
+			return dxyStrategy.getIndicatorValues();
+		} else if (strategyName.equals(VSTOXXStrategy.class.getSimpleName())) {
+			return vstoxxStrategy.getIndicatorValues();
+		} else if (strategyName.equals(OMXvsSTOXX50Strategy.class.getSimpleName())) {
+			return omxvsSTOXX50Strategy.getIndicatorValues();
+		} else if (strategyName.equals(SwedishLongTermMomentumStrategy.class.getSimpleName())) {
+			return swedishLongTermMomentumStrategy.getIndicatorValues();
+		} else if (strategyName.equals(TreasuryYieldStrategy.class.getSimpleName())) {
+			return treasuryYieldStrategy.getIndicatorValues();
+		} else if (strategyName.equals(YieldCurveSpreadStrategy.class.getSimpleName())) {
+			return yieldCurveSpreadStrategy.getIndicatorValues();
+		} else if (strategyName.equals(DailyBreakoutStrategy.class.getSimpleName())) {
+			return dailyBreakoutStrategy.getIndicatorValues();
+		} else if (strategyName.equals(DailyOversoldBounceStrategy.class.getSimpleName())) {
+			return dailyOversoldBounceStrategy.getIndicatorValues();
 		} else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);
 		}

@@ -1,0 +1,31 @@
+package nu.itark.frosk.strategies.indicators;
+
+import org.ta4j.core.Bar;
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.indicators.CachedIndicator;
+import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.num.Num;
+
+/**
+ * Risk-on when VSTOXX is NOT (above 25 AND rising).
+ * Complement of {@link VSTOXXRiskOffIndicator}.
+ */
+public class VSTOXXRiskOnIndicator extends CachedIndicator<Boolean> {
+
+    private final Num threshold = DoubleNum.valueOf(25);
+
+    public VSTOXXRiskOnIndicator(BarSeries series) {
+        super(series);
+    }
+
+    @Override
+    protected Boolean calculate(int index) {
+        Bar currBar = getBarSeries().getBar(index);
+        return !(currBar.isBullish() && currBar.getClosePrice().isGreaterThanOrEqual(threshold));
+    }
+
+    @Override
+    public int getUnstableBars() {
+        return 0;
+    }
+}

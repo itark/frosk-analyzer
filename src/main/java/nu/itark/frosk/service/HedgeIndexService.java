@@ -64,6 +64,14 @@ public class HedgeIndexService {
         updateHedgeIndex("GoldStrategy", "GC=F", this::convertToGoldStrategyHedgeIndexes);
         updateHedgeIndex("SP500Strategy", "^GSPC", this::convertToSP500StrategyHedgeIndexes);
         updateHedgeIndex("NasdaqVsSPStrategy", "^IXIC", this::convertToNasdaqVsSPStrategyHedgeIndexes);
+        updateHedgeIndex("EURUSDStrategy", "EURUSD=X", this::convertToEURUSDStrategyHedgeIndexes);
+        updateHedgeIndex("USDJPYStrategy", "JPY=X", this::convertToUSDJPYStrategyHedgeIndexes);
+        updateHedgeIndex("AUDUSDStrategy", "AUDUSD=X", this::convertToAUDUSDStrategyHedgeIndexes);
+        updateHedgeIndex("DXYStrategy", "DX-Y.NYB", this::convertToDXYStrategyHedgeIndexes);
+        updateHedgeIndex("VSTOXXStrategy", "^V2TX", this::convertToVSTOXXStrategyHedgeIndexes);
+        updateHedgeIndex("OMXvsSTOXX50Strategy", "^STOXX50E", this::convertToOMXvsSTOXX50StrategyHedgeIndexes);
+        updateHedgeIndex("TreasuryYieldStrategy", "^TNX", this::convertToTreasuryYieldStrategyHedgeIndexes);
+        updateHedgeIndex("YieldCurveSpreadStrategy", "^TNX", this::convertToYieldCurveSpreadStrategyHedgeIndexes);
         clearCache(); // invalidate after data update
     }
 
@@ -204,6 +212,126 @@ public class HedgeIndexService {
         return hedgeIndexList;
     }
 
+    private List<HedgeIndex> convertToEURUSDStrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("FX");
+            hedgeIndex.setIndicator("EURUSD=X");
+            hedgeIndex.setRuleDesc("EUR/USD drops >3% in last 10 days");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
+    private List<HedgeIndex> convertToUSDJPYStrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("FX");
+            hedgeIndex.setIndicator("JPY=X");
+            hedgeIndex.setRuleDesc("USD/JPY drops >2% in last 5 days (JPY strengthening)");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
+    private List<HedgeIndex> convertToAUDUSDStrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("FX");
+            hedgeIndex.setIndicator("AUDUSD=X");
+            hedgeIndex.setRuleDesc("AUD/USD drops >2% in last 5 days");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
+    private List<HedgeIndex> convertToDXYStrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("FX");
+            hedgeIndex.setIndicator("DX-Y.NYB");
+            hedgeIndex.setRuleDesc("DXY > 105 and rising");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
+    private List<HedgeIndex> convertToVSTOXXStrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("Volatility");
+            hedgeIndex.setIndicator("^V2TX");
+            hedgeIndex.setRuleDesc("VSTOXX > 25 and rising");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
+    private List<HedgeIndex> convertToOMXvsSTOXX50StrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("Equities");
+            hedgeIndex.setIndicator("^STOXX50E");
+            hedgeIndex.setRuleDesc("OMXS30 30-day return < STOXX50 30-day return by >3pp");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
+    private List<HedgeIndex> convertToTreasuryYieldStrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("Interest Rates");
+            hedgeIndex.setIndicator("^TNX");
+            hedgeIndex.setRuleDesc("10Y Treasury yield > 4.5% and rising");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
+    private List<HedgeIndex> convertToYieldCurveSpreadStrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
+        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
+        for (StrategyTrade trade : strategyTrades) {
+            HedgeIndex hedgeIndex = new HedgeIndex();
+            hedgeIndex.setDate(trade.getDate());
+            hedgeIndex.setCategory("Yield Curve");
+            hedgeIndex.setIndicator("^TNX");
+            hedgeIndex.setRuleDesc("10Y - 13W spread < -50 bps (deep inversion)");
+            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
+            hedgeIndex.setPrice(trade.getPrice());
+            hedgeIndexList.add(hedgeIndex);
+        }
+        return hedgeIndexList;
+    }
+
     // In-memory cache: date millis → risk count. Loaded lazily on first risk() call.
     private volatile Map<Long, Integer> riskCache = null;
 
@@ -227,16 +355,28 @@ public class HedgeIndexService {
     private void buildCache() {
         List<HedgeIndex> all = hedgeIndexRepository.findAll();
         Map<Long, Integer> cache = new HashMap<>();
+        // Track which indicators fired risk-off on each date (for cluster rule)
+        Map<Long, Set<String>> riskIndicatorsByDate = new HashMap<>();
+
         for (HedgeIndex hi : all) {
             if (hi.getDate() != null) {
                 long key = hi.getDate().getTime();
                 if (hi.getRisk()) {
                     cache.merge(key, 1, Integer::sum);
+                    riskIndicatorsByDate.computeIfAbsent(key, k -> new HashSet<>()).add(hi.getIndicator());
                 } else {
                     cache.putIfAbsent(key, 0);
                 }
             }
         }
+
+        // Volatility cluster rule: VIX + VSTOXX both risk-off on same date → +1 extra point
+        for (Map.Entry<Long, Set<String>> entry : riskIndicatorsByDate.entrySet()) {
+            if (entry.getValue().contains("^VIX") && entry.getValue().contains("^V2TX")) {
+                cache.merge(entry.getKey(), 1, Integer::sum);
+            }
+        }
+
         riskCache = cache;
         log.info("HedgeIndex cache warmed: {} distinct dates loaded", cache.size());
     }

@@ -14,3 +14,11 @@ name,description
 CL=F,Crude Oil
 BZ=F,Brent Crude Oil
 GC=F,Gold
+^STOXX50E,Euro Stoxx 50
+^V2TX,VSTOXX Euro Volatility Index
+DX-Y.NYB,US Dollar Index (DXY)
+EURUSD=X,EUR/USD
+JPY=X,USD/JPY
+AUDUSD=X,AUD/USD
+^TNX,US 10-Year Treasury Yield
+^IRX,US 13-Week T-Bill Yield
