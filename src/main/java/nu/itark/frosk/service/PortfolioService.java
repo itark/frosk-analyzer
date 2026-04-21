@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Builds and reads Portfolio snapshots based on open FeaturedStrategy positions.
@@ -32,10 +33,12 @@ import java.util.stream.Collectors;
 public class PortfolioService {
 
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm";
+    private static final double SLMS_MAX_SECTOR_RATIO = 0.30;
 
     private static final List<String> PORTFOLIO_STRATEGIES = List.of(
             "ShortTermMomentumLongTermStrengthStrategy",
-            "HighLanderStrategy"
+            "HighLanderStrategy",
+            "SwedishLongTermMomentumStrategy"
     );
 
     final FeaturedStrategyRepository featuredStrategyRepository;
@@ -53,10 +56,23 @@ public class PortfolioService {
     public Portfolio build() {
         log.info("Building portfolio snapshot...");
 
-        List<FeaturedStrategy> openStrategies = featuredStrategyRepository.findByOpen(true).stream()
+        List<FeaturedStrategy> allOpen = featuredStrategyRepository.findByOpen(true).stream()
                 .filter(fs -> PORTFOLIO_STRATEGIES.contains(fs.getName()))
                 .collect(Collectors.toList());
-        log.info("Found {} open positions for strategies {}", openStrategies.size(), PORTFOLIO_STRATEGIES);
+
+        // Apply 30%-per-sector cap to SwedishLongTermMomentumStrategy positions
+        List<FeaturedStrategy> slmsPositions = allOpen.stream()
+                .filter(fs -> "SwedishLongTermMomentumStrategy".equals(fs.getName()))
+                .collect(Collectors.toList());
+        List<FeaturedStrategy> otherPositions = allOpen.stream()
+                .filter(fs -> !"SwedishLongTermMomentumStrategy".equals(fs.getName()))
+                .collect(Collectors.toList());
+        List<FeaturedStrategy> cappedSlms = applySectorCap(slmsPositions, SLMS_MAX_SECTOR_RATIO);
+
+        List<FeaturedStrategy> openStrategies = Stream.concat(otherPositions.stream(), cappedSlms.stream())
+                .collect(Collectors.toList());
+        log.info("Found {} open positions for strategies {} ({} SLMS after sector cap)",
+                openStrategies.size(), PORTFOLIO_STRATEGIES, cappedSlms.size());
 
         Portfolio portfolio = new Portfolio();
         portfolio.setSnapshotDate(new Date());
@@ -133,6 +149,31 @@ public class PortfolioService {
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    private List<FeaturedStrategy> applySectorCap(List<FeaturedStrategy> positions, double maxSectorRatio) {
+        if (positions.isEmpty()) return positions;
+        int maxPerSector = Math.max(1, (int) Math.ceil(positions.size() * maxSectorRatio));
+
+        Map<String, List<FeaturedStrategy>> bySector = positions.stream()
+                .collect(Collectors.groupingBy(fs -> {
+                    nu.itark.frosk.model.Security sec = securityRepository.findByName(fs.getSecurityName());
+                    return (sec != null && sec.getSector() != null && !sec.getSector().isBlank())
+                            ? sec.getSector() : "Unknown";
+                }));
+
+        List<FeaturedStrategy> result = new ArrayList<>();
+        bySector.forEach((sector, sectorPositions) -> {
+            sectorPositions.stream()
+                    .sorted(Comparator.comparing(
+                            fs -> fs.getSqn() != null ? fs.getSqn() : BigDecimal.ZERO,
+                            Comparator.reverseOrder()))
+                    .limit(maxPerSector)
+                    .forEach(result::add);
+        });
+        log.info("Sector cap applied: {} sectors, max {} per sector, {} positions kept from {}",
+                bySector.size(), maxPerSector, result.size(), positions.size());
+        return result;
+    }
 
     private PortfolioPosition buildPosition(FeaturedStrategy fs, Portfolio portfolio) {
         List<StrategyTrade> trades = strategyTradeRepository.findByFeaturedStrategyId(fs.getId());

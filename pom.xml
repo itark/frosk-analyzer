@@ -18,17 +18,15 @@
 	<properties>
 		<spring-boot.build-image.skip>true</spring-boot.build-image.skip>
 		<maven.test.skip>true</maven.test.skip>
-		<maven.compiler.source>17</maven.compiler.source>
-		<maven.compiler.target>17</maven.compiler.target>
-		<lombok.version>1.18.28</lombok.version>
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
+		<lombok.version>1.18.34</lombok.version>
 		<lombok.mapstruct.version>0.2.0</lombok.mapstruct.version>
 		<maven.lombok.plugin.version>1.18.20.0</maven.lombok.plugin.version>
 		<maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
 
 		<!-- Java build configuration -->
-		<java.version>17</java.version>
-		<maven.compiler.target>17</maven.compiler.target>
-		<maven.compiler.source>17</maven.compiler.source>
+		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
