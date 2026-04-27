@@ -92,13 +92,13 @@ public class StrategyExecutor {
                 strategyTrade = new StrategyTrade();
                 strategyTrade.setDate(Date.from(barEntry.getEndTime().toInstant()));
                 strategyTrade.setType(position.getEntry().getType().name());
-                strategyTrade.setPrice(BigDecimal.valueOf(position.getEntry().getPricePerAsset().doubleValue()));
-                strategyTrade.setAmount(BigDecimal.valueOf(position.getEntry().getAmount().doubleValue()));
+                strategyTrade.setPrice(safeBigDecimal(position.getEntry().getPricePerAsset().doubleValue()));
+                strategyTrade.setAmount(safeBigDecimal(position.getEntry().getAmount().doubleValue()));
                 strategyTradeList.add(strategyTrade);
                 Bar barExit = series.getBar(position.getExit().getIndex());
                 Date sellDate = Date.from(barExit.getEndTime().toInstant());
                 String exitType = position.getExit().getType().name();
-                BigDecimal grossProfit = BigDecimal.valueOf(position.getGrossProfit().doubleValue());
+                BigDecimal grossProfit = safeBigDecimal(position.getGrossProfit().doubleValue());
                 BigDecimal pnl = BigDecimal.ZERO;
                 if (!Double.isNaN(position.getGrossReturn().doubleValue())) {
                     pnl = new BigDecimal((position.getGrossReturn().doubleValue() - 1) * 100).setScale(4, BigDecimal.ROUND_DOWN);
@@ -106,8 +106,8 @@ public class StrategyExecutor {
                 strategyTrade = new StrategyTrade();
                 strategyTrade.setDate(sellDate);
                 strategyTrade.setType(exitType);
-                strategyTrade.setPrice(BigDecimal.valueOf(position.getExit().getPricePerAsset().doubleValue()));
-                strategyTrade.setAmount(BigDecimal.valueOf(position.getEntry().getAmount().doubleValue()));
+                strategyTrade.setPrice(safeBigDecimal(position.getExit().getPricePerAsset().doubleValue()));
+                strategyTrade.setAmount(safeBigDecimal(position.getEntry().getAmount().doubleValue()));
                 strategyTrade.setGrossProfit(grossProfit);
                 strategyTrade.setPnl(pnl);
                 strategyTrade.setFeaturedStrategy(fs.get());
@@ -119,8 +119,8 @@ public class StrategyExecutor {
                 strategyTrade = new StrategyTrade();
                 strategyTrade.setDate(Date.from(barEntry.getEndTime().toInstant()));
                 strategyTrade.setType(tradingRecord.getCurrentPosition().getEntry().getType().name());
-                strategyTrade.setPrice(BigDecimal.valueOf(tradingRecord.getCurrentPosition().getEntry().getPricePerAsset().doubleValue()));
-                strategyTrade.setAmount(BigDecimal.valueOf(tradingRecord.getCurrentPosition().getEntry().getAmount().doubleValue()));
+                strategyTrade.setPrice(safeBigDecimal(tradingRecord.getCurrentPosition().getEntry().getPricePerAsset().doubleValue()));
+                strategyTrade.setAmount(safeBigDecimal(tradingRecord.getCurrentPosition().getEntry().getAmount().doubleValue()));
                 strategyTradeList.add(strategyTrade);
                 latestTradeDate.set(Date.from(barEntry.getBeginTime().toInstant()));
             }
@@ -150,8 +150,10 @@ public class StrategyExecutor {
                 fs.get().setMaxDD(BigDecimal.ZERO);
             }
             fs.get().setOpen(tradingRecord.getCurrentPosition().isOpened());
-            fs.get().setSqn(new BigDecimal(new SqnCriterion().calculate(series, tradingRecord).doubleValue()));
-            fs.get().setExpectency(new BigDecimal(new ExpectancyCriterion().calculate(series, tradingRecord).doubleValue()));
+            double sqn = new SqnCriterion().calculate(series, tradingRecord).doubleValue();
+            fs.get().setSqn(Double.isNaN(sqn) ? BigDecimal.ZERO : new BigDecimal(sqn));
+            double expectancy = new ExpectancyCriterion().calculate(series, tradingRecord).doubleValue();
+            fs.get().setExpectency(Double.isNaN(expectancy) ? BigDecimal.ZERO : new BigDecimal(expectancy));
             AtomicReference<FeaturedStrategy> fsRes = new AtomicReference<>(featuredStrategyRepository.save(fs.get()));
             List<StrategyTrade> existingStrategyTrades = tradesRepository.findByFeaturedStrategyId(fsRes.get().getId());
             if (!existingStrategyTrades.isEmpty()) {
@@ -179,5 +181,9 @@ public class StrategyExecutor {
             sb.append(lastBar.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
         }
         return sb.toString();
+    }
+
+    private BigDecimal safeBigDecimal(double value) {
+        return Double.isNaN(value) || Double.isInfinite(value) ? BigDecimal.ZERO : BigDecimal.valueOf(value);
     }
 }

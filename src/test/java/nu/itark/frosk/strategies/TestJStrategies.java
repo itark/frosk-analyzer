@@ -7,8 +7,10 @@ import nu.itark.frosk.coinbase.BaseIntegrationTest;
 import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.StrategyTrade;
+import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.Profit;
+import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.strategies.hedge.BetaStrategy;
@@ -36,15 +38,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-/**
- *
- * Oskar?: 734 818 634-2
- * Rasmus: 8368-3,694 961 403-3
- *
- *
- */
-
-
 
 @SpringBootTest
 @Slf4j
@@ -64,6 +57,9 @@ public class TestJStrategies extends BaseIntegrationTest {
 
 	@Autowired
 	StrategiesMap strategiesMap;
+
+	@Autowired
+	SecurityRepository securityRepository;
 
 	Formatter fmt;
 
@@ -388,6 +384,31 @@ public class TestJStrategies extends BaseIntegrationTest {
 		//doPerformanceReport(timeSeries, strategy, tradingRecord);
 
 		return returnObject;
+	}
+
+	@Test
+	public void runSwedishLongTermMomentum() {
+		List<ReturnObject> resultMap = new ArrayList<>();
+		List<Security> allSwedish = securityRepository.findByDatabaseAndActive("YAHOO", true).stream()
+				.filter(s -> s.getName().endsWith(".ST"))
+				.toList();
+		log.info("runSwedishLongTermMomentum: {} active Swedish securities", allSwedish.size());
+		addFormat();
+
+		SwedishLongTermMomentumStrategy slms = strategiesMap.getSwedishLongTermMomentumStrategy();
+		for (Security sec : allSwedish) {
+			try {
+				BarSeries ts = barSeriesService.getDataSet(sec.getName(), false, false);
+				if (ts.isEmpty()) {
+					continue;
+				}
+				resultMap.add(run(slms.buildStrategy(ts), ts));
+			} catch (Exception e) {
+				log.warn("Failed for {}: {}", sec.getName(), e.getMessage());
+			}
+		}
+
+		printResult(resultMap);
 	}
 
 	@Test

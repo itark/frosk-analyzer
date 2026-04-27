@@ -63,7 +63,6 @@ public class HedgeIndexService {
         updateHedgeIndex("CrudeOilStrategy", "CL=F", this::convertToCrudeOilStrategyHedgeIndexes);
         updateHedgeIndex("GoldStrategy", "GC=F", this::convertToGoldStrategyHedgeIndexes);
         updateHedgeIndex("SP500Strategy", "^GSPC", this::convertToSP500StrategyHedgeIndexes);
-        updateHedgeIndex("NasdaqVsSPStrategy", "^IXIC", this::convertToNasdaqVsSPStrategyHedgeIndexes);
         updateHedgeIndex("EURUSDStrategy", "EURUSD=X", this::convertToEURUSDStrategyHedgeIndexes);
         updateHedgeIndex("USDJPYStrategy", "JPY=X", this::convertToUSDJPYStrategyHedgeIndexes);
         updateHedgeIndex("AUDUSDStrategy", "AUDUSD=X", this::convertToAUDUSDStrategyHedgeIndexes);
@@ -190,21 +189,6 @@ public class HedgeIndexService {
             hedgeIndex.setCategory("Equities");
             hedgeIndex.setIndicator("^GSPC");
             hedgeIndex.setRuleDesc("S&P 500 below 200-day MA");
-            hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
-            hedgeIndex.setPrice(trade.getPrice());
-            hedgeIndexList.add(hedgeIndex);
-        }
-        return hedgeIndexList;
-    }
-
-    private List<HedgeIndex> convertToNasdaqVsSPStrategyHedgeIndexes(List<StrategyTrade> strategyTrades) {
-        final List<HedgeIndex> hedgeIndexList = new ArrayList<>();
-        for (StrategyTrade trade : strategyTrades) {
-            HedgeIndex hedgeIndex = new HedgeIndex();
-            hedgeIndex.setDate(trade.getDate());
-            hedgeIndex.setCategory("Equities");
-            hedgeIndex.setIndicator("^IXIC");
-            hedgeIndex.setRuleDesc("NASDAQ 30-day return < S&P 30-day return");
             hedgeIndex.setRisk(trade.getType().equals(Trade.TradeType.SELL.toString()) ? Boolean.TRUE : Boolean.FALSE);
             hedgeIndex.setPrice(trade.getPrice());
             hedgeIndexList.add(hedgeIndex);
@@ -389,6 +373,14 @@ public class HedgeIndexService {
      * @return true if risk
      */
     public boolean risk(ZonedDateTime indexDate) {
+        return getScore(indexDate) > riskThreshold;
+    }
+
+    /**
+     * Returns the raw risk score for a given date.
+     * Higher score = more risk-off indicators firing.
+     */
+    public int getScore(ZonedDateTime indexDate) {
         if (riskCache == null) {
             synchronized (this) {
                 if (riskCache == null) {
@@ -397,8 +389,7 @@ public class HedgeIndexService {
             }
         }
         long key = Date.from(indexDate.toInstant()).getTime();
-        int risks = riskCache.getOrDefault(key, 0);
-        return risks > riskThreshold;
+        return riskCache.getOrDefault(key, 0);
     }
 
     private int countRisksIndicators(List<HedgeIndex> hedgeIndexList) {

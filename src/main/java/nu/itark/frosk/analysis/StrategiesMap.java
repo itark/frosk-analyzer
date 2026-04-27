@@ -170,7 +170,7 @@ public class StrategiesMap {
 		strategies.add(audusdStrategy.buildStrategy());
 		strategies.add(dxyStrategy.buildStrategy());
 		strategies.add(vstoxxStrategy.buildStrategy());
-		strategies.add(omxvsSTOXX50Strategy.buildStrategy());
+		strategies.add(omxvsSTOXX50Strategy.buildStrategy(series));
 		strategies.add(swedishLongTermMomentumStrategy.buildStrategy(series));
 		strategies.add(treasuryYieldStrategy.buildStrategy());
 		strategies.add(yieldCurveSpreadStrategy.buildStrategy());
@@ -248,7 +248,7 @@ public class StrategiesMap {
 		} else if (strategy.equals(VSTOXXStrategy.class.getSimpleName())) {
 			return vstoxxStrategy.buildStrategy();
 		} else if (strategy.equals(OMXvsSTOXX50Strategy.class.getSimpleName())) {
-			return omxvsSTOXX50Strategy.buildStrategy();
+			return omxvsSTOXX50Strategy.buildStrategy(series);
 		} else if (strategy.equals(SwedishLongTermMomentumStrategy.class.getSimpleName())) {
 			return swedishLongTermMomentumStrategy.buildStrategy(series);
 		} else if (strategy.equals(TreasuryYieldStrategy.class.getSimpleName())) {

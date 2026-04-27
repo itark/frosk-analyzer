@@ -3,10 +3,14 @@ package nu.itark.frosk.strategies;
 import lombok.RequiredArgsConstructor;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.hedge.*;
+import nu.itark.frosk.strategies.rules.StopLossRule;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
+import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 
 import java.util.List;
 
@@ -19,6 +23,9 @@ public class HighLanderStrategy extends AbstractStrategy implements IIndicatorVa
     private final PEGRatioStrategy pegRatioStrategy;
     private final GoldenCrossRelativeStrengthStrategy goldenCrossRelativeStrengthStrategy;
     private final RecommendationStrategy recommendationStrategy;
+
+    @Value("${frosk.highlander.stoploss.percent:20.0}")
+    private double stopLossPercent;
 
     /**
      * Builds a composite trading strategy by combining hedge index and beta strategies.
@@ -66,13 +73,20 @@ public class HighLanderStrategy extends AbstractStrategy implements IIndicatorVa
         }
         super.barSeries = series;
 
-        Strategy strategy = hedgeIndexStrategy.buildStrategy(series)
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+        Rule stopLoss = new StopLossRule(closePrice, stopLossPercent);
+
+        Strategy compositeStrategy = hedgeIndexStrategy.buildStrategy(series)
                             .and(betaStrategy.buildStrategy(series))
                             .and(pegRatioStrategy.buildStrategy(series));
                           //  .and(goldenCrossRelativeStrengthStrategy.buildStrictGoldenCrossStrategy(series))
                           //  .and(yoYRevenueGrowthStrategy.buildStrategy(series));
                            // .and(recommendationStrategy.buildStrategy(series));
-        return strategy;
+
+        Rule entryRule = compositeStrategy.getEntryRule();
+        Rule exitRule = compositeStrategy.getExitRule().or(stopLoss);
+
+        return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
 
     @Override

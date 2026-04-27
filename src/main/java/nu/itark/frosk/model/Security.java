@@ -56,6 +56,9 @@ public class Security {
 	@Column(name = "enterprise_value")
 	private Long enterpriseValue;
 
+	@Column(name = "dividend_yield")
+	private Double dividendYield;
+
 	@Column(name = "sector")
 	private String sector;
 

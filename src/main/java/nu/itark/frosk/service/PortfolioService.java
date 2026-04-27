@@ -8,11 +8,13 @@ import nu.itark.frosk.model.*;
 import nu.itark.frosk.repo.*;
 import nu.itark.frosk.util.FroskUtil;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,6 +37,21 @@ public class PortfolioService {
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm";
     private static final double SLMS_MAX_SECTOR_RATIO = 0.30;
 
+    @Value("${frosk.swedish.longterm.topN:20}")
+    private int slmsTopN;
+
+    /** Minimum SQN a position must have to appear in the portfolio. */
+    @Value("${frosk.portfolio.min.sqn:1.0}")
+    private double portfolioMinSqn;
+
+    /** Minimum profitable-trades ratio (win rate) a position must have. */
+    @Value("${frosk.portfolio.min.win.rate:0.35}")
+    private double portfolioMinWinRate;
+
+    /** Maximum number of non-SLMS (HighLander + ShortTermMomentum) positions, ranked by SQN. */
+    @Value("${frosk.portfolio.other.topN:10}")
+    private int otherTopN;
+
     private static final List<String> PORTFOLIO_STRATEGIES = List.of(
             "ShortTermMomentumLongTermStrengthStrategy",
             "HighLanderStrategy",
@@ -47,6 +64,7 @@ public class PortfolioService {
     final SecurityPriceRepository securityPriceRepository;
     final PortfolioRepository portfolioRepository;
     final PortfolioPositionRepository portfolioPositionRepository;
+    final HedgeIndexService hedgeIndexService;
 
     /**
      * Builds a new Portfolio snapshot from all currently open FeaturedStrategy positions.
@@ -58,21 +76,41 @@ public class PortfolioService {
 
         List<FeaturedStrategy> allOpen = featuredStrategyRepository.findByOpen(true).stream()
                 .filter(fs -> PORTFOLIO_STRATEGIES.contains(fs.getName()))
+                .filter(this::passesQualityGate)
                 .collect(Collectors.toList());
 
         // Apply 30%-per-sector cap to SwedishLongTermMomentumStrategy positions
         List<FeaturedStrategy> slmsPositions = allOpen.stream()
                 .filter(fs -> "SwedishLongTermMomentumStrategy".equals(fs.getName()))
                 .collect(Collectors.toList());
+
+        // Cap HighLander + ShortTermMomentum positions by SQN (top-N only)
         List<FeaturedStrategy> otherPositions = allOpen.stream()
                 .filter(fs -> !"SwedishLongTermMomentumStrategy".equals(fs.getName()))
+                .sorted(Comparator.comparing(
+                        (FeaturedStrategy fs) -> fs.getSqn() != null ? fs.getSqn() : BigDecimal.ZERO,
+                        Comparator.reverseOrder()))
+                .limit(otherTopN)
                 .collect(Collectors.toList());
         List<FeaturedStrategy> cappedSlms = applySectorCap(slmsPositions, SLMS_MAX_SECTOR_RATIO);
 
-        List<FeaturedStrategy> openStrategies = Stream.concat(otherPositions.stream(), cappedSlms.stream())
+        // Tiered HedgeIndex sizing for SLMS: score 0-3 → topN, score 4-7 → topN/2, score 8+ → 0
+        int effectiveTopN = computeTieredTopN();
+
+        // Limit SwedishLongTermMomentumStrategy positions to effectiveTopN, ranked by SQN descending
+        List<FeaturedStrategy> topNSlms = cappedSlms.stream()
+                .sorted(Comparator.comparing(
+                        (FeaturedStrategy fs) -> fs.getSqn() != null ? fs.getSqn() : BigDecimal.ZERO,
+                        Comparator.reverseOrder()))
+                .limit(effectiveTopN)
                 .collect(Collectors.toList());
-        log.info("Found {} open positions for strategies {} ({} SLMS after sector cap)",
-                openStrategies.size(), PORTFOLIO_STRATEGIES, cappedSlms.size());
+
+        List<FeaturedStrategy> openStrategies = Stream.concat(otherPositions.stream(), topNSlms.stream())
+                .collect(Collectors.toList());
+        log.info("Portfolio: {} positions total (quality gate: sqn>={}, winRate>={}; other cap: top{}; " +
+                        "SLMS after sector cap: {}, after tieredTopN={} [base={}])",
+                openStrategies.size(), portfolioMinSqn, portfolioMinWinRate, otherTopN,
+                cappedSlms.size(), topNSlms.size(), effectiveTopN, slmsTopN);
 
         Portfolio portfolio = new Portfolio();
         portfolio.setSnapshotDate(new Date());
@@ -149,6 +187,41 @@ public class PortfolioService {
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Tiered HedgeIndex sizing for Månadsportföljen:
+     * Score 0-3 (Strong Risk-On) → full topN
+     * Score 4-7 (Cautious)       → topN / 2
+     * Score 8+  (Defensive)      → 0 (no SLMS positions)
+     */
+    private int computeTieredTopN() {
+        int score = hedgeIndexService.getScore(ZonedDateTime.now());
+        if (score <= 3) {
+            return slmsTopN;
+        } else if (score <= 7) {
+            return Math.max(1, slmsTopN / 2);
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * Minimum quality gate applied to every position before it enters the portfolio.
+     * Requires SQN >= frosk.portfolio.min.sqn (default 1.0)
+     * and profitable trades ratio >= frosk.portfolio.min.win.rate (default 0.35).
+     * Positions with no track record (null SQN or win rate) are excluded.
+     */
+    private boolean passesQualityGate(FeaturedStrategy fs) {
+        if (fs.getSqn() == null || fs.getSqn().doubleValue() < portfolioMinSqn) {
+            log.debug("Quality gate excluded {} ({}) — SQN={}", fs.getSecurityName(), fs.getName(), fs.getSqn());
+            return false;
+        }
+        if (fs.getProfitableTradesRatio() == null || fs.getProfitableTradesRatio().doubleValue() < portfolioMinWinRate) {
+            log.debug("Quality gate excluded {} ({}) — winRate={}", fs.getSecurityName(), fs.getName(), fs.getProfitableTradesRatio());
+            return false;
+        }
+        return true;
+    }
 
     private List<FeaturedStrategy> applySectorCap(List<FeaturedStrategy> positions, double maxSectorRatio) {
         if (positions.isEmpty()) return positions;

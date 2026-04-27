@@ -10,7 +10,7 @@ A Spring Boot application implementing a **hedge fund-style, layered trading fra
 2. **Equity selection** — rule-based stock screening (momentum, Beta, growth, technical levels) aligned with the current macro regime.
 3. **Hedging** — options-based protection (protective puts, collars, spreads) sized to regime severity.
 
-The project is being extended with two Swedish stock portfolio strategies (see **Roadmap** below), which map onto the existing architecture.
+The project includes two Swedish stock portfolio strategies (Månadsportföljen and Dagstrategin — see **Roadmap** below), both gated by the HedgeIndex.
 
 ## Build and Run
 
@@ -38,23 +38,34 @@ mvn test -Dtest=TestJStrategyAnalysis                # run all tests in one clas
 | `frosk.runallstrategies` | true = run all strategies × all securities |
 | `frosk.updatehedgeindex` | true = refresh the hedge index from DB before running |
 | `frosk.buildportfolio` | true = call `portfolioService.build()` after `runInstall()` |
-| `frosk.strategies.exclude` | Comma-separated strategy names to skip |
+| `frosk.strategies.exclude` | Comma-separated strategy names to skip — **all hedge/FX/index strategies and the two Dagstrategin + OMXS30Swing strategies are excluded from the default all-strategies batch run** (they run via their own dedicated code paths) |
+| `frosk.run.dagstrategin` | true = run Dagstrategin strategies on OMX30 after startup |
+| `frosk.swedish.longterm.topN` | Max SLMS positions in portfolio (annotation fallback: 20; `application.properties` sets 25) |
+| `frosk.swedish.longterm.maxVolatility` | Max annualized volatility for SLMS entry (default: 0.40) |
+| `frosk.portfolio.min.sqn` | Min SQN for any position to appear in portfolio snapshot (default: 1.0) |
+| `frosk.portfolio.min.win.rate` | Min profitable-trades ratio for any position (default: 0.35) |
+| `frosk.portfolio.other.topN` | Max combined HighLander + ShortTermMomentum positions, ranked by SQN (default: 10) |
+| `frosk.slms.stoploss.percent` | Hard stop-loss % below entry for ShortTermMomentumLongTermStrengthStrategy (default: 15.0) |
+| `frosk.highlander.stoploss.percent` | Hard stop-loss % below entry for HighLanderStrategy (default: 20.0) |
 
 ## Architecture
 
 ```
 HighLander (startup runner)
-  └─ StrategyAnalysis.run(strategy, securityId)
-       ├─ Case 1: null/null  → all strategies × all securities (batch)
-       │    └─ HedgeIndexService.warmCache() called first
-       ├─ Case 2: strategy + null  → one strategy × all securities
-       └─ Case 3: strategy + securityId → one strategy × one security
-            └─ StrategyExecutor.run() [@Transactional(REQUIRES_NEW)]
-                 ├─ builds BarSeries via BarSeriesService
-                 ├─ builds ta4j Strategy via StrategiesMap.getStrategyToRun()
-                 ├─ runs backtest via BarSeriesService.runConfiguredStrategy()
-                 ├─ upserts FeaturedStrategy
-                 └─ replaces StrategyTrade + StrategyIndicatorValue (saveAll)
+  ├─ StrategyAnalysis.run(strategy, securityId)
+  │    ├─ Case 1: null/null  → all strategies × all securities (batch)
+  │    │    └─ HedgeIndexService.warmCache() called first
+  │    ├─ Case 2: strategy + null  → one strategy × all securities
+  │    └─ Case 3: strategy + securityId → one strategy × one security
+  │         └─ StrategyExecutor.run() [@Transactional(REQUIRES_NEW)]
+  │              ├─ builds BarSeries via BarSeriesService
+  │              ├─ builds ta4j Strategy via StrategiesMap.getStrategyToRun()
+  │              ├─ runs backtest via BarSeriesService.runConfiguredStrategy()
+  │              ├─ upserts FeaturedStrategy
+  │              └─ replaces StrategyTrade + StrategyIndicatorValue (saveAll)
+  ├─ StrategyAnalysis.runHedgeIndexStrategies()  → syncs + runs 14 macro strategies → hedgeIndexService.update()
+  ├─ StrategyAnalysis.runDagstrateginStrategies() → runs DailyBreakout + DailyOversoldBounce on OMX30
+  └─ PortfolioService.build() → snapshots open positions with sector cap + tiered HedgeIndex sizing
 ```
 
 ## FeaturedStrategy — Central Result Entity
@@ -71,7 +82,7 @@ HighLander (startup runner)
 
 ## Adding a New Strategy
 
-Every strategy must be registered in **four places** in `StrategiesMap`:
+Every strategy must be registered in **five places** in `StrategiesMap`:
 
 1. `@Autowired` field declaration
 2. `buildStrategiesMap()` — adds class simple name to the string list
@@ -84,6 +95,23 @@ Strategy class must:
 - Extend `AbstractStrategy`
 - Implement `IIndicatorValue` (provides `getIndicatorValues()`)
 - Call `super.setInherentExitRule()` and `indicatorValues.clear()` at the start of `buildStrategy()`
+
+## Existing Strategies — Inventory
+
+| Class | Type | Description |
+|---|---|---|
+| `HighLanderStrategy` | Long-term | Core equity strategy — gated by HedgeIndex; entries only in risk-on regime. Exit: composite sub-strategy exits OR 20% hard stop-loss. |
+| `ShortTermMomentumLongTermStrengthStrategy` | Medium-term | Combines short-term momentum with long-term strength filter. Exit: price < SMA(50) OR SMA(10) < SMA(20) OR HedgeIndex risk-off OR 15% stop-loss. |
+| `EngulfingStrategy` | Short-term | Candlestick pattern — uses `TradeOnCurrentCloseModel` |
+| `GoldStrategy` | Commodity | Gold-specific rules — uses `TradeOnCurrentCloseModel` |
+| `OMXS30SwingStrategy` | Swing (2–10 days) | **"Nordic Momentum Filter"** — Fredrik's own strategy. Entry: EMA(20) > EMA(50) AND RSI(14) crosses above 40 AND OBV > OBV SMA(5). Exit: RSI(14) > 65 OR ATR stop-loss (2× ATR) OR stop-gain (3× ATR × 2) OR max 10 bars held. Uses two custom inner rules: `AtrStopLossRule` and `MaxBarsHeldRule`. 137 lines. |
+| `SwedishLongTermMomentumStrategy` | Quarterly factor | **Månadsportföljen** — 6M/12-1 momentum, low-vol filter, relative strength vs ^OMX, PEG/Beta gates, tiered HedgeIndex. 231 lines. |
+| `DailyBreakoutStrategy` | Swing (2–10 days) | **Dagstrategin A** — 20-day breakout on elevated volume in uptrend. Uptrend filter, 0.5% breakout threshold, stop-loss at 5-bar low. 95 lines. |
+| `DailyOversoldBounceStrategy` | Swing (2–10 days) | **Dagstrategin B** — RSI(14) < 30 + lower Bollinger Band bounce in uptrend. Volume confirmation, stop-loss at 3-bar low. 111 lines. |
+
+> All strategies extend `AbstractStrategy` and implement `IIndicatorValue`. All must be registered in `StrategiesMap` at 5 points. `EngulfingStrategy` and `GoldStrategy` use `TradeOnCurrentCloseModel`; all others use `TradeOnNextOpenModel`.
+
+---
 
 ## HedgeIndex — Full Scoring Model
 
@@ -114,7 +142,7 @@ Sweden is the primary market. US indicators are retained where they drive global
 
 > **Note:** thresholds are starting points — tune to your universe and regime. Use smoothed/ROC versions to avoid single-day noise. Use `BarSeriesAligner` to align time series when comparing assets.
 >
-> **Removed indicators:** SKEW (CBOE tail-risk index — US options market only, no meaningful read for Swedish equities) and SDEX (S&P 500 constituent dispersion — purely US internal measure). NASDAQ vs S&P replaced by OMX vs STOXX50. US CPI replaced by Swedish KPIF. VSTOXX added as a more relevant volatility gauge alongside VIX. EUR/USD added given Sweden's deep Eurozone trade dependency.
+> **Removed indicators:** SKEW (CBOE tail-risk index — US options market only, no meaningful read for Swedish equities) and SDEX (S&P 500 constituent dispersion — purely US internal measure). NASDAQ vs S&P replaced by OMX vs STOXX50 — `NasdaqVsSPStrategy` removed from `HedgeIndexService.update()` (step 12); `OMXvsSTOXX50Strategy` is the sole equities-relative indicator. US CPI replaced by Swedish KPIF. VSTOXX added as a more relevant volatility gauge alongside VIX. EUR/USD added given Sweden's deep Eurozone trade dependency.
 
 **Volatility cluster rule:** if both VIX and VSTOXX are risk-off simultaneously, increase hedge size by +1 notch regardless of total score.
 
@@ -129,9 +157,9 @@ Sweden is the primary market. US indicators are retained where they drive global
 
 ### HedgeIndex Performance
 
-`HedgeIndexService` maintains an in-memory cache (`Map<Long, Integer>` keyed on `Date.getTime()` millis) to avoid per-bar DB queries during strategy evaluation. Call `warmCache()` before running bulk strategies; the cache is automatically cleared after `update()`.
+`HedgeIndexService` maintains an in-memory cache (`Map<Long, Integer>` keyed on `Date.getTime()` millis) to avoid per-bar DB queries during strategy evaluation. Call `warmCache()` before running bulk strategies; the cache is automatically cleared after `update()`. Two accessors: `risk(ZonedDateTime)` returns boolean (score > threshold), `getScore(ZonedDateTime)` returns the raw integer score for tiered decisions.
 
-**Missing indicators backlog:** VSTOXX (`^V2TX`), OMX vs STOXX50, EUR/USD, USD/JPY, AUD/USD, DXY, Swedish KPIF, 10Y Treasury, 2Y–10Y spread, A/D line, HY OAS, TED Spread — each needs a data source (via `RapidApiManager`) and a new scoring rule in `HedgeIndexService`. Add one at a time and validate the regime classification doesn't shift dramatically before proceeding to the next. **Recommended starting point:** FX pairs (EUR/USD, USD/JPY, AUD/USD) — all available via Yahoo Finance as `EURUSD=X`, `JPY=X`, `AUDUSD=X`.
+**Remaining indicators backlog:** Only 3 indicators still missing an implementation: A/D line (NYSE Advance/Decline — no Yahoo Finance ticker), HY OAS (US High-Yield OAS — not available via Yahoo Finance15), TED Spread (SOFR–T-bill spread — not available via Yahoo Finance15). Swedish KPIF is permanently skipped (no Yahoo Finance ticker). All other indicators — VSTOXX, OMX vs STOXX50, EUR/USD, USD/JPY, AUD/USD, DXY, 10Y Treasury, 2Y–10Y spread — are fully implemented and their tickers are registered in `YAHOO-INDEX-World indexes.csv`.
 
 ---
 
@@ -175,12 +203,18 @@ The options hedging layer sizes protection based on HedgeIndex regime. Not yet i
 `PortfolioService.build()` snapshots open `FeaturedStrategy` positions filtered to:
 - `ShortTermMomentumLongTermStrengthStrategy`
 - `HighLanderStrategy`
+- `SwedishLongTermMomentumStrategy` — subject to 30%-per-sector cap (`applySectorCap`), tiered HedgeIndex sizing (`computeTieredTopN`: score 0-3 → topN, 4-7 → topN/2, 8+ → 0), and topN limit (default 25, ranked by SQN)
+
+**Portfolio quality filters (applied to ALL positions before sector cap / top-N):**
+- `passesQualityGate()` — excludes positions with SQN < `frosk.portfolio.min.sqn` (default 1.0) or win rate < `frosk.portfolio.min.win.rate` (default 0.35)
+- HighLander + ShortTermMomentum positions are additionally capped at `frosk.portfolio.other.topN` (default 10), ranked by SQN descending — prevents indefinite accumulation of stale positions
 
 Each call persists a new `Portfolio` + `PortfolioPosition` records. REST endpoints in `DataController`:
 - `POST /portfolio/build`
 - `GET /portfolio` — latest snapshot
 - `GET /portfolio/history`
 - `GET /portfolio/{id}`
+- `GET /dagstrategin/watchlist` — open Dagstrategin signals ranked by SQN
 
 ---
 
@@ -210,24 +244,11 @@ Securities are registered in the DB via `DataSetHelper.addDatasetSecuritiesFromC
 |---|---|---|---|---|
 | `YAHOO-SWEDISH-All securities in Sweden.csv` | semicolon-separated, quoted | `SWEDISH` | All Swedish stocks with `.ST` suffix + index tickers `^OMX`, `^OMXSPI`, `^NORDIC`, `^NORDICPI` | 977 |
 | `YAHOO-OMX30-All securites included in OMX30.csv` | comma-separated | `OMX30` | OMXS30 constituents | 29 |
-| `YAHOO-INDEX-World indexes.csv` | comma-separated | `INDEX` | Global market indicators | 15 |
+| `YAHOO-INDEX-World indexes.csv` | comma-separated | `INDEX` | Global market indicators | 23 |
 | `YAHOO-OSCAR-The Money Machine.csv` | comma-separated | `OSCAR` | Small curated portfolio | 4 |
 
 **`YAHOO-INDEX-World indexes.csv` — current tickers:**
-`^FTSE`, `^GDAXI`, `^FCHI`, `^GSPC` (S&P 500), `^IXIC` (NASDAQ), `^N225`, `^MXX`, `^NYA`, `^VIX`, `^VVIX`, `^SDEX`, `^DJI`, `CL=F` (WTI Crude), `BZ=F` (Brent), `GC=F` (Gold), `^STOXX50E`, `^V2TX`, `DX-Y.NYB`, `EURUSD=X`, `JPY=X`, `AUDUSD=X`
-
-**Tickers missing from all CSV files — must be added to `YAHOO-INDEX-World indexes.csv` before use:**
-
-| Ticker | Description | Needed for |
-|---|---|---|
-| `^STOXX50E` | Euro Stoxx 50 index | OMX vs STOXX50 HedgeIndex indicator — ✅ added to CSV |
-| `^V2TX` | VSTOXX (Euro volatility) | VSTOXX HedgeIndex indicator — ✅ added to CSV |
-| `DX-Y.NYB` | DXY US Dollar Index | DXY HedgeIndex indicator — ✅ added to CSV |
-| `^TNX` | US 10Y Treasury yield | 10Y + 2Y–10Y spread HedgeIndex indicators — ✅ added to CSV |
-| `^IRX` | US 13-week T-bill yield | 2Y–10Y spread (proxy for short end) — ✅ added to CSV |
-| `EURUSD=X` | EUR/USD | EUR/USD HedgeIndex indicator — ✅ added to CSV |
-| `JPY=X` | USD/JPY | USD/JPY HedgeIndex indicator — ✅ added to CSV |
-| `AUDUSD=X` | AUD/USD | AUD/USD HedgeIndex indicator — ✅ added to CSV |
+`^FTSE`, `^GDAXI`, `^FCHI`, `^GSPC` (S&P 500), `^IXIC` (NASDAQ), `^N225`, `^MXX`, `^NYA`, `^VIX`, `^VVIX`, `^SDEX`, `^DJI`, `CL=F` (WTI Crude), `BZ=F` (Brent), `GC=F` (Gold), `^STOXX50E`, `^V2TX`, `DX-Y.NYB`, `EURUSD=X`, `JPY=X`, `AUDUSD=X`, `^TNX` (US 10Y Treasury), `^IRX` (US 13W T-Bill)
 
 **Adding a new HedgeIndex indicator requires two steps:**
 1. Add the ticker to `YAHOO-INDEX-World indexes.csv`
@@ -241,6 +262,7 @@ Securities are registered in the DB via `DataSetHelper.addDatasetSecuritiesFromC
 | `/api/v1/markets/stock/modules?module=statistics` | Beta, PEG, EPS, P/E, enterprise value | `updateSecurityMetaData()` |
 | `/api/v1/markets/stock/modules?module=income-statement` | Revenue YoY growth | `updateSecurityMetaData()` |
 | `/api/v1/markets/stock/modules?module=recommendation-trend` | Analyst ratings | `updateSecurityMetaData()` |
+| `/api/v1/markets/stock/modules?module=asset-profile` | Sector, industry | `updateSecurityMetaData()` → `setSectorData()` |
 
 Index tickers (`^` prefix) and futures (`=F` suffix) are skipped by `updateSecurityMetaData()` — only called on actual stock tickers.
 
@@ -274,9 +296,9 @@ Current plan (yahoo-finance15 via RapidAPI):
 
 | Job | Cron | Req/run | Monthly |
 |---|---|---|---|
-| Metadata update (3 req × 600 stocks) | `0 0 7 1 * *` | ~1,800 | ~1,800 |
+| Metadata update (4 req × 600 stocks) | `0 0 7 1 * *` | ~2,400 | ~2,400 |
 
-**Budget: ~6,280 / 10,000 req/month** — leaves ~3,700 headroom for manual runs and growth.
+**Budget: ~6,880 / 10,000 req/month** — leaves ~3,100 headroom for manual runs and growth.
 
 **Note:** `Scheduler.java` has `@EnableScheduling` enabled with three methods (`tier1DailySync`, `tier2WeeklySync`, `tier3MonthlyMetadata`) driven by `scheduler.tier1.cron`, `scheduler.tier2.cron`, `scheduler.tier3.cron` properties. Skip logic is built in: `YAHOODataManager.syncronize()` checks the latest stored date per security and skips if already current.
 
@@ -301,6 +323,7 @@ Swedish daily prices use the **same two tables** as all other securities — no 
 | `trailing_pe` / `forward_pe` | `Double` | Already stored |
 | `trailing_eps` / `forward_eps` | `Double` | Already stored |
 | `enterprise_value` | `Long enterpriseValue` | Controls `active` flag |
+| `dividend_yield` | `Double dividendYield` | Computed from `lastDividendValue / price` via `updateSecurityMetaData()` |
 | `sector` | `String sector` | e.g. `"Technology"`, `"Industrials"` — populated via `updateSecurityMetaData()` |
 | `active` | `boolean active` | Auto-set: `enterpriseValue > 500_000_000` via `@PreUpdate` |
 
@@ -317,7 +340,7 @@ Swedish daily prices use the **same two tables** as all other securities — no 
 
 **`active` flag caveat:** `BarSeriesService.getDataSet(Database)` filters to `active=true`. Stocks with `enterpriseValue ≤ 500M` are excluded. May filter out some mid/small-caps in Månadsportföljen — check count with `SELECT COUNT(*) FROM security WHERE active = true AND name LIKE '%.ST'`.
 
-**Fundamental data:** `beta`, `pegRatio`, `yoyGrowth`, `trailingPe`, `forwardPe` already stored on `Security` — no new columns needed for `SwedishLongTermMomentumStrategy`. Populated by `RapidApiManager` via `updateSecurityMetaData()`.
+**Fundamental data:** `beta`, `pegRatio`, `yoyGrowth`, `trailingPe`, `forwardPe`, `dividendYield` stored on `Security`. All populated by `RapidApiManager` via `updateSecurityMetaData()`.
 
 ---
 
@@ -340,7 +363,7 @@ The system already holds years of Swedish stock price history. The goal is to us
 | Low volatility | `StandardDeviationIndicator(closePriceSeries, 252)` | 20% | Inverted in composite score — lower vol = higher score |
 | Relative strength vs OMXS30 | `ROCIndicator(stock, 63)` minus `ROCIndicator(^OMX, 63)` | 20% | 3-month outperformance vs benchmark |
 | Golden Cross | Price > SMA(50) AND Price > SMA(200) | Hard filter | Binary — stock excluded from ranking if not met |
-| Dividend yield | From `Security.dividendYield` once populated | Optional | Add as 10% weight once `/stock/get-statistics` is backfilled; redistribute other weights |
+| Dividend yield | From `Security.dividendYield` | Soft tilt | Populated from statistics; used for portfolio ranking, not as hard entry filter |
 
 **Composite score:** Each factor is rank-normalised across the candidate universe (rank 1 = worst, rank N = best), then weighted and summed. Stocks failing the Golden Cross hard filter are excluded before ranking.
 
@@ -352,11 +375,11 @@ The system already holds years of Swedish stock price history. The goal is to us
 
 **Quarterly rebalance implementation note:** ta4j runs bar-by-bar so quarterly date detection requires a helper — check if `bar.getEndTime().getMonth()` is in {Jan, Apr, Jul, Oct} AND `bar.getEndTime().getDayOfMonth() <= 5` (first week of quarter) to approximate the rebalance trigger.
 
-**New class to create:** `SwedishLongTermMomentumStrategy extends AbstractStrategy implements IIndicatorValue`
+**Class:** `SwedishLongTermMomentumStrategy extends AbstractStrategy implements IIndicatorValue` — ✅ implemented (231 lines). Wired into `StrategiesMap` (all 5 points) and `PortfolioService`.
 
-**Portfolio filter:** Extend `PortfolioService.build()` to include `SwedishLongTermMomentumStrategy`.
+**Portfolio filter:** `PortfolioService.build()` includes `SwedishLongTermMomentumStrategy` with sector cap, tiered HedgeIndex sizing, and topN limit.
 
-**New property:** `frosk.swedish.longterm.topN` (default: 20) — number of stocks to hold.
+**Properties:** `frosk.swedish.longterm.topN` (default: 25) — max positions. `frosk.swedish.longterm.maxVolatility` (default: 0.40) — max annualized vol for entry.
 
 **Sector field:** `sector` (`String`) column on `Security`. Populated via `RapidApiManager.getModuleAssetProfile()` (`asset-profile` module) called inside `YAHOODataManager.updateSecurityMetaData()`. Run `updateSecurityMetaData()` once to backfill all existing stocks before the 30%-per-sector cap in `PortfolioService` takes effect.
 
@@ -393,7 +416,7 @@ Captures multi-day momentum moves when a stock breaks out of a consolidation ran
 - Max concurrent open positions: 5 across all OMXS30 tickers
 - Next-morning watchlist: stocks where signal fired on today's close, ranked by volume ratio (signal bar volume ÷ 20-bar average) — strongest volume confirmation first
 
-**New class:** `DailyBreakoutStrategy extends AbstractStrategy implements IIndicatorValue`
+**Class:** `DailyBreakoutStrategy extends AbstractStrategy implements IIndicatorValue` — ✅ implemented (95 lines). Wired into `StrategiesMap` (all 5 points).
 
 ---
 
@@ -410,7 +433,7 @@ Captures mean-reversion moves after sharp pullbacks in otherwise uptrending stoc
 - Exit also triggered by: HedgeIndex score ≥ 8
 - Next-morning watchlist: stocks where signal fired on today's close, ranked by distance of close below SMA(20) — deepest pullback first
 
-**New class:** `DailyOversoldBounceStrategy extends AbstractStrategy implements IIndicatorValue`
+**Class:** `DailyOversoldBounceStrategy extends AbstractStrategy implements IIndicatorValue` — ✅ implemented (111 lines). Wired into `StrategiesMap` (all 5 points).
 
 ---
 
@@ -421,73 +444,75 @@ Captures mean-reversion moves after sharp pullbacks in otherwise uptrending stoc
 | Swedish stock daily OHLCV | ✅ Exists | 977 securities in `YAHOO-SWEDISH` dataset; multi-year history via `RapidApiManager` |
 | OMXS30 constituents (daily prices) | ✅ Exists | 29 tickers in `YAHOO-OMX30` dataset; used for Dagstrategin universe |
 | OMXS30 benchmark (`^OMX`) | ✅ Exists | Present in `YAHOO-SWEDISH` dataset (line 973 of CSV); also `^OMXSPI` (all-share), `^NORDIC`, `^NORDICPI` are available |
-| Beta, PEG, Revenue Growth | ⚠️ Partial | `yoyGrowth` fetched on security insert; `beta`, `pegRatio` fields exist but may not be populated — verify via `updateSecurityMetaData()` |
-| HedgeIndex missing indicators | ⚠️ Ready to add | 9 tickers missing from CSV files (see table above); add to `YAHOO-INDEX-World indexes.csv` then implement scoring rules in `HedgeIndexService` |
+| Beta, PEG, Revenue Growth, Dividend Yield | ⚠️ Partial | `yoyGrowth` fetched on security insert; `beta`, `pegRatio`, `dividendYield` fields exist — populated via `updateSecurityMetaData()`. Run Tier 3 sync to backfill. |
+| HedgeIndex new indicators | ✅ CSV complete | All planned tickers added to `YAHOO-INDEX-World indexes.csv`; VSTOXX, FX pairs, DXY, rates, yield curve, OMX vs STOXX50 all implemented in `HedgeIndexService`. Remaining unimplemented: A/D line, HY OAS, TED Spread (no Yahoo Finance ticker) |
 
 ---
 
 ### Implementation Order
 
-**Step 0 — Explore before writing any code**
-Read the following before starting implementation: `HedgeIndexService` (which of the 16 indicators are actually coded), `Scheduler.java` (what crons exist and which are commented out), `Security.java` (confirm no `sector` field yet), `StrategiesMap` (current strategy registrations). The CSV file inventory and DB contents are already documented in this file — use the tables above rather than re-reading the files. Run `SELECT COUNT(*) FROM security WHERE active = true AND name LIKE '%.ST'` to confirm how many Swedish stocks pass the `active` filter.
+---
 
-**Step 1 — HedgeIndex: FX pairs** (3 indicators)
-Add `EURUSD=X`, `JPY=X`, `AUDUSD=X` to `YAHOO-INDEX-World indexes.csv`. Restart the app (or call `DataSetHelper.addDatasetSecuritiesFromCvsFile()`) to register them, then trigger a price history sync. Add scoring rules to `HedgeIndexService`. Validate that the regime distribution does not shift more than ±1 tier after each addition before proceeding.
+#### ✅ Completed — Steps 0–14
 
-**Step 2 — HedgeIndex: DXY + European volatility + OMX vs STOXX50** (3 indicators)
-Add `DX-Y.NYB`, `^V2TX`, and `^STOXX50E` to `YAHOO-INDEX-World indexes.csv`. Register and sync prices. Add scoring rules for DXY, VSTOXX, and the OMX vs STOXX50 relative comparison. Update the volatility cluster rule to fire on VIX + VSTOXX co-trigger. `^OMX` is already in the DB (YAHOO-SWEDISH dataset) — no action needed there.
+| Step | What was done |
+|---|---|
+| 0 | Initial exploration — `sector`, `dividendYield` on `Security`; HedgeIndex cache understood |
+| 1 | FX indicators: `EURUSDStrategy`, `USDJPYStrategy`, `AUDUSDStrategy` + CSV tickers |
+| 2 | DXY + European vol + OMX vs STOXX50: `DXYStrategy`, `VSTOXXStrategy`, `OMXvsSTOXX50Strategy`; volatility cluster rule |
+| 3 | Rates + yield curve: `TreasuryYieldStrategy`, `YieldCurveSpreadStrategy`; HY OAS + TED Spread skipped (no ticker) |
+| 4 | Swedish KPIF skipped (no Yahoo Finance ticker) |
+| 5 | `SwedishLongTermMomentumStrategy` (231 lines): quarterly rebalance, 6M/12-1 momentum, golden cross, relative strength vs `^OMX`, PEG/Beta gates, wired at all 5 `StrategiesMap` points |
+| 6 | SLMS sector cap (`applySectorCap`), tiered HedgeIndex gate (`HedgeIndexTieredRule`), tiered portfolio sizing (`computeTieredTopN`), low-vol filter, dividend yield stored |
+| 7 | Scheduler activated: Tier 1/2/3 `@Scheduled` crons live in `Scheduler.java` |
+| 8 | `DailyBreakoutStrategy` (95 lines) + `DailyOversoldBounceStrategy` (111 lines); `GET /dagstrategin/watchlist`; called from `syncTier1()` every weekday |
+| 9 | Portfolio quality gate (`passesQualityGate` in `PortfolioService`): SQN ≥ 1.0, win rate ≥ 35%; HighLander + ShortTermMomentum capped at top-10 by SQN; `ShortTermMomentumLongTermStrengthStrategy` now exits on HedgeIndex risk-off OR 15% stop-loss |
+| 10 | Validated step 9: build compiles cleanly, all strategies wired at 5 points in `StrategiesMap`, `TestJStrategiesMap` passes, all rule classes (`HedgeIndexTieredRule`, `StopLossRule`, `HedgeIndexRiskOffRule`) verified |
+| 11 | Added 20% hard stop-loss to `HighLanderStrategy` via `StopLossRule`; extracts composite entry/exit rules and appends `.or(stopLoss)` to exit; `frosk.highlander.stoploss.percent=20.0` in `application.properties` |
+| 12 | Removed `NasdaqVsSPStrategy` from `HedgeIndexService.update()` and its converter method; removed from `frosk.strategies.hedge.strategy` in all properties files (main, test, prod). Strategy remains in `StrategiesMap`. HedgeIndex now has 13 contributing strategies. |
+| 13 | Created `BreakoutProfitTargetRule` — 2:1 R:R exit based on entry price vs 5-bar low stop level at entry. Added to `DailyBreakoutStrategy` exit rule: `stopLoss.or(profitTarget).or(hedgeRiskOff)`. |
+| 14 | Already implemented — `PortfolioService.PORTFOLIO_STRATEGIES` allowlist (3 equity strategies only) already excludes all macro/hedge strategies; H2 query already has `fs.name != 'HedgeIndexStrategy'` filter. No code change needed. |
 
-**Step 3 — HedgeIndex: rates, credit, breadth** (4 indicators)
-Add `^TNX` and `^IRX` to `YAHOO-INDEX-World indexes.csv` and sync. Implement 10Y Treasury threshold rule and 2Y–10Y spread rule using `^TNX` minus `^IRX`. For HY OAS and SOFR–T-bill spread, verify ticker availability via `RapidApiManager` before implementing — these may need a dedicated endpoint rather than the standard history call.
+> **Results are queryable directly in the H2 console** (`/h2-console`). No additional REST endpoints are planned — the existing portfolio, watchlist, and strategy endpoints are sufficient. New endpoints should only be added when there is a concrete consumer (e.g. a frontend or external integration).
 
-**Step 4 — HedgeIndex: Swedish KPIF** — skipped; no Yahoo Finance ticker available.
+#### Useful H2 queries
 
-**Step 5 — Månadsportföljen (price-only)**
-`^OMX` is already in DB (YAHOO-SWEDISH dataset). Create `SwedishLongTermMomentumStrategy` with the following specifics:
-- **6-month momentum:** `ROCIndicator(closePriceSeries, 126)` — weight 30%
-- **12-month momentum (12-1):** `(close[t-21] - close[t-252]) / close[t-252]` — weight 30%. Do NOT use `ROCIndicator(series, 252)` which includes the reversal month
-- **Low volatility:** `StandardDeviationIndicator(closePriceSeries, 252)` — weight 20%, inverted (lower vol = higher rank)
-- **Relative strength vs OMXS30:** `ROCIndicator(stock, 63)` minus `ROCIndicator(^OMX, 63)` — weight 20%
-- **Golden Cross:** price > SMA(50) AND price > SMA(200) — hard filter, exclude stock from ranking if not met
-- **Composite score:** rank-normalise each factor across the active universe (rank 1 = worst, rank N = best), apply weights, sum
-- **Quarterly rebalance trigger:** check `bar.getEndTime().getMonth()` ∈ {Jan, Apr, Jul, Oct} AND `bar.getEndTime().getDayOfMonth() <= 5`
-- **HedgeIndex gate:** score 0–3 → full top-N; score 4–7 → top-N/2 positions only, no new entries to lowest-ranked half; score 8+ → no new entries, trim bottom 25%
-- Wire into `StrategiesMap` (all 5 registration points). Add to `PortfolioService` filter. Add property `frosk.swedish.longterm.topN` (default: 20).
+```sql
+-- Current portfolio: open positions with quality metrics
+SELECT fs.security_name, fs.name strategy, fs.sqn, fs.prof_trade_ratio win_rate,
+       fs.total_gross_return, t.price entry_price, t.date entry_date
+FROM featured_strategy fs
+JOIN strategy_trade t ON t.featured_strategy_id = fs.id
+WHERE fs.open = true
+  AND fs.name != 'HedgeIndexStrategy'
+  AND t.type = 'BUY'
+  AND t.date = (SELECT MAX(t2.date) FROM strategy_trade t2
+                WHERE t2.featured_strategy_id = fs.id AND t2.type = 'BUY')
+ORDER BY fs.sqn DESC;
 
-**Step 6 — Månadsportföljen: sector cap + fundamentals**
-Add `sector` (`String`) column to `Security` entity. Populate via `RapidApiManager` `asset-profile` module. Enforce 30%-per-sector cap in `SwedishLongTermMomentumStrategy`. Then extend composite score: add dividend yield (10% weight, redistribute other weights proportionally) and Beta as a tilt factor once `/stock/get-statistics` data is confirmed populated.
+-- Today's new BUY signals
+SELECT fs.security_name, fs.name strategy, fs.sqn, t.price, t.date
+FROM featured_strategy fs
+JOIN strategy_trade t ON t.featured_strategy_id = fs.id
+WHERE fs.open = true AND t.type = 'BUY'
+  AND CAST(t.date AS DATE) = CURRENT_DATE
+ORDER BY fs.sqn DESC;
 
-**Step 7 — Activate Scheduler**
-Uncomment `@Scheduled` in `Scheduler.java` and set cron expressions per the Tier 1 / Tier 2 / Tier 3 schedule defined in the Data Layer section. Verify OMXS30 constituents (~30 tickers from `YAHOO-OMX30` dataset) are included in the Tier 1 daily sync so Dagstrategin has fresh data each evening.
+-- Current HedgeIndex score (most recent date)
+-- Note: HEDGE_INDEX stores one row per indicator per date (columns: id, category, date, indicator, price, risk, rule_desc)
+-- Score = count of RISK=TRUE rows for the latest date
+SELECT date, SUM(CASE WHEN risk = TRUE THEN 1 ELSE 0 END) AS score, COUNT(*) AS total_indicators
+FROM hedge_index
+WHERE date = (SELECT MAX(date) FROM hedge_index)
+GROUP BY date;
 
-**Step 8 — Dagstrategin**
-Implement both strategies using existing daily `BarSeries` — no new data infrastructure needed. Wire both into `StrategiesMap`. Add `GET /dagstrategin/watchlist` REST endpoint to `DataController`.
-
-*Sub-strategy A — `DailyBreakoutStrategy`:*
-- Precondition: close > SMA(200)
-- Signal: close > `HighestValueIndicator(high, 20)` by ≥ 0.5% AND volume > 1.5× `SMAIndicator(volume, 20)`
-- Entry: next-day open (use `TradeOnNextOpenModel`)
-- Stop: `LowestValueIndicator(low, 5)` at signal bar
-- Target: entry + 2× (entry − stop)
-- HedgeIndex gate: score 0–3 → full size; score 4–7 → half size; score ≥ 8 → no new entries, close open positions
-- Max 5 concurrent open positions across universe
-- Watchlist ranking: by volume ratio (signal bar volume ÷ 20-bar average volume), descending
-
-*Sub-strategy B — `DailyOversoldBounceStrategy`:*
-- Precondition: close > SMA(200)
-- Signal: `RSIIndicator(14)` < 30 AND close < `BollingerBandsLowerIndicator(20, 2)` AND close > `LowestValueIndicator(close, 252)` × 1.10 AND volume > 1.2× `SMAIndicator(volume, 20)`
-- Entry: next-day open (use `TradeOnNextOpenModel`)
-- Stop: `LowestValueIndicator(low, 3)` at signal bar
-- Target: `SMAIndicator(close, 20)` value at signal bar OR RSI(14) > 55
-- Max 1 open position per stock; max 3 concurrent across universe
-- HedgeIndex gate: score ≥ 8 → exit all open positions, no new entries
-- Watchlist ranking: by distance of close below SMA(20) at signal bar, descending
-
-**Step 9 — Hedging layer**
-Implement options strategy sizing gated on HedgeIndex regime score: Protective Put for score 4–7; Bear Put Spread and/or long VIX exposure for score 8+. Size positions as a percentage of the relevant equity exposure tier.
-
-**Step 10 — Live signal mode**
-Extend `HighLander` to optionally emit live BUY/SELL signals for all active strategies via REST endpoint or push notification. Add `frosk.livemode.enabled` property guard.
+-- HedgeIndex history (last 30 days)
+SELECT date, SUM(CASE WHEN risk = TRUE THEN 1 ELSE 0 END) AS score, COUNT(*) AS total_indicators
+FROM hedge_index
+WHERE date >= DATEADD('DAY', -30, CURRENT_DATE)
+GROUP BY date
+ORDER BY date DESC;
+```
 
 ---
 

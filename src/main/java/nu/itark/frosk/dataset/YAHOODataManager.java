@@ -297,7 +297,7 @@ public class YAHOODataManager {
 
         long enterpriseValueRaw = 0;
 
-        StatisticsBody moduleStatistics;
+        StatisticsBody moduleStatistics = null;
         try {
             moduleStatistics = rapidApiManager.getModuleStatistics(security.getName());
             if (moduleStatistics != null && moduleStatistics.getPegRatio().length == 0) {
@@ -387,6 +387,23 @@ public class YAHOODataManager {
         } catch (Exception e) {
             log.error("Error in Statistics for:{}, error:{}", security.getName(), e.getMessage());
         }
+        // Extract dividend yield from lastDividendValue and trailing price
+        double dividendYield = 0.0;
+        try {
+            if (moduleStatistics != null && moduleStatistics.getLastDividendValue() != null) {
+                Object divObj = moduleStatistics.getLastDividendValue();
+                if (divObj instanceof Map) {
+                    double divRaw = getDoubleFromRaw(((Map<?, ?>) divObj).get("raw"));
+                    if (divRaw > 0 && trailingPe > 0 && trailingEps > 0) {
+                        double price = trailingPe * trailingEps;
+                        dividendYield = (divRaw / price) * 100.0;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not compute dividendYield for {}: {}", security.getName(), e.getMessage());
+        }
+
         security.setPegRatio(pegRatio);
         security.setBeta(beta);
         security.setTrailingEps(trailingEps);
@@ -394,6 +411,7 @@ public class YAHOODataManager {
         security.setTrailingPe(trailingPe);
         security.setForwardPe(forwardPe);
         security.setEnterpriseValue(enterpriseValueRaw);
+        security.setDividendYield(dividendYield);
         if (enterpriseValueRaw < enterpriseValueThreshold) {
             security.setActive(false);
         }

@@ -28,9 +28,9 @@ public class FroskStartupApplicationListener implements ApplicationListener<Cont
         log.info("cleanInstall:{}",cleanInstall);
         tradingAccountService.initTradingAccounts();
         if (cleanInstall) {
-            highLander.runCleanInstall(Database.COINBASE);
+            highLander.runCleanInstall(Database.YAHOO);
         } else {
-            highLander.runInstall(Database.COINBASE);
+            highLander.runInstall(Database.YAHOO);
         }
     }
 

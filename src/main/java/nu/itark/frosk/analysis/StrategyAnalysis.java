@@ -138,7 +138,8 @@ public class StrategyAnalysis {
 			// Case 4: both set - run one strategy on one security
 			BarSeries barSeries = barSeriesService.getDataSet(security_id);
 			if (Objects.isNull(barSeries) || barSeries.isEmpty()) {
-				throw new RuntimeException("BarSeries is null or empty. Download security prices.");
+				log.warn("BarSeries is null or empty for strategy={}, security_id={}. Skipping — no price data available.", strategy, security_id);
+				return;
 			}
 			try {
 				strategyExecutor.execute(strategy, List.of(barSeries));

@@ -2,6 +2,11 @@ package nu.itark.frosk.strategies;
 
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.service.HedgeIndexService;
+import nu.itark.frosk.strategies.rules.HedgeIndexRiskOffRule;
+import nu.itark.frosk.strategies.rules.StopLossRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
@@ -26,9 +31,17 @@ import java.util.List;
  * Exit Conditions:
  * - Price falls below 50D SMA (loss of medium-term strength)
  * - OR 10D SMA falls below 20D SMA (loss of short-term momentum)
+ * - OR HedgeIndex turns risk-off (macro regime guard)
+ * - OR price drops more than stopLossPercent below entry (hard stop-loss)
  */
 @Component
 public class ShortTermMomentumLongTermStrengthStrategy extends AbstractStrategy implements IIndicatorValue {
+
+    @Autowired
+    private HedgeIndexService hedgeIndexService;
+
+    @Value("${frosk.slms.stoploss.percent:15.0}")
+    private double stopLossPercent;
 
     public Strategy buildStrategy(BarSeries series) {
         super.setInherentExitRule();
@@ -61,9 +74,11 @@ public class ShortTermMomentumLongTermStrengthStrategy extends AbstractStrategy 
         // Exit Rules
         Rule priceBelow50D = new UnderIndicatorRule(closePrice, sma50);
         Rule shortTermMomentumLoss = new UnderIndicatorRule(sma10, sma20);
+        Rule hedgeIndexExit = new HedgeIndexRiskOffRule(series, hedgeIndexService);
+        Rule stopLoss = new StopLossRule(closePrice, stopLossPercent);
 
-        // Exit when losing either medium-term strength OR short-term momentum
-        Rule exitRule = new OrRule(priceBelow50D, shortTermMomentumLoss);
+        // Exit when losing medium-term strength, short-term momentum, macro turns risk-off, or hard stop hit
+        Rule exitRule = priceBelow50D.or(shortTermMomentumLoss).or(hedgeIndexExit).or(stopLoss);
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
