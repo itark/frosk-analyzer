@@ -161,6 +161,7 @@ public class StrategyExecutor {
             }
             strategyTradeList.forEach(st -> st.setFeaturedStrategy(fsRes.get()));
             tradesRepository.saveAll(strategyTradeList);
+            try {
             List<StrategyIndicatorValue> existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.get().getId());
             if (!existIv.isEmpty()) {
                 indicatorValueRepo.deleteAllInBatch(existIv);
@@ -168,6 +169,9 @@ public class StrategyExecutor {
             List<StrategyIndicatorValue> ivList = strategiesMap.getIndicatorValues(strategy, null);
             ivList.forEach(iv -> iv.setFeaturedStrategy(fsRes.get()));
             indicatorValueRepo.saveAll(ivList);
+            } catch (DataIntegrityViolationException e) {
+                log.warn("Indicator value save failed for strategy={}, securityId={}: {}", strategy, fsRes.get().getId(), e.getMessage());
+            }
         });
     }
 
