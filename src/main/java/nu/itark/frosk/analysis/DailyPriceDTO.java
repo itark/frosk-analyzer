@@ -4,9 +4,11 @@ import java.time.format.DateTimeFormatter;
 
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.ta4j.core.Bar;
 
 @Data
+@NoArgsConstructor
 public class DailyPriceDTO {
 
 //	private long time;

@@ -93,6 +93,8 @@ public class StrategiesMap {
 	private DailyBreakoutStrategy dailyBreakoutStrategy;
 	@Autowired
 	private DailyOversoldBounceStrategy dailyOversoldBounceStrategy;
+	@Autowired
+	private OMX30IntradayMomentumStrategy omx30IntradayMomentumStrategy;
 
 	private List<Strategy> strategies = null;
 
@@ -132,6 +134,7 @@ public class StrategiesMap {
 		strategies.add(yieldCurveSpreadStrategy.getClass().getSimpleName());
 		strategies.add(dailyBreakoutStrategy.getClass().getSimpleName());
 		strategies.add(dailyOversoldBounceStrategy.getClass().getSimpleName());
+		strategies.add(omx30IntradayMomentumStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -176,6 +179,7 @@ public class StrategiesMap {
 		strategies.add(yieldCurveSpreadStrategy.buildStrategy());
 		strategies.add(dailyBreakoutStrategy.buildStrategy(series));
 		strategies.add(dailyOversoldBounceStrategy.buildStrategy(series));
+		strategies.add(omx30IntradayMomentumStrategy.buildStrategy(series));
 
 		this.strategies = strategies;
 		return strategies;
@@ -259,6 +263,8 @@ public class StrategiesMap {
 			return dailyBreakoutStrategy.buildStrategy(series);
 		} else if (strategy.equals(DailyOversoldBounceStrategy.class.getSimpleName())) {
 			return dailyOversoldBounceStrategy.buildStrategy(series);
+		} else if (strategy.equals(OMX30IntradayMomentumStrategy.class.getSimpleName())) {
+			return omx30IntradayMomentumStrategy.buildStrategy(series);
 		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
@@ -337,6 +343,8 @@ public class StrategiesMap {
 			return dailyBreakoutStrategy.getIndicatorValues();
 		} else if (strategyName.equals(DailyOversoldBounceStrategy.class.getSimpleName())) {
 			return dailyOversoldBounceStrategy.getIndicatorValues();
+		} else if (strategyName.equals(OMX30IntradayMomentumStrategy.class.getSimpleName())) {
+			return omx30IntradayMomentumStrategy.getIndicatorValues();
 		} else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);
 		}

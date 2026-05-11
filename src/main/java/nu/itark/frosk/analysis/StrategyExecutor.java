@@ -11,6 +11,7 @@ import nu.itark.frosk.repo.StrategyIndicatorValueRepository;
 import nu.itark.frosk.repo.StrategyTradeRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -22,6 +23,7 @@ import org.ta4j.core.criteria.pnl.ProfitLossPercentageCriterion;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,6 +55,9 @@ public class StrategyExecutor {
     @Autowired
     StrategiesMap strategiesMap;
 
+    @Value("${frosk.strategy.force.rerun:false}")
+    private boolean forceRerun;
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void execute(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException {
         log.info("execute strategy={}, size={}", strategy, barSeriesList.size());
@@ -78,6 +83,10 @@ public class StrategyExecutor {
                 return;
             }
             fs.set(featuredStrategyRepository.findByNameAndSecurityName(strategy, security.getName()));
+            if (!forceRerun && fs.get() != null && LocalDate.now().equals(fs.get().getLastRunDate())) {
+                log.debug("Skipping {} / {} — already run today ({})", strategy, security.getName(), fs.get().getLastRunDate());
+                return;
+            }
             if (fs.get() == null) {
                 fs.set(new FeaturedStrategy());
                 fs.get().setName(strategy);
@@ -154,6 +163,7 @@ public class StrategyExecutor {
             fs.get().setSqn(Double.isNaN(sqn) ? BigDecimal.ZERO : new BigDecimal(sqn));
             double expectancy = new ExpectancyCriterion().calculate(series, tradingRecord).doubleValue();
             fs.get().setExpectency(Double.isNaN(expectancy) ? BigDecimal.ZERO : new BigDecimal(expectancy));
+            fs.get().setLastRunDate(LocalDate.now());
             AtomicReference<FeaturedStrategy> fsRes = new AtomicReference<>(featuredStrategyRepository.save(fs.get()));
             List<StrategyTrade> existingStrategyTrades = tradesRepository.findByFeaturedStrategyId(fsRes.get().getId());
             if (!existingStrategyTrades.isEmpty()) {

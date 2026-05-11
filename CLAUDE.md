@@ -47,21 +47,35 @@ mvn test -Dtest=TestJStrategyAnalysis                # run all tests in one clas
 | `frosk.portfolio.other.topN` | Max combined HighLander + ShortTermMomentum positions, ranked by SQN (default: 10) |
 | `frosk.slms.stoploss.percent` | Hard stop-loss % below entry for ShortTermMomentumLongTermStrengthStrategy (default: 15.0) |
 | `frosk.highlander.stoploss.percent` | Hard stop-loss % below entry for HighLanderStrategy (default: 20.0) |
+| `frosk.strategy.force.rerun` | true = bypass same-day idempotency check in `StrategyExecutor`, always re-run (default: false; test: true) |
+| `frosk.portfolio.force.rebuild` | true = bypass same-day idempotency check in `PortfolioService.build()`, always rebuild (default: false; test: true) |
+| `frosk.run.intraday` | true = run the Tier-0 intraday pipeline on every 10-min scheduler tick (default: true; test: false) |
+| `intraday.retention.days` | Days of 5-minute bars to retain in `intraday_bar` table (default: 7) — older bars are pruned on every Tier-0 sync run |
 
 ## Architecture
 
 ```
-HighLander (startup runner)
+HighLander (startup runner + scheduler target)
+  ├─ syncTier0()  → IntradayStrategyRunner.run()
+  │    ├─ IntradayDataService.syncAndBuildSeries()
+  │    │    ├─ RapidApiManager.getHistory(^OMX, 5m) — 1 API call
+  │    │    ├─ upsert IntradayBar rows (idempotent)
+  │    │    ├─ deleteOlderThan(now - retentionDays)
+  │    │    └─ buildSeriesFromDb() → ta4j BarSeries
+  │    ├─ OMX30IntradayMomentumStrategy.buildStrategy(series)
+  │    ├─ BarSeriesManager.run(strategy) → TradingRecord
+  │    └─ emit IntradaySignal (BUY/SELL) if last bar triggers entry/exit
   ├─ StrategyAnalysis.run(strategy, securityId)
   │    ├─ Case 1: null/null  → all strategies × all securities (batch)
   │    │    └─ HedgeIndexService.warmCache() called first
   │    ├─ Case 2: strategy + null  → one strategy × all securities
   │    └─ Case 3: strategy + securityId → one strategy × one security
-  │         └─ StrategyExecutor.run() [@Transactional(REQUIRES_NEW)]
+  │         └─ StrategyExecutor.execute() [@Transactional(REQUIRES_NEW)]
+  │              ├─ same-day idempotency check (lastRunDate == today → skip)
   │              ├─ builds BarSeries via BarSeriesService
   │              ├─ builds ta4j Strategy via StrategiesMap.getStrategyToRun()
   │              ├─ runs backtest via BarSeriesService.runConfiguredStrategy()
-  │              ├─ upserts FeaturedStrategy
+  │              ├─ upserts FeaturedStrategy (sets lastRunDate)
   │              └─ replaces StrategyTrade + StrategyIndicatorValue (saveAll)
   ├─ StrategyAnalysis.runHedgeIndexStrategies()  → syncs + runs 14 macro strategies → hedgeIndexService.update()
   ├─ StrategyAnalysis.runDagstrateginStrategies() → runs DailyBreakout + DailyOversoldBounce on OMX30
@@ -74,11 +88,12 @@ HighLander (startup runner)
 
 - `open` — true if the last trade in the backtest is a BUY without a matching SELL (position currently open)
 - `entryDate`, `entryPrice` — from the last open BUY trade
+- `lastRunDate` — `LocalDate` of last `StrategyExecutor` run; used for same-day idempotency (nullable for pre-existing rows)
 - `sqn`, `expectency`, `profitableTradesRatio`, `totalGrossReturn`, `totalProfit`
 - `@OneToMany StrategyTrade` — individual BUY/SELL pairs with `pnl`, `grossProfit`, `price`, `amount`
 - `@OneToMany StrategyIndicatorValue` — latest indicator snapshots for charting
 
-`StrategyExecutor` always deletes+re-inserts `StrategyTrade` and `StrategyIndicatorValue` on each run. A `FeaturedStrategy` row is created on first run and updated on subsequent runs.
+`StrategyExecutor` skips execution if `lastRunDate` is today (unless `frosk.strategy.force.rerun=true`). On each run it deletes+re-inserts `StrategyTrade` and `StrategyIndicatorValue`, sets `lastRunDate`, and saves. A `FeaturedStrategy` row is created on first run and updated on subsequent runs.
 
 ## Adding a New Strategy
 
@@ -108,6 +123,7 @@ Strategy class must:
 | `SwedishLongTermMomentumStrategy` | Quarterly factor | **Månadsportföljen** — 6M/12-1 momentum, low-vol filter, relative strength vs ^OMX, PEG/Beta gates, tiered HedgeIndex. 231 lines. |
 | `DailyBreakoutStrategy` | Swing (2–10 days) | **Dagstrategin A** — 20-day breakout on elevated volume in uptrend. Uptrend filter, 0.5% breakout threshold, stop-loss at 5-bar low. 95 lines. |
 | `DailyOversoldBounceStrategy` | Swing (2–10 days) | **Dagstrategin B** — RSI(14) < 30 + lower Bollinger Band bounce in uptrend. Volume confirmation, stop-loss at 3-bar low. 111 lines. |
+| `OMX30IntradayMomentumStrategy` | Intraday (30-min max hold) | **Tier-0** — EMA(9) > EMA(21) AND RSI(7) crosses above 45 on 5-minute `^OMX` bars. Exit: RSI(7) > 70 OR EMA crossover reversal OR 6 bars held. 151 lines. |
 
 > All strategies extend `AbstractStrategy` and implement `IIndicatorValue`. All must be registered in `StrategiesMap` at 5 points. `EngulfingStrategy` and `GoldStrategy` use `TradeOnCurrentCloseModel`; all others use `TradeOnNextOpenModel`.
 
@@ -298,9 +314,96 @@ Current plan (yahoo-finance15 via RapidAPI):
 |---|---|---|---|
 | Metadata update (4 req × 600 stocks) | `0 0 7 1 * *` | ~2,400 | ~2,400 |
 
-**Budget: ~6,880 / 10,000 req/month** — leaves ~3,100 headroom for manual runs and growth.
+**Budget: ~8,002 / 10,000 req/month** — leaves ~2,000 headroom for manual runs and growth.
+(Tier-0 adds ~1,122 req/month: 1 API call × ~51 ticks/day × 22 trading days.)
 
-**Note:** `Scheduler.java` has `@EnableScheduling` enabled with three methods (`tier1DailySync`, `tier2WeeklySync`, `tier3MonthlyMetadata`) driven by `scheduler.tier1.cron`, `scheduler.tier2.cron`, `scheduler.tier3.cron` properties. Skip logic is built in: `YAHOODataManager.syncronize()` checks the latest stored date per security and skips if already current.
+**Note:** `Scheduler.java` has `@EnableScheduling` enabled with four methods (`tier0IntradaySync`, `tier1DailySync`, `tier2WeeklySync`, `tier3MonthlyMetadata`) driven by cron properties. Skip logic is built in at each tier.
+
+---
+
+## Intraday Pipeline — Tier 0 (10-Minute Ticker)
+
+### Overview
+
+Every 10 minutes during Stockholm market hours (09:00–17:59 CET, Mon–Fri) the Tier-0 pipeline:
+
+1. Fetches the latest **5-minute bars** for `^OMX` (OMXS30 index) via `RapidApiManager.getHistory(^OMX, 5m)` — **1 API request per tick**.
+2. Upserts new bars into the `intraday_bar` table (idempotent — existing bars are skipped by the `uq_intraday_bar` unique constraint on `(security_id, bar_timestamp, interval_code)`).
+3. Prunes bars older than `intraday.retention.days` (default: 7) to keep the table small.
+4. Builds a ta4j `BarSeries` from the retained window and runs `OMX30IntradayMomentumStrategy` as a full backtest.
+5. If the strategy's entry or exit rule fires on the **latest bar**, emits an `IntradaySignal` to the `intraday_signal` table.
+
+This is a **signal-generation layer only** — no orders are placed automatically.  The human trader monitors signals via the H2 console or the `GET /intraday/signals` endpoint (if added).
+
+### OMX30IntradayMomentumStrategy — Design
+
+Runs on **5-minute bars** of `^OMX`. The 10-minute cron evaluates the strategy twice per 10-minute candle; intraday signals are therefore generated at 5-minute granularity.
+
+| Parameter | Value | Rationale |
+|---|---|---|
+| EMA fast | 9 bars (45 min) | Short-term trend on 5m bars |
+| EMA slow | 21 bars (105 min / ~1.75 h) | Medium-term intraday trend |
+| RSI period | 7 | Faster RSI for intraday momentum |
+| Entry RSI level | 45 (crosses above) | Momentum turning up from neutral |
+| Exit RSI level | 70 (over) | Overbought — take profit |
+| Max bars held | 6 (30 min) | Hard intraday time-based exit |
+
+**Entry (all must be true):** EMA(9) > EMA(21) AND RSI(7) crosses above 45
+
+**Exit (first satisfied):** RSI(7) > 70 OR EMA(9) crosses below EMA(21) OR 6 bars elapsed
+
+> **No volume filter** — `^OMX` is an index; volume data is often zero or unavailable at the intraday level from Yahoo Finance.
+
+### New Entities
+
+| Entity | Table | Purpose |
+|---|---|---|
+| `IntradayBar` | `intraday_bar` | Rolling 5-minute OHLCV window (`retention.days` deep); unique on `(security_id, bar_timestamp, interval_code)` |
+| `IntradaySignal` | `intraday_signal` | Persistent signal log — never deleted; one row per BUY/SELL event with close, EMA9, EMA21, RSI7 snapshots |
+
+### Cost Analysis
+
+| Tier | Frequency | Req/run | Monthly |
+|---|---|---|---|
+| Tier 0 (intraday) | Every 10 min, 09:00–17:59, Mon–Fri | 1 | ~1,122 |
+| Tier 1 (daily) | MON-FRI 18:00 | ~40 | ~880 |
+| Tier 2 (weekly) | SAT 06:00 | ~900 | ~3,600 |
+| Tier 3 (monthly) | 1st of month 07:00 | ~2,400 | ~2,400 |
+| **Total** | | | **~8,002 / 10,000** |
+
+### Useful H2 Queries — Intraday
+
+```sql
+-- Latest 20 intraday signals (BUY and SELL)
+SELECT signal_type, ticker,
+       DATEADD('SECOND', signal_timestamp, DATE '1970-01-01') AS bar_time,
+       close_price, ema9, ema21, rsi7
+FROM intraday_signal
+ORDER BY signal_timestamp DESC
+LIMIT 20;
+
+-- Only today's BUY signals
+SELECT signal_type, ticker,
+       DATEADD('SECOND', signal_timestamp, DATE '1970-01-01') AS bar_time,
+       close_price, ema9, ema21, rsi7
+FROM intraday_signal
+WHERE signal_type = 'BUY'
+  AND signal_timestamp >= UNIX_TIMESTAMP(CURRENT_DATE)
+ORDER BY signal_timestamp DESC;
+
+-- Bar count currently in the rolling window
+SELECT COUNT(*) AS bar_count,
+       MIN(DATEADD('SECOND', bar_timestamp, DATE '1970-01-01')) AS oldest_bar,
+       MAX(DATEADD('SECOND', bar_timestamp, DATE '1970-01-01')) AS newest_bar
+FROM intraday_bar;
+```
+
+### Adding More Intraday Tickers (Future)
+
+Currently only `^OMX` is fetched. To add individual OMXS30 constituents:
+1. Add ticker to the `YAHOO-OMX30` or `YAHOO-SWEDISH` CSV (already present for active stocks).
+2. Extend `IntradayDataService.syncAndBuildSeries()` to accept a ticker argument, or introduce a list of tickers in `application.properties` (`intraday.tickers=^OMX,VOLV-B.ST,...`).
+3. **Cost constraint**: each additional ticker adds ~1,122 req/month — at 30 tickers that would be ~33,660/month (over the 10,000 free limit). Upgrade RapidAPI plan before fetching more than ~8 intraday tickers.
 
 ---
 
@@ -453,7 +556,7 @@ Captures mean-reversion moves after sharp pullbacks in otherwise uptrending stoc
 
 ---
 
-#### ✅ Completed — Steps 0–14
+#### ✅ Completed — Steps 0–18
 
 | Step | What was done |
 |---|---|
@@ -472,6 +575,10 @@ Captures mean-reversion moves after sharp pullbacks in otherwise uptrending stoc
 | 12 | Removed `NasdaqVsSPStrategy` from `HedgeIndexService.update()` and its converter method; removed from `frosk.strategies.hedge.strategy` in all properties files (main, test, prod). Strategy remains in `StrategiesMap`. HedgeIndex now has 13 contributing strategies. |
 | 13 | Created `BreakoutProfitTargetRule` — 2:1 R:R exit based on entry price vs 5-bar low stop level at entry. Added to `DailyBreakoutStrategy` exit rule: `stopLoss.or(profitTarget).or(hedgeRiskOff)`. |
 | 14 | Already implemented — `PortfolioService.PORTFOLIO_STRATEGIES` allowlist (3 equity strategies only) already excludes all macro/hedge strategies; H2 query already has `fs.name != 'HedgeIndexStrategy'` filter. No code change needed. |
+| 15 | Same-day idempotency check in `StrategyExecutor`: `lastRunDate` (`LocalDate`) column on `FeaturedStrategy`; skip guard in `execute()` checks if already run today; `frosk.strategy.force.rerun=false` (main) / `true` (test). |
+| 16 | Same-day idempotency check in `PortfolioService.build()`: skips rebuild if a snapshot already exists for today's local date; `frosk.portfolio.force.rebuild=false` (main) / `true` (test). `PortfolioRepository.existsBySnapshotDateBetween()` used for the check. |
+| 17 | **Intraday pipeline (Tier 0)**: `IntradayBar` + `IntradaySignal` entities; `IntradayBarRepository` + `IntradaySignalRepository`; `IntradayDataService` (fetches 5m bars for all OMX30 dataset securities → upsert DB → build BarSeries per security → prune old bars); `OMX30IntradayMomentumStrategy` (EMA9/EMA21/RSI7, MaxBarsHeld exit); `IntradayStrategyRunner` (orchestrator → runs strategy per OMX30 security → emits BUY/SELL signals to `intraday_signal`). Scheduler Tier-0 cron `0 */10 9-17 * * MON-FRI` wired via `syncTier0()` in `HighLander` (gated by `frosk.run.intraday`). Strategy also wired into `StrategiesMap` (all 5 points), runs via `runDagstrateginStrategies()` on daily bars for `FeaturedStrategy` backtest results, and included in `PortfolioService.PORTFOLIO_STRATEGIES`. Excluded from batch all-strategies run. Fixed `RapidApiManager.Interval` visibility (now `public`) and removed spurious URL-parameter spaces in `getHistory()`. |
+| 18 | **Nordic Quant Investment Strategy Agent — trader-facing REST + UI layer**: 4 new REST endpoints in `DataController`: `GET /intraday/signals` (latest 20 signals as `IntradaySignalDTO`), `GET /intraday/signals/today` (today's BUY signals only), `GET /hedgeindex/score` (current score + regime label as `HedgeIndexScoreDTO`), `GET /hedgeindex/history?days=30` (daily score series). New DTOs: `IntradaySignalDTO`, `HedgeIndexScoreDTO`. React dashboard at `src/main/resources/static/index.html` (CDN React 18 + Recharts, no build tooling). 4 panels: HedgeIndex gauge with area chart history, intraday signals table (Stockholm time), Dagstrategin watchlist (reuses `/dagstrategin/watchlist`), portfolio snapshot (reuses `/portfolio`). Auto-refreshes every 60s. Dark theme. |
 
 > **Results are queryable directly in the H2 console** (`/h2-console`). No additional REST endpoints are planned — the existing portfolio, watchlist, and strategy endpoints are sufficient. New endpoints should only be added when there is a concrete consumer (e.g. a frontend or external integration).
 
@@ -515,5 +622,4 @@ ORDER BY date DESC;
 ```
 
 ---
-
 

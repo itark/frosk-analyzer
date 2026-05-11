@@ -3,13 +3,20 @@ package nu.itark.frosk.controller;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.HighLander;
 import nu.itark.frosk.analysis.*;
+import nu.itark.frosk.service.HedgeIndexService;
 import nu.itark.frosk.service.PortfolioService;
 import nu.itark.frosk.dataset.Database;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.FeaturedStrategy;
+import nu.itark.frosk.model.IntradayBar;
+import nu.itark.frosk.model.IntradaySignal;
+import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.DataSetRepository;
+import nu.itark.frosk.repo.IntradayBarRepository;
+import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
 import nu.itark.frosk.repo.HedgeIndexRepository;
+import nu.itark.frosk.repo.IntradaySignalRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
@@ -19,6 +26,10 @@ import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -62,6 +73,18 @@ public class DataController {
 
     @Autowired
     PortfolioService portfolioService;
+
+    @Autowired
+    IntradayBarRepository intradayBarRepository;
+
+    @Autowired
+    IntradaySignalRepository intradaySignalRepository;
+
+    @Autowired
+    SecurityRepository securityRepository;
+
+    @Autowired
+    HedgeIndexService hedgeIndexService;
 
 
     /**
@@ -145,8 +168,8 @@ public class DataController {
 
         if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.LOAD_DATA) {
             log.info("action:{}",action);
-            highLander.addSecurityPriceFromDatabase(securityId, Database.YAHOO);
-            highLander.updateSecurityMetaData(securityId);
+            highLander.addSecurityPriceFromDatabase(Long.valueOf(securityId), Database.YAHOO);
+            highLander.updateSecurityMetaData(Long.valueOf(securityId));
         }
         if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.RUN_STRATEGY) {
             log.info("action:{}",action);
@@ -172,6 +195,34 @@ public class DataController {
         }
 
         return dpList;
+    }
+
+    /**
+     * @Example http://localhost:8080/intradayPrices?security=VOLV-B.ST
+     */
+    @GetMapping(path = "/intradayPrices")
+    public List<DailyPriceDTO> getIntradayPrices(@RequestParam("security") String security) {
+        log.info("/intradayPrices for security:{}", security);
+        Security sec = securityRepository.findByName(security);
+        if (sec == null) {
+            log.warn("Security not found: {}", security);
+            return Collections.emptyList();
+        }
+        List<IntradayBar> bars = intradayBarRepository.findBySecurityIdOrderByBarTimestampAsc(sec.getId());
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        return bars.stream()
+                .map(ib -> {
+                    DailyPriceDTO dto = new DailyPriceDTO();
+                    dto.setTime(Instant.ofEpochSecond(ib.getBarTimestamp())
+                            .atZone(ZoneId.of("Europe/Stockholm")).format(fmt));
+                    dto.setOpen(ib.getOpen().doubleValue());
+                    dto.setHigh(ib.getHigh().doubleValue());
+                    dto.setLow(ib.getLow().doubleValue());
+                    dto.setClose(ib.getClose().doubleValue());
+                    dto.setValue(ib.getVolume() != null ? ib.getVolume() : 0L);
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -374,6 +425,90 @@ public class DataController {
         return candidates.stream()
                 .map(fs -> securityMetaDataManager.getDTO(fs, false))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * @Example GET http://localhost:8080/intraday/signals
+     */
+    @GetMapping(value = "/intraday/signals")
+    public List<IntradaySignalDTO> getIntradaySignals() {
+        log.info("GET /intraday/signals");
+        return intradaySignalRepository.findTop20ByOrderBySignalTimestampDesc().stream()
+                .map(s -> IntradaySignalDTO.builder()
+                        .ticker(s.getTicker())
+                        .signalTime(Instant.ofEpochSecond(s.getSignalTimestamp())
+                                .atZone(ZoneId.of("Europe/Stockholm"))
+                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                        .signalType(s.getSignalType())
+                        .closePrice(s.getClosePrice())
+                        .ema9(s.getEma9())
+                        .ema21(s.getEma21())
+                        .rsi7(s.getRsi7())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * @Example GET http://localhost:8080/intraday/signals/today
+     */
+    @GetMapping(value = "/intraday/signals/today")
+    public List<IntradaySignalDTO> getIntradaySignalsToday() {
+        log.info("GET /intraday/signals/today");
+        long startOfDay = LocalDate.now(ZoneId.of("Europe/Stockholm"))
+                .atStartOfDay(ZoneId.of("Europe/Stockholm"))
+                .toEpochSecond();
+        return intradaySignalRepository.findTop20ByOrderBySignalTimestampDesc().stream()
+                .filter(s -> s.getSignalTimestamp() >= startOfDay && "BUY".equals(s.getSignalType()))
+                .map(s -> IntradaySignalDTO.builder()
+                        .ticker(s.getTicker())
+                        .signalTime(Instant.ofEpochSecond(s.getSignalTimestamp())
+                                .atZone(ZoneId.of("Europe/Stockholm"))
+                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                        .signalType(s.getSignalType())
+                        .closePrice(s.getClosePrice())
+                        .ema9(s.getEma9())
+                        .ema21(s.getEma21())
+                        .rsi7(s.getRsi7())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * @Example GET http://localhost:8080/hedgeindex/score
+     */
+    @GetMapping(value = "/hedgeindex/score")
+    public HedgeIndexScoreDTO getHedgeIndexScore() {
+        log.info("GET /hedgeindex/score");
+        int score = hedgeIndexService.getScore(ZonedDateTime.now());
+        return HedgeIndexScoreDTO.builder()
+                .date(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
+                .score(score)
+                .regime(regimeLabel(score))
+                .build();
+    }
+
+    /**
+     * @Example GET http://localhost:8080/hedgeindex/history?days=30
+     */
+    @GetMapping(value = "/hedgeindex/history")
+    public List<HedgeIndexScoreDTO> getHedgeIndexHistory(@RequestParam(value = "days", defaultValue = "30") int days) {
+        log.info("GET /hedgeindex/history?days={}", days);
+        LocalDate cutoff = LocalDate.now().minusDays(days);
+        return hedgeIndexRepository.summarizeCumulativeRiskPerDate().stream()
+                .filter(p -> p.getDayDate() != null && !p.getDayDate().isBefore(cutoff))
+                .map(p -> HedgeIndexScoreDTO.builder()
+                        .date(p.getDayDate().format(DateTimeFormatter.ISO_LOCAL_DATE))
+                        .score(p.getRiskyCount().intValue())
+                        .regime(regimeLabel(p.getRiskyCount().intValue()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private String regimeLabel(int score) {
+        if (score <= 3) return "Strong Risk-On";
+        if (score <= 7) return "Cautious / Transition";
+        if (score <= 11) return "Neutral / Defensive";
+        return "Strong Risk-Off";
     }
 
     @GetMapping(value = "/tradingAccounts")

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nordic Quant Strategy Agent</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script crossorigin src="https://unpkg.com/recharts@2/umd/Recharts.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1923; color: #e0e6ed; }
+    .header { background: #1a2733; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a3a4a; }
+    .header h1 { font-size: 20px; font-weight: 600; color: #4fc3f7; }
+    .header .refresh-info { font-size: 12px; color: #7a8a9a; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .panel { background: #1a2733; border: 1px solid #2a3a4a; border-radius: 8px; overflow: hidden; }
+    .panel-header { padding: 12px 16px; border-bottom: 1px solid #2a3a4a; display: flex; align-items: center; justify-content: space-between; }
+    .panel-header h2 { font-size: 14px; font-weight: 600; color: #b0bec5; text-transform: uppercase; letter-spacing: 0.5px; }
+    .panel-body { padding: 16px; }
+    .score-display { text-align: center; padding: 24px 0; }
+    .score-number { font-size: 64px; font-weight: 700; line-height: 1; }
+    .score-label { font-size: 14px; margin-top: 8px; font-weight: 500; }
+    .regime-riskon { color: #4caf50; }
+    .regime-cautious { color: #ff9800; }
+    .regime-defensive { color: #f44336; }
+    .regime-riskoff { color: #d32f2f; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 10px; color: #7a8a9a; font-weight: 500; border-bottom: 1px solid #2a3a4a; }
+    td { padding: 7px 10px; border-bottom: 1px solid #1e2d3d; }
+    tr:hover td { background: #1e2d3d; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-buy { background: #1b5e20; color: #66bb6a; }
+    .badge-sell { background: #b71c1c33; color: #ef5350; }
+    .pnl-pos { color: #4caf50; }
+    .pnl-neg { color: #f44336; }
+    .empty-state { text-align: center; padding: 32px; color: #546e7a; }
+    .chart-container { width: 100%; height: 200px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+    const { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart } = Recharts;
+
+    function regimeClass(regime) {
+      if (!regime) return '';
+      if (regime.includes('Strong Risk-On')) return 'regime-riskon';
+      if (regime.includes('Cautious')) return 'regime-cautious';
+      if (regime.includes('Defensive')) return 'regime-defensive';
+      return 'regime-riskoff';
+    }
+
+    function HedgeIndexPanel({ score, history }) {
+      return (
+        <div className="panel">
+          <div className="panel-header"><h2>HedgeIndex</h2></div>
+          <div className="panel-body">
+            {score ? (
+              <div className="score-display">
+                <div className={`score-number ${regimeClass(score.regime)}`}>{score.score}</div>
+                <div className={`score-label ${regimeClass(score.regime)}`}>{score.regime}</div>
+              </div>
+            ) : <div className="empty-state">Loading...</div>}
+            {history.length > 0 && (
+              <div className="chart-container">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={history} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4fc3f7" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#4fc3f7" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#546e7a' }} tickFormatter={d => d.slice(5)} />
+                    <YAxis domain={[0, 14]} tick={{ fontSize: 10, fill: '#546e7a' }} />
+                    <Tooltip contentStyle={{ background: '#1a2733', border: '1px solid #2a3a4a', fontSize: 12 }} />
+                    <ReferenceLine y={3} stroke="#4caf50" strokeDasharray="3 3" label={{ value: 'Risk-On', fill: '#4caf50', fontSize: 10, position: 'right' }} />
+                    <ReferenceLine y={7} stroke="#ff9800" strokeDasharray="3 3" label={{ value: 'Cautious', fill: '#ff9800', fontSize: 10, position: 'right' }} />
+                    <Area type="stepAfter" dataKey="score" stroke="#4fc3f7" fill="url(#scoreGrad)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function IntradayPanel({ signals }) {
+      return (
+        <div className="panel">
+          <div className="panel-header"><h2>Intraday Signals</h2><span style={{fontSize:11,color:'#546e7a'}}>{signals.length} signals</span></div>
+          <div className="panel-body" style={{ maxHeight: 340, overflowY: 'auto' }}>
+            {signals.length === 0 ? <div className="empty-state">No intraday signals</div> : (
+              <table>
+                <thead><tr><th>Time</th><th>Ticker</th><th>Type</th><th>Close</th><th>RSI(7)</th></tr></thead>
+                <tbody>
+                  {signals.map((s, i) => (
+                    <tr key={i}>
+                      <td>{s.signalTime}</td>
+                      <td>{s.ticker}</td>
+                      <td><span className={`badge ${s.signalType === 'BUY' ? 'badge-buy' : 'badge-sell'}`}>{s.signalType}</span></td>
+                      <td>{s.closePrice != null ? Number(s.closePrice).toFixed(2) : '-'}</td>
+                      <td>{s.rsi7 != null ? Number(s.rsi7).toFixed(1) : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function WatchlistPanel({ watchlist }) {
+      return (
+        <div className="panel">
+          <div className="panel-header"><h2>Dagstrategin Watchlist</h2><span style={{fontSize:11,color:'#546e7a'}}>{watchlist.length} open</span></div>
+          <div className="panel-body" style={{ maxHeight: 340, overflowY: 'auto' }}>
+            {watchlist.length === 0 ? <div className="empty-state">No open dagstrategin signals</div> : (
+              <table>
+                <thead><tr><th>Security</th><th>Strategy</th><th>SQN</th><th>Entry</th><th>Entry Price</th></tr></thead>
+                <tbody>
+                  {watchlist.map((w, i) => (
+                    <tr key={i}>
+                      <td title={w.securityDesc}>{w.securityName}</td>
+                      <td>{w.strategyName ? w.strategyName.replace('Strategy', '') : ''}</td>
+                      <td>{w.sqn != null ? Number(w.sqn).toFixed(2) : '-'}</td>
+                      <td>{w.entryDate || '-'}</td>
+                      <td>{w.entryPrice != null ? Number(w.entryPrice).toFixed(2) : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function PortfolioPanel({ portfolio }) {
+      if (!portfolio || !portfolio.positions) return (
+        <div className="panel">
+          <div className="panel-header"><h2>Portfolio</h2></div>
+          <div className="panel-body"><div className="empty-state">No portfolio snapshot</div></div>
+        </div>
+      );
+      const pnl = portfolio.totalPnlPercent;
+      return (
+        <div className="panel">
+          <div className="panel-header">
+            <h2>Portfolio</h2>
+            <span style={{fontSize:11,color:'#546e7a'}}>
+              {portfolio.snapshotDate} &middot; {portfolio.openPositionCount} positions &middot;
+              Avg PnL: <span className={pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}>{pnl != null ? (pnl * 100).toFixed(2) + '%' : '-'}</span>
+            </span>
+          </div>
+          <div className="panel-body" style={{ maxHeight: 340, overflowY: 'auto' }}>
+            {portfolio.positions.length === 0 ? <div className="empty-state">No positions</div> : (
+              <table>
+                <thead><tr><th>Security</th><th>Strategy</th><th>Entry</th><th>Price</th><th>Latest</th><th>PnL</th><th>SQN</th></tr></thead>
+                <tbody>
+                  {portfolio.positions.map((p, i) => {
+                    const pnlPct = p.unrealizedPnlPercent;
+                    return (
+                      <tr key={i}>
+                        <td title={p.securityDesc}>{p.securityName}</td>
+                        <td>{p.strategyName || ''}</td>
+                        <td>{p.entryDate || '-'}</td>
+                        <td>{p.entryPrice != null ? Number(p.entryPrice).toFixed(2) : '-'}</td>
+                        <td>{p.latestPrice != null ? Number(p.latestPrice).toFixed(2) : '-'}</td>
+                        <td className={pnlPct >= 0 ? 'pnl-pos' : 'pnl-neg'}>{pnlPct != null ? (pnlPct * 100).toFixed(2) + '%' : '-'}</td>
+                        <td>{p.sqn != null ? Number(p.sqn).toFixed(2) : '-'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [score, setScore] = useState(null);
+      const [history, setHistory] = useState([]);
+      const [signals, setSignals] = useState([]);
+      const [watchlist, setWatchlist] = useState([]);
+      const [portfolio, setPortfolio] = useState(null);
+      const [lastRefresh, setLastRefresh] = useState('');
+
+      const fetchAll = useCallback(() => {
+        fetch('/hedgeindex/score').then(r => r.json()).then(setScore).catch(() => {});
+        fetch('/hedgeindex/history?days=60').then(r => r.json()).then(setHistory).catch(() => {});
+        fetch('/intraday/signals').then(r => r.json()).then(setSignals).catch(() => {});
+        fetch('/dagstrategin/watchlist').then(r => r.json()).then(setWatchlist).catch(() => {});
+        fetch('/portfolio').then(r => r.json()).then(setPortfolio).catch(() => {});
+        setLastRefresh(new Date().toLocaleTimeString());
+      }, []);
+
+      useEffect(() => {
+        fetchAll();
+        const interval = setInterval(fetchAll, 60000);
+        return () => clearInterval(interval);
+      }, [fetchAll]);
+
+      return (
+        <div>
+          <div className="header">
+            <h1>Nordic Quant Strategy Agent</h1>
+            <div className="refresh-info">Last refresh: {lastRefresh} (auto every 60s)</div>
+          </div>
+          <div className="grid">
+            <HedgeIndexPanel score={score} history={history} />
+            <IntradayPanel signals={signals} />
+            <WatchlistPanel watchlist={watchlist} />
+            <PortfolioPanel portfolio={portfolio} />
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,10 +54,18 @@ public class PortfolioService {
     @Value("${frosk.portfolio.other.topN:10}")
     private int otherTopN;
 
+    /**
+     * When true, bypasses the same-day idempotency check and always rebuilds.
+     * Default false. Set to true in application-test.properties so tests are never skipped.
+     */
+    @Value("${frosk.portfolio.force.rebuild:false}")
+    private boolean forceRebuild;
+
     private static final List<String> PORTFOLIO_STRATEGIES = List.of(
             "ShortTermMomentumLongTermStrengthStrategy",
             "HighLanderStrategy",
-            "SwedishLongTermMomentumStrategy"
+            "SwedishLongTermMomentumStrategy",
+            "OMX30IntradayMomentumStrategy"
     );
 
     final FeaturedStrategyRepository featuredStrategyRepository;
@@ -72,6 +82,11 @@ public class PortfolioService {
      */
     @Transactional
     public Portfolio build() {
+        if (!forceRebuild && builtToday()) {
+            log.info("[PortfolioService] Skipping build — portfolio already built today ({}). " +
+                    "Set frosk.portfolio.force.rebuild=true to override.", LocalDate.now());
+            return portfolioRepository.findTopByOrderBySnapshotDateDesc().orElse(null);
+        }
         log.info("Building portfolio snapshot...");
 
         List<FeaturedStrategy> allOpen = featuredStrategyRepository.findByOpen(true).stream()
@@ -187,6 +202,17 @@ public class PortfolioService {
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Returns true if a portfolio snapshot already exists for today's local date.
+     * Uses a midnight-to-midnight window to avoid timestamp precision issues.
+     */
+    private boolean builtToday() {
+        LocalDate today = LocalDate.now();
+        Date startOfDay = Date.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date endOfDay   = Date.from(today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        return portfolioRepository.existsBySnapshotDateBetween(startOfDay, endOfDay);
+    }
 
     /**
      * Tiered HedgeIndex sizing for Månadsportföljen:

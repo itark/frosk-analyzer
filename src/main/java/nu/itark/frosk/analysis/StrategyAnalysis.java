@@ -11,6 +11,7 @@ import nu.itark.frosk.service.HedgeIndexService;
 import nu.itark.frosk.strategies.DailyBreakoutStrategy;
 import nu.itark.frosk.strategies.DailyOversoldBounceStrategy;
 import nu.itark.frosk.strategies.OMXS30SwingStrategy;
+import nu.itark.frosk.strategies.SwedishLongTermMomentumStrategy;
 import nu.itark.frosk.strategies.hedge.*;
 import nu.itark.frosk.util.DateTimeManager;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -330,6 +331,30 @@ public class StrategyAnalysis {
 		log.info("runDagstrateginStrategies() READY");
 	}
 
+	/**
+	 * Månadsportföljen — runs SwedishLongTermMomentumStrategy across all active
+	 * Swedish stocks (YAHOO database, name ending in .ST).
+	 * Called from HighLander.syncTier2() after the weekly price sync so that
+	 * fresh prices are available before the factor scores are recomputed.
+	 */
+	public void runMånadsportföljStrategies() {
+		log.info("runMånadsportföljStrategies()");
+		List<Security> swedishStocks = securityRepository.findByDatabaseAndActive("YAHOO", true)
+				.stream()
+				.filter(sec -> sec.getName() != null && sec.getName().endsWith(".ST"))
+				.collect(java.util.stream.Collectors.toList());
+		if (swedishStocks.isEmpty()) {
+			log.warn("No active Swedish (.ST) securities found — skipping Månadsportföljen");
+			return;
+		}
+		List<BarSeries> barSeriesList = swedishStocks.stream()
+				.map(sec -> barSeriesService.getDataSet(sec.getId()))
+				.filter(bs -> bs != null && !bs.isEmpty())
+				.collect(java.util.stream.Collectors.toList());
+		log.info("Månadsportföljen: running on {} Swedish securities", barSeriesList.size());
+		strategyExecutor.execute(SwedishLongTermMomentumStrategy.class.getSimpleName(), barSeriesList);
+		log.info("runMånadsportföljStrategies() READY");
+	}
 
 	protected void setBestStrategy(BarSeries barSeries) {
 		if (Objects.isNull(barSeries) || barSeries.getBarData().isEmpty()){

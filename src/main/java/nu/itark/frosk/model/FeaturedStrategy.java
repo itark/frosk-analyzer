@@ -1,6 +1,7 @@
 package nu.itark.frosk.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.Set;
 
@@ -87,6 +88,9 @@ public class FeaturedStrategy {
 	@Column(name = "open", columnDefinition="BOOLEAN DEFAULT false")
 	private boolean open = false;
 	
+	@Column(name = "last_run_date")
+	private LocalDate lastRunDate;
+
 	@OneToMany(mappedBy = "featuredStrategy", fetch=FetchType.LAZY)
 	private Set<StrategyTrade> strategyTrades;
 

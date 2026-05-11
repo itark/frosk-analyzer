@@ -8,13 +8,16 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**
- * Scheduled jobs — three-tier sync strategy.
+ * Scheduled jobs — four-tier sync strategy.
  *
+ * Tier 0 (intraday, MON-FRI every 10 min 09:00-17:59):
+ *                              Fetch 5m ^OMX bars + run OMX30IntradayMomentumStrategy  ~1 req/run
  * Tier 1 (daily, MON-FRI 18:00):  OMXS30 price sync + HedgeIndex update   ~40 req/run
  * Tier 2 (weekly, SAT 06:00):     Full universe price sync                  ~900 req/run
  * Tier 3 (monthly, 1st 07:00):    Fundamental metadata update               ~1,800 req/run
  *
- * Budget: ~6,280 / 10,000 req/month on the yahoo-finance15 free plan.
+ * Budget: ~8,002 / 10,000 req/month on the yahoo-finance15 free plan.
+ * (Tier 0 adds ~1,122 req/month — 1 req × ~51 ticks/day × 22 trading days)
  */
 @Configuration
 @EnableScheduling
@@ -23,6 +26,17 @@ public class Scheduler {
 
 	@Autowired
 	private HighLander highLander;
+
+	/**
+	 * Tier 0 — fetch 5-minute ^OMX bars and run the intraday momentum strategy
+	 * every 10 minutes during Stockholm market hours (09:00–17:59 CET, Mon–Fri).
+	 */
+	@Scheduled(cron = "${scheduler.tier0.cron}")
+	public void tier0IntradaySync() {
+		log.info("Scheduler::tier0IntradaySync starting");
+		highLander.syncTier0();
+		log.info("Scheduler::tier0IntradaySync completed");
+	}
 
 	/** Tier 1 — sync OMXS30 + HedgeIndex every weekday after market close. */
 	@Scheduled(cron = "${scheduler.tier1.cron}")

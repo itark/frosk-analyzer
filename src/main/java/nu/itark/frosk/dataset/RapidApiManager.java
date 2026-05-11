@@ -83,7 +83,7 @@ public class RapidApiManager {
      */
     public Map<String, StockHistoryDTO.StockData> getHistory(String symbol, Interval interval)  {
         String baseUrl = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/history";
-        String uri = "?symbol=+"+symbol+"+&interval=+"+interval.getValue()+"+&diffandsplits=false";
+        String uri = "?symbol="+symbol+"&interval="+interval.getValue()+"&diffandsplits=false";
         StockHistoryDTO response = webClient(baseUrl).get()
                 .uri(uri)
                 .retrieve()
@@ -177,7 +177,7 @@ public class RapidApiManager {
         //return response.getBody();
     }
 
-    enum Interval {
+    public enum Interval {
         FIVE_MINUTES("5m"),
         FIFTEEN_MINUTES("15m"),
         THIRTY_MINUTES("30m"),

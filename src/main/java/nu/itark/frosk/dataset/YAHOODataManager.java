@@ -127,6 +127,18 @@ public class YAHOODataManager {
         dataSet.getSecurities().forEach(security -> syncronize(security.getName()));
     }
 
+    public void syncronizeActiveSwedish() {
+        if (!apiEnabled) {
+            log.info("syncronizeActiveSwedish, apiEnabled={}, aborting.", apiEnabled);
+            return;
+        }
+        List<Security> swedishStocks = securityRepository.findByDatabaseAndActive("YAHOO", true).stream()
+                .filter(sec -> sec.getName() != null && sec.getName().endsWith(".ST"))
+                .collect(Collectors.toList());
+        log.info("syncronizeActiveSwedish: {} securities", swedishStocks.size());
+        swedishStocks.forEach(sec -> syncronize(sec.getName()));
+    }
+
     /**
      * Download prices and insert into database for one security
      */
@@ -260,12 +272,11 @@ public class YAHOODataManager {
         }));
     }
 
-    public void updateSecurityMetaData(String securityName) {
+    public void updateSecurityMetaData(Security security) {
         if (!apiEnabled) {
             log.info("updateSecurityMetaData, apiEnabled=" + apiEnabled + ", aborting.");
             return;
         }
-        Security security = securityRepository.findByName(securityName);
         updateWithMetaData(security);
     }
 

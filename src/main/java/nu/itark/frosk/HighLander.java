@@ -1,6 +1,7 @@
 package nu.itark.frosk;
 
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.*;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
@@ -49,6 +50,12 @@ public class HighLander {
 	@Value("${frosk.run.dagstrategin:false}")
 	private boolean runDagstrategin;
 
+	@Value("${frosk.run.manedsportfolj:false}")
+	private boolean runManedsportfolj;
+
+	@Value("${frosk.run.intraday:true}")
+	private boolean runIntraday;
+
 	@Value("${frosk.updatesecuritymetadata}")
 	private boolean updateSecurityMetaData;
 
@@ -94,6 +101,9 @@ public class HighLander {
 	@Autowired
 	YAHOODataManager yahooDataManager;
 
+	@Autowired
+	nu.itark.frosk.service.IntradayStrategyRunner intradayStrategyRunner;
+
 	/**
 	 * Full setup, addition
 	 * 
@@ -109,6 +119,7 @@ public class HighLander {
 		log.info("buildPortfolio:{}",buildPortfolio);
 		log.info("runOMXS30Swing:{}",runOMXS30Swing);
 		log.info("runDagstrategin:{}",runDagstrategin);
+		log.info("runManedsportfolj:{}",runManedsportfolj);
 
 		if (addDatasetAndSecurities) {
 			addDataSetAndSecurities();
@@ -140,8 +151,28 @@ public class HighLander {
 			strategyAnalysis.runOMXS30Swing();
 		}
 		if (runDagstrategin) {
+			yahooDataManager.syncronizeByDataset("OMX30");
 			strategyAnalysis.runDagstrateginStrategies();
 		}
+		if (runManedsportfolj) {
+			yahooDataManager.syncronizeActiveSwedish();
+			strategyAnalysis.runMånadsportföljStrategies();
+		}
+	}
+
+	/**
+	 * Tier 0 — Intraday (every 10 minutes, MON-FRI 09:00-17:59 CET).
+	 * Fetches latest 5-minute ^OMX bars and runs OMX30IntradayMomentumStrategy.
+	 * Emits BUY/SELL signals to the intraday_signal table for human review.
+	 */
+	public void syncTier0() {
+		if (!runIntraday) {
+			log.info("syncTier0 skipped — frosk.run.intraday=false");
+			return;
+		}
+		log.info("syncTier0 started");
+		intradayStrategyRunner.run();
+		log.info("syncTier0 completed");
 	}
 
 	/**
@@ -158,11 +189,14 @@ public class HighLander {
 
 	/**
 	 * Tier 2 — Weekly (SAT morning).
-	 * Syncs price history for all active YAHOO securities.
+	 * Syncs price history for all active YAHOO securities, then re-runs
+	 * Månadsportföljen (SwedishLongTermMomentumStrategy) on the fresh prices.
 	 */
 	public void syncTier2() {
 		log.info("syncTier2 started");
 		addSecurityPricesFromYahoo();
+		strategyAnalysis.runMånadsportföljStrategies();
+		portfolioService.build();
 		log.info("syncTier2 completed");
 	}
 
@@ -229,15 +263,17 @@ public class HighLander {
 		log.info("addSecurityPricesFromCoinbase executed");
 	}
 
-	public void addSecurityPriceFromDatabase(String security, Database database) {
-		dataManager.insertSecurityPricesIntoDatabase(database, security);
+	public void addSecurityPriceFromDatabase(Long securityId, Database database) {
+		Security security = securityRepository.findById(securityId).get();
+		dataManager.insertSecurityPricesIntoDatabase(database, security.getName());
 	}
 
 	public void updateSecurityMetaData() {
 		dataManager.updateSecurityMetaData(Database.YAHOO);
 	}
 
-	public void updateSecurityMetaData(String security) {
+	public void updateSecurityMetaData(Long securityId) {
+		Security security = securityRepository.findById(securityId).get();
 		dataManager.updateSecurityMetaData(Database.YAHOO, security);
 	}
 

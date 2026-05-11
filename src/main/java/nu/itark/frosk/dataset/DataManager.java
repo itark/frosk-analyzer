@@ -2,6 +2,7 @@ package nu.itark.frosk.dataset;
 
 import java.util.logging.Logger;
 
+import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.SecurityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -82,7 +83,7 @@ public class DataManager {
 		}
 	}
 
-	public void updateSecurityMetaData(Database database, String security) {
+	public void updateSecurityMetaData(Database database, Security security) {
 		if (database.equals(Database.YAHOO)) {
 			yahooDataManager.updateSecurityMetaData(security);
 		}
