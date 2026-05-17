@@ -6,6 +6,7 @@ import nu.itark.frosk.model.IntradaySignal;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.IntradaySignalRepository;
 import nu.itark.frosk.strategies.OMX30IntradayMomentumStrategy;
+import nu.itark.frosk.strategies.RunawayGAPIntradayStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
@@ -33,13 +34,17 @@ import java.util.Map;
 public class IntradayStrategyRunner {
 
     private static final int MIN_BARS = 30;
-    private static final String STRATEGY_NAME = "OMX30IntradayMomentumStrategy";
+    private static final String MOMENTUM_STRATEGY = "OMX30IntradayMomentumStrategy";
+    private static final String GAP_STRATEGY = "RunawayGAPIntradayStrategy";
 
     @Autowired
     private IntradayDataService intradayDataService;
 
     @Autowired
-    private OMX30IntradayMomentumStrategy strategy;
+    private OMX30IntradayMomentumStrategy momentumStrategy;
+
+    @Autowired
+    private RunawayGAPIntradayStrategy gapStrategy;
 
     @Autowired
     private IntradaySignalRepository signalRepository;
@@ -69,73 +74,75 @@ public class IntradayStrategyRunner {
                 continue;
             }
 
-            totalSignals += evaluateSecurity(security, series);
+            totalSignals += evaluateStrategy(momentumStrategy.buildStrategy(series),
+                    MOMENTUM_STRATEGY, security, series);
+            totalSignals += evaluateStrategy(gapStrategy.buildStrategy(series),
+                    GAP_STRATEGY, security, series);
             eligibleSeries.add(series);
         }
 
         if (!eligibleSeries.isEmpty()) {
-            strategyExecutor.execute(STRATEGY_NAME, eligibleSeries);
-            log.info("IntradayStrategyRunner: FeaturedStrategy updated for {} securities", eligibleSeries.size());
+            strategyExecutor.execute(MOMENTUM_STRATEGY, eligibleSeries);
+            strategyExecutor.execute(GAP_STRATEGY, eligibleSeries);
+            log.info("IntradayStrategyRunner: FeaturedStrategy updated for {} securities × 2 strategies",
+                    eligibleSeries.size());
         }
 
         log.info("IntradayStrategyRunner: completed — {} signals emitted across {} securities",
                 totalSignals, allSeries.size());
     }
 
-    private int evaluateSecurity(Security security, BarSeries series) {
-        Strategy ta4jStrategy = strategy.buildStrategy(series);
+    private int evaluateStrategy(Strategy ta4jStrategy, String strategyName,
+                                  Security security, BarSeries series) {
         BarSeriesManager manager = new BarSeriesManager(series);
         TradingRecord tradingRecord = manager.run(ta4jStrategy);
 
         int lastIndex = series.getEndIndex();
-        int signals = 0;
 
         if (tradingRecord.getCurrentPosition().isNew()) {
             if (ta4jStrategy.shouldEnter(lastIndex, tradingRecord)) {
-                emitSignal("BUY", security.getName(), series, lastIndex);
-                signals++;
+                emitSignal("BUY", strategyName, security.getName(), series, lastIndex);
+                return 1;
             }
         } else if (tradingRecord.getCurrentPosition().isOpened()) {
             if (ta4jStrategy.shouldExit(lastIndex, tradingRecord)) {
-                emitSignal("SELL", security.getName(), series, lastIndex);
-                signals++;
+                emitSignal("SELL", strategyName, security.getName(), series, lastIndex);
+                return 1;
             }
         }
-
-        return signals;
+        return 0;
     }
 
-    private void emitSignal(String signalType, String ticker, BarSeries series, int index) {
+    private void emitSignal(String signalType, String strategyName, String ticker,
+                            BarSeries series, int index) {
         Bar bar = series.getBar(index);
         ZonedDateTime barEnd = bar.getEndTime();
         long barStartEpoch = barEnd.toEpochSecond() - 300;
 
         if (signalRepository.existsByTickerAndSignalTimestampAndSignalType(
                 ticker, barStartEpoch, signalType)) {
-            log.debug("IntradayStrategyRunner: signal {}/{}/{} already stored — skipping",
-                    ticker, barStartEpoch, signalType);
             return;
         }
 
-        Double ema9  = strategy.getEma9At(index);
-        Double ema21 = strategy.getEma21At(index);
-        Double rsi7  = strategy.getRsi7At(index);
+        BigDecimal ema9 = null, ema21 = null, rsi7 = null;
+        if (MOMENTUM_STRATEGY.equals(strategyName)) {
+            Double ef  = momentumStrategy.getEmaFastAt(index);
+            Double es  = momentumStrategy.getEmaSlowAt(index);
+            Double r   = momentumStrategy.getRsiAt(index);
+            ema9  = ef != null ? toBd(ef) : null;
+            ema21 = es != null ? toBd(es) : null;
+            rsi7  = r  != null ? toBd(r)  : null;
+        }
 
         IntradaySignal signal = new IntradaySignal(
-                ticker,
-                barStartEpoch,
-                signalType,
+                ticker, barStartEpoch, signalType,
                 toBd(bar.getClosePrice().doubleValue()),
-                ema9  != null ? toBd(ema9)  : null,
-                ema21 != null ? toBd(ema21) : null,
-                rsi7  != null ? toBd(rsi7)  : null
+                ema9, ema21, rsi7
         );
-
         signalRepository.save(signal);
 
-        log.info("IntradayStrategyRunner: {} signal — ticker={}, bar={}, close={}, EMA9={}, EMA21={}, RSI7={}",
-                signalType, ticker, barStartEpoch,
-                signal.getClosePrice(), signal.getEma9(), signal.getEma21(), signal.getRsi7());
+        log.info("IntradayStrategyRunner: {} {} — ticker={}, bar={}, close={}",
+                strategyName, signalType, ticker, barStartEpoch, signal.getClosePrice());
     }
 
     private static BigDecimal toBd(double value) {

@@ -54,6 +54,9 @@ public class RunawayGAPStrategy extends AbstractStrategy implements IIndicatorVa
         super.barSeries = series;
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         RunawayGAPIndicator runawayGAPIndicator = new RunawayGAPIndicator(series);
+
+        setIndicatorValues(closePrice, "close");
+
         Rule entryRule = new BooleanIndicatorRule(runawayGAPIndicator);
 
         Rule exitRule;

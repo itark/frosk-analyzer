@@ -48,6 +48,9 @@ public class BarSeriesService  {
 	@Value("${exchange.transaction.feePerTradePercent}")
 	private double feePerTradePercent;
 
+	@Value("${exchange.transaction.intradayFeePerTradePercent:0.0003}")
+	private double intradayFeePerTradePercent;
+
 	@Value("${exchange.transaction.initialAmount}")
 	private double initialAmount;
 
@@ -172,23 +175,24 @@ public class BarSeriesService  {
 
 	}
 
+	private static final java.util.Set<String> INTRADAY_STRATEGIES = java.util.Set.of(
+			"OMX30IntradayMomentumStrategy", "RunawayGAPIntradayStrategy"
+	);
+
+	private static final java.util.Set<String> CURRENT_CLOSE_STRATEGIES = java.util.Set.of(
+			"EngulfingStrategy", "GoldStrategy",
+			"OMX30IntradayMomentumStrategy", "RunawayGAPIntradayStrategy"
+	);
+
 	public TradingRecord runConfiguredStrategy(BarSeries barSeries, Strategy strategyToRun) {
-		//TODO
 		double borrowingFee = 0.00001;
-		CostModel transactionCostModel = new LinearTransactionCostModel(feePerTradePercent);
+		boolean isIntraday = INTRADAY_STRATEGIES.contains(strategyToRun.getName());
+		double fee = isIntraday ? intradayFeePerTradePercent : feePerTradePercent;
+		CostModel transactionCostModel = new LinearTransactionCostModel(fee);
 		CostModel borrowingCostModel = new LinearBorrowingCostModel(borrowingFee);
-		TradeExecutionModel tradeExecutionModel;
-		if ("EngulfingStrategy".equals(strategyToRun.getName())) {
-			tradeExecutionModel = new TradeOnCurrentCloseModel();
-		}
-		else if ("GoldStrategy".equals(strategyToRun.getName())) {
-			tradeExecutionModel = new TradeOnCurrentCloseModel();
-		}
-		else {
-			tradeExecutionModel = new TradeOnNextOpenModel();
-		}
-		//TradeExecutionModel tradeExecutionModel = new TradeOnNextOpenModel();
-		//TradeExecutionModel tradeExecutionModel = new TradeOnCurrentCloseModel();
+		TradeExecutionModel tradeExecutionModel = CURRENT_CLOSE_STRATEGIES.contains(strategyToRun.getName())
+				? new TradeOnCurrentCloseModel()
+				: new TradeOnNextOpenModel();
 		BarSeriesManager seriesManager = new BarSeriesManager(barSeries, transactionCostModel, borrowingCostModel, tradeExecutionModel);
 		if (isBuy) {
 			return seriesManager.run(strategyToRun, Trade.TradeType.BUY);

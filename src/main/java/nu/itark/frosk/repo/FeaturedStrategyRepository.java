@@ -15,6 +15,7 @@ public interface FeaturedStrategyRepository extends JpaRepository<FeaturedStrate
 	List<FeaturedStrategy> findByNameOrderByTotalProfitDesc(String name);
 	List<FeaturedStrategy> findByOpen(Boolean open);
 	List<FeaturedStrategy> findByNameInAndOpenOrderBySqnDesc(List<String> names, Boolean open);
+	List<FeaturedStrategy> findByNameAndOpenOrderBySqnDesc(String name, boolean open);
 	FeaturedStrategy findByNameAndSecurityName(String name, String securityName);
 	FeaturedStrategy findTopBySecurityNameOrderByLatestTradeDesc(String security);
 

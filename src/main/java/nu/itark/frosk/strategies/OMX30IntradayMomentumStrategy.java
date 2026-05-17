@@ -24,16 +24,16 @@ import java.util.List;
  *
  * <h3>Entry rules (all must be true)</h3>
  * <ul>
- *   <li>EMA(9) &gt; EMA(21) — short-term uptrend confirmed on 5m bars
- *       (9 bars ≈ 45 min trend; 21 bars ≈ 105 min / ~1.75 h)</li>
- *   <li>RSI(7) crosses above 45 — momentum turning up from neutral/oversold</li>
+ *   <li>EMA(5) &gt; EMA(13) — short-term uptrend confirmed on 5m bars
+ *       (5 bars ≈ 25 min trend; 13 bars ≈ 65 min / ~1 h)</li>
+ *   <li>RSI(5) crosses above 50 — momentum turning up</li>
  * </ul>
  *
  * <h3>Exit rules (first satisfied wins)</h3>
  * <ul>
- *   <li>RSI(7) &gt; 70 — overbought, take profit</li>
- *   <li>EMA(9) crosses below EMA(21) — short-term trend reversal</li>
- *   <li>Max 6 bars held (30 minutes) — intraday time-based exit</li>
+ *   <li>RSI(5) &gt; 75 — overbought, take profit</li>
+ *   <li>EMA(5) crosses below EMA(13) — short-term trend reversal</li>
+ *   <li>Max 12 bars held (1 hour) — intraday time-based exit</li>
  * </ul>
  *
  * <h3>Design notes</h3>
@@ -52,12 +52,12 @@ import java.util.List;
 public class OMX30IntradayMomentumStrategy extends AbstractStrategy implements IIndicatorValue {
 
     // ── Indicator parameters ────────────────────────────────────────────────
-    private static final int    EMA_FAST        = 9;   // 45 min
-    private static final int    EMA_SLOW        = 21;  // 105 min (~1.75 h)
-    private static final int    RSI_PERIOD      = 7;
-    private static final double RSI_ENTRY_LEVEL = 45.0;
-    private static final double RSI_EXIT_LEVEL  = 70.0;
-    private static final int    MAX_BARS_HELD   = 6;   // 30 min
+    private static final int    EMA_FAST        = 5;   // 25 min
+    private static final int    EMA_SLOW        = 13;  // 65 min (~1 h)
+    private static final int    RSI_PERIOD      = 5;
+    private static final double RSI_ENTRY_LEVEL = 50.0;
+    private static final double RSI_EXIT_LEVEL  = 75.0;
+    private static final int    MAX_BARS_HELD   = 12;  // 1 hour
 
     // ── Cached indicator refs (populated in buildStrategy) ──────────────────
     private EMAIndicator cachedEmaFast;
@@ -87,9 +87,9 @@ public class OMX30IntradayMomentumStrategy extends AbstractStrategy implements I
         cachedRsi     = new RSIIndicator(close, RSI_PERIOD);
 
         setIndicatorValues(close,         "close");
-        setIndicatorValues(cachedEmaFast, "ema9");
-        setIndicatorValues(cachedEmaSlow, "ema21");
-        setIndicatorValues(cachedRsi,     "rsi7");
+        setIndicatorValues(cachedEmaFast, "ema5");
+        setIndicatorValues(cachedEmaSlow, "ema13");
+        setIndicatorValues(cachedRsi,     "rsi5");
 
         // ── Entry ─────────────────────────────────────────────────────────
         Rule uptrend   = new OverIndicatorRule(cachedEmaFast, cachedEmaSlow);
@@ -110,21 +110,15 @@ public class OMX30IntradayMomentumStrategy extends AbstractStrategy implements I
         return indicatorValues;
     }
 
-    /**
-     * Convenience: read EMA(9) at {@code index} from the most recently built series.
-     * Returns {@code null} if {@link #buildStrategy(BarSeries)} has not been called.
-     */
-    public Double getEma9At(int index) {
+    public Double getEmaFastAt(int index) {
         return cachedEmaFast != null ? cachedEmaFast.getValue(index).doubleValue() : null;
     }
 
-    /** Convenience: read EMA(21) at {@code index}. */
-    public Double getEma21At(int index) {
+    public Double getEmaSlowAt(int index) {
         return cachedEmaSlow != null ? cachedEmaSlow.getValue(index).doubleValue() : null;
     }
 
-    /** Convenience: read RSI(7) at {@code index}. */
-    public Double getRsi7At(int index) {
+    public Double getRsiAt(int index) {
         return cachedRsi != null ? cachedRsi.getValue(index).doubleValue() : null;
     }
 

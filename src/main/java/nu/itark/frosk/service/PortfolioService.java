@@ -65,7 +65,8 @@ public class PortfolioService {
             "ShortTermMomentumLongTermStrengthStrategy",
             "HighLanderStrategy",
             "SwedishLongTermMomentumStrategy",
-            "OMX30IntradayMomentumStrategy"
+            "OMX30IntradayMomentumStrategy",
+            "RunawayGAPIntradayStrategy"
     );
 
     final FeaturedStrategyRepository featuredStrategyRepository;

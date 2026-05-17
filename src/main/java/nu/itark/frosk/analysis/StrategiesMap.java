@@ -95,6 +95,8 @@ public class StrategiesMap {
 	private DailyOversoldBounceStrategy dailyOversoldBounceStrategy;
 	@Autowired
 	private OMX30IntradayMomentumStrategy omx30IntradayMomentumStrategy;
+	@Autowired
+	private RunawayGAPIntradayStrategy runawayGAPIntradayStrategy;
 
 	private List<Strategy> strategies = null;
 
@@ -135,6 +137,7 @@ public class StrategiesMap {
 		strategies.add(dailyBreakoutStrategy.getClass().getSimpleName());
 		strategies.add(dailyOversoldBounceStrategy.getClass().getSimpleName());
 		strategies.add(omx30IntradayMomentumStrategy.getClass().getSimpleName());
+		strategies.add(runawayGAPIntradayStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -180,6 +183,7 @@ public class StrategiesMap {
 		strategies.add(dailyBreakoutStrategy.buildStrategy(series));
 		strategies.add(dailyOversoldBounceStrategy.buildStrategy(series));
 		strategies.add(omx30IntradayMomentumStrategy.buildStrategy(series));
+		strategies.add(runawayGAPIntradayStrategy.buildStrategy(series));
 
 		this.strategies = strategies;
 		return strategies;
@@ -265,6 +269,8 @@ public class StrategiesMap {
 			return dailyOversoldBounceStrategy.buildStrategy(series);
 		} else if (strategy.equals(OMX30IntradayMomentumStrategy.class.getSimpleName())) {
 			return omx30IntradayMomentumStrategy.buildStrategy(series);
+		} else if (strategy.equals(RunawayGAPIntradayStrategy.class.getSimpleName())) {
+			return runawayGAPIntradayStrategy.buildStrategy(series);
 		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
@@ -345,6 +351,8 @@ public class StrategiesMap {
 			return dailyOversoldBounceStrategy.getIndicatorValues();
 		} else if (strategyName.equals(OMX30IntradayMomentumStrategy.class.getSimpleName())) {
 			return omx30IntradayMomentumStrategy.getIndicatorValues();
+		} else if (strategyName.equals(RunawayGAPIntradayStrategy.class.getSimpleName())) {
+			return runawayGAPIntradayStrategy.getIndicatorValues();
 		} else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);
 		}

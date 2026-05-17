@@ -18,6 +18,8 @@ import org.ta4j.core.num.Num;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Component
@@ -188,7 +190,7 @@ public class SecurityMetaDataManager {
             TradeDTO tradee = new TradeDTO();
             tradee.setId(trade.getId());
             tradee.setDate(trade.getDate().toInstant().toEpochMilli());
-            tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd"));
+            tradee.setDateReadable(formatTradeDate(trade.getDate()));
             tradee.setPrice(trade.getPrice());
             tradee.setAmount(trade.getAmount());
             tradee.setType(trade.getType());
@@ -203,6 +205,14 @@ public class SecurityMetaDataManager {
             trades.add(tradee);
         });
         return trades;
+    }
+
+    private static String formatTradeDate(Date date) {
+        LocalDateTime ldt = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        if (ldt.getHour() == 0 && ldt.getMinute() == 0) {
+            return DateFormatUtils.format(date, "yyyy-MM-dd");
+        }
+        return DateFormatUtils.format(date, "yyyy-MM-dd HH:mm");
     }
 
     public BigDecimal getPrice(FeaturedStrategy fs) {

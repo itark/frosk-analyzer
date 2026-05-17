@@ -23,7 +23,11 @@ public class IndicatorValueDTO {
 		LocalDateTime ldt = date.toInstant()
 				.atZone(ZoneId.systemDefault())
 				.toLocalDateTime();
-		this.setTime(ldt.format( DateTimeFormatter.ISO_LOCAL_DATE));
+		if (ldt.getHour() == 0 && ldt.getMinute() == 0) {
+			this.setTime(ldt.format(DateTimeFormatter.ISO_LOCAL_DATE));
+		} else {
+			this.setTime(ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+		}
 		this.value = value.setScale(6, RoundingMode.HALF_EVEN);
 		this.name = name;
 	}

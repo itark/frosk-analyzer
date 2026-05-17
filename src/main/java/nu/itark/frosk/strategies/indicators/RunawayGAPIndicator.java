@@ -38,6 +38,6 @@ public class RunawayGAPIndicator extends CachedIndicator<Boolean> {
 
     @Override
     public int getUnstableBars() {
-        return getUnstableBars();
+        return 1;
     }
 }

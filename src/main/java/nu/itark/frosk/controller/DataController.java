@@ -11,6 +11,7 @@ import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.IntradayBar;
 import nu.itark.frosk.model.IntradaySignal;
 import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.StrategyTrade;
 import nu.itark.frosk.repo.DataSetRepository;
 import nu.itark.frosk.repo.IntradayBarRepository;
 import nu.itark.frosk.repo.SecurityRepository;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -509,6 +511,97 @@ public class DataController {
         if (score <= 7) return "Cautious / Transition";
         if (score <= 11) return "Neutral / Defensive";
         return "Strong Risk-Off";
+    }
+
+    /**
+     * @Example POST http://localhost:8080/intraday/run
+     */
+    @PostMapping(value = "/intraday/run")
+    public String triggerIntradayRun() {
+        log.info("POST /intraday/run — manual trigger");
+        highLander.syncTier0();
+        return "IntradayStrategyRunner completed";
+    }
+
+    /**
+     * @Example GET http://localhost:8080/intradayOpenPositions
+     */
+    @GetMapping(value = "/intradayOpenPositions")
+    public List<IntradayOpenPositionDTO> getIntradayOpenPositions() {
+        log.info("GET /intradayOpenPositions");
+        List<FeaturedStrategy> openPositions = featuredStrategyRepository
+                .findByNameAndOpenOrderBySqnDesc("OMX30IntradayMomentumStrategy", true);
+
+        return openPositions.stream().map(fs -> {
+            Security security = securityRepository.findByName(fs.getSecurityName());
+            BigDecimal entryPrice = null;
+            String entryTime = "";
+            if (fs.getStrategyTrades() != null && !fs.getStrategyTrades().isEmpty()) {
+                StrategyTrade lastBuy = fs.getStrategyTrades().stream()
+                        .filter(t -> "BUY".equals(t.getType()))
+                        .max(Comparator.comparing(t -> t.getDate().getTime()))
+                        .orElse(null);
+                if (lastBuy != null) {
+                    entryPrice = lastBuy.getPrice();
+                    entryTime = lastBuy.getDate().toInstant()
+                            .atZone(ZoneId.of("Europe/Stockholm"))
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                }
+            }
+            BigDecimal currentPrice = null;
+            if (security != null) {
+                IntradayBar latestBar = intradayBarRepository
+                        .findTopBySecurityIdOrderByBarTimestampDesc(security.getId());
+                if (latestBar != null) {
+                    currentPrice = latestBar.getClose();
+                }
+            }
+            BigDecimal unrealizedPnl = null;
+            if (entryPrice != null && currentPrice != null && entryPrice.compareTo(BigDecimal.ZERO) != 0) {
+                unrealizedPnl = currentPrice.subtract(entryPrice)
+                        .divide(entryPrice, 4, java.math.RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100));
+            }
+            return IntradayOpenPositionDTO.builder()
+                    .securityName(fs.getSecurityName())
+                    .entryPrice(entryPrice)
+                    .entryTime(entryTime)
+                    .currentPrice(currentPrice)
+                    .unrealizedPnl(unrealizedPnl)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * @Example GET http://localhost:8080/intradayTodaySignals
+     */
+    @GetMapping(value = "/intradayTodaySignals")
+    public List<IntradayTodaySignalDTO> getIntradayTodaySignals() {
+        log.info("GET /intradayTodaySignals");
+        long startOfDay = LocalDate.now(ZoneId.of("Europe/Stockholm"))
+                .atStartOfDay(ZoneId.of("Europe/Stockholm"))
+                .toEpochSecond();
+
+        List<FeaturedStrategy> allMomentum = featuredStrategyRepository
+                .findByName("OMX30IntradayMomentumStrategy");
+
+        List<IntradayTodaySignalDTO> signals = new ArrayList<>();
+        Date startOfDayDate = Date.from(Instant.ofEpochSecond(startOfDay));
+        for (FeaturedStrategy fs : allMomentum) {
+            if (fs.getStrategyTrades() == null) continue;
+            fs.getStrategyTrades().stream()
+                    .filter(t -> t.getDate().after(startOfDayDate) || t.getDate().equals(startOfDayDate))
+                    .forEach(t -> signals.add(IntradayTodaySignalDTO.builder()
+                            .securityName(fs.getSecurityName())
+                            .type(t.getType())
+                            .price(t.getPrice())
+                            .date(t.getDate().toInstant()
+                                    .atZone(ZoneId.of("Europe/Stockholm"))
+                                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                            .build()));
+        }
+        signals.sort(Comparator.comparing(IntradayTodaySignalDTO::getDate).reversed());
+        return signals;
     }
 
     @GetMapping(value = "/tradingAccounts")

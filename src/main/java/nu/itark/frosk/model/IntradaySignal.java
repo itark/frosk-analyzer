@@ -44,15 +44,15 @@ public class IntradaySignal {
     @Column(name = "close_price", precision = 14, scale = 6)
     private BigDecimal closePrice;
 
-    /** EMA(9) value at signal bar (indicator snapshot). */
+    /** EMA fast value at signal bar (indicator snapshot). */
     @Column(name = "ema9", precision = 14, scale = 6)
     private BigDecimal ema9;
 
-    /** EMA(21) value at signal bar (indicator snapshot). */
+    /** EMA slow value at signal bar (indicator snapshot). */
     @Column(name = "ema21", precision = 14, scale = 6)
     private BigDecimal ema21;
 
-    /** RSI(7) value at signal bar (indicator snapshot). */
+    /** RSI value at signal bar (indicator snapshot). */
     @Column(name = "rsi7", precision = 8, scale = 4)
     private BigDecimal rsi7;
 

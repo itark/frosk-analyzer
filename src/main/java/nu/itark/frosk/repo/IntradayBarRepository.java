@@ -25,6 +25,8 @@ public interface IntradayBarRepository extends JpaRepository<IntradayBar, Long> 
     boolean existsBySecurityIdAndBarTimestampAndIntervalCode(
             Long securityId, long barTimestamp, String intervalCode);
 
+    IntradayBar findTopBySecurityIdOrderByBarTimestampDesc(Long securityId);
+
     /**
      * Prune old bars — called at the end of every sync run to cap table growth.
      * Deletes all bars with a timestamp strictly before the supplied cutoff.

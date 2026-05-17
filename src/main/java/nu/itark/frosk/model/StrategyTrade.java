@@ -22,7 +22,7 @@ import lombok.*;
 @NoArgsConstructor
 @Entity
 @Table(name = "strategy_trade", uniqueConstraints={@UniqueConstraint(columnNames={"date", "type", "featured_strategy_id"})})
-public class StrategyTrade {
+public class  StrategyTrade {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)

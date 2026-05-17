@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -182,7 +184,7 @@ public class StrategyFilter {
             TradeDTO tradee = new TradeDTO();
             tradee.setId(trade.getId());
             tradee.setDate(trade.getDate().toInstant().toEpochMilli());
-            tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd"));
+            tradee.setDateReadable(formatTradeDate(trade.getDate()));
             tradee.setPrice(BigDecimal.valueOf(trade.getPrice().doubleValue()));
             tradee.setAmount(BigDecimal.valueOf(trade.getAmount().doubleValue()));
             tradee.setType(trade.getType());
@@ -243,7 +245,7 @@ public class StrategyFilter {
             TradeDTO tradee = new TradeDTO();
             tradee.setId(trade.getId());
             tradee.setDate(trade.getDate().toInstant().toEpochMilli());
-            tradee.setDateReadable(DateFormatUtils.format(trade.getDate(), "yyyy-MM-dd"));
+            tradee.setDateReadable(formatTradeDate(trade.getDate()));
             tradee.setPrice(trade.getPrice());
             tradee.setAmount(trade.getAmount());
             tradee.setType(trade.getType());
@@ -258,6 +260,10 @@ public class StrategyFilter {
             trades.add(tradee);
         });
         return trades;
+    }
+
+    private static String formatTradeDate(Date date) {
+        return DateFormatUtils.format(date, "yyyy-MM-dd HH:mm");
     }
 
 
