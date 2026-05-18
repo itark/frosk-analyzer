@@ -70,7 +70,8 @@ public class GlobalExtremaStrategy extends AbstractStrategy implements IIndicato
 
         Rule exitRule;
         if (!inherentExitRule) {
-            exitRule = new OverIndicatorRule(closePrices, upWeek);
+            exitRule = new OverIndicatorRule(closePrices, upWeek)
+                    .or(catastrophicStopRule());
         } else {
             exitRule = exitRule();
         }

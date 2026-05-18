@@ -71,6 +71,8 @@ Current plan (yahoo-finance15 via RapidAPI):
 **Budget: ~8,002 / 10,000 req/month** — leaves ~2,000 headroom for manual runs and growth.
 (Tier-0 adds ~1,122 req/month: 1 API call × ~51 ticks/day × 22 trading days.)
 
+> ⚠️ **The numbers above are wrong for the actual Tier-0 load.** See `intraday-pipeline.md` Cost Analysis: Tier-0 alone is ~32,538 req/month (29 tickers × 51 ticks/day × 22 days), which is 3× the free quota. **See Pending Changes below for the cost fix.**
+
 **Note:** `Scheduler.java` has `@EnableScheduling` enabled with four methods (`tier0IntradaySync`, `tier1DailySync`, `tier2WeeklySync`, `tier3MonthlyMetadata`) driven by cron properties. Skip logic is built in at each tier.
 
 ## Data Prerequisites
@@ -82,3 +84,63 @@ Current plan (yahoo-finance15 via RapidAPI):
 | OMXS30 benchmark (`^OMX`) | ✅ Exists | Present in `YAHOO-SWEDISH` dataset (line 973 of CSV); also `^OMXSPI` (all-share), `^NORDIC`, `^NORDICPI` are available |
 | Beta, PEG, Revenue Growth, Dividend Yield | ⚠️ Partial | `yoyGrowth` fetched on security insert; `beta`, `pegRatio`, `dividendYield` fields exist — populated via `updateSecurityMetaData()`. Run Tier 3 sync to backfill. |
 | HedgeIndex new indicators | ✅ CSV complete | All planned tickers added to `YAHOO-INDEX-World indexes.csv`; VSTOXX, FX pairs, DXY, rates, yield curve, OMX vs STOXX50 all implemented in `HedgeIndexService`. Remaining unimplemented: A/D line, HY OAS, TED Spread (no Yahoo Finance ticker) |
+
+## Pending Changes
+
+### Replace Tier-0 intraday fetching with direct Yahoo Finance v8 API (HIGH priority — cost saving)
+
+**Problem:** RapidAPI's `yahoo-finance15` is a paid proxy around Yahoo Finance's own endpoints. Tier-0 alone consumes ~32,538 API calls/month — 3× the free quota — making an upgraded paid plan mandatory.
+
+**Solution:** Call Yahoo Finance's native v8 chart API directly. This is the same underlying data, free of charge, no API key required. It is the same source used by the popular open-source `yfinance` library. Rate limit is approximately 2 req/sec, which is well within the 10-minute tick cadence for 29 tickers.
+
+**Free endpoint (intraday 5-min bars):**
+```
+GET https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=5m&range=1d
+```
+- `{symbol}` uses the same Yahoo Finance ticker format already in use (e.g. `VOLV-B.ST`, `ERIC-B.ST`)
+- `range=1d` returns today's 5-min bars; use `range=5d` for a rolling 5-day window
+- No `x-rapidapi-key` or `x-rapidapi-host` headers needed
+- Add a `User-Agent: Mozilla/5.0` header to avoid occasional 401 rejections
+
+**Response shape (differs from RapidAPI wrapper):**
+```json
+{
+  "chart": {
+    "result": [{
+      "timestamp": [1716800100, 1716800400, ...],
+      "indicators": {
+        "quote": [{
+          "open":  [234.5, ...],
+          "high":  [235.1, ...],
+          "low":   [234.2, ...],
+          "close": [234.9, ...],
+          "volume":[12300, ...]
+        }]
+      }
+    }]
+  }
+}
+```
+Timestamps are Unix epoch seconds in UTC. Convert to `ZonedDateTime` with `ZoneId.of("Europe/Stockholm")` to align with Swedish market hours.
+
+**Implementation plan:**
+
+1. **Create `YahooFinanceDirectClient`** — new `@Component` in `nu.itark.frosk.dataset`, using Spring `WebClient`. No API key fields. Add `User-Agent` header. Implement one method:
+   ```java
+   public YahooChartDTO getIntradayBars(String symbol, String interval, String range)
+   ```
+   Create matching DTO classes: `YahooChartDTO`, `YahooChartResult`, `YahooQuoteIndicators`.
+
+2. **Create `YahooChartDTO` model classes** under `nu.itark.frosk.dataset.yhfinance.model` (or a new `direct` sub-package). Map the `chart.result[0]` structure above.
+
+3. **Update `IntradayDataService.syncAndBuildSeries()`** — replace the call to `RapidApiManager.getHistory(ticker, 5m)` with `YahooFinanceDirectClient.getIntradayBars(ticker, "5m", "5d")`. The `range=5d` window ensures the retention window is always fully populated on restart.
+
+4. **Add a 500ms sleep between ticker fetches** in `IntradayDataService` to stay well under the ~2 req/sec rate limit. The 10-minute tick window has plenty of slack for 29 sequential calls with a half-second delay.
+
+5. **Keep `RapidApiManager` unchanged** — it continues to serve Tier 1/2/3 (daily prices, metadata). Those tiers use ~7,880 req/month, well within the free quota once Tier-0 is removed.
+
+6. **Update `intraday-pipeline.md`** to reflect the new client.
+
+7. **Update `application.properties`** — no new properties needed (no API key). Optionally add `yahoo.finance.direct.base-url=https://query1.finance.yahoo.com` for testability.
+
+**Risk note:** The Yahoo Finance v8 endpoint is unofficial and undocumented. Yahoo can change the response format or add authentication without notice. If it breaks, the fallback is to re-enable `RapidApiManager.getHistory()` for intraday. Mitigate by wrapping the call in a try/catch in `IntradayDataService` and logging a warning (rather than crashing the pipeline) if the response is null or malformed.

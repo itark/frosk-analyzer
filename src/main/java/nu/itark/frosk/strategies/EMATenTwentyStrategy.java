@@ -56,7 +56,8 @@ public class EMATenTwentyStrategy extends AbstractStrategy implements IIndicator
         Rule entryRule = new CrossedUpIndicatorRule(shortEma,longEma );
         Rule exitRule;
         if (!inherentExitRule) {
-            exitRule = new UnderIndicatorRule(shortEma, longEma);
+            exitRule = new UnderIndicatorRule(shortEma, longEma)
+                    .or(catastrophicStopRule());
         } else {
             exitRule = exitRule();
         }

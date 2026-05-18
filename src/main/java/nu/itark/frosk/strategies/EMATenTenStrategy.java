@@ -57,7 +57,8 @@ public class EMATenTenStrategy extends AbstractStrategy implements IIndicatorVal
         Rule entryRule = new CrossedUpIndicatorRule(closeEma, openEma);
         Rule exitRule;
         if (!inherentExitRule) {
-            exitRule = new UnderIndicatorRule(closeEma, openEma);
+            exitRule = new UnderIndicatorRule(closeEma, openEma)
+                    .or(catastrophicStopRule());
         } else {
             exitRule = exitRule();
         }

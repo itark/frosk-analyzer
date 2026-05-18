@@ -198,7 +198,7 @@ public class SwedishLongTermMomentumStrategy extends AbstractStrategy implements
         Rule deathCross      = new UnderIndicatorRule(sma50, sma200);
         Rule momentum6mGone  = new UnderIndicatorRule(roc6m, 0);
 
-        Rule exitRule = new OrRule(hedgeExitRule, new OrRule(deathCross, momentum6mGone));
+        Rule exitRule = new OrRule(hedgeExitRule, new OrRule(deathCross, new OrRule(momentum6mGone, catastrophicStopRule())));
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

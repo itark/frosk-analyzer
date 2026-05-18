@@ -76,7 +76,8 @@ public class RSI2Strategy extends AbstractStrategy implements IIndicatorValue {
             // The long-term trend is down when a security is below its 200-period SMA.
             exitRule = new UnderIndicatorRule(shortEma, longEma) // Trend
                     .and(new CrossedUpIndicatorRule(rsi, 80)) // Signal 1
-                    .and(new UnderIndicatorRule(shortEma, closePrice)); // Signal 2
+                    .and(new UnderIndicatorRule(shortEma, closePrice)) // Signal 2
+                    .or(catastrophicStopRule());
         } else {
             exitRule = exitRule();
         }

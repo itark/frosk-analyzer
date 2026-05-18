@@ -66,7 +66,8 @@ public class ThreeBlackWhiteStrategy extends AbstractStrategy implements IIndica
 
         Rule exitRule;
         if (!inherentExitRule) {
-            exitRule = new BooleanIndicatorRule(bearish); // Bear trend
+            exitRule = new BooleanIndicatorRule(bearish) // Bear trend
+                    .or(catastrophicStopRule());
         } else {
             exitRule = exitRule();
         }

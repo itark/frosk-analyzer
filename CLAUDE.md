@@ -86,6 +86,7 @@ When working on a specific area, read the relevant doc first.
 | Månadsportföljen (long-term factor) | `docs/strategies/manadsportfoljen.md` |
 | Dagstrategin (daily breakout + oversold bounce) | `docs/strategies/dagstrategin.md` |
 | OMX30 Intraday Momentum | `docs/strategies/omx30-intraday.md` |
+| Exit rules audit (stop-loss, HedgeIndex, time exits) | `docs/strategies/exit-rules.md` |
 
 Project history and completed implementation steps: `CHANGELOG.md`.
 

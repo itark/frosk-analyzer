@@ -37,7 +37,8 @@ public class ConvergenceDivergenceStrategy extends AbstractStrategy implements I
         Rule entryRule = new BooleanIndicatorRule(posDiv);
         Rule exitRule;
         if (!inherentExitRule) {
-            exitRule = new BooleanIndicatorRule(negDiv);
+            exitRule = new BooleanIndicatorRule(negDiv)
+                    .or(catastrophicStopRule());
         } else {
             exitRule = exitRule();
         }

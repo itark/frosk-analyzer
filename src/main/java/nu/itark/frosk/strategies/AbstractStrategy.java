@@ -8,6 +8,7 @@ import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.rules.StopLossRule;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
@@ -29,6 +30,9 @@ public abstract  class AbstractStrategy {
     BarSeries barSeriesWithForecast;
     public Boolean inherentExitRule;
 
+    @Value("${frosk.strategy.catastrophic.stop.pct:15.0}")
+    protected double catastrophicStopPct;
+
     @Autowired
     private TradingAccountService tradingAccountService;
 
@@ -40,6 +44,11 @@ public abstract  class AbstractStrategy {
 
     void setInherentExitRule() {
         inherentExitRule= tradingAccountService.getActiveTradingAccount().getAccountType().getInherentExitRule();
+    }
+
+    protected Rule catastrophicStopRule() {
+        ClosePriceIndicator close = new ClosePriceIndicator(barSeries);
+        return new StopLossRule(close, catastrophicStopPct);
     }
 
     Rule exitRule() {

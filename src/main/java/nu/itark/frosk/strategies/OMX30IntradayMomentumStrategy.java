@@ -8,6 +8,7 @@ import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.rules.AbstractRule;
+import nu.itark.frosk.strategies.rules.StopLossRule;
 import org.ta4j.core.rules.CrossedDownIndicatorRule;
 import org.ta4j.core.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.rules.OverIndicatorRule;
@@ -58,6 +59,7 @@ public class OMX30IntradayMomentumStrategy extends AbstractStrategy implements I
     private static final double RSI_ENTRY_LEVEL = 50.0;
     private static final double RSI_EXIT_LEVEL  = 75.0;
     private static final int    MAX_BARS_HELD   = 12;  // 1 hour
+    private static final double STOP_LOSS_PCT   = 0.5; // hard stop: 0.5% below entry
 
     // ── Cached indicator refs (populated in buildStrategy) ──────────────────
     private EMAIndicator cachedEmaFast;
@@ -100,7 +102,8 @@ public class OMX30IntradayMomentumStrategy extends AbstractStrategy implements I
         Rule rsiOverbought  = new OverIndicatorRule(cachedRsi, RSI_EXIT_LEVEL);
         Rule trendReversal  = new CrossedDownIndicatorRule(cachedEmaFast, cachedEmaSlow);
         Rule timeExit       = new MaxBarsHeldRule(MAX_BARS_HELD);
-        Rule exitRule       = rsiOverbought.or(trendReversal).or(timeExit);
+        Rule stopLoss       = new StopLossRule(close, STOP_LOSS_PCT);
+        Rule exitRule       = rsiOverbought.or(trendReversal).or(timeExit).or(stopLoss);
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
