@@ -4,7 +4,7 @@
 
 Every 10 minutes during Stockholm market hours (09:00–17:59 CET, Mon–Fri) the Tier-0 pipeline:
 
-1. Fetches the latest **5-minute bars** for all securities in the **OMX30 dataset** (~29 tickers) via `RapidApiManager.getHistory(ticker, 5m)` — **1 API request per security per tick**.
+1. Fetches the latest **5-minute bars** for all securities in the **OMX30 dataset** (~29 tickers) via `YahooFinanceDirectClient.getIntradayBars(ticker, 5m, 5d)` — direct Yahoo Finance v8 API, no RapidAPI cost. 500ms sleep between tickers.
 2. Upserts new bars into the `intraday_bar` table (idempotent — existing bars are skipped by the `uq_intraday_bar` unique constraint on `(security_id, bar_timestamp, interval_code)`).
 3. Prunes bars older than `intraday.retention.days` (default: 7) to keep the table small.
 4. Builds a ta4j `BarSeries` per security from the retained window.
@@ -24,7 +24,7 @@ HighLander.syncTier0()
        ├─ IntradayDataService.syncAndBuildSeries()
        │    ├─ DataSetRepository.findByName("OMX30") → ~29 securities
        │    ├─ for each security:
-       │    │    ├─ RapidApiManager.getHistory(ticker, 5m)
+       │    │    ├─ YahooFinanceDirectClient.getIntradayBars(ticker, 5m, 5d)
        │    │    ├─ upsert IntradayBar rows
        │    │    └─ deleteOlderThan(now - retentionDays)
        │    └─ buildSeriesFromDb() per security → Map<Security, BarSeries>
@@ -47,15 +47,13 @@ HighLander.syncTier0()
 
 ## Cost Analysis
 
-| Tier | Frequency | Req/run | Monthly |
-|---|---|---|---|
-| Tier 0 (intraday) | Every 10 min, 09:00–17:59, Mon–Fri | ~29 | ~32,538 |
-| Tier 1 (daily) | MON-FRI 18:00 | ~40 | ~880 |
-| Tier 2 (weekly) | SAT 06:00 | ~900 | ~3,600 |
-| Tier 3 (monthly) | 1st of month 07:00 | ~2,400 | ~2,400 |
-| **Total** | | | **~39,418 / 10,000** |
-
-**Warning:** Fetching all ~29 OMX30 securities at 5-minute intervals far exceeds the free RapidAPI quota (10,000 req/month). This requires an upgraded API plan. To reduce cost within the free tier, limit `IntradayDataService.DATASET_NAME` to a smaller subset or reduce the tick frequency.
+| Tier | Frequency | Client | Req/run | Monthly RapidAPI cost |
+|---|---|---|---|---|
+| Tier 0 (intraday) | Every 10 min, 09:00–17:59, Mon–Fri | `YahooFinanceDirectClient` | ~29 | **$0** (free) |
+| Tier 1 (daily) | MON-FRI 18:00 | `RapidApiManager` | ~40 | ~880 |
+| Tier 2 (weekly) | SAT 06:00 | `RapidApiManager` | ~900 | ~3,600 |
+| Tier 3 (monthly) | 1st of month 07:00 | `RapidApiManager` | ~2,400 | ~2,400 |
+| **RapidAPI total** | | | | **~6,880 / 10,000** |
 
 ## Configuration
 

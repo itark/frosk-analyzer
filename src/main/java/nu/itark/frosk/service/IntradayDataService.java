@@ -1,7 +1,7 @@
 package nu.itark.frosk.service;
 
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.dataset.RapidApiManager;
+import nu.itark.frosk.dataset.YahooFinanceDirectClient;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.IntradayBar;
 import nu.itark.frosk.model.Security;
@@ -42,7 +42,7 @@ public class IntradayDataService {
     private int retentionDays;
 
     @Autowired
-    private RapidApiManager rapidApiManager;
+    private YahooFinanceDirectClient yahooFinanceClient;
 
     @Autowired
     private IntradayBarRepository intradayBarRepository;
@@ -66,8 +66,11 @@ public class IntradayDataService {
         List<Security> securities = omx30.getSecurities();
         log.info("IntradayDataService: syncing 5m bars for {} OMX30 securities", securities.size());
 
-        for (Security security : securities) {
-            syncSecurity(security);
+        for (int i = 0; i < securities.size(); i++) {
+            syncSecurity(securities.get(i));
+            if (i < securities.size() - 1) {
+                try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            }
         }
 
         pruneOldBars();
@@ -87,8 +90,8 @@ public class IntradayDataService {
     private void syncSecurity(Security security) {
         Map<String, StockHistoryDTO.StockData> rawBars;
         try {
-            rawBars = rapidApiManager.getHistory(security.getName(),
-                    RapidApiManager.Interval.FIVE_MINUTES);
+            rawBars = yahooFinanceClient.getIntradayBars(
+                    security.getName(), INTERVAL_CODE, "5d");
         } catch (Exception e) {
             log.error("IntradayDataService: failed to fetch 5m bars for {}: {}",
                     security.getName(), e.getMessage());
