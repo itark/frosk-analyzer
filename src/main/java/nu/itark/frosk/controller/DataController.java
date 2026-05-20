@@ -410,6 +410,34 @@ public class DataController {
     }
 
     /**
+     * @Example POST http://localhost:8080/portfolio/intraday/build
+     */
+    @PostMapping(value = "/portfolio/intraday/build")
+    public PortfolioDTO buildIntradayPortfolio() {
+        log.info("POST /portfolio/intraday/build");
+        portfolioService.buildIntraday();
+        return portfolioService.getCurrentIntraday();
+    }
+
+    /**
+     * @Example GET http://localhost:8080/portfolio/intraday
+     */
+    @GetMapping(value = "/portfolio/intraday")
+    public PortfolioDTO getIntradayPortfolio() {
+        log.info("GET /portfolio/intraday");
+        return portfolioService.getCurrentIntraday();
+    }
+
+    /**
+     * @Example GET http://localhost:8080/portfolio/intraday/history
+     */
+    @GetMapping(value = "/portfolio/intraday/history")
+    public List<PortfolioDTO> getIntradayPortfolioHistory() {
+        log.info("GET /portfolio/intraday/history");
+        return portfolioService.getHistoryIntraday();
+    }
+
+    /**
      * Dagstrategin next-morning watchlist.
      * Returns OMXS30 stocks with an open DailyBreakout or DailyOversoldBounce signal,
      * ranked by SQN descending (highest quality signal first).

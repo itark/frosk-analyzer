@@ -53,7 +53,7 @@ public class DataSetHelper {
 	ProductProxy productProxy;
 
 	@Autowired
-	RapidApiManager rapidApiManager;
+	YahooFinanceDirectClient yahooFinanceClient;
 	
 	@PostConstruct
 	public void post_construct() {
@@ -245,7 +245,7 @@ public class DataSetHelper {
 		double totalRevenueLastYear = 0;
 		Body module = null;
 		try {
-			module = rapidApiManager.getModuleIncomeStatement(name);
+			module = yahooFinanceClient.getModuleIncomeStatement(name);
 			if (module == null) {
 				return 0;
 			}

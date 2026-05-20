@@ -61,10 +61,16 @@ public class PortfolioService {
     @Value("${frosk.portfolio.force.rebuild:false}")
     private boolean forceRebuild;
 
-    private static final List<String> PORTFOLIO_STRATEGIES = List.of(
+    private static final String TYPE_DAILY = "DAILY";
+    private static final String TYPE_INTRADAY = "INTRADAY";
+
+    private static final List<String> DAILY_STRATEGIES = List.of(
             "ShortTermMomentumLongTermStrengthStrategy",
             "HighLanderStrategy",
-            "SwedishLongTermMomentumStrategy",
+            "SwedishLongTermMomentumStrategy"
+    );
+
+    private static final List<String> INTRADAY_STRATEGIES = List.of(
             "OMX30IntradayMomentumStrategy",
             "RunawayGAPIntradayStrategy"
     );
@@ -76,6 +82,7 @@ public class PortfolioService {
     final PortfolioRepository portfolioRepository;
     final PortfolioPositionRepository portfolioPositionRepository;
     final HedgeIndexService hedgeIndexService;
+    final IntradayBarRepository intradayBarRepository;
 
     /**
      * Builds a new Portfolio snapshot from all currently open FeaturedStrategy positions.
@@ -83,15 +90,15 @@ public class PortfolioService {
      */
     @Transactional
     public Portfolio build() {
-        if (!forceRebuild && builtToday()) {
-            log.info("[PortfolioService] Skipping build — portfolio already built today ({}). " +
+        if (!forceRebuild && builtToday(TYPE_DAILY)) {
+            log.info("[PortfolioService] Skipping build — daily portfolio already built today ({}). " +
                     "Set frosk.portfolio.force.rebuild=true to override.", LocalDate.now());
-            return portfolioRepository.findTopByOrderBySnapshotDateDesc().orElse(null);
+            return portfolioRepository.findTopByPortfolioTypeOrderBySnapshotDateDesc(TYPE_DAILY).orElse(null);
         }
-        log.info("Building portfolio snapshot...");
+        log.info("Building daily portfolio snapshot...");
 
         List<FeaturedStrategy> allOpen = featuredStrategyRepository.findByOpen(true).stream()
-                .filter(fs -> PORTFOLIO_STRATEGIES.contains(fs.getName()))
+                .filter(fs -> DAILY_STRATEGIES.contains(fs.getName()))
                 .filter(this::passesQualityGate)
                 .collect(Collectors.toList());
 
@@ -130,6 +137,7 @@ public class PortfolioService {
 
         Portfolio portfolio = new Portfolio();
         portfolio.setSnapshotDate(new Date());
+        portfolio.setPortfolioType(TYPE_DAILY);
 
         List<PortfolioPosition> positions = new ArrayList<>();
         List<BigDecimal> pnlValues = new ArrayList<>();
@@ -149,20 +157,70 @@ public class PortfolioService {
         portfolio.getPositions().addAll(positions);
 
         Portfolio saved = portfolioRepository.save(portfolio);
-        log.info("Portfolio snapshot saved: id={}, openPositions={}, avgPnl={}",
+        log.info("Daily portfolio snapshot saved: id={}, openPositions={}, avgPnl={}",
                 saved.getId(), saved.getOpenPositionCount(), saved.getTotalPnlPercent());
         return saved;
     }
 
     /**
-     * Returns the most recently built portfolio snapshot as a DTO.
-     * Returns an empty DTO if no portfolio has been built yet.
+     * Builds an intraday portfolio snapshot from open OMX30IntradayMomentum and RunawayGAP positions.
+     * Rebuilds every Tier-0 cycle (no same-day idempotency — intraday positions change frequently).
+     */
+    @Transactional
+    public Portfolio buildIntraday() {
+        log.info("Building intraday portfolio snapshot...");
+
+        List<FeaturedStrategy> intradayOpen = featuredStrategyRepository.findByOpen(true).stream()
+                .filter(fs -> INTRADAY_STRATEGIES.contains(fs.getName()))
+                .collect(Collectors.toList());
+
+        Portfolio portfolio = new Portfolio();
+        portfolio.setSnapshotDate(new Date());
+        portfolio.setPortfolioType(TYPE_INTRADAY);
+
+        List<PortfolioPosition> positions = new ArrayList<>();
+        List<BigDecimal> pnlValues = new ArrayList<>();
+
+        for (FeaturedStrategy fs : intradayOpen) {
+            PortfolioPosition pos = buildIntradayPosition(fs, portfolio);
+            if (pos != null) {
+                positions.add(pos);
+                if (pos.getUnrealizedPnlPercent() != null) {
+                    pnlValues.add(pos.getUnrealizedPnlPercent());
+                }
+            }
+        }
+
+        portfolio.setOpenPositionCount(positions.size());
+        portfolio.setTotalPnlPercent(averagePnl(pnlValues));
+        portfolio.getPositions().addAll(positions);
+
+        Portfolio saved = portfolioRepository.save(portfolio);
+        log.info("Intraday portfolio snapshot saved: id={}, openPositions={}, avgPnl={}",
+                saved.getId(), saved.getOpenPositionCount(), saved.getTotalPnlPercent());
+        return saved;
+    }
+
+    /**
+     * Returns the most recently built daily portfolio snapshot as a DTO.
      */
     @Transactional(readOnly = true)
     public PortfolioDTO getCurrent() {
-        Optional<Portfolio> latest = portfolioRepository.findTopByOrderBySnapshotDateDesc();
+        return getLatestByType(TYPE_DAILY);
+    }
+
+    /**
+     * Returns the most recently built intraday portfolio snapshot as a DTO.
+     */
+    @Transactional(readOnly = true)
+    public PortfolioDTO getCurrentIntraday() {
+        return getLatestByType(TYPE_INTRADAY);
+    }
+
+    private PortfolioDTO getLatestByType(String type) {
+        Optional<Portfolio> latest = portfolioRepository.findTopByPortfolioTypeOrderBySnapshotDateDesc(type);
         if (latest.isEmpty()) {
-            log.warn("No portfolio snapshot found. Run build() first.");
+            log.warn("No {} portfolio snapshot found.", type);
             return PortfolioDTO.builder()
                     .snapshotDate("none")
                     .openPositionCount(0)
@@ -173,13 +231,24 @@ public class PortfolioService {
     }
 
     /**
-     * Returns all historical portfolio snapshots ordered newest first.
+     * Returns all historical daily portfolio snapshots ordered newest first.
      * Positions are NOT loaded (header data only) to keep the list lightweight.
      */
     @Transactional(readOnly = true)
     public List<PortfolioDTO> getHistory() {
-        return portfolioRepository.findAll().stream()
-                .sorted(Comparator.comparing(Portfolio::getSnapshotDate).reversed())
+        return getHistoryByType(TYPE_DAILY);
+    }
+
+    /**
+     * Returns all historical intraday portfolio snapshots ordered newest first.
+     */
+    @Transactional(readOnly = true)
+    public List<PortfolioDTO> getHistoryIntraday() {
+        return getHistoryByType(TYPE_INTRADAY);
+    }
+
+    private List<PortfolioDTO> getHistoryByType(String type) {
+        return portfolioRepository.findByPortfolioTypeOrderBySnapshotDateDesc(type).stream()
                 .map(p -> PortfolioDTO.builder()
                         .id(p.getId())
                         .snapshotDate(DateFormatUtils.format(p.getSnapshotDate(), DATE_FORMAT))
@@ -204,15 +273,11 @@ public class PortfolioService {
     // Private helpers
     // -------------------------------------------------------------------------
 
-    /**
-     * Returns true if a portfolio snapshot already exists for today's local date.
-     * Uses a midnight-to-midnight window to avoid timestamp precision issues.
-     */
-    private boolean builtToday() {
+    private boolean builtToday(String portfolioType) {
         LocalDate today = LocalDate.now();
         Date startOfDay = Date.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant());
         Date endOfDay   = Date.from(today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
-        return portfolioRepository.existsBySnapshotDateBetween(startOfDay, endOfDay);
+        return portfolioRepository.existsByPortfolioTypeAndSnapshotDateBetween(portfolioType, startOfDay, endOfDay);
     }
 
     /**
@@ -313,6 +378,56 @@ public class PortfolioService {
         pos.setExpectency(fs.getExpectency());
         pos.setProfitableTradesRatio(fs.getProfitableTradesRatio());
         return pos;
+    }
+
+    private PortfolioPosition buildIntradayPosition(FeaturedStrategy fs, Portfolio portfolio) {
+        List<StrategyTrade> trades = strategyTradeRepository.findByFeaturedStrategyId(fs.getId());
+        if (trades.isEmpty()) {
+            log.warn("No trades found for intraday FeaturedStrategy id={}, security={}", fs.getId(), fs.getSecurityName());
+            return null;
+        }
+
+        StrategyTrade entryTrade = trades.stream()
+                .max(Comparator.comparing(StrategyTrade::getDate))
+                .orElse(null);
+        if (entryTrade == null || !"BUY".equals(entryTrade.getType())) {
+            return null;
+        }
+
+        BigDecimal latestClose = getLatestIntradayClose(fs.getSecurityName());
+        BigDecimal entryPrice = entryTrade.getPrice();
+        BigDecimal pnl = null;
+        if (latestClose != null && entryPrice != null && entryPrice.compareTo(BigDecimal.ZERO) != 0) {
+            pnl = FroskUtil.getPercentage(entryPrice, latestClose);
+        }
+
+        PortfolioPosition pos = new PortfolioPosition();
+        pos.setPortfolio(portfolio);
+        pos.setFeaturedStrategyId(fs.getId());
+        pos.setSecurityName(fs.getSecurityName());
+        pos.setSecurityDesc(fs.getSecurityDesc());
+        pos.setStrategyName(fs.getName());
+        pos.setEntryDate(entryTrade.getDate());
+        pos.setEntryPrice(entryPrice);
+        pos.setLatestPrice(latestClose);
+        pos.setUnrealizedPnlPercent(pnl != null ? pnl.setScale(4, RoundingMode.DOWN) : null);
+        pos.setOpen(fs.isOpen());
+        pos.setSqn(fs.getSqn());
+        pos.setExpectency(fs.getExpectency());
+        pos.setProfitableTradesRatio(fs.getProfitableTradesRatio());
+        return pos;
+    }
+
+    private BigDecimal getLatestIntradayClose(String securityName) {
+        try {
+            Security security = securityRepository.findByName(securityName);
+            if (security == null) return null;
+            IntradayBar bar = intradayBarRepository.findTopBySecurityIdOrderByBarTimestampDesc(security.getId());
+            return bar != null ? bar.getClose() : null;
+        } catch (Exception e) {
+            log.error("Could not get latest intraday close for {}: {}", securityName, e.getMessage());
+            return null;
+        }
     }
 
     private BigDecimal getLatestClose(String securityName) {

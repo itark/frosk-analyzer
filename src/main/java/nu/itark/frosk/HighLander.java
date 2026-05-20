@@ -172,6 +172,7 @@ public class HighLander {
 		}
 		log.info("syncTier0 started");
 		intradayStrategyRunner.run();
+		portfolioService.buildIntraday();
 		log.info("syncTier0 completed");
 	}
 

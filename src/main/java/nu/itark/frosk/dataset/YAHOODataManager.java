@@ -62,7 +62,7 @@ public class YAHOODataManager {
     RecommendationTrendRepository recommendationTrendRepository;
 
     @Autowired
-    RapidApiManager rapidApiManager;
+    YahooFinanceDirectClient yahooFinanceClient;
 
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -226,7 +226,7 @@ public class YAHOODataManager {
             if (!isToday) {
                 log.info("Retrieving history for " + security.getName() + " from " + from.getTime());
                 try {
-                    final Map<String, StockHistoryDTO.StockData> history = rapidApiManager.getHistory(security.getName(), RapidApiManager.Interval.ONE_DAY);
+                    final Map<String, StockHistoryDTO.StockData> history = yahooFinanceClient.getHistory(security.getName(), YahooFinanceDirectClient.Interval.ONE_DAY);
                     if (Objects.nonNull(history)) {
                         Map<String, StockHistoryDTO.StockData> filterFromHistory = filterFromHistory(from, history);
                         log.info("Adding:{} stockdata for :{}", filterFromHistory.values().size(), security.getName());
@@ -281,7 +281,7 @@ public class YAHOODataManager {
     }
 
     /**
-     * Includes call to Yahoo Finance using RapidApiManager
+     * Includes call to Yahoo Finance using YahooFinanceDirectClient
      *
      * @param security
      */
@@ -310,7 +310,7 @@ public class YAHOODataManager {
 
         StatisticsBody moduleStatistics = null;
         try {
-            moduleStatistics = rapidApiManager.getModuleStatistics(security.getName());
+            moduleStatistics = yahooFinanceClient.getModuleStatistics(security.getName());
             if (moduleStatistics != null && moduleStatistics.getPegRatio().length == 0) {
                 // This gives only 1-year growth estimate
                 if (moduleStatistics.getForwardPE() != null && moduleStatistics.getForwardEps() != null) {
@@ -431,7 +431,7 @@ public class YAHOODataManager {
     private void setIncomeStatementData(Security security) {
         double yoyGrowth = 0;
         try {
-            Body module = rapidApiManager.getModuleIncomeStatement(security.getName());
+            Body module = yahooFinanceClient.getModuleIncomeStatement(security.getName());
             if (module != null && module.getIncomeStatementHistory() != null) {
                 if (module.getIncomeStatementHistory().getIncomeStatementHistory().size() >= 2) {
                     double totalRevenueThisYear = module.getIncomeStatementHistory().getIncomeStatementHistory().get(0).getTotalRevenue().getRaw();
@@ -448,7 +448,7 @@ public class YAHOODataManager {
     private void setRecommendationTrend(Security security) {
         recommendationTrendRepository.deleteBySecurity(security);
         try {
-            RecommendationBody moduleRecommendationTrend = rapidApiManager.getModuleRecommendationTrend(security.getName());
+            RecommendationBody moduleRecommendationTrend = yahooFinanceClient.getModuleRecommendationTrend(security.getName());
             if (moduleRecommendationTrend != null && !moduleRecommendationTrend.getTrend().isEmpty()){
                 moduleRecommendationTrend.getTrend().forEach(trend -> {
                     RecommendationTrend recommendationTrend = RecommendationTrend.builder()
@@ -471,7 +471,7 @@ public class YAHOODataManager {
     private void setSectorData(Security security) {
         try {
             nu.itark.frosk.rapidapi.yhfinance.model.AssetProfileBody profile =
-                    rapidApiManager.getModuleAssetProfile(security.getName());
+                    yahooFinanceClient.getModuleAssetProfile(security.getName());
             if (profile != null && profile.getSector() != null && !profile.getSector().isBlank()) {
                 security.setSector(profile.getSector());
             }

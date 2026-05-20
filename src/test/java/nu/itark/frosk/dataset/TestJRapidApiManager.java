@@ -16,8 +16,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-// https://rapidapi.com/sparior/api/yahoo-finance15/playground/apiendpoint_b7dd3888-f254-4081-a4cb-178d5638136e
-
 
 @SpringBootTest
 @Slf4j
@@ -30,28 +28,28 @@ public class TestJRapidApiManager extends BaseIntegrationTest  {
     ProductService productService;
 
     @Autowired
-    RapidApiManager rapidApiManager;
+    YahooFinanceDirectClient yahooFinanceClient;
 
     @Test
     public void testGetQuotes() throws IOException, InterruptedException {
 
         String symbol = "NIBE-B.ST"; //NIBE-B.ST , "FRAG.ST"
 
-        final List<QuotesDTO.Quote> quotesDTO = rapidApiManager.getQuotesReal(symbol, "STOCKS");
+        final List<QuotesDTO.Quote> quotesDTO = yahooFinanceClient.getQuotesReal(symbol, "STOCKS");
         quotesDTO.stream()
                  .forEach(dto -> log.info("dto:{}",ReflectionToStringBuilder.toString(dto, ToStringStyle.MULTI_LINE_STYLE)));
     }
 
     @Test
     public void testGetHistory() throws IOException, InterruptedException {
-        final Map<String, StockHistoryDTO.StockData> history = rapidApiManager.getHistory("NIBE-B.ST", RapidApiManager.Interval.ONE_DAY);//Funkar
+        final Map<String, StockHistoryDTO.StockData> history = yahooFinanceClient.getHistory("NIBE-B.ST", YahooFinanceDirectClient.Interval.ONE_DAY);
         history.forEach((key, value) -> log.info("Key: {}, StockData: {}", key, value));
     }
 
 
     @Test void testGetModulesIncomeStatement() throws IOException, InterruptedException {
         String symbol = "NIBE-B.ST"; //NIBE-B.ST   ABB.ST
-       Body result = rapidApiManager.getModuleIncomeStatement(symbol);
+       Body result = yahooFinanceClient.getModuleIncomeStatement(symbol);
        log.info("result:{}",result);
         final double totalRevenueThisYear = result.getIncomeStatementHistory().getIncomeStatementHistory().get(0).getTotalRevenue().getRaw();
         final double totalRevenueLastYear = result.getIncomeStatementHistory().getIncomeStatementHistory().get(1).getTotalRevenue().getRaw();
@@ -61,10 +59,10 @@ public class TestJRapidApiManager extends BaseIntegrationTest  {
 
     @Test void testGetModuleStatistics() throws IOException, InterruptedException {
         String symbol = "OODA.ST"; //NIBE-B.ST   ABB.ST, FRAG.ST, OODA.ST
-        String result = rapidApiManager.getModuleRaw(symbol, "statistics");
+        String result = yahooFinanceClient.getModuleRaw(symbol, "statistics");
         log.info("result(raw):{}",result);
 
-        StatisticsBody moduleStatistics = rapidApiManager.getModuleStatistics(symbol);
+        StatisticsBody moduleStatistics = yahooFinanceClient.getModuleStatistics(symbol);
         log.info("trailingEPS:{}",moduleStatistics.getTrailingEps());
         log.info("forwardEPS:{}",moduleStatistics.getForwardEps());
         log.info("trailingPE:{}",moduleStatistics.getTrailingPE());
@@ -77,10 +75,10 @@ public class TestJRapidApiManager extends BaseIntegrationTest  {
 
     @Test void testGetModuleRecommendationTrende() throws IOException, InterruptedException {
         String symbol = "ABB.ST"; //NIBE-B.ST   ABB.ST, FRAG.ST
-        String result = rapidApiManager.getModuleRaw(symbol, "recommendation-trend");
+        String result = yahooFinanceClient.getModuleRaw(symbol, "recommendation-trend");
         log.info("result:{}",result);
 
-        RecommendationBody moduleRecommendationTrend = rapidApiManager.getModuleRecommendationTrend(symbol);
+        RecommendationBody moduleRecommendationTrend = yahooFinanceClient.getModuleRecommendationTrend(symbol);
 
         log.info("moduleRecommendationTrend:{}",moduleRecommendationTrend);
 
@@ -90,11 +88,11 @@ public class TestJRapidApiManager extends BaseIntegrationTest  {
 
 
     @Test void testGetTicker() throws IOException, InterruptedException {
-        rapidApiManager.getTickers(1, "STOCKS");
+        yahooFinanceClient.getTickers(1, "STOCKS");
     }
 
     @Test void testSearch() throws IOException, InterruptedException {
-        rapidApiManager.search(".ST");
+        yahooFinanceClient.search(".ST");
     }
 
 
