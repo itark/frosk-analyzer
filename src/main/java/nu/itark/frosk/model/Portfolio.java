@@ -27,7 +27,7 @@ public class Portfolio {
     @Column(name = "snapshot_date", nullable = false)
     private Date snapshotDate;
 
-    @Column(name = "portfolio_type", nullable = false, length = 20)
+    @Column(name = "portfolio_type", length = 20)
     private String portfolioType = "DAILY";
 
     @Column(name = "open_position_count")

@@ -67,7 +67,9 @@ public class Security {
 
 	@PreUpdate
 	private void syncActiveWithEnterpriseValue() {
-		this.active = (this.enterpriseValue != null && this.enterpriseValue > 500000000);
+		if (this.enterpriseValue != null) {
+			this.active = this.enterpriseValue > 500000000;
+		}
 	}
 
     @ManyToMany(fetch = FetchType.EAGER, mappedBy = "securities")

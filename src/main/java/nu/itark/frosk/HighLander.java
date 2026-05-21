@@ -10,6 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 import nu.itark.frosk.analysis.StrategyAnalysis;
 import nu.itark.frosk.dataset.DataManager;
 import nu.itark.frosk.dataset.Database;
@@ -160,17 +164,33 @@ public class HighLander {
 		}
 	}
 
+	private static final ZoneId STOCKHOLM = ZoneId.of("Europe/Stockholm");
+	private static final LocalTime INTRADAY_OPEN  = LocalTime.of(8, 30);
+	private static final LocalTime INTRADAY_CLOSE = LocalTime.of(17, 30);
+
 	/**
-	 * Tier 0 — Intraday (every 10 minutes, MON-FRI 09:00-17:59 CET).
-	 * Fetches latest 5-minute ^OMX bars and runs OMX30IntradayMomentumStrategy.
+	 * Tier 0 — Intraday (every 10 minutes, MON-FRI 08:30-17:30 Swedish time).
+	 * Fetches latest 5-minute bars for OMX30 dataset and runs intraday strategies.
 	 * Emits BUY/SELL signals to the intraday_signal table for human review.
 	 */
 	public void syncTier0() {
+		syncTier0(false);
+	}
+
+	public void syncTier0(boolean force) {
 		if (!runIntraday) {
 			log.info("syncTier0 skipped — frosk.run.intraday=false");
 			return;
 		}
-		log.info("syncTier0 started");
+		if (!force) {
+			LocalTime now = ZonedDateTime.now(STOCKHOLM).toLocalTime();
+			if (now.isBefore(INTRADAY_OPEN) || now.isAfter(INTRADAY_CLOSE)) {
+				log.info("syncTier0 skipped — outside Swedish market hours ({}, window {}–{})",
+						now, INTRADAY_OPEN, INTRADAY_CLOSE);
+				return;
+			}
+		}
+		log.info("syncTier0 started (force={})", force);
 		intradayStrategyRunner.run();
 		portfolioService.buildIntraday();
 		log.info("syncTier0 completed");

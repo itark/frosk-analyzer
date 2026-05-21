@@ -43,9 +43,6 @@ public class YAHOODataManager {
     @Value("${frosk.download.years}")
     public int years;
 
-    @Value("${rapid.api.enabled}")
-    boolean apiEnabled;
-
     @Value("${enterprise.value.threshold:500000000}")
     int enterpriseValueThreshold;
 
@@ -71,10 +68,6 @@ public class YAHOODataManager {
      * Download prices and insert into database.
      */
     public void syncronize() {
-        if (!apiEnabled) {
-            log.info("sync=" + Database.YAHOO.toString() + " apiEnabled=" + apiEnabled + ", aborting.");
-            return;
-        }
         log.info("sync=" + Database.YAHOO.toString());
         Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.YAHOO.toString(), true);
   //    Iterable<Security> securities = securityRepository.findTop3ByDatabaseAndActive(Database.YAHOO.toString(), true);
@@ -114,10 +107,6 @@ public class YAHOODataManager {
      * Sync prices for all active securities belonging to the named dataset.
      */
     public void syncronizeByDataset(String datasetName) {
-        if (!apiEnabled) {
-            log.info("syncronizeByDataset={}, apiEnabled={}, aborting.", datasetName, apiEnabled);
-            return;
-        }
         nu.itark.frosk.model.DataSet dataSet = dataSetRepository.findByName(datasetName);
         if (dataSet == null) {
             log.warn("Dataset not found: {}", datasetName);
@@ -128,10 +117,6 @@ public class YAHOODataManager {
     }
 
     public void syncronizeActiveSwedish() {
-        if (!apiEnabled) {
-            log.info("syncronizeActiveSwedish, apiEnabled={}, aborting.", apiEnabled);
-            return;
-        }
         List<Security> swedishStocks = securityRepository.findByDatabaseAndActive("YAHOO", true).stream()
                 .filter(sec -> sec.getName() != null && sec.getName().endsWith(".ST"))
                 .collect(Collectors.toList());
@@ -261,10 +246,6 @@ public class YAHOODataManager {
 
 
     public void updateSecurityMetaData() {
-        if (!apiEnabled) {
-            log.info("updateSecurityMetaData, apiEnabled=" + apiEnabled + ", aborting.");
-            return;
-        }
         Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.YAHOO.toString(), true);
         securities.forEach((security -> {
             if (security.getName().contains("^") || security.getName().contains("=")) return;
@@ -273,10 +254,6 @@ public class YAHOODataManager {
     }
 
     public void updateSecurityMetaData(Security security) {
-        if (!apiEnabled) {
-            log.info("updateSecurityMetaData, apiEnabled=" + apiEnabled + ", aborting.");
-            return;
-        }
         updateWithMetaData(security);
     }
 

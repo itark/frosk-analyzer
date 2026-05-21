@@ -546,8 +546,8 @@ public class DataController {
      */
     @PostMapping(value = "/intraday/run")
     public String triggerIntradayRun() {
-        log.info("POST /intraday/run — manual trigger");
-        highLander.syncTier0();
+        log.info("POST /intraday/run — manual trigger (bypasses market hours check)");
+        highLander.syncTier0(true);
         return "IntradayStrategyRunner completed";
     }
 
@@ -557,8 +557,11 @@ public class DataController {
     @GetMapping(value = "/intradayOpenPositions")
     public List<IntradayOpenPositionDTO> getIntradayOpenPositions() {
         log.info("GET /intradayOpenPositions");
-        List<FeaturedStrategy> openPositions = featuredStrategyRepository
-                .findByNameAndOpenOrderBySqnDesc("OMX30IntradayMomentumStrategy", true);
+        List<FeaturedStrategy> openPositions = new ArrayList<>();
+        openPositions.addAll(featuredStrategyRepository
+                .findByNameAndOpenOrderBySqnDesc("OMX30IntradayMomentumStrategy", true));
+        openPositions.addAll(featuredStrategyRepository
+                .findByNameAndOpenOrderBySqnDesc("RunawayGAPIntradayStrategy", true));
 
         return openPositions.stream().map(fs -> {
             Security security = securityRepository.findByName(fs.getSecurityName());
