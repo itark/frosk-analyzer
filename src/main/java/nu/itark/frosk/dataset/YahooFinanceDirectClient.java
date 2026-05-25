@@ -8,28 +8,102 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.rapidapi.yhfinance.model.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Component
 @Slf4j
 public class YahooFinanceDirectClient {
 
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
+
     @Value("${yahoo.finance.direct.base-url:https://query1.finance.yahoo.com}")
     private String baseUrl;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ReentrantLock crumbLock = new ReentrantLock();
+    private volatile String crumb;
+    private volatile String sessionCookie;
 
     private WebClient webClient() {
         return WebClient.builder()
                 .baseUrl(baseUrl)
-                .defaultHeader("User-Agent", "Mozilla/5.0")
+                .defaultHeader("User-Agent", USER_AGENT)
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(20 * 1024 * 1024))
                 .build();
+    }
+
+    private void ensureCrumb() {
+        if (crumb != null && sessionCookie != null) return;
+        crumbLock.lock();
+        try {
+            if (crumb != null && sessionCookie != null) return;
+            refreshCrumb();
+        } finally {
+            crumbLock.unlock();
+        }
+    }
+
+    private void refreshCrumb() {
+        try {
+            ClientResponse response = WebClient.builder()
+                    .defaultHeader("User-Agent", USER_AGENT)
+                    .codecs(c -> c.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
+                    .build()
+                    .get()
+                    .uri("https://fc.yahoo.com/")
+                    .exchangeToMono(r -> reactor.core.publisher.Mono.just(r))
+                    .block();
+
+            if (response != null) {
+                List<String> cookies = new ArrayList<>();
+                response.cookies().forEach((name, responseCookies) ->
+                        responseCookies.forEach(c -> cookies.add(name + "=" + c.getValue())));
+                sessionCookie = String.join("; ", cookies);
+                response.releaseBody().block();
+            }
+
+            if (sessionCookie == null || sessionCookie.isBlank()) {
+                log.warn("Yahoo crumb: no cookies returned from fc.yahoo.com");
+                return;
+            }
+
+            String crumbResponse = WebClient.builder()
+                    .defaultHeader("User-Agent", USER_AGENT)
+                    .defaultHeader("Cookie", sessionCookie)
+                    .build()
+                    .get()
+                    .uri("https://query2.finance.yahoo.com/v1/test/getcrumb")
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            if (crumbResponse != null && !crumbResponse.isBlank()) {
+                crumb = crumbResponse.trim();
+                log.info("Yahoo crumb acquired successfully");
+            } else {
+                log.warn("Yahoo crumb: empty response from getcrumb");
+            }
+        } catch (Exception e) {
+            log.warn("Yahoo crumb acquisition failed: {}", e.getMessage());
+        }
+    }
+
+    private void invalidateCrumb() {
+        crumbLock.lock();
+        try {
+            crumb = null;
+            sessionCookie = null;
+        } finally {
+            crumbLock.unlock();
+        }
     }
 
     // ── Chart / History ────────────────────────────────────────────────
@@ -136,8 +210,11 @@ public class YahooFinanceDirectClient {
         String json = fetchQuoteSummaryModule(symbol, "defaultKeyStatistics,financialData");
         if (json == null) return null;
         try {
-            YahooFinanceResponseDTO response = objectMapper.readValue(json, YahooFinanceResponseDTO.class);
-            return response.getBody();
+            JsonNode module = extractQuoteSummaryResult(json);
+            if (module == null) return null;
+            JsonNode stats = module.path("defaultKeyStatistics");
+            if (stats.isMissingNode()) return null;
+            return objectMapper.treeToValue(stats, StatisticsBody.class);
         } catch (Exception e) {
             log.warn("YahooFinanceDirectClient: statistics parse failed for {}: {}", symbol, e.getMessage());
             return null;
@@ -150,8 +227,9 @@ public class YahooFinanceDirectClient {
         String json = fetchQuoteSummaryModule(symbol, "incomeStatementHistory,incomeStatementHistoryQuarterly");
         if (json == null) return null;
         try {
-            FinancialDataResponseDTO response = objectMapper.readValue(json, FinancialDataResponseDTO.class);
-            return response.getBody();
+            JsonNode module = extractQuoteSummaryResult(json);
+            if (module == null) return null;
+            return objectMapper.treeToValue(module, Body.class);
         } catch (Exception e) {
             log.warn("YahooFinanceDirectClient: income-statement parse failed for {}: {}", symbol, e.getMessage());
             return null;
@@ -164,8 +242,11 @@ public class YahooFinanceDirectClient {
         String json = fetchQuoteSummaryModule(symbol, "recommendationTrend");
         if (json == null) return null;
         try {
-            FinancialRecommendationResponseDTO response = objectMapper.readValue(json, FinancialRecommendationResponseDTO.class);
-            return response.getBody();
+            JsonNode module = extractQuoteSummaryResult(json);
+            if (module == null) return null;
+            JsonNode trend = module.path("recommendationTrend");
+            if (trend.isMissingNode()) return null;
+            return objectMapper.treeToValue(trend, RecommendationBody.class);
         } catch (Exception e) {
             log.warn("YahooFinanceDirectClient: recommendation parse failed for {}: {}", symbol, e.getMessage());
             return null;
@@ -178,12 +259,32 @@ public class YahooFinanceDirectClient {
         String json = fetchQuoteSummaryModule(symbol, "assetProfile");
         if (json == null) return null;
         try {
-            AssetProfileResponseDTO response = objectMapper.readValue(json, AssetProfileResponseDTO.class);
-            return response.getBody();
+            JsonNode module = extractQuoteSummaryResult(json);
+            if (module == null) return null;
+            JsonNode profile = module.path("assetProfile");
+            if (profile.isMissingNode()) return null;
+            return objectMapper.treeToValue(profile, AssetProfileBody.class);
         } catch (Exception e) {
             log.warn("YahooFinanceDirectClient: asset-profile parse failed for {}: {}", symbol, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Extracts the first result object from the v10 quoteSummary response:
+     * { "quoteSummary": { "result": [ { ...module data... } ] } }
+     */
+    private JsonNode extractQuoteSummaryResult(String json) {
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode results = root.path("quoteSummary").path("result");
+            if (results.isArray() && !results.isEmpty()) {
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            log.warn("YahooFinanceDirectClient: failed to parse quoteSummary envelope: {}", e.getMessage());
+        }
+        return null;
     }
 
     // ── Module: raw JSON ─────────────────────────────────────────────────
@@ -210,10 +311,19 @@ public class YahooFinanceDirectClient {
     // ── Internal: quoteSummary fetcher ────────────────────────────────────
 
     private String fetchQuoteSummaryModule(String symbol, String modules) {
+        return fetchQuoteSummaryModule(symbol, modules, true);
+    }
+
+    private String fetchQuoteSummaryModule(String symbol, String modules, boolean retryOnAuth) {
+        ensureCrumb();
         try {
-            String json = webClient().get()
-                    .uri("/v10/finance/quoteSummary/{symbol}?modules={modules}",
-                            symbol, modules)
+            WebClient.RequestHeadersSpec<?> request = webClient().get()
+                    .uri("/v10/finance/quoteSummary/{symbol}?modules={modules}&crumb={crumb}",
+                            symbol, modules, crumb != null ? crumb : "");
+            if (sessionCookie != null) {
+                request = request.header("Cookie", sessionCookie);
+            }
+            String json = request
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
@@ -224,6 +334,11 @@ public class YahooFinanceDirectClient {
             }
             return json;
         } catch (WebClientResponseException e) {
+            if (e.getStatusCode().value() == 401 && retryOnAuth) {
+                log.info("Yahoo 401 for {} — refreshing crumb and retrying", symbol);
+                invalidateCrumb();
+                return fetchQuoteSummaryModule(symbol, modules, false);
+            }
             log.warn("YahooFinanceDirectClient: HTTP {} for {} module {}: {}",
                     e.getStatusCode().value(), symbol, modules, e.getMessage());
             return null;

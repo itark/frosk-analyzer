@@ -552,6 +552,11 @@ public class DataController {
     }
 
     /**
+     * Returns all currently open intraday positions across all intraday strategies
+     * (OMX30IntradayMomentumStrategy, RunawayGAPIntradayStrategy).
+     * Each position includes entry price/time, latest intraday price, and unrealized P&L.
+     *
+     * @return open intraday positions sorted by SQN descending per strategy
      * @Example GET http://localhost:8080/intradayOpenPositions
      */
     @GetMapping(value = "/intradayOpenPositions")
@@ -594,6 +599,7 @@ public class DataController {
                         .multiply(BigDecimal.valueOf(100));
             }
             return IntradayOpenPositionDTO.builder()
+                    .strategyName(fs.getName())
                     .securityName(fs.getSecurityName())
                     .entryPrice(entryPrice)
                     .entryTime(entryTime)
@@ -604,6 +610,11 @@ public class DataController {
     }
 
     /**
+     * Returns all BUY/SELL signals generated today (Stockholm time) across all intraday strategies
+     * (OMX30IntradayMomentumStrategy, RunawayGAPIntradayStrategy).
+     * Results are sorted by time descending (most recent first).
+     *
+     * @return today's intraday trade signals
      * @Example GET http://localhost:8080/intradayTodaySignals
      */
     @GetMapping(value = "/intradayTodaySignals")
@@ -613,16 +624,18 @@ public class DataController {
                 .atStartOfDay(ZoneId.of("Europe/Stockholm"))
                 .toEpochSecond();
 
-        List<FeaturedStrategy> allMomentum = featuredStrategyRepository
-                .findByName("OMX30IntradayMomentumStrategy");
+        List<FeaturedStrategy> allIntraday = new ArrayList<>();
+        allIntraday.addAll(featuredStrategyRepository.findByName("OMX30IntradayMomentumStrategy"));
+        allIntraday.addAll(featuredStrategyRepository.findByName("RunawayGAPIntradayStrategy"));
 
         List<IntradayTodaySignalDTO> signals = new ArrayList<>();
         Date startOfDayDate = Date.from(Instant.ofEpochSecond(startOfDay));
-        for (FeaturedStrategy fs : allMomentum) {
+        for (FeaturedStrategy fs : allIntraday) {
             if (fs.getStrategyTrades() == null) continue;
             fs.getStrategyTrades().stream()
                     .filter(t -> t.getDate().after(startOfDayDate) || t.getDate().equals(startOfDayDate))
                     .forEach(t -> signals.add(IntradayTodaySignalDTO.builder()
+                            .strategyName(fs.getName())
                             .securityName(fs.getSecurityName())
                             .type(t.getType())
                             .price(t.getPrice())

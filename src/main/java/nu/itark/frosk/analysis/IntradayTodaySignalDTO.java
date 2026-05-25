@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 @Data
 @Builder
 public class IntradayTodaySignalDTO {
+    private String strategyName;
     private String securityName;
     private String type;
     private BigDecimal price;

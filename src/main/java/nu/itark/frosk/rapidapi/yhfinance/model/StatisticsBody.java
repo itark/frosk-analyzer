@@ -1,6 +1,7 @@
 package nu.itark.frosk.rapidapi.yhfinance.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class StatisticsBody {
 
     private int maxAge;
@@ -112,7 +114,7 @@ public class StatisticsBody {
     private Object[] earningsQuarterlyGrowth;
     @JsonIgnore
     private Object[] revenueQuarterlyGrowth;
-    private Object[] pegRatio;
+    private Object pegRatio;
     @JsonIgnore
     private Object[] lastCapGain;
     @JsonIgnore

@@ -288,86 +288,28 @@ public class YAHOODataManager {
         StatisticsBody moduleStatistics = null;
         try {
             moduleStatistics = yahooFinanceClient.getModuleStatistics(security.getName());
-            if (moduleStatistics != null && moduleStatistics.getPegRatio().length == 0) {
-                // This gives only 1-year growth estimate
-                if (moduleStatistics.getForwardPE() != null && moduleStatistics.getForwardEps() != null) {
-
-                    Object forwardPEObj = moduleStatistics.getForwardPE();
-                    Object forwardEpsObj = moduleStatistics.getForwardEps();
-                    Object trailingEpsObj = moduleStatistics.getTrailingEps();
-
-                    if (forwardPEObj instanceof Map) {
-                        Map<?, ?> map = (Map<?, ?>) forwardPEObj;
-                        Object rawValue = map.get("raw");
-                        if (rawValue instanceof Number) {
-                            forwardPERaw = ((Number) rawValue).doubleValue();
-                            forwardPe = forwardPERaw;
-                        } else {
-                            throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
+            if (moduleStatistics != null) {
+                double pegFromYahoo = extractRaw(moduleStatistics.getPegRatio());
+                if (pegFromYahoo != 0.0) {
+                    pegRatio = pegFromYahoo;
+                } else if (moduleStatistics.getForwardPE() != null && moduleStatistics.getForwardEps() != null) {
+                    forwardPERaw = extractRaw(moduleStatistics.getForwardPE());
+                    forwardPe = forwardPERaw;
+                    forwardEpsRaw = extractRaw(moduleStatistics.getForwardEps());
+                    forwardEps = forwardEpsRaw;
+                    trailingEpsRaw = extractRaw(moduleStatistics.getTrailingEps());
+                    trailingEps = trailingEpsRaw;
+                    if (trailingEpsRaw != 0.0) {
+                        double oneYearGrowthRate = ((forwardEpsRaw - trailingEpsRaw) / trailingEpsRaw) * 100;
+                        if (oneYearGrowthRate != 0.0) {
+                            pegRatio = forwardPERaw / oneYearGrowthRate;
                         }
                     }
-                    if (forwardEpsObj instanceof Map) {
-                        Map<?, ?> map = (Map<?, ?>) forwardEpsObj;
-                        Object rawValue = map.get("raw");
-                        if (rawValue instanceof Number) {
-                            forwardEpsRaw = ((Number) rawValue).doubleValue();
-                            forwardEps = forwardEpsRaw;
-                        } else {
-                            throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
-                        }
-                    }
-                    if (trailingEpsObj instanceof Map) {
-                        Map<?, ?> map = (Map<?, ?>) trailingEpsObj;
-                        Object rawValue = map.get("raw");
-                        if (rawValue instanceof Number) {
-                            trailingEpsRaw = ((Number) rawValue).doubleValue();
-                            trailingEps = trailingEpsRaw;
-                        } else {
-                            throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
-                        }
-                    }
-                    double oneYearGrowthRate = ((forwardEpsRaw - trailingEpsRaw) / trailingEpsRaw) * 100;
-                    pegRatio = forwardPERaw / oneYearGrowthRate;
-                }
-            } else {
-                pegRatio = (double) moduleStatistics.getPegRatio()[0];
-            }
-            if (moduleStatistics.getBeta() != null) {
-                Object betaObj = moduleStatistics.getBeta();
-                if (betaObj instanceof Map) {
-                    Map<?, ?> map = (Map<?, ?>) betaObj;
-                    Object rawValue = map.get("raw");
-                    if (rawValue instanceof Number) {
-                        beta = ((Number) rawValue).doubleValue();
-                    } else {
-                        throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
-                    }
                 }
             }
-            if (moduleStatistics.getTrailingEps() != null) {
-                Object trailingEpsObj = moduleStatistics.getTrailingEps();
-                if (trailingEpsObj instanceof Map) {
-                    Map<?, ?> map = (Map<?, ?>) trailingEpsObj;
-                    Object rawValue = map.get("raw");
-                    if (rawValue instanceof Number) {
-                        trailingEps = ((Number) rawValue).doubleValue();
-                    } else {
-                        throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
-                    }
-                }
-            }
-            if (moduleStatistics.getTrailingPE() != null) {
-                Object trailingPEObj = moduleStatistics.getTrailingPE();
-                if (trailingPEObj instanceof Map) {
-                    Map<?, ?> map = (Map<?, ?>) trailingPEObj;
-                    Object rawValue = map.get("raw");
-                    if (rawValue instanceof Number) {
-                        trailingPe = ((Number) rawValue).doubleValue();
-                    } else {
-                        throw new IllegalArgumentException("Expected 'raw' to be a number, got: " + rawValue);
-                    }
-                }
-            }
+            beta = extractRaw(moduleStatistics.getBeta());
+            trailingEps = extractRaw(moduleStatistics.getTrailingEps());
+            trailingPe = extractRaw(moduleStatistics.getTrailingPE());
             if (moduleStatistics.getEnterpriseValue() != null) {
                 FinancialValue enterpriseValue = moduleStatistics.getEnterpriseValue();
                 enterpriseValueRaw  = enterpriseValue.getRaw();
@@ -379,13 +321,10 @@ public class YAHOODataManager {
         double dividendYield = 0.0;
         try {
             if (moduleStatistics != null && moduleStatistics.getLastDividendValue() != null) {
-                Object divObj = moduleStatistics.getLastDividendValue();
-                if (divObj instanceof Map) {
-                    double divRaw = getDoubleFromRaw(((Map<?, ?>) divObj).get("raw"));
-                    if (divRaw > 0 && trailingPe > 0 && trailingEps > 0) {
-                        double price = trailingPe * trailingEps;
-                        dividendYield = (divRaw / price) * 100.0;
-                    }
+                double divRaw = extractRaw(moduleStatistics.getLastDividendValue());
+                if (divRaw > 0 && trailingPe > 0 && trailingEps > 0) {
+                    double price = trailingPe * trailingEps;
+                    dividendYield = (divRaw / price) * 100.0;
                 }
             }
         } catch (Exception e) {
@@ -455,6 +394,16 @@ public class YAHOODataManager {
         } catch (Exception e) {
             log.error("Error in AssetProfile for:{}, error:{}", security.getName(), e.getMessage());
         }
+    }
+
+    private static double extractRaw(Object obj) {
+        if (obj == null) return 0.0;
+        if (obj instanceof Map) {
+            Object raw = ((Map<?, ?>) obj).get("raw");
+            return (raw instanceof Number) ? ((Number) raw).doubleValue() : 0.0;
+        }
+        if (obj instanceof Number) return ((Number) obj).doubleValue();
+        return 0.0;
     }
 
     public static double getDoubleFromRaw(Object rawValue) {
