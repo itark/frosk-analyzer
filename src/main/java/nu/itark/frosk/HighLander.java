@@ -170,7 +170,7 @@ public class HighLander {
 
 	/**
 	 * Tier 0 — Intraday (every 10 minutes, MON-FRI 08:30-17:30 Swedish time).
-	 * Fetches latest 5-minute bars for OMX30 dataset and runs intraday strategies.
+	 * Fetches latest 15-minute bars for OMX30 dataset and runs intraday strategies.
 	 * Emits BUY/SELL signals to the intraday_signal table for human review.
 	 */
 	public void syncTier0() {

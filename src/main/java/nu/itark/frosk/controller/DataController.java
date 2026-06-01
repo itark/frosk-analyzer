@@ -648,6 +648,68 @@ public class DataController {
         return signals;
     }
 
+    /**
+     * @Example GET http://localhost:8080/intraday/pnl
+     * @Example GET http://localhost:8080/intraday/pnl?ticker=^OMX
+     */
+    @GetMapping(value = "/intraday/pnl")
+    public List<IntradayPnlDTO> getIntradayPnl(@RequestParam(value = "ticker", required = false) String ticker) {
+        log.info("GET /intraday/pnl ticker={}", ticker);
+        List<String> tickers = ticker != null ? List.of(ticker) : intradaySignalRepository.findDistinctTickers();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        ZoneId sthlm = ZoneId.of("Europe/Stockholm");
+
+        return tickers.stream().map(t -> {
+            List<IntradaySignal> signals = intradaySignalRepository.findByTickerOrderBySignalTimestampAsc(t);
+            List<IntradayPnlDTO.IntradayRoundTripDTO> roundTrips = new ArrayList<>();
+            IntradaySignal pendingBuy = null;
+
+            for (IntradaySignal s : signals) {
+                if ("BUY".equals(s.getSignalType())) {
+                    pendingBuy = s;
+                } else if ("SELL".equals(s.getSignalType()) && pendingBuy != null) {
+                    BigDecimal pnl = s.getClosePrice().subtract(pendingBuy.getClosePrice())
+                            .divide(pendingBuy.getClosePrice(), 4, java.math.RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100));
+                    roundTrips.add(IntradayPnlDTO.IntradayRoundTripDTO.builder()
+                            .buyTime(Instant.ofEpochSecond(pendingBuy.getSignalTimestamp()).atZone(sthlm).format(fmt))
+                            .buyPrice(pendingBuy.getClosePrice())
+                            .sellTime(Instant.ofEpochSecond(s.getSignalTimestamp()).atZone(sthlm).format(fmt))
+                            .sellPrice(s.getClosePrice())
+                            .pnlPercent(pnl)
+                            .build());
+                    pendingBuy = null;
+                }
+            }
+
+            BigDecimal totalPnl = roundTrips.stream()
+                    .map(IntradayPnlDTO.IntradayRoundTripDTO::getPnlPercent)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            int wins = (int) roundTrips.stream().filter(rt -> rt.getPnlPercent().compareTo(BigDecimal.ZERO) > 0).count();
+            int losses = (int) roundTrips.stream().filter(rt -> rt.getPnlPercent().compareTo(BigDecimal.ZERO) < 0).count();
+            BigDecimal avg = roundTrips.isEmpty() ? BigDecimal.ZERO
+                    : totalPnl.divide(BigDecimal.valueOf(roundTrips.size()), 4, java.math.RoundingMode.HALF_UP);
+            BigDecimal best = roundTrips.stream()
+                    .map(IntradayPnlDTO.IntradayRoundTripDTO::getPnlPercent)
+                    .max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+            BigDecimal worst = roundTrips.stream()
+                    .map(IntradayPnlDTO.IntradayRoundTripDTO::getPnlPercent)
+                    .min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+
+            return IntradayPnlDTO.builder()
+                    .ticker(t)
+                    .totalTrades(roundTrips.size())
+                    .winningTrades(wins)
+                    .losingTrades(losses)
+                    .totalPnlPercent(totalPnl)
+                    .avgPnlPercent(avg)
+                    .bestTradePercent(best)
+                    .worstTradePercent(worst)
+                    .trades(roundTrips)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
     @GetMapping(value = "/tradingAccounts")
     public List<TotalTradingDTO> tradingAccounts() {
         log.info("/tradingAccounts");

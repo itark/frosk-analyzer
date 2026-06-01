@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
  * Scheduled jobs — four-tier sync strategy.
  *
  * Tier 0 (intraday, MON-FRI every 10 min 08:30-17:30 Swedish time):
- *                              Fetch 5m OMX30 bars + run intraday strategies  ~29 req/run
+ *                              Fetch 15m OMX30 bars + run intraday strategies  ~29 req/run
  * Tier 1 (daily, MON-FRI 18:00):  OMXS30 price sync + HedgeIndex update   ~40 req/run
  * Tier 2 (weekly, SAT 06:00):     Full universe price sync                  ~900 req/run
  * Tier 3 (monthly, 1st 07:00):    Fundamental metadata update               ~1,800 req/run
@@ -28,7 +28,7 @@ public class Scheduler {
 	private HighLander highLander;
 
 	/**
-	 * Tier 0 — fetch 5-minute OMX30 bars and run intraday strategies
+	 * Tier 0 — fetch 15-minute OMX30 bars and run intraday strategies
 	 * every 10 minutes during Stockholm market hours (08:30–17:30, Mon–Fri).
 	 */
 	@Scheduled(cron = "${scheduler.tier0.cron}")

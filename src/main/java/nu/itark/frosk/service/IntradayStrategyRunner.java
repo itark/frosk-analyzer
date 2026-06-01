@@ -24,7 +24,7 @@ import java.util.Map;
  * <p>Called by {@link nu.itark.frosk.dataset.Scheduler#tier0IntradaySync()}
  * every 10 minutes during Stockholm market hours (09:00–17:30 CET, Mon–Fri).
  *
- * <p>Each invocation fetches 5-minute bars for all OMX30 constituent stocks,
+ * <p>Each invocation fetches 15-minute bars for all OMX30 constituent stocks,
  * runs {@link OMX30IntradayMomentumStrategy} on each, emits BUY/SELL
  * signals to the {@code intraday_signal} table, and persists
  * {@code FeaturedStrategy} backtest results via {@link StrategyExecutor}.

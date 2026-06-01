@@ -17,16 +17,16 @@ import org.ta4j.core.rules.UnderIndicatorRule;
 import java.util.List;
 
 /**
- * OMX30 Intraday Momentum Strategy — Tier-0 (10-minute ticker, 5-minute bars)
+ * OMX30 Intraday Momentum Strategy — Tier-0 (10-minute ticker, 15-minute bars)
  *
- * <p>This strategy runs on 5-minute bars of the {@code ^OMX} (OMXS30) index.
+ * <p>This strategy runs on 15-minute bars of the {@code ^OMX} (OMXS30) index.
  * It is evaluated every 10 minutes during Stockholm market hours
  * (09:00–17:30 CET, Monday–Friday) by the {@link nu.itark.frosk.service.IntradayStrategyRunner}.
  *
  * <h3>Entry rules (all must be true)</h3>
  * <ul>
- *   <li>EMA(5) &gt; EMA(13) — short-term uptrend confirmed on 5m bars
- *       (5 bars ≈ 25 min trend; 13 bars ≈ 65 min / ~1 h)</li>
+ *   <li>EMA(5) &gt; EMA(13) — short-term uptrend confirmed on 15m bars
+ *       (5 bars ≈ 75 min trend; 13 bars ≈ 195 min / ~3.25 h)</li>
  *   <li>RSI(5) crosses above 50 — momentum turning up</li>
  * </ul>
  *
@@ -34,7 +34,7 @@ import java.util.List;
  * <ul>
  *   <li>RSI(5) &gt; 75 — overbought, take profit</li>
  *   <li>EMA(5) crosses below EMA(13) — short-term trend reversal</li>
- *   <li>Max 12 bars held (1 hour) — intraday time-based exit</li>
+ *   <li>Max 4 bars held (1 hour) — intraday time-based exit</li>
  * </ul>
  *
  * <h3>Design notes</h3>
@@ -53,12 +53,12 @@ import java.util.List;
 public class OMX30IntradayMomentumStrategy extends AbstractStrategy implements IIndicatorValue {
 
     // ── Indicator parameters ────────────────────────────────────────────────
-    private static final int    EMA_FAST        = 5;   // 25 min
-    private static final int    EMA_SLOW        = 13;  // 65 min (~1 h)
+    private static final int    EMA_FAST        = 5;   // 75 min
+    private static final int    EMA_SLOW        = 13;  // 195 min (~3.25 h)
     private static final int    RSI_PERIOD      = 5;
     private static final double RSI_ENTRY_LEVEL = 50.0;
     private static final double RSI_EXIT_LEVEL  = 75.0;
-    private static final int    MAX_BARS_HELD   = 12;  // 1 hour
+    private static final int    MAX_BARS_HELD   = 4;   // 1 hour
     private static final double STOP_LOSS_PCT   = 0.5; // hard stop: 0.5% below entry
 
     // ── Cached indicator refs (populated in buildStrategy) ──────────────────
@@ -69,7 +69,7 @@ public class OMX30IntradayMomentumStrategy extends AbstractStrategy implements I
     // -----------------------------------------------------------------------
 
     /**
-     * Build the ta4j {@link Strategy} for the provided 5-minute {@link BarSeries}.
+     * Build the ta4j {@link Strategy} for the provided 15-minute {@link BarSeries}.
      *
      * <p>Safe to call repeatedly — each call rebuilds indicators and clears
      * the {@code indicatorValues} snapshot list.

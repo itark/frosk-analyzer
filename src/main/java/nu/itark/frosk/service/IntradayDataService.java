@@ -25,7 +25,7 @@ import java.util.*;
 /**
  * Tier-0 intraday data pipeline for OMX30 constituent stocks.
  *
- * <p>On every 10-minute scheduler tick this service fetches 5-minute bars
+ * <p>On every 10-minute scheduler tick this service fetches 15-minute bars
  * for each security in the OMX30 dataset, persists them, prunes old bars,
  * and builds ta4j {@link BarSeries} instances for strategy evaluation.
  */
@@ -34,8 +34,8 @@ import java.util.*;
 public class IntradayDataService {
 
     private static final String DATASET_NAME = "OMX30";
-    private static final String INTERVAL_CODE = "5m";
-    private static final Duration BAR_DURATION = Duration.ofMinutes(5);
+    private static final String INTERVAL_CODE = "15m";
+    private static final Duration BAR_DURATION = Duration.ofMinutes(15);
     private static final ZoneId STOCKHOLM = ZoneId.of("Europe/Stockholm");
 
     @Value("${intraday.retention.days:7}")
@@ -51,7 +51,7 @@ public class IntradayDataService {
     private DataSetRepository dataSetRepository;
 
     /**
-     * Fetch fresh 5-minute bars for all OMX30 securities, persist them,
+     * Fetch fresh 15-minute bars for all OMX30 securities, persist them,
      * prune old bars, and return a map of Security to ta4j BarSeries.
      *
      * @return map keyed by Security; empty map if the OMX30 dataset is not found.
@@ -64,7 +64,7 @@ public class IntradayDataService {
         }
 
         List<Security> securities = omx30.getSecurities();
-        log.info("IntradayDataService: syncing 5m bars for {} OMX30 securities", securities.size());
+        log.info("IntradayDataService: syncing 15m bars for {} OMX30 securities", securities.size());
 
         for (int i = 0; i < securities.size(); i++) {
             syncSecurity(securities.get(i));
@@ -93,7 +93,7 @@ public class IntradayDataService {
             rawBars = yahooFinanceClient.getIntradayBars(
                     security.getName(), INTERVAL_CODE, "5d");
         } catch (Exception e) {
-            log.error("IntradayDataService: failed to fetch 5m bars for {}: {}",
+            log.error("IntradayDataService: failed to fetch 15m bars for {}: {}",
                     security.getName(), e.getMessage());
             return;
         }
@@ -126,7 +126,7 @@ public class IntradayDataService {
             }
         }
         if (inserted > 0) {
-            log.info("IntradayDataService: inserted {} new 5m bars for {}", inserted, security.getName());
+            log.info("IntradayDataService: inserted {} new 15m bars for {}", inserted, security.getName());
         }
     }
 
@@ -146,7 +146,8 @@ public class IntradayDataService {
                 .getEpochSecond();
 
         List<IntradayBar> bars = intradayBarRepository
-                .findBySecurityIdAndBarTimestampGreaterThanOrderByBarTimestampAsc(securityId, cutoff);
+                .findBySecurityIdAndIntervalCodeAndBarTimestampGreaterThanOrderByBarTimestampAsc(
+                        securityId, INTERVAL_CODE, cutoff);
 
         BarSeries series = new BaseBarSeriesBuilder()
                 .withName(String.valueOf(securityId))

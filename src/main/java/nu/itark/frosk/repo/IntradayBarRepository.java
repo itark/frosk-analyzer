@@ -17,6 +17,9 @@ public interface IntradayBarRepository extends JpaRepository<IntradayBar, Long> 
     List<IntradayBar> findBySecurityIdAndBarTimestampGreaterThanOrderByBarTimestampAsc(
             Long securityId, long cutoffEpochSeconds);
 
+    List<IntradayBar> findBySecurityIdAndIntervalCodeAndBarTimestampGreaterThanOrderByBarTimestampAsc(
+            Long securityId, String intervalCode, long cutoffEpochSeconds);
+
     List<IntradayBar> findBySecurityIdOrderByBarTimestampAsc(Long securityId);
 
     /**

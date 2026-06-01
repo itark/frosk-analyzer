@@ -13,7 +13,7 @@ import java.time.Instant;
  * {@link nu.itark.frosk.strategies.OMX30IntradayMomentumStrategy}.
  *
  * The signal is emitted when the strategy's entry / exit rule is satisfied
- * on the most-recently-completed 5-minute bar.  These rows are the live
+ * on the most-recently-completed 15-minute bar.  These rows are the live
  * output of the Tier-0 intraday pipeline; they are never deleted (they form
  * the audit trail for the human trader's decision log).
  */
