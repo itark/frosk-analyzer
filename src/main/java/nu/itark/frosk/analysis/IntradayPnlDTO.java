@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 @Builder
 public class IntradayPnlDTO {
+    private String strategyName;
     private String ticker;
     private int totalTrades;
     private int winningTrades;

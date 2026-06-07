@@ -83,6 +83,11 @@ public abstract  class AbstractStrategy {
         return security.getDividendYield() != null ? security.getDividendYield() : Double.valueOf(0.0);
     }
 
+    public Double getTrailingEps(String securityId) {
+        final Security security = securityRepository.findById(Long.valueOf(securityId)).orElseGet(null);
+        return security.getTrailingEps() != null ? security.getTrailingEps() : Double.valueOf(0.0);
+    }
+
     public List<RecommendationTrend> getRecommendationTrends(String securityId) {
         final Security security = securityRepository.findById(Long.valueOf(securityId)).orElse(null);
         return recommendationTrendRepository.findBySecurityOrderByPeriod(security);

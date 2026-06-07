@@ -3,6 +3,10 @@ package nu.itark.frosk.analysis;
 import lombok.Data;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.*;
+import nu.itark.frosk.strategies.CANSLIMStrategy;
+import nu.itark.frosk.strategies.OpeningRangeBreakoutIntradayStrategy;
+import nu.itark.frosk.strategies.VWAPMeanReversionIntradayStrategy;
+import nu.itark.frosk.strategies.GapReversalIntradayStrategy;
 import nu.itark.frosk.strategies.hedge.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -94,9 +98,13 @@ public class StrategiesMap {
 	@Autowired
 	private DailyOversoldBounceStrategy dailyOversoldBounceStrategy;
 	@Autowired
-	private OMX30IntradayMomentumStrategy omx30IntradayMomentumStrategy;
+	private CANSLIMStrategy canslimStrategy;
 	@Autowired
-	private RunawayGAPIntradayStrategy runawayGAPIntradayStrategy;
+	private OpeningRangeBreakoutIntradayStrategy openingRangeBreakoutIntradayStrategy;
+	@Autowired
+	private VWAPMeanReversionIntradayStrategy vwapMeanReversionIntradayStrategy;
+	@Autowired
+	private GapReversalIntradayStrategy gapReversalIntradayStrategy;
 
 	private List<Strategy> strategies = null;
 
@@ -136,8 +144,10 @@ public class StrategiesMap {
 		strategies.add(yieldCurveSpreadStrategy.getClass().getSimpleName());
 		strategies.add(dailyBreakoutStrategy.getClass().getSimpleName());
 		strategies.add(dailyOversoldBounceStrategy.getClass().getSimpleName());
-		strategies.add(omx30IntradayMomentumStrategy.getClass().getSimpleName());
-		strategies.add(runawayGAPIntradayStrategy.getClass().getSimpleName());
+		strategies.add(canslimStrategy.getClass().getSimpleName());
+		strategies.add(openingRangeBreakoutIntradayStrategy.getClass().getSimpleName());
+		strategies.add(vwapMeanReversionIntradayStrategy.getClass().getSimpleName());
+		strategies.add(gapReversalIntradayStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -182,8 +192,10 @@ public class StrategiesMap {
 		strategies.add(yieldCurveSpreadStrategy.buildStrategy());
 		strategies.add(dailyBreakoutStrategy.buildStrategy(series));
 		strategies.add(dailyOversoldBounceStrategy.buildStrategy(series));
-		strategies.add(omx30IntradayMomentumStrategy.buildStrategy(series));
-		strategies.add(runawayGAPIntradayStrategy.buildStrategy(series));
+		strategies.add(canslimStrategy.buildStrategy(series));
+		strategies.add(openingRangeBreakoutIntradayStrategy.buildStrategy(series));
+		strategies.add(vwapMeanReversionIntradayStrategy.buildStrategy(series));
+		strategies.add(gapReversalIntradayStrategy.buildStrategy(series));
 
 		this.strategies = strategies;
 		return strategies;
@@ -267,10 +279,14 @@ public class StrategiesMap {
 			return dailyBreakoutStrategy.buildStrategy(series);
 		} else if (strategy.equals(DailyOversoldBounceStrategy.class.getSimpleName())) {
 			return dailyOversoldBounceStrategy.buildStrategy(series);
-		} else if (strategy.equals(OMX30IntradayMomentumStrategy.class.getSimpleName())) {
-			return omx30IntradayMomentumStrategy.buildStrategy(series);
-		} else if (strategy.equals(RunawayGAPIntradayStrategy.class.getSimpleName())) {
-			return runawayGAPIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CANSLIMStrategy.class.getSimpleName())) {
+			return canslimStrategy.buildStrategy(series);
+		} else if (strategy.equals(OpeningRangeBreakoutIntradayStrategy.class.getSimpleName())) {
+			return openingRangeBreakoutIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(VWAPMeanReversionIntradayStrategy.class.getSimpleName())) {
+			return vwapMeanReversionIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(GapReversalIntradayStrategy.class.getSimpleName())) {
+			return gapReversalIntradayStrategy.buildStrategy(series);
 		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
@@ -349,10 +365,14 @@ public class StrategiesMap {
 			return dailyBreakoutStrategy.getIndicatorValues();
 		} else if (strategyName.equals(DailyOversoldBounceStrategy.class.getSimpleName())) {
 			return dailyOversoldBounceStrategy.getIndicatorValues();
-		} else if (strategyName.equals(OMX30IntradayMomentumStrategy.class.getSimpleName())) {
-			return omx30IntradayMomentumStrategy.getIndicatorValues();
-		} else if (strategyName.equals(RunawayGAPIntradayStrategy.class.getSimpleName())) {
-			return runawayGAPIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CANSLIMStrategy.class.getSimpleName())) {
+			return canslimStrategy.getIndicatorValues();
+		} else if (strategyName.equals(OpeningRangeBreakoutIntradayStrategy.class.getSimpleName())) {
+			return openingRangeBreakoutIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(VWAPMeanReversionIntradayStrategy.class.getSimpleName())) {
+			return vwapMeanReversionIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(GapReversalIntradayStrategy.class.getSimpleName())) {
+			return gapReversalIntradayStrategy.getIndicatorValues();
 		} else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);
 		}

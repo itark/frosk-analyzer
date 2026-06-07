@@ -23,20 +23,23 @@ import java.time.ZonedDateTime;
 import java.util.*;
 
 /**
- * Tier-0 intraday data pipeline for OMX30 constituent stocks.
+ * Tier-0 intraday data pipeline.
  *
  * <p>On every 10-minute scheduler tick this service fetches 15-minute bars
- * for each security in the OMX30 dataset, persists them, prunes old bars,
- * and builds ta4j {@link BarSeries} instances for strategy evaluation.
+ * for each security in the configured datasets ({@code intraday.datasets}),
+ * persists them, prunes old bars, and builds ta4j {@link BarSeries} instances
+ * for strategy evaluation.
  */
 @Service
 @Slf4j
 public class IntradayDataService {
 
-    private static final String DATASET_NAME = "OMX30";
     private static final String INTERVAL_CODE = "15m";
     private static final Duration BAR_DURATION = Duration.ofMinutes(15);
     private static final ZoneId STOCKHOLM = ZoneId.of("Europe/Stockholm");
+
+    @Value("${intraday.datasets:OMX30}")
+    private List<String> datasetNames;
 
     @Value("${intraday.retention.days:7}")
     private int retentionDays;
@@ -51,24 +54,33 @@ public class IntradayDataService {
     private DataSetRepository dataSetRepository;
 
     /**
-     * Fetch fresh 15-minute bars for all OMX30 securities, persist them,
-     * prune old bars, and return a map of Security to ta4j BarSeries.
+     * Fetch fresh 15-minute bars for all securities in the configured datasets,
+     * persist them, prune old bars, and return a map of Security to ta4j BarSeries.
      *
-     * @return map keyed by Security; empty map if the OMX30 dataset is not found.
+     * @return map keyed by Security; empty map if no datasets are found.
      */
     public Map<Security, BarSeries> syncAndBuildAllSeries() {
-        DataSet omx30 = dataSetRepository.findByName(DATASET_NAME);
-        if (omx30 == null) {
-            log.warn("IntradayDataService: dataset '{}' not found", DATASET_NAME);
+        List<Security> allSecurities = new ArrayList<>();
+        for (String datasetName : datasetNames) {
+            DataSet ds = dataSetRepository.findByName(datasetName.trim());
+            if (ds == null) {
+                log.warn("IntradayDataService: dataset '{}' not found", datasetName);
+                continue;
+            }
+            allSecurities.addAll(ds.getSecurities());
+        }
+
+        if (allSecurities.isEmpty()) {
+            log.warn("IntradayDataService: no securities found across datasets {}", datasetNames);
             return Collections.emptyMap();
         }
 
-        List<Security> securities = omx30.getSecurities();
-        log.info("IntradayDataService: syncing 15m bars for {} OMX30 securities", securities.size());
+        log.info("IntradayDataService: syncing 15m bars for {} securities from datasets {}",
+                allSecurities.size(), datasetNames);
 
-        for (int i = 0; i < securities.size(); i++) {
-            syncSecurity(securities.get(i));
-            if (i < securities.size() - 1) {
+        for (int i = 0; i < allSecurities.size(); i++) {
+            syncSecurity(allSecurities.get(i));
+            if (i < allSecurities.size() - 1) {
                 try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
         }
@@ -76,14 +88,14 @@ public class IntradayDataService {
         pruneOldBars();
 
         Map<Security, BarSeries> result = new LinkedHashMap<>();
-        for (Security security : securities) {
+        for (Security security : allSecurities) {
             BarSeries series = buildSeriesFromDb(security.getId(), security.getName());
             if (series.getBarCount() > 0) {
                 result.put(security, series);
             }
         }
 
-        log.info("IntradayDataService: built {} non-empty BarSeries from OMX30", result.size());
+        log.info("IntradayDataService: built {} non-empty BarSeries from {}", result.size(), datasetNames);
         return result;
     }
 

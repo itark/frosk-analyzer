@@ -71,8 +71,9 @@ public class PortfolioService {
     );
 
     private static final List<String> INTRADAY_STRATEGIES = List.of(
-            "OMX30IntradayMomentumStrategy",
-            "RunawayGAPIntradayStrategy"
+            "OpeningRangeBreakoutIntradayStrategy",
+            "VWAPMeanReversionIntradayStrategy",
+            "GapReversalIntradayStrategy"
     );
 
     final FeaturedStrategyRepository featuredStrategyRepository;

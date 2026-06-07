@@ -45,6 +45,8 @@ The strategy class must:
 
 **Trade-on model convention:** `EngulfingStrategy` and `GoldStrategy` use `TradeOnCurrentCloseModel`; all others use `TradeOnNextOpenModel`. Intraday strategies use `TradeOnCurrentCloseModel` with 0.03% fee (`intradayFeePerTradePercent`).
 
+**Adding an intraday strategy:** In addition to the five `StrategiesMap` registrations, implement `IntradayStrategy` on the class. The `IntradayStrategyRunner` auto-discovers all `IntradayStrategy` beans via Spring DI. Add the class name to `frosk.strategies.exclude` (intraday strategies run via Tier-0, not the batch run). See `docs/intraday-pipeline.md`.
+
 ## Conventions Claude Can't See From the Code
 
 - **Swedish tickers** use the `.ST` suffix (e.g. `VOLV-B.ST`, `ERIC-B.ST`). The OMXS30 index is `^OMX`.

@@ -88,6 +88,9 @@ public class DataController {
     @Autowired
     HedgeIndexService hedgeIndexService;
 
+    @Autowired
+    nu.itark.frosk.service.IntradayStrategyRunner intradayStrategyRunner;
+
 
     /**
      * @return
@@ -464,17 +467,7 @@ public class DataController {
     public List<IntradaySignalDTO> getIntradaySignals() {
         log.info("GET /intraday/signals");
         return intradaySignalRepository.findTop20ByOrderBySignalTimestampDesc().stream()
-                .map(s -> IntradaySignalDTO.builder()
-                        .ticker(s.getTicker())
-                        .signalTime(Instant.ofEpochSecond(s.getSignalTimestamp())
-                                .atZone(ZoneId.of("Europe/Stockholm"))
-                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
-                        .signalType(s.getSignalType())
-                        .closePrice(s.getClosePrice())
-                        .ema9(s.getEma9())
-                        .ema21(s.getEma21())
-                        .rsi7(s.getRsi7())
-                        .build())
+                .map(this::toSignalDTO)
                 .collect(Collectors.toList());
     }
 
@@ -489,18 +482,20 @@ public class DataController {
                 .toEpochSecond();
         return intradaySignalRepository.findTop20ByOrderBySignalTimestampDesc().stream()
                 .filter(s -> s.getSignalTimestamp() >= startOfDay && "BUY".equals(s.getSignalType()))
-                .map(s -> IntradaySignalDTO.builder()
-                        .ticker(s.getTicker())
-                        .signalTime(Instant.ofEpochSecond(s.getSignalTimestamp())
-                                .atZone(ZoneId.of("Europe/Stockholm"))
-                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
-                        .signalType(s.getSignalType())
-                        .closePrice(s.getClosePrice())
-                        .ema9(s.getEma9())
-                        .ema21(s.getEma21())
-                        .rsi7(s.getRsi7())
-                        .build())
+                .map(this::toSignalDTO)
                 .collect(Collectors.toList());
+    }
+
+    private IntradaySignalDTO toSignalDTO(IntradaySignal s) {
+        return IntradaySignalDTO.builder()
+                .strategyName(s.getStrategyName())
+                .ticker(s.getTicker())
+                .signalTime(Instant.ofEpochSecond(s.getSignalTimestamp())
+                        .atZone(ZoneId.of("Europe/Stockholm"))
+                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                .signalType(s.getSignalType())
+                .closePrice(s.getClosePrice())
+                .build();
     }
 
     /**
@@ -553,7 +548,7 @@ public class DataController {
 
     /**
      * Returns all currently open intraday positions across all intraday strategies
-     * (OMX30IntradayMomentumStrategy, RunawayGAPIntradayStrategy).
+     * (OpeningRangeBreakoutIntradayStrategy, VWAPMeanReversionIntradayStrategy, GapReversalIntradayStrategy).
      * Each position includes entry price/time, latest intraday price, and unrealized P&L.
      *
      * @return open intraday positions sorted by SQN descending per strategy
@@ -563,10 +558,10 @@ public class DataController {
     public List<IntradayOpenPositionDTO> getIntradayOpenPositions() {
         log.info("GET /intradayOpenPositions");
         List<FeaturedStrategy> openPositions = new ArrayList<>();
-        openPositions.addAll(featuredStrategyRepository
-                .findByNameAndOpenOrderBySqnDesc("OMX30IntradayMomentumStrategy", true));
-        openPositions.addAll(featuredStrategyRepository
-                .findByNameAndOpenOrderBySqnDesc("RunawayGAPIntradayStrategy", true));
+        for (String name : intradayStrategyRunner.getStrategyNames()) {
+            openPositions.addAll(featuredStrategyRepository
+                    .findByNameAndOpenOrderBySqnDesc(name, true));
+        }
 
         return openPositions.stream().map(fs -> {
             Security security = securityRepository.findByName(fs.getSecurityName());
@@ -610,11 +605,9 @@ public class DataController {
     }
 
     /**
-     * Returns all BUY/SELL signals generated today (Stockholm time) across all intraday strategies
-     * (OMX30IntradayMomentumStrategy, RunawayGAPIntradayStrategy).
-     * Results are sorted by time descending (most recent first).
+     * Returns all BUY/SELL signals generated today (Stockholm time) across all
+     * registered intraday strategies. Sorted by time descending.
      *
-     * @return today's intraday trade signals
      * @Example GET http://localhost:8080/intradayTodaySignals
      */
     @GetMapping(value = "/intradayTodaySignals")
@@ -625,8 +618,9 @@ public class DataController {
                 .toEpochSecond();
 
         List<FeaturedStrategy> allIntraday = new ArrayList<>();
-        allIntraday.addAll(featuredStrategyRepository.findByName("OMX30IntradayMomentumStrategy"));
-        allIntraday.addAll(featuredStrategyRepository.findByName("RunawayGAPIntradayStrategy"));
+        for (String name : intradayStrategyRunner.getStrategyNames()) {
+            allIntraday.addAll(featuredStrategyRepository.findByName(name));
+        }
 
         List<IntradayTodaySignalDTO> signals = new ArrayList<>();
         Date startOfDayDate = Date.from(Instant.ofEpochSecond(startOfDay));
@@ -656,58 +650,68 @@ public class DataController {
     public List<IntradayPnlDTO> getIntradayPnl(@RequestParam(value = "ticker", required = false) String ticker) {
         log.info("GET /intraday/pnl ticker={}", ticker);
         List<String> tickers = ticker != null ? List.of(ticker) : intradaySignalRepository.findDistinctTickers();
+        List<String> strategies = intradaySignalRepository.findDistinctStrategyNames();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         ZoneId sthlm = ZoneId.of("Europe/Stockholm");
 
-        return tickers.stream().map(t -> {
-            List<IntradaySignal> signals = intradaySignalRepository.findByTickerOrderBySignalTimestampAsc(t);
-            List<IntradayPnlDTO.IntradayRoundTripDTO> roundTrips = new ArrayList<>();
-            IntradaySignal pendingBuy = null;
+        List<IntradayPnlDTO> results = new ArrayList<>();
+        for (String t : tickers) {
+            for (String strategyName : strategies) {
+                List<IntradaySignal> signals = intradaySignalRepository
+                        .findByTickerAndStrategyNameOrderBySignalTimestampAsc(t, strategyName);
+                if (signals.isEmpty()) continue;
 
-            for (IntradaySignal s : signals) {
-                if ("BUY".equals(s.getSignalType())) {
-                    pendingBuy = s;
-                } else if ("SELL".equals(s.getSignalType()) && pendingBuy != null) {
-                    BigDecimal pnl = s.getClosePrice().subtract(pendingBuy.getClosePrice())
-                            .divide(pendingBuy.getClosePrice(), 4, java.math.RoundingMode.HALF_UP)
-                            .multiply(BigDecimal.valueOf(100));
-                    roundTrips.add(IntradayPnlDTO.IntradayRoundTripDTO.builder()
-                            .buyTime(Instant.ofEpochSecond(pendingBuy.getSignalTimestamp()).atZone(sthlm).format(fmt))
-                            .buyPrice(pendingBuy.getClosePrice())
-                            .sellTime(Instant.ofEpochSecond(s.getSignalTimestamp()).atZone(sthlm).format(fmt))
-                            .sellPrice(s.getClosePrice())
-                            .pnlPercent(pnl)
-                            .build());
-                    pendingBuy = null;
+                List<IntradayPnlDTO.IntradayRoundTripDTO> roundTrips = new ArrayList<>();
+                IntradaySignal pendingBuy = null;
+
+                for (IntradaySignal s : signals) {
+                    if ("BUY".equals(s.getSignalType())) {
+                        pendingBuy = s;
+                    } else if ("SELL".equals(s.getSignalType()) && pendingBuy != null) {
+                        BigDecimal pnl = s.getClosePrice().subtract(pendingBuy.getClosePrice())
+                                .divide(pendingBuy.getClosePrice(), 4, java.math.RoundingMode.HALF_UP)
+                                .multiply(BigDecimal.valueOf(100));
+                        roundTrips.add(IntradayPnlDTO.IntradayRoundTripDTO.builder()
+                                .buyTime(Instant.ofEpochSecond(pendingBuy.getSignalTimestamp()).atZone(sthlm).format(fmt))
+                                .buyPrice(pendingBuy.getClosePrice())
+                                .sellTime(Instant.ofEpochSecond(s.getSignalTimestamp()).atZone(sthlm).format(fmt))
+                                .sellPrice(s.getClosePrice())
+                                .pnlPercent(pnl)
+                                .build());
+                        pendingBuy = null;
+                    }
                 }
+
+                if (roundTrips.isEmpty()) continue;
+
+                BigDecimal totalPnl = roundTrips.stream()
+                        .map(IntradayPnlDTO.IntradayRoundTripDTO::getPnlPercent)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                int wins = (int) roundTrips.stream().filter(rt -> rt.getPnlPercent().compareTo(BigDecimal.ZERO) > 0).count();
+                int losses = (int) roundTrips.stream().filter(rt -> rt.getPnlPercent().compareTo(BigDecimal.ZERO) < 0).count();
+                BigDecimal avg = totalPnl.divide(BigDecimal.valueOf(roundTrips.size()), 4, java.math.RoundingMode.HALF_UP);
+                BigDecimal best = roundTrips.stream()
+                        .map(IntradayPnlDTO.IntradayRoundTripDTO::getPnlPercent)
+                        .max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+                BigDecimal worst = roundTrips.stream()
+                        .map(IntradayPnlDTO.IntradayRoundTripDTO::getPnlPercent)
+                        .min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+
+                results.add(IntradayPnlDTO.builder()
+                        .strategyName(strategyName)
+                        .ticker(t)
+                        .totalTrades(roundTrips.size())
+                        .winningTrades(wins)
+                        .losingTrades(losses)
+                        .totalPnlPercent(totalPnl)
+                        .avgPnlPercent(avg)
+                        .bestTradePercent(best)
+                        .worstTradePercent(worst)
+                        .trades(roundTrips)
+                        .build());
             }
-
-            BigDecimal totalPnl = roundTrips.stream()
-                    .map(IntradayPnlDTO.IntradayRoundTripDTO::getPnlPercent)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            int wins = (int) roundTrips.stream().filter(rt -> rt.getPnlPercent().compareTo(BigDecimal.ZERO) > 0).count();
-            int losses = (int) roundTrips.stream().filter(rt -> rt.getPnlPercent().compareTo(BigDecimal.ZERO) < 0).count();
-            BigDecimal avg = roundTrips.isEmpty() ? BigDecimal.ZERO
-                    : totalPnl.divide(BigDecimal.valueOf(roundTrips.size()), 4, java.math.RoundingMode.HALF_UP);
-            BigDecimal best = roundTrips.stream()
-                    .map(IntradayPnlDTO.IntradayRoundTripDTO::getPnlPercent)
-                    .max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
-            BigDecimal worst = roundTrips.stream()
-                    .map(IntradayPnlDTO.IntradayRoundTripDTO::getPnlPercent)
-                    .min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
-
-            return IntradayPnlDTO.builder()
-                    .ticker(t)
-                    .totalTrades(roundTrips.size())
-                    .winningTrades(wins)
-                    .losingTrades(losses)
-                    .totalPnlPercent(totalPnl)
-                    .avgPnlPercent(avg)
-                    .bestTradePercent(best)
-                    .worstTradePercent(worst)
-                    .trades(roundTrips)
-                    .build();
-        }).collect(Collectors.toList());
+        }
+        return results;
     }
 
     @GetMapping(value = "/tradingAccounts")

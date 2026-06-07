@@ -5,8 +5,7 @@ import nu.itark.frosk.analysis.StrategyExecutor;
 import nu.itark.frosk.model.IntradaySignal;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.IntradaySignalRepository;
-import nu.itark.frosk.strategies.OMX30IntradayMomentumStrategy;
-import nu.itark.frosk.strategies.RunawayGAPIntradayStrategy;
+import nu.itark.frosk.strategies.IntradayStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
@@ -24,8 +23,8 @@ import java.util.Map;
  * <p>Called by {@link nu.itark.frosk.dataset.Scheduler#tier0IntradaySync()}
  * every 10 minutes during Stockholm market hours (09:00–17:30 CET, Mon–Fri).
  *
- * <p>Each invocation fetches 15-minute bars for all OMX30 constituent stocks,
- * runs {@link OMX30IntradayMomentumStrategy} on each, emits BUY/SELL
+ * <p>Each invocation fetches intraday bars for all configured securities,
+ * runs every registered {@link IntradayStrategy} on each, emits BUY/SELL
  * signals to the {@code intraday_signal} table, and persists
  * {@code FeaturedStrategy} backtest results via {@link StrategyExecutor}.
  */
@@ -34,17 +33,12 @@ import java.util.Map;
 public class IntradayStrategyRunner {
 
     private static final int MIN_BARS = 30;
-    private static final String MOMENTUM_STRATEGY = "OMX30IntradayMomentumStrategy";
-    private static final String GAP_STRATEGY = "RunawayGAPIntradayStrategy";
 
     @Autowired
     private IntradayDataService intradayDataService;
 
     @Autowired
-    private OMX30IntradayMomentumStrategy momentumStrategy;
-
-    @Autowired
-    private RunawayGAPIntradayStrategy gapStrategy;
+    private List<IntradayStrategy> intradayStrategies;
 
     @Autowired
     private IntradaySignalRepository signalRepository;
@@ -52,8 +46,15 @@ public class IntradayStrategyRunner {
     @Autowired
     private StrategyExecutor strategyExecutor;
 
+    public List<String> getStrategyNames() {
+        return intradayStrategies.stream()
+                .map(s -> s.getClass().getSimpleName())
+                .toList();
+    }
+
     public void run() {
-        log.info("IntradayStrategyRunner: starting");
+        log.info("IntradayStrategyRunner: starting with {} strategies: {}",
+                intradayStrategies.size(), getStrategyNames());
 
         Map<Security, BarSeries> allSeries = intradayDataService.syncAndBuildAllSeries();
         if (allSeries.isEmpty()) {
@@ -74,18 +75,21 @@ public class IntradayStrategyRunner {
                 continue;
             }
 
-            totalSignals += evaluateStrategy(momentumStrategy.buildStrategy(series),
-                    MOMENTUM_STRATEGY, security, series);
-            totalSignals += evaluateStrategy(gapStrategy.buildStrategy(series),
-                    GAP_STRATEGY, security, series);
+            for (IntradayStrategy intradayStrategy : intradayStrategies) {
+                String strategyName = intradayStrategy.getClass().getSimpleName();
+                Strategy ta4j = intradayStrategy.buildStrategy(series);
+                totalSignals += evaluateStrategy(ta4j, strategyName, security, series);
+            }
             eligibleSeries.add(series);
         }
 
         if (!eligibleSeries.isEmpty()) {
-            strategyExecutor.execute(MOMENTUM_STRATEGY, eligibleSeries);
-            strategyExecutor.execute(GAP_STRATEGY, eligibleSeries);
-            log.info("IntradayStrategyRunner: FeaturedStrategy updated for {} securities × 2 strategies",
-                    eligibleSeries.size());
+            for (IntradayStrategy intradayStrategy : intradayStrategies) {
+                String strategyName = intradayStrategy.getClass().getSimpleName();
+                strategyExecutor.execute(strategyName, eligibleSeries);
+            }
+            log.info("IntradayStrategyRunner: FeaturedStrategy updated for {} securities x {} strategies",
+                    eligibleSeries.size(), intradayStrategies.size());
         }
 
         log.info("IntradayStrategyRunner: completed — {} signals emitted across {} securities",
@@ -119,33 +123,18 @@ public class IntradayStrategyRunner {
         ZonedDateTime barEnd = bar.getEndTime();
         long barStartEpoch = barEnd.toEpochSecond() - 300;
 
-        if (signalRepository.existsByTickerAndSignalTimestampAndSignalType(
-                ticker, barStartEpoch, signalType)) {
+        if (signalRepository.existsByStrategyNameAndTickerAndSignalTimestampAndSignalType(
+                strategyName, ticker, barStartEpoch, signalType)) {
             return;
         }
 
-        BigDecimal ema9 = null, ema21 = null, rsi7 = null;
-        if (MOMENTUM_STRATEGY.equals(strategyName)) {
-            Double ef  = momentumStrategy.getEmaFastAt(index);
-            Double es  = momentumStrategy.getEmaSlowAt(index);
-            Double r   = momentumStrategy.getRsiAt(index);
-            ema9  = ef != null ? toBd(ef) : null;
-            ema21 = es != null ? toBd(es) : null;
-            rsi7  = r  != null ? toBd(r)  : null;
-        }
-
         IntradaySignal signal = new IntradaySignal(
-                ticker, barStartEpoch, signalType,
-                toBd(bar.getClosePrice().doubleValue()),
-                ema9, ema21, rsi7
+                strategyName, ticker, barStartEpoch, signalType,
+                BigDecimal.valueOf(bar.getClosePrice().doubleValue())
         );
         signalRepository.save(signal);
 
         log.info("IntradayStrategyRunner: {} {} — ticker={}, bar={}, close={}",
                 strategyName, signalType, ticker, barStartEpoch, signal.getClosePrice());
-    }
-
-    private static BigDecimal toBd(double value) {
-        return BigDecimal.valueOf(value);
     }
 }

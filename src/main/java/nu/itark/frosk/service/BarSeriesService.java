@@ -176,12 +176,12 @@ public class BarSeriesService  {
 	}
 
 	private static final java.util.Set<String> INTRADAY_STRATEGIES = java.util.Set.of(
-			"OMX30IntradayMomentumStrategy", "RunawayGAPIntradayStrategy"
+			"OpeningRangeBreakoutIntradayStrategy", "VWAPMeanReversionIntradayStrategy", "GapReversalIntradayStrategy"
 	);
 
 	private static final java.util.Set<String> CURRENT_CLOSE_STRATEGIES = java.util.Set.of(
 			"EngulfingStrategy", "GoldStrategy",
-			"OMX30IntradayMomentumStrategy", "RunawayGAPIntradayStrategy"
+			"OpeningRangeBreakoutIntradayStrategy", "VWAPMeanReversionIntradayStrategy", "GapReversalIntradayStrategy"
 	);
 
 	public TradingRecord runConfiguredStrategy(BarSeries barSeries, Strategy strategyToRun) {
