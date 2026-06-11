@@ -14,6 +14,18 @@
     .header { background: #1a2733; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a3a4a; }
     .header h1 { font-size: 20px; font-weight: 600; color: #4fc3f7; }
     .header .refresh-info { font-size: 12px; color: #7a8a9a; }
+    .source-switch { display: flex; align-items: center; gap: 12px; margin: 0 20px; }
+    .source-switch-label { font-size: 13px; font-weight: 600; color: #546e7a; transition: color 0.3s; cursor: pointer; user-select: none; }
+    .source-switch-label.active { color: #e0e6ed; }
+    .source-switch-label.equity-active { color: #66bb6a; }
+    .source-switch-label.crypto-active { color: #ffb74d; }
+    .switch-track { position: relative; width: 52px; height: 28px; background: #1b5e20; border-radius: 14px; cursor: pointer; transition: background 0.3s; border: 2px solid #2e7d32; }
+    .switch-track.crypto { background: #e65100; border-color: #ef6c00; }
+    .switch-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+    .switch-track.crypto .switch-thumb { transform: translateX(24px); }
+    .source-mode-badge { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
+    .source-mode-badge.equity { background: #1b5e2033; color: #66bb6a; }
+    .source-mode-badge.crypto { background: #e6510033; color: #ffb74d; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
     @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
     .panel { background: #1a2733; border: 1px solid #2a3a4a; border-radius: 8px; overflow: hidden; }
@@ -38,6 +50,7 @@
     .pnl-neg { color: #f44336; }
     .empty-state { text-align: center; padding: 32px; color: #546e7a; }
     .chart-container { width: 100%; height: 200px; }
+    .crypto-accent { color: #ffb74d; }
   </style>
 </head>
 <body>
@@ -52,6 +65,11 @@
       if (regime.includes('Cautious')) return 'regime-cautious';
       if (regime.includes('Defensive')) return 'regime-defensive';
       return 'regime-riskoff';
+    }
+
+    /** Appends ?source=crypto to URL when in crypto mode */
+    function apiUrl(path, source) {
+      return source === 'crypto' ? `${path}${path.includes('?') ? '&' : '?'}source=crypto` : path;
     }
 
     function HedgeIndexPanel({ score, history }) {
@@ -90,19 +108,52 @@
       );
     }
 
-    function IntradayPanel({ signals }) {
+    function SecuritiesPanel({ securities, source }) {
+      const isCrypto = source === 'crypto';
       return (
         <div className="panel">
-          <div className="panel-header"><h2>Intraday Signals</h2><span style={{fontSize:11,color:'#546e7a'}}>{signals.length} signals</span></div>
+          <div className="panel-header">
+            <h2>{isCrypto ? 'Crypto Securities' : 'Securities'}</h2>
+            <span style={{fontSize:11,color:'#546e7a'}}>{securities.length} active</span>
+          </div>
           <div className="panel-body" style={{ maxHeight: 340, overflowY: 'auto' }}>
-            {signals.length === 0 ? <div className="empty-state">No intraday signals</div> : (
+            {securities.length === 0 ? <div className="empty-state">No securities found</div> : (
+              <table>
+                <thead><tr><th>Ticker</th><th>Description</th>{!isCrypto && <th>Sector</th>}{isCrypto && <th>Currency</th>}</tr></thead>
+                <tbody>
+                  {securities.map((s, i) => (
+                    <tr key={i}>
+                      <td style={isCrypto ? {color:'#ffb74d'} : {}}>{s.name}</td>
+                      <td>{s.description || '-'}</td>
+                      {!isCrypto && <td>{s.sector || '-'}</td>}
+                      {isCrypto && <td>{s.quoteCurrency || 'EUR'}</td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function IntradayPanel({ signals, source }) {
+      const isCrypto = source === 'crypto';
+      return (
+        <div className="panel">
+          <div className="panel-header">
+            <h2>{isCrypto ? 'Crypto Signals' : 'Intraday Signals'}</h2>
+            <span style={{fontSize:11,color:'#546e7a'}}>{signals.length} signals</span>
+          </div>
+          <div className="panel-body" style={{ maxHeight: 340, overflowY: 'auto' }}>
+            {signals.length === 0 ? <div className="empty-state">{isCrypto ? 'No crypto signals yet' : 'No intraday signals'}</div> : (
               <table>
                 <thead><tr><th>Time</th><th>Ticker</th><th>Type</th><th>Close</th><th>RSI(7)</th></tr></thead>
                 <tbody>
                   {signals.map((s, i) => (
                     <tr key={i}>
                       <td>{s.signalTime}</td>
-                      <td>{s.ticker}</td>
+                      <td style={isCrypto ? {color:'#ffb74d'} : {}}>{s.ticker}</td>
                       <td><span className={`badge ${s.signalType === 'BUY' ? 'badge-buy' : 'badge-sell'}`}>{s.signalType}</span></td>
                       <td>{s.closePrice != null ? Number(s.closePrice).toFixed(2) : '-'}</td>
                       <td>{s.rsi7 != null ? Number(s.rsi7).toFixed(1) : '-'}</td>
@@ -142,10 +193,11 @@
       );
     }
 
-    function PortfolioPanel({ portfolio }) {
+    function PortfolioPanel({ portfolio, source }) {
+      const isCrypto = source === 'crypto';
       if (!portfolio || !portfolio.positions) return (
         <div className="panel">
-          <div className="panel-header"><h2>Portfolio</h2></div>
+          <div className="panel-header"><h2>{isCrypto ? 'Crypto Portfolio' : 'Portfolio'}</h2></div>
           <div className="panel-body"><div className="empty-state">No portfolio snapshot</div></div>
         </div>
       );
@@ -153,7 +205,7 @@
       return (
         <div className="panel">
           <div className="panel-header">
-            <h2>Portfolio</h2>
+            <h2>{isCrypto ? 'Crypto Portfolio' : 'Portfolio'}</h2>
             <span style={{fontSize:11,color:'#546e7a'}}>
               {portfolio.snapshotDate} &middot; {portfolio.openPositionCount} positions &middot;
               Avg PnL: <span className={pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}>{pnl != null ? (pnl * 100).toFixed(2) + '%' : '-'}</span>
@@ -168,7 +220,7 @@
                     const pnlPct = p.unrealizedPnlPercent;
                     return (
                       <tr key={i}>
-                        <td title={p.securityDesc}>{p.securityName}</td>
+                        <td style={isCrypto ? {color:'#ffb74d'} : {}} title={p.securityDesc}>{p.securityName}</td>
                         <td>{p.strategyName || ''}</td>
                         <td>{p.entryDate || '-'}</td>
                         <td>{p.entryPrice != null ? Number(p.entryPrice).toFixed(2) : '-'}</td>
@@ -186,22 +238,75 @@
       );
     }
 
+    function FeaturedStrategiesPanel({ strategies, source }) {
+      const isCrypto = source === 'crypto';
+      return (
+        <div className="panel" style={{ gridColumn: '1 / -1' }}>
+          <div className="panel-header">
+            <h2>{isCrypto ? 'Crypto Strategies' : 'Top Strategies'}</h2>
+            <span style={{fontSize:11,color:'#546e7a'}}>{strategies.length} strategies</span>
+          </div>
+          <div className="panel-body" style={{ maxHeight: 400, overflowY: 'auto' }}>
+            {strategies.length === 0 ? <div className="empty-state">{isCrypto ? 'No crypto strategy results yet — run crypto sync first' : 'No strategy data'}</div> : (
+              <table>
+                <thead><tr><th>Security</th><th>Strategy</th><th>Profit</th><th>SQN</th><th>Win %</th><th>Trades</th><th>Open</th></tr></thead>
+                <tbody>
+                  {strategies.map((s, i) => {
+                    const profit = s.totalProfit;
+                    return (
+                      <tr key={i}>
+                        <td style={isCrypto ? {color:'#ffb74d'} : {}}>{s.securityName || '-'}</td>
+                        <td>{s.name ? s.name.replace('Strategy', '') : '-'}</td>
+                        <td className={profit >= 0 ? 'pnl-pos' : 'pnl-neg'}>{profit != null ? Number(profit).toFixed(2) + '%' : '-'}</td>
+                        <td>{s.sqn != null ? Number(s.sqn).toFixed(2) : '-'}</td>
+                        <td>{s.profitableTradesRatio || '-'}</td>
+                        <td>{s.numberofTrades || '-'}</td>
+                        <td>{s.isOpen === 'true' ? 'Yes' : ''}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     function App() {
+      const [source, setSource] = useState('equity');
       const [score, setScore] = useState(null);
       const [history, setHistory] = useState([]);
       const [signals, setSignals] = useState([]);
       const [watchlist, setWatchlist] = useState([]);
       const [portfolio, setPortfolio] = useState(null);
+      const [securities, setSecurities] = useState([]);
+      const [featuredStrategies, setFeaturedStrategies] = useState([]);
       const [lastRefresh, setLastRefresh] = useState('');
 
+      const isCrypto = source === 'crypto';
+
       const fetchAll = useCallback(() => {
+        // HedgeIndex is always from main DB (not source-dependent)
         fetch('/hedgeindex/score').then(r => r.json()).then(setScore).catch(() => {});
         fetch('/hedgeindex/history?days=60').then(r => r.json()).then(setHistory).catch(() => {});
-        fetch('/intraday/signals').then(r => r.json()).then(setSignals).catch(() => {});
-        fetch('/dagstrategin/watchlist').then(r => r.json()).then(setWatchlist).catch(() => {});
-        fetch('/portfolio').then(r => r.json()).then(setPortfolio).catch(() => {});
+
+        // Source-dependent endpoints
+        fetch(apiUrl('/intraday/signals', source)).then(r => r.json()).then(setSignals).catch(() => setSignals([]));
+        fetch(apiUrl('/metadata', source)).then(r => r.json()).then(setSecurities).catch(() => setSecurities([]));
+        fetch(apiUrl('/featuredStrategies', source)).then(r => r.json()).then(setFeaturedStrategies).catch(() => setFeaturedStrategies([]));
+
+        if (isCrypto) {
+          // Crypto doesn't have dagstrategin watchlist
+          setWatchlist([]);
+          fetch(apiUrl('/portfolio', source)).then(r => r.json()).then(setPortfolio).catch(() => setPortfolio(null));
+        } else {
+          fetch('/dagstrategin/watchlist').then(r => r.json()).then(setWatchlist).catch(() => setWatchlist([]));
+          fetch('/portfolio').then(r => r.json()).then(setPortfolio).catch(() => setPortfolio(null));
+        }
+
         setLastRefresh(new Date().toLocaleTimeString());
-      }, []);
+      }, [source]);
 
       useEffect(() => {
         fetchAll();
@@ -213,13 +318,39 @@
         <div>
           <div className="header">
             <h1>Nordic Quant Strategy Agent</h1>
+            <div className="source-switch">
+              <span
+                className={`source-switch-label ${!isCrypto ? 'equity-active' : ''}`}
+                onClick={() => setSource('equity')}
+              >OMX Equity</span>
+              <div
+                className={`switch-track ${isCrypto ? 'crypto' : ''}`}
+                onClick={() => setSource(isCrypto ? 'equity' : 'crypto')}
+              >
+                <div className="switch-thumb" />
+              </div>
+              <span
+                className={`source-switch-label ${isCrypto ? 'crypto-active' : ''}`}
+                onClick={() => setSource('crypto')}
+              >Crypto</span>
+              <span className={`source-mode-badge ${isCrypto ? 'crypto' : 'equity'}`}>
+                {isCrypto ? 'COINBASE' : 'YAHOO'}
+              </span>
+            </div>
             <div className="refresh-info">Last refresh: {lastRefresh} (auto every 60s)</div>
           </div>
           <div className="grid">
             <HedgeIndexPanel score={score} history={history} />
-            <IntradayPanel signals={signals} />
-            <WatchlistPanel watchlist={watchlist} />
-            <PortfolioPanel portfolio={portfolio} />
+            {isCrypto
+              ? <SecuritiesPanel securities={securities} source={source} />
+              : <IntradayPanel signals={signals} source={source} />
+            }
+            {isCrypto
+              ? <IntradayPanel signals={signals} source={source} />
+              : <WatchlistPanel watchlist={watchlist} />
+            }
+            <PortfolioPanel portfolio={portfolio} source={source} />
+            <FeaturedStrategiesPanel strategies={featuredStrategies} source={source} />
           </div>
         </div>
       );

@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.SecurityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
@@ -38,9 +39,15 @@ public class DataManager {
 	@Autowired
 	SecurityRepository securityRepository;
 
+	@Value("${frosk.database.only:YAHOO}")
+	private String databaseOnly;
+
 	public void addDatasetSecuritiesIntoDatabase(){
-		dataSetHelper.addDatasetSecuritiesFromCvsFile();
-		//dataSetHelper.addDatasetSecuritiesForCoinBase();
+		if ("COINBASE".equals(databaseOnly)) {
+			dataSetHelper.addDatasetSecuritiesForCoinBase();
+		} else {
+			dataSetHelper.addDatasetSecuritiesFromCvsFile();
+		}
 	}
 	
 	/**
@@ -92,9 +99,9 @@ public class DataManager {
 	public void insertSecurityPricesIntoDatabase(Database database, String security) {
 		if (database.equals(Database.YAHOO)) {
 			yahooDataManager.syncronize(security);
-		} else if (database.equals(Database.COINBASE))
+		} else if (database.equals(Database.COINBASE)) {
 			coinbaseDataManager.syncronize(security);
-		else {
+		} else {
 			throw new RuntimeException("No database set!");
 		}
 	}

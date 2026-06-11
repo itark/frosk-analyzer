@@ -60,6 +60,9 @@ public class HighLander {
 	@Value("${frosk.run.intraday:true}")
 	private boolean runIntraday;
 
+	@Value("${frosk.run.crypto:false}")
+	private boolean runCrypto;
+
 	@Value("${frosk.updatesecuritymetadata}")
 	private boolean updateSecurityMetaData;
 
@@ -229,6 +232,25 @@ public class HighLander {
 		log.info("syncTier3 started");
 		updateSecurityMetaData();
 		log.info("syncTier3 completed");
+	}
+
+	/**
+	 * Crypto sync — syncs Coinbase price data and runs strategies on crypto securities.
+	 * Runs independently of OMX market hours (crypto is 24/7).
+	 * Does NOT warm HedgeIndex cache — crypto is not gated by OMX macro signals.
+	 *
+	 * In the two-process architecture, this method runs in the crypto process
+	 * where the main (and only) datasource points to the crypto H2 database.
+	 */
+	public void syncCrypto() {
+		if (!runCrypto) {
+			log.info("syncCrypto skipped — frosk.run.crypto=false");
+			return;
+		}
+		log.info("syncCrypto started");
+		addSecurityPricesFromCoinbase();
+		strategyAnalysis.runCryptoStrategies();
+		log.info("syncCrypto completed");
 	}
 
 	/**

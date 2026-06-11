@@ -28,5 +28,9 @@ public class SecurityDTO {
     private BigDecimal threeMonthPercent;
     private BigDecimal sixMonthPercent;
     private String bestStrategy;
+    private String description;
+    private String quoteCurrency;
+    private String sector;
+    private String database;
 
 }

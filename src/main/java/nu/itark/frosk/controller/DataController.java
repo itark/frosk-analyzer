@@ -236,7 +236,7 @@ public class DataController {
      */
     @RequestMapping(path = "/metadata", method = RequestMethod.GET)
     public List<SecurityDTO> getMetaData() {
-        log.info("/metadata");
+        log.info("/metadata (db={})", databaseOnly);
         return securityMetaDataManager.getSecurityMetaData(databaseOnly);
     }
 
@@ -544,6 +544,17 @@ public class DataController {
         log.info("POST /intraday/run — manual trigger (bypasses market hours check)");
         highLander.syncTier0(true);
         return "IntradayStrategyRunner completed";
+    }
+
+    /**
+     * Manual trigger for crypto sync — syncs Coinbase prices and runs strategies.
+     * @Example POST http://localhost:8080/crypto/run
+     */
+    @PostMapping(value = "/crypto/run")
+    public String triggerCryptoRun() {
+        log.info("POST /crypto/run — manual crypto sync trigger");
+        highLander.syncCrypto();
+        return "Crypto sync completed";
     }
 
     /**

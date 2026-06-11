@@ -15,9 +15,11 @@ import org.springframework.scheduling.annotation.Scheduled;
  * Tier 1 (daily, MON-FRI 18:00):  OMXS30 price sync + HedgeIndex update   ~40 req/run
  * Tier 2 (weekly, SAT 06:00):     Full universe price sync                  ~900 req/run
  * Tier 3 (monthly, 1st 07:00):    Fundamental metadata update               ~1,800 req/run
+ * Crypto (daily, 00:30):           Coinbase price sync + strategy run        0 RapidAPI req
  *
  * Budget: ~8,002 / 10,000 req/month on the yahoo-finance15 free plan.
  * (Tier 0 adds ~1,122 req/month — 1 req × ~51 ticks/day × 22 trading days)
+ * Crypto sync uses Coinbase API directly — no RapidAPI cost.
  */
 @Configuration
 @EnableScheduling
@@ -60,5 +62,17 @@ public class Scheduler {
 		log.info("Scheduler::tier3MonthlyMetadata starting");
 		highLander.syncTier3();
 		log.info("Scheduler::tier3MonthlyMetadata completed");
+	}
+
+	/**
+	 * Crypto — sync Coinbase prices and run strategies daily at 00:30.
+	 * Crypto trades 24/7, so one daily sync captures the full previous day.
+	 * Uses Coinbase API directly — zero RapidAPI cost.
+	 */
+	@Scheduled(cron = "${scheduler.crypto.cron:0 30 0 * * *}")
+	public void cryptoDailySync() {
+		log.info("Scheduler::cryptoDailySync starting");
+		highLander.syncCrypto();
+		log.info("Scheduler::cryptoDailySync completed");
 	}
 }

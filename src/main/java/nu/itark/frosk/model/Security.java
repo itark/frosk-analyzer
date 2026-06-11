@@ -65,9 +65,13 @@ public class Security {
 	@Column(name = "active", columnDefinition="BOOLEAN DEFAULT true")
 	private boolean active = true;
 
+	/**
+	 * Enterprise value gating only applies to equities (YAHOO database).
+	 * Crypto (COINBASE) has no enterprise value — keep active as-is.
+	 */
 	@PreUpdate
 	private void syncActiveWithEnterpriseValue() {
-		if (this.enterpriseValue != null) {
+		if (this.enterpriseValue != null && !"COINBASE".equals(this.database)) {
 			this.active = this.enterpriseValue > 500000000;
 		}
 	}

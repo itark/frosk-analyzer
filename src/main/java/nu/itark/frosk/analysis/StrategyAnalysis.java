@@ -356,6 +356,25 @@ public class StrategyAnalysis {
 		log.info("runMånadsportföljStrategies() READY");
 	}
 
+	/**
+	 * Runs all non-excluded strategies on COINBASE (crypto) securities.
+	 * Called from HighLander.syncCrypto() on its own schedule.
+	 * HedgeIndex cache is NOT warmed — crypto strategies should not be gated by OMX macro signals.
+	 */
+	public void runCryptoStrategies() {
+		log.info("runCryptoStrategies()");
+		List<BarSeries> barSeriesList = barSeriesService.getDataSet(Database.COINBASE);
+		if (barSeriesList.isEmpty()) {
+			log.warn("No active COINBASE securities found — skipping crypto strategies");
+			return;
+		}
+		List<String> strategies = strategiesMap.buildStrategiesMap();
+		strategies.removeAll(List.of(excludeHedgeStrategies));
+		log.info("Crypto: running {} strategies on {} securities", strategies.size(), barSeriesList.size());
+		runStrategiesInParallel(strategies, barSeriesList);
+		log.info("runCryptoStrategies() READY");
+	}
+
 	protected void setBestStrategy(BarSeries barSeries) {
 		if (Objects.isNull(barSeries) || barSeries.getBarData().isEmpty()){
 			return;

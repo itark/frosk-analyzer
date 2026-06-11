@@ -17,8 +17,31 @@ Two Swedish stock portfolio strategies (Månadsportföljen, Dagstrategin), both 
 ```bash
 ./build-frosk.sh                                  # build gdax-java + frosk-analyzer, then start
 mvn clean install -DskipTests
-mvn spring-boot:run
+```
 
+### Starting the application
+
+Equity and crypto run as **two separate Spring Boot processes** from the same JAR, each with its own H2 database file and Spring profile. Start them in separate terminals:
+
+```bash
+# Terminal 1 — Equity (OMX/Yahoo data, port 8080)
+mvn spring-boot:run -Dspring-boot.run.profiles=equity
+
+# Terminal 2 — Crypto (Coinbase data, port 8081)
+mvn spring-boot:run -Dspring-boot.run.profiles=crypto
+```
+
+Running without a profile (`mvn spring-boot:run`) uses the defaults in `application.properties`, which match the equity profile.
+
+The frosk-dashboard toggle switch in the header seamlessly switches all API calls between `:8080` (equity) and `:8081` (crypto) — no restart needed.
+
+Profile-specific configuration lives in:
+- `application-equity.properties` — Yahoo sync, HedgeIndex, all schedulers (Tier 0–3)
+- `application-crypto.properties` — Coinbase sync, Yahoo schedulers disabled, crypto cron at 00:30
+
+### Tests
+
+```bash
 mvn test
 mvn test -Dtest=TestJStrategyAnalysis             # one test class
 mvn test -Dtest=TestJStrategyAnalysis#runSTLT     # one test method
@@ -49,6 +72,7 @@ The strategy class must:
 
 ## Conventions Claude Can't See From the Code
 
+- **Two-process architecture**: equity (port 8080) and crypto (port 8081) run as separate Spring Boot processes from the same JAR, using `application-equity.properties` and `application-crypto.properties` respectively. Each process has its own H2 database file. The frosk-dashboard toggle switch changes which backend base URL is used (`config.baseApi` vs `config.cryptoBaseApi` in `config.js`).
 - **Swedish tickers** use the `.ST` suffix (e.g. `VOLV-B.ST`, `ERIC-B.ST`). The OMXS30 index is `^OMX`.
 - **`Security.active`** is auto-set to `enterpriseValue > 500_000_000` via `@PreUpdate`. `BarSeriesService.getDataSet(Database)` filters to `active=true`, so small caps are excluded by default.
 - **HedgeIndex cache**: call `HedgeIndexService.warmCache()` before bulk strategy runs; the cache clears automatically after `update()`. Use `risk(ZonedDateTime)` for boolean checks and `getScore(ZonedDateTime)` for tiered decisions.
