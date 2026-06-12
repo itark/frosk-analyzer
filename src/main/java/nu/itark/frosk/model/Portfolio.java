@@ -33,9 +33,21 @@ public class Portfolio {
     @Column(name = "open_position_count")
     private int openPositionCount;
 
-    /** Average unrealized P&L % across all open positions. */
+    /**
+     * Daily portfolio: average unrealized P&L % across all open positions.
+     * Intraday portfolio: sum of today's realized round-trip P&L (net of fees)
+     * plus the unrealized P&L of currently open positions.
+     */
     @Column(name = "total_pnl_percent", precision = 12, scale = 4)
     private BigDecimal totalPnlPercent;
+
+    /** Sum of today's closed round-trip P&L % net of fees (intraday only). */
+    @Column(name = "realized_pnl_percent", precision = 12, scale = 4)
+    private BigDecimal realizedPnlPercent;
+
+    /** Number of round trips closed today (intraday only). */
+    @Column(name = "closed_trade_count")
+    private Integer closedTradeCount;
 
     @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("entryDate ASC")

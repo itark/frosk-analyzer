@@ -29,7 +29,7 @@ Sweden is the primary market. US indicators are retained where they drive global
 >
 > **Removed indicators:** SKEW (CBOE tail-risk index — US options market only, no meaningful read for Swedish equities) and SDEX (S&P 500 constituent dispersion — purely US internal measure). NASDAQ vs S&P replaced by OMX vs STOXX50 — `NasdaqVsSPStrategy` removed from `HedgeIndexService.update()` (step 12); `OMXvsSTOXX50Strategy` is the sole equities-relative indicator. US CPI replaced by Swedish KPIF. VSTOXX added as a more relevant volatility gauge alongside VIX. EUR/USD added given Sweden's deep Eurozone trade dependency.
 
-**Volatility cluster rule:** if both VIX and VSTOXX are risk-off simultaneously, increase hedge size by +1 notch regardless of total score.
+**Volatility cluster rule:** if both VIX and VSTOXX are risk-off simultaneously, +1 extra point is added to the score (implemented in `HedgeIndexService.scoreOf()`).
 
 ## Regime Classification
 
@@ -40,8 +40,19 @@ Sweden is the primary market. US indicators are retained where they drive global
 | 8–11 | **Neutral / Defensive** | 10–40% | Defensive sectors, high-quality dividends; long Gold, long VIX |
 | 12+ | **Strong Risk-Off** | 0–10% or net short | Long VIX/volatility, long Gold, short indices via bear puts or inverse ETFs |
 
-## HedgeIndex Performance
+## Score Semantics and Cache
 
-`HedgeIndexService` maintains an in-memory cache (`Map<Long, Integer>` keyed on `Date.getTime()` millis) to avoid per-bar DB queries during strategy evaluation. Call `warmCache()` before running bulk strategies; the cache is automatically cleared after `update()`. Two accessors: `risk(ZonedDateTime)` returns boolean (score > threshold), `getScore(ZonedDateTime)` returns the raw integer score for tiered decisions.
+`HedgeIndex` rows are state-change **events** (one per hedge strategy trade: BUY = indicator back to risk-on, SELL = indicator flipped to risk-off), not daily snapshots. The score for any given day is therefore a carried-forward **level**: the number of indicators whose most recent event on or before that day left them in the risk-off state.
+
+`HedgeIndexService` builds an in-memory cache by replaying all events chronologically and carrying each indicator's state forward, keyed by Stockholm start-of-day in a `TreeMap<Long, Integer>`. Lookups use `floorEntry`, so any timestamp — a daily bar end time, a 15-minute intraday bar, or `ZonedDateTime.now()` — resolves to the score in effect on that calendar day. (The previous cache counted events on exact-millisecond dates, so `getScore(now())` and any intraday timestamp returned 0, making the tiered sizing and regime gates dead code.)
+
+Call `warmCache()` before running bulk strategies; the cache is automatically cleared after `update()`. Accessors:
+
+- `risk(ZonedDateTime)` — boolean, score > `frosk.hedge.criteria.risk.threshold` (**7**, recalibrated from 2 for level semantics: 8+ = defensive)
+- `getScore(ZonedDateTime)` / `getScoreForDay(ZonedDateTime)` — raw integer level for tiered decisions
+
+Rule classes in `strategies/rules/`: `HedgeIndexMaxScoreRule` (entry gate, satisfied while score ≤ max; `.negation()` turns it into an exit; works on daily and 15m bars alike), `HedgeIndexTieredRule`, `HedgeIndexRiskOffRule` (wraps `risk()`, fires at score ≥ 8).
+
+Test: `TestJHedgeIndexDayScore`.
 
 **Remaining indicators backlog:** Only 3 indicators still missing an implementation: A/D line (NYSE Advance/Decline — no Yahoo Finance ticker), HY OAS (US High-Yield OAS — not available via Yahoo Finance15), TED Spread (SOFR–T-bill spread — not available via Yahoo Finance15). Swedish KPIF is permanently skipped (no Yahoo Finance ticker). All other indicators — VSTOXX, OMX vs STOXX50, EUR/USD, USD/JPY, AUD/USD, DXY, 10Y Treasury, 2Y–10Y spread — are fully implemented and their tickers are registered in `YAHOO-INDEX-World indexes.csv`.

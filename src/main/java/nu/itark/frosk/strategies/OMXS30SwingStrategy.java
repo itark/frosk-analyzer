@@ -2,16 +2,15 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.strategies.rules.AtrStopLossRule;
+import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.*;
-import org.ta4j.core.indicators.ATRIndicator;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
-import org.ta4j.core.num.Num;
-import org.ta4j.core.rules.AbstractRule;
 import org.ta4j.core.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.StopGainRule;
@@ -87,51 +86,5 @@ public class OMXS30SwingStrategy extends AbstractStrategy implements IIndicatorV
     @Override
     public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
-    }
-
-    // ── ATR-based stop-loss: exits when price drops multiplier×ATR below entry ─
-    private static class AtrStopLossRule extends AbstractRule {
-
-        private final BarSeries           series;
-        private final ATRIndicator        atr;
-        private final double              multiplier;
-        private final ClosePriceIndicator close;
-
-        AtrStopLossRule(BarSeries series, int atrPeriod, double multiplier) {
-            this.series     = series;
-            this.atr        = new ATRIndicator(series, atrPeriod);
-            this.multiplier = multiplier;
-            this.close      = new ClosePriceIndicator(series);
-        }
-
-        @Override
-        public boolean isSatisfied(int index, TradingRecord tradingRecord) {
-            if (tradingRecord == null || tradingRecord.getCurrentPosition().isNew()) {
-                return false;
-            }
-            int entryIndex = tradingRecord.getCurrentPosition().getEntry().getIndex();
-            Num entryPrice = close.getValue(entryIndex);
-            Num stopLevel  = entryPrice.minus(atr.getValue(entryIndex).multipliedBy(series.numOf(multiplier)));
-            return close.getValue(index).isLessThanOrEqual(stopLevel);
-        }
-    }
-
-    // ── Time-based exit: close position after maxBars bars ───────────────────
-    private static class MaxBarsHeldRule extends AbstractRule {
-
-        private final int maxBars;
-
-        MaxBarsHeldRule(int maxBars) {
-            this.maxBars = maxBars;
-        }
-
-        @Override
-        public boolean isSatisfied(int index, TradingRecord tradingRecord) {
-            if (tradingRecord == null || tradingRecord.getCurrentPosition().isNew()) {
-                return false;
-            }
-            int entryIndex = tradingRecord.getCurrentPosition().getEntry().getIndex();
-            return (index - entryIndex) >= maxBars;
-        }
     }
 }

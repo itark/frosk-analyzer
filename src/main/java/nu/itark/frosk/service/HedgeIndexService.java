@@ -317,7 +317,9 @@ public class HedgeIndexService {
     }
 
     // In-memory cache: date millis → risk count. Loaded lazily on first risk() call.
-    private volatile Map<Long, Integer> riskCache = null;
+    private volatile NavigableMap<Long, Integer> riskCache = null;
+
+    private static final java.time.ZoneId STOCKHOLM = java.time.ZoneId.of("Europe/Stockholm");
 
     /**
      * Pre-loads the entire HedgeIndex table into memory so that per-bar rule
@@ -336,33 +338,50 @@ public class HedgeIndexService {
         riskCache = null;
     }
 
+    /**
+     * HedgeIndex rows are state-change <em>events</em> (one per hedge strategy
+     * trade: BUY = indicator back to risk-on, SELL = indicator flipped to
+     * risk-off), not daily snapshots. The score for any given day is therefore
+     * the number of indicators whose most recent event on or before that day
+     * left them in the risk-off state — so the cache is built by replaying all
+     * events chronologically and carrying each indicator's state forward.
+     */
     private void buildCache() {
         List<HedgeIndex> all = hedgeIndexRepository.findAll();
-        Map<Long, Integer> cache = new HashMap<>();
-        // Track which indicators fired risk-off on each date (for cluster rule)
-        Map<Long, Set<String>> riskIndicatorsByDate = new HashMap<>();
+        all.sort(Comparator.comparing(HedgeIndex::getDate, Comparator.nullsFirst(Comparator.naturalOrder())));
 
+        TreeMap<Long, Integer> cache = new TreeMap<>();
+        Map<String, Boolean> stateByIndicator = new HashMap<>();
         for (HedgeIndex hi : all) {
-            if (hi.getDate() != null) {
-                long key = hi.getDate().getTime();
-                if (hi.getRisk()) {
-                    cache.merge(key, 1, Integer::sum);
-                    riskIndicatorsByDate.computeIfAbsent(key, k -> new HashSet<>()).add(hi.getIndicator());
-                } else {
-                    cache.putIfAbsent(key, 0);
-                }
+            if (hi.getDate() == null) {
+                continue;
             }
-        }
-
-        // Volatility cluster rule: VIX + VSTOXX both risk-off on same date → +1 extra point
-        for (Map.Entry<Long, Set<String>> entry : riskIndicatorsByDate.entrySet()) {
-            if (entry.getValue().contains("^VIX") && entry.getValue().contains("^V2TX")) {
-                cache.merge(entry.getKey(), 1, Integer::sum);
-            }
+            stateByIndicator.put(hi.getIndicator(), hi.getRisk());
+            cache.put(startOfDayKey(hi.getDate().toInstant()), scoreOf(stateByIndicator));
         }
 
         riskCache = cache;
-        log.info("HedgeIndex cache warmed: {} distinct dates loaded", cache.size());
+        log.info("HedgeIndex cache warmed: {} distinct dates loaded, current score={}",
+                cache.size(), cache.isEmpty() ? 0 : cache.lastEntry().getValue());
+    }
+
+    private static int scoreOf(Map<String, Boolean> stateByIndicator) {
+        int score = 0;
+        for (Boolean risk : stateByIndicator.values()) {
+            if (Boolean.TRUE.equals(risk)) {
+                score++;
+            }
+        }
+        // Volatility cluster rule: VIX + VSTOXX both risk-off → +1 extra point
+        if (Boolean.TRUE.equals(stateByIndicator.get("^VIX"))
+                && Boolean.TRUE.equals(stateByIndicator.get("^V2TX"))) {
+            score++;
+        }
+        return score;
+    }
+
+    private static long startOfDayKey(java.time.Instant instant) {
+        return instant.atZone(STOCKHOLM).toLocalDate().atStartOfDay(STOCKHOLM).toInstant().toEpochMilli();
     }
 
     /**
@@ -377,8 +396,10 @@ public class HedgeIndexService {
     }
 
     /**
-     * Returns the raw risk score for a given date.
-     * Higher score = more risk-off indicators firing.
+     * Returns the risk score in effect on the given date: the most recent
+     * score on or before that day (Stockholm time). Works for any timestamp —
+     * daily bar end times, 15-minute intraday bars, or {@code ZonedDateTime.now()}.
+     * Higher score = more risk-off indicators in effect.
      */
     public int getScore(ZonedDateTime indexDate) {
         if (riskCache == null) {
@@ -388,8 +409,13 @@ public class HedgeIndexService {
                 }
             }
         }
-        long key = Date.from(indexDate.toInstant()).getTime();
-        return riskCache.getOrDefault(key, 0);
+        Map.Entry<Long, Integer> entry = riskCache.floorEntry(startOfDayKey(indexDate.toInstant()));
+        return entry != null ? entry.getValue() : 0;
+    }
+
+    /** Alias for {@link #getScore(ZonedDateTime)} — the score in effect on that day. */
+    public int getScoreForDay(ZonedDateTime day) {
+        return getScore(day);
     }
 
     private int countRisksIndicators(List<HedgeIndex> hedgeIndexList) {

@@ -60,16 +60,7 @@ public class IntradayDataService {
      * @return map keyed by Security; empty map if no datasets are found.
      */
     public Map<Security, BarSeries> syncAndBuildAllSeries() {
-        List<Security> allSecurities = new ArrayList<>();
-        for (String datasetName : datasetNames) {
-            DataSet ds = dataSetRepository.findByName(datasetName.trim());
-            if (ds == null) {
-                log.warn("IntradayDataService: dataset '{}' not found", datasetName);
-                continue;
-            }
-            allSecurities.addAll(ds.getSecurities());
-        }
-
+        List<Security> allSecurities = collectSecurities();
         if (allSecurities.isEmpty()) {
             log.warn("IntradayDataService: no securities found across datasets {}", datasetNames);
             return Collections.emptyMap();
@@ -87,14 +78,44 @@ public class IntradayDataService {
 
         pruneOldBars();
 
+        return buildSeriesMap(allSecurities);
+    }
+
+    /**
+     * Builds BarSeries for all securities in the configured datasets from
+     * already-persisted bars only — no network sync, no pruning. Used by
+     * backtest/report tooling that must run offline.
+     */
+    public Map<Security, BarSeries> buildAllSeriesFromDb() {
+        List<Security> allSecurities = collectSecurities();
+        if (allSecurities.isEmpty()) {
+            log.warn("IntradayDataService: no securities found across datasets {}", datasetNames);
+            return Collections.emptyMap();
+        }
+        return buildSeriesMap(allSecurities);
+    }
+
+    private List<Security> collectSecurities() {
+        List<Security> allSecurities = new ArrayList<>();
+        for (String datasetName : datasetNames) {
+            DataSet ds = dataSetRepository.findByName(datasetName.trim());
+            if (ds == null) {
+                log.warn("IntradayDataService: dataset '{}' not found", datasetName);
+                continue;
+            }
+            allSecurities.addAll(ds.getSecurities());
+        }
+        return allSecurities;
+    }
+
+    private Map<Security, BarSeries> buildSeriesMap(List<Security> securities) {
         Map<Security, BarSeries> result = new LinkedHashMap<>();
-        for (Security security : allSecurities) {
+        for (Security security : securities) {
             BarSeries series = buildSeriesFromDb(security.getId(), security.getName());
             if (series.getBarCount() > 0) {
                 result.put(security, series);
             }
         }
-
         log.info("IntradayDataService: built {} non-empty BarSeries from {}", result.size(), datasetNames);
         return result;
     }

@@ -6,7 +6,7 @@ Every 10 minutes during Stockholm market hours (09:00–17:59 CET, Mon–Fri) th
 
 1. Fetches the latest **15-minute bars** for all securities in the configured datasets (`intraday.datasets`, default: OMX30) via `YahooFinanceDirectClient.getIntradayBars()` — direct Yahoo Finance v8 API, no RapidAPI cost. 500ms sleep between tickers.
 2. Upserts new bars into the `intraday_bar` table (idempotent — existing bars are skipped by the `uq_intraday_bar` unique constraint on `(security_id, bar_timestamp, interval_code)`).
-3. Prunes bars older than `intraday.retention.days` (default: 7) to keep the table small.
+3. Prunes bars older than `intraday.retention.days` (30 in `application.properties`) — a rolling window large enough to evaluate intraday strategy changes on a real sample.
 4. Builds a ta4j `BarSeries` per security from the retained window.
 5. Runs all registered `IntradayStrategy` implementations on each security. Strategies are auto-discovered via Spring DI — any `@Component` implementing `IntradayStrategy` is included.
 6. If a strategy's entry or exit rule fires on the **latest bar**, emits an `IntradaySignal` to the `intraday_signal` table.
@@ -44,6 +44,8 @@ HighLander.syncTier0()
        └─ log summary
 ```
 
+`IntradayDataService.buildAllSeriesFromDb()` builds the same per-security series from retained bars **without** syncing — used by the offline validation harness (`StrategyComparisonReportIT#intradayReport`).
+
 ## REST Endpoints
 
 | Endpoint | Method | Description |
@@ -52,7 +54,20 @@ HighLander.syncTier0()
 | `/intradayTodaySignals` | GET | All intraday BUY/SELL signals fired today (from FeaturedStrategy trades) |
 | `/intraday/signals` | GET | Latest 20 intraday signals (from `intraday_signal` table) |
 | `/intraday/signals/today` | GET | Today's BUY signals only |
-| `/intraday/pnl` | GET | PnL round-trip report per (ticker, strategy) |
+| `/intraday/pnl` | GET | PnL round-trip report per (ticker, strategy), **net of the 2× 0.03% round-trip fee** |
+| `/portfolio/intraday/build` | POST | Manual trigger of `PortfolioService.buildIntraday()` |
+| `/portfolio/intraday` | GET | Latest intraday portfolio snapshot |
+| `/portfolio/intraday/history` | GET | All intraday portfolio snapshots (headers only) |
+
+## Intraday Portfolio PnL
+
+`PortfolioService.buildIntraday()` snapshots the intraday portfolio on every Tier-0 cycle (no same-day idempotency — positions change frequently). Unlike the daily portfolio (average unrealized PnL of open positions), the intraday `totalPnlPercent` is **additive day-PnL**:
+
+- `realizedPnlPercent` — today's BUY→SELL `IntradaySignal`s paired per (ticker, strategy), each round trip netted of the 2× 0.03% fee, summed
+- `closedTradeCount` — number of round trips closed today
+- `totalPnlPercent` = realized + unrealized PnL of positions still open
+
+Intraday round trips complete within hours, so the old open-positions-only average read 0.0000 essentially always. Test: `TestJIntradayPortfolioPnl`.
 
 ## Cost Analysis
 
@@ -70,6 +85,7 @@ HighLander.syncTier0()
 |---|---|---|
 | `frosk.run.intraday` | `true` | Gate for the Tier-0 pipeline in `syncTier0()` |
 | `intraday.datasets` | `OMX30` | Comma-separated list of datasets whose securities are synced for intraday bars |
-| `intraday.retention.days` | `7` | Days of 15-min bars to retain in `intraday_bar` |
+| `intraday.retention.days` | `30` | Days of 15-min bars to retain in `intraday_bar` (code fallback: 7) |
+| `frosk.intraday.hedge.max.score` | `9` | HedgeIndex entry gate for all intraday strategies — only strong risk-off (score > 9) blocks entries |
 | `scheduler.tier0.cron` | `0 */10 9-17 * * MON-FRI` | Cron expression for Tier-0 tick |
-| `exchange.transaction.intradayFeePerTradePercent` | `0.0003` | Fee applied to intraday strategies (0.03%) |
+| `exchange.transaction.intradayFeePerTradePercent` | `0.0003` | Fee applied to intraday strategies (0.03% per trade); also used to net round-trip PnL |

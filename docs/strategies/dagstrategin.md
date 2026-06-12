@@ -47,3 +47,11 @@ Captures mean-reversion moves after sharp pullbacks in otherwise uptrending stoc
 - Next-morning watchlist: stocks where signal fired on today's close, ranked by distance of close below SMA(20) — deepest pullback first
 
 **Class:** `DailyOversoldBounceStrategy extends AbstractStrategy implements IIndicatorValue` — ✅ implemented (111 lines). Wired into `StrategiesMap` (all 5 points).
+
+---
+
+## Portfolio Inclusion
+
+Since the 2026-06-11 PnL overhaul, `DailyOversoldBounceStrategy` is included in `PortfolioService.DAILY_STRATEGIES`, so its open positions appear in the daily portfolio snapshot (subject to the quality gate: SQN ≥ `frosk.portfolio.min.sqn`, win rate ≥ `frosk.portfolio.min.win.rate` — note the win rate is on the **percent scale**, 40.0 = 40%). `DailyBreakoutStrategy` is not in the portfolio.
+
+The HedgeIndex gates use the carried-forward level semantics (`frosk.hedge.criteria.risk.threshold=7`): `HedgeIndexRiskOffRule` exits fire at score ≥ 8, and the `HedgeIndexTieredRule(7)` entry gate blocks at 8+.

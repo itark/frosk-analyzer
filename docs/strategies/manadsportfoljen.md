@@ -1,35 +1,48 @@
 # Månadsportföljen (Long-Term Factor Portfolio)
 
-**Goal:** Hold 15–25 quality Swedish large/mid-cap stocks, rebalanced quarterly. Beat OMXS30 over 3–5 years.
+**Goal:** Hold 15–25 quality Swedish large/mid-cap stocks, rebalanced monthly. Beat OMXS30 over 3–5 years.
 
 **Universe:** Active Swedish stocks (`active=true AND name LIKE '%.ST'`). The `active` flag filters to `enterpriseValue > 500M` — this is appropriate for a large/mid-cap strategy and requires no override.
 
-## Selection Factors — Swedish Adaptation of the Equity Model
+**Class:** `SwedishLongTermMomentumStrategy extends AbstractStrategy implements IIndicatorValue`. Wired into `StrategiesMap` (all 5 points) and `PortfolioService`.
 
-| Factor | ta4j Implementation | Weight | Notes |
-|---|---|---|---|
-| 6-month momentum | `ROCIndicator(closePriceSeries, 126)` | 30% | 126 trading days ≈ 6 months |
-| 12-month momentum (12-1) | `(close[t-21] - close[t-252]) / close[t-252]` | 30% | Skips most recent month to avoid short-term reversal — **not** `ROCIndicator(series, 252)` which includes the reversal month |
-| Low volatility | `StandardDeviationIndicator(closePriceSeries, 252)` | 20% | Inverted in composite score — lower vol = higher score |
-| Relative strength vs OMXS30 | `ROCIndicator(stock, 63)` minus `ROCIndicator(^OMX, 63)` | 20% | 3-month outperformance vs benchmark |
-| Golden Cross | Price > SMA(50) AND Price > SMA(200) | Hard filter | Binary — stock excluded from ranking if not met |
-| Dividend yield | From `Security.dividendYield` | Soft tilt | Populated from statistics; used for portfolio ranking, not as hard entry filter |
+## Entry Rules (ALL must be met)
 
-**Composite score:** Each factor is rank-normalised across the candidate universe (rank 1 = worst, rank N = best), then weighted and summed. Stocks failing the Golden Cross hard filter are excluded before ranking.
+1. **Monthly rebalance window** — first 7 calendar days of every month (`MonthlyRebalanceRule`). The original design was a quarterly window, which combined with ten AND-ed conditions produced 3 trades in three years across the whole universe.
+2. **HedgeIndex score ≤ 7** (`HedgeIndexTieredRule`; 8+ blocks)
+3. **6-month momentum** — ROC(126) > 0
+4. **Golden Cross** — close > SMA(50) AND SMA(50) > SMA(200)
+5. **3-month relative strength vs ^OMX** — stock ROC(63) outperforms OMXS30 ROC(63) (date-aligned lookup against the `^OMX` series)
+6. **Valuation** — PEG ratio < 2.5 (`frosk.swedish.longterm.pegratio.threshold`; gate skipped if no data). Uses its own key, no longer shared with HighLander's `frosk.hedge.criteria.pegratio.threshold`.
+7. **Beta** — < 2.0 (filters extreme high-vol names; gate skipped if no data)
+8. **Low volatility** — 252-day annualized standard deviation of **daily returns** < 0.60 (`frosk.swedish.longterm.maxVolatility`). Must be computed on returns, not price levels — the stddev of price itself measures how far the stock trended, which blocked every mover and let only dead-flat names through.
 
-## Entry/Exit Rules
+The redundant 12M−1 momentum rule was dropped — it duplicated the 6-month momentum gate and silenced any listing younger than 252 bars.
 
-- Entry: stock enters top-N ranked list at quarterly rebalance date (first trading day of Jan, Apr, Jul, Oct) AND Golden Cross condition met
-- Exit: stock drops below rank threshold OR composite score falls below bottom quartile OR death cross (close < SMA200)
-- Max weight per stock: 10%; max per sector: 30% (requires `sector` field — see below)
-- HedgeIndex gate: score 0–3 → full allocation (top-N positions); score 4–7 → reduce to top-N/2 positions, no new entries into lowest-ranked half; score 8+ → no new entries, trim bottom 25% of positions
+## Exit Rules (ANY triggers)
 
-**Quarterly rebalance implementation note:** ta4j runs bar-by-bar so quarterly date detection requires a helper — check if `bar.getEndTime().getMonth()` is in {Jan, Apr, Jul, Oct} AND `bar.getEndTime().getDayOfMonth() <= 5` (first week of quarter) to approximate the rebalance trigger.
+- HedgeIndex score > 9 (`frosk.swedish.longterm.hedge.exit.score`) — strong risk-off only. Exiting already at the 8-point defensive tier dumped positions a few weeks after every monthly entry, since the score oscillates between 4 and 9.
+- Death cross: SMA(50) < SMA(200)
+- 6-month momentum decisively negative: ROC(126) < −5 (a marginal dip around 0 caused churn)
+- ATR trailing stop: 3×ATR(14) below the highest close since entry (`frosk.swedish.longterm.atr.mult`) — banks winners before the slower factor exits trigger
+- Catastrophic stop (`frosk.strategy.catastrophic.stop.pct`, 15%)
 
-**Class:** `SwedishLongTermMomentumStrategy extends AbstractStrategy implements IIndicatorValue` — ✅ implemented (231 lines). Wired into `StrategiesMap` (all 5 points) and `PortfolioService`.
+## Portfolio Integration
 
-**Portfolio filter:** `PortfolioService.build()` includes `SwedishLongTermMomentumStrategy` with sector cap, tiered HedgeIndex sizing, and topN limit.
+`PortfolioService.build()` includes `SwedishLongTermMomentumStrategy` positions with:
 
-**Properties:** `frosk.swedish.longterm.topN` (default: 25) — max positions. `frosk.swedish.longterm.maxVolatility` (default: 0.40) — max annualized vol for entry.
+- 30%-per-sector cap (requires the `Security.sector` field — populated via `RapidApiManager.getModuleAssetProfile()` inside `YAHOODataManager.updateSecurityMetaData()`)
+- Tiered HedgeIndex sizing (`computeTieredTopN()`, day-floored score): score 0–3 → full topN; 4–7 → topN/2; 8+ → 0 positions
+- topN limit ranked by SQN (`frosk.swedish.longterm.topN`, default 25)
 
-**Sector field:** `sector` (`String`) column on `Security`. Populated via `RapidApiManager.getModuleAssetProfile()` (`asset-profile` module) called inside `YAHOODataManager.updateSecurityMetaData()`. Run `updateSecurityMetaData()` once to backfill all existing stocks before the 30%-per-sector cap in `PortfolioService` takes effect.
+## Properties
+
+| Key | Value |
+|---|---|
+| `frosk.swedish.longterm.topN` | 25 |
+| `frosk.swedish.longterm.maxVolatility` | 0.60 |
+| `frosk.swedish.longterm.pegratio.threshold` | 2.5 |
+| `frosk.swedish.longterm.hedge.exit.score` | 9 |
+| `frosk.swedish.longterm.atr.mult` | 3.0 |
+
+Backtest impact of the 2026-06-11 redesign: 2 trades ever → 135 trades at +1.23%/trade (34% win rate).

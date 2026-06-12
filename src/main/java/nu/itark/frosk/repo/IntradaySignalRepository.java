@@ -16,6 +16,9 @@ public interface IntradaySignalRepository extends JpaRepository<IntradaySignal, 
     List<IntradaySignal> findByTickerAndStrategyNameOrderBySignalTimestampAsc(
             String ticker, String strategyName);
 
+    List<IntradaySignal> findByTickerAndStrategyNameAndSignalTimestampGreaterThanEqualOrderBySignalTimestampAsc(
+            String ticker, String strategyName, long fromEpochSeconds);
+
     @Query("SELECT DISTINCT s.ticker FROM IntradaySignal s")
     List<String> findDistinctTickers();
 

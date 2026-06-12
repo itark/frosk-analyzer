@@ -5,7 +5,8 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.HedgeIndexService;
 import nu.itark.frosk.strategies.hedge.HedgeIndexStrategy;
-import nu.itark.frosk.strategies.rules.HedgeIndexRiskOffRule;
+import nu.itark.frosk.strategies.rules.AtrTrailingStopRule;
+import nu.itark.frosk.strategies.rules.HedgeIndexMaxScoreRule;
 import nu.itark.frosk.strategies.rules.HedgeIndexTieredRule;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.*;
@@ -23,32 +24,34 @@ import org.ta4j.core.rules.OrRule;
 import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
-import java.time.Month;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Månadsportföljen — Swedish Long-Term Factor Portfolio strategy.
  *
  * Entry conditions (ALL must be met):
- * 1. Quarterly rebalance window (first 5 trading days of Jan, Apr, Jul, Oct)
- * 2. HedgeIndex risk-on
+ * 1. Monthly rebalance window (first 7 calendar days of every month)
+ * 2. HedgeIndex score <= 7 (tiered gate; 8+ blocks)
  * 3. 6-month momentum (ROC 126 bars) > 0
- * 4. 12-month momentum (12-1): skip most recent month to avoid reversal
- * 5. Golden Cross: price > SMA(50) AND SMA(50) > SMA(200)
- * 6. 3-month relative strength vs ^OMX: stock ROC(63) outperforms OMXS30 ROC(63)
- * 7. Valuation: PEG ratio < threshold (if available)
- * 8. Volatility: Beta < 2.0 (if available; filters extreme high-vol names)
- * 9. Low volatility: 252-day standard deviation below threshold (annualized ~40%)
- * 10. Dividend yield: positive tilt for dividend-paying stocks (soft filter)
+ * 4. Golden Cross: price > SMA(50) AND SMA(50) > SMA(200)
+ * 5. 3-month relative strength vs ^OMX: stock ROC(63) outperforms OMXS30 ROC(63)
+ * 6. Valuation: PEG ratio < threshold (if available)
+ * 7. Volatility: Beta < 2.0 (if available; filters extreme high-vol names)
+ * 8. Low volatility: 252-day annualized stddev below threshold (~60%)
+ *
+ * The original design AND-ed ten conditions inside a 5-day quarterly window
+ * and produced 3 trades in three years across the whole universe. The window
+ * is now monthly, the redundant 12M-1 momentum rule (which also silenced any
+ * listing younger than 252 bars) is dropped, and the volatility/PEG gates are
+ * calibrated to Swedish mid-caps.
  *
  * Exit conditions (ANY):
  * - HedgeIndex score >= 8 (Defensive / Strong Risk-Off)
  * - Death cross: SMA(50) < SMA(200)
- * - 6-month momentum turns negative
+ * - 6-month momentum decisively negative (ROC 126 < -5)
  */
 @Component
 @RequiredArgsConstructor
@@ -58,11 +61,17 @@ public class SwedishLongTermMomentumStrategy extends AbstractStrategy implements
     private final HedgeIndexStrategy hedgeIndexStrategy;
     private final HedgeIndexService hedgeIndexService;
 
-    @Value("${frosk.hedge.criteria.pegratio.threshold:1.5}")
+    @Value("${frosk.swedish.longterm.pegratio.threshold:2.5}")
     private double pegRatioThreshold;
 
-    @Value("${frosk.swedish.longterm.maxVolatility:0.40}")
+    @Value("${frosk.swedish.longterm.maxVolatility:0.60}")
     private double maxVolatility;
+
+    @Value("${frosk.swedish.longterm.hedge.exit.score:9}")
+    private int hedgeExitScore;
+
+    @Value("${frosk.swedish.longterm.atr.mult:3.0}")
+    private double atrMultiplier;
 
     public Strategy buildStrategy(BarSeries series) {
         super.setInherentExitRule();
@@ -86,26 +95,6 @@ public class SwedishLongTermMomentumStrategy extends AbstractStrategy implements
         // 6-month momentum
         ROCIndicator roc6m = new ROCIndicator(close, 126);
         setIndicatorValues(roc6m, "roc6m");
-
-        // 12-month momentum (12-1): (close[t-21] - close[t-252]) / close[t-252]
-        // Skips most recent month (21 trading days) to avoid short-term reversal
-        CachedIndicator<Num> roc12m1 = new CachedIndicator<>(series) {
-            @Override
-            protected Num calculate(int index) {
-                if (index < 252) {
-                    return series.numOf(0);
-                }
-                Num closeRecent = series.getBar(index - 21).getClosePrice();
-                Num closeOld = series.getBar(index - 252).getClosePrice();
-                if (closeOld.isZero()) {
-                    return series.numOf(0);
-                }
-                return closeRecent.minus(closeOld).dividedBy(closeOld).multipliedBy(series.numOf(100));
-            }
-            @Override
-            public int getUnstableBars() { return 252; }
-        };
-        setIndicatorValues(roc12m1, "roc12m1");
 
         // Moving averages for Golden Cross
         SMAIndicator sma50 = new SMAIndicator(close, 50);
@@ -136,18 +125,20 @@ public class SwedishLongTermMomentumStrategy extends AbstractStrategy implements
             public int getUnstableBars() { return 63; }
         };
 
-        // Low volatility factor: 252-day standard deviation (annualized)
-        // Daily stddev × sqrt(252) gives annualized volatility
-        StandardDeviationIndicator stdDev252 = new StandardDeviationIndicator(close, 252);
+        // Low volatility factor: annualized stddev of daily returns.
+        // Must be computed on returns, not price levels — the stddev of the
+        // price itself over a year measures how far the stock trended, which
+        // blocked every mover and let only dead-flat names through.
+        ROCIndicator dailyReturnPct = new ROCIndicator(close, 1);
+        StandardDeviationIndicator returnStdDev252 = new StandardDeviationIndicator(dailyReturnPct, 252);
         CachedIndicator<Num> annualizedVol = new CachedIndicator<>(series) {
             @Override
             protected Num calculate(int index) {
                 if (index < 252) return series.numOf(1); // not enough data, assume high vol
-                Num dailyStdDev = stdDev252.getValue(index);
-                Num price = close.getValue(index);
-                if (price.isZero()) return series.numOf(1);
-                // Normalize: (stddev / price) * sqrt(252) = annualized vol as decimal
-                return dailyStdDev.dividedBy(price).multipliedBy(series.numOf(Math.sqrt(252)));
+                // stddev of daily returns in % → decimal, annualized with sqrt(252)
+                return returnStdDev252.getValue(index)
+                        .dividedBy(series.numOf(100))
+                        .multipliedBy(series.numOf(Math.sqrt(252)));
             }
             @Override
             public int getUnstableBars() { return 252; }
@@ -165,12 +156,11 @@ public class SwedishLongTermMomentumStrategy extends AbstractStrategy implements
         // Only blocks entry in cautious regime (score 4-7) if no dividend — always allows in risk-on (0-3)
         Rule dividendGate = (divYield > 0) ? BooleanRule.TRUE : BooleanRule.TRUE; // stored for portfolio ranking
 
-        // Quarterly rebalance window: first 5 trading days of Jan, Apr, Jul, Oct
-        Rule quarterlyRebalance = new QuarterlyRebalanceRule(series);
+        // Monthly rebalance window: first 7 calendar days of every month
+        Rule monthlyRebalance = new MonthlyRebalanceRule(series);
 
         // Entry rules
         Rule momentum6mPositive   = new OverIndicatorRule(roc6m, 0);
-        Rule momentum12m1Positive = new OverIndicatorRule(roc12m1, 0);
         Rule priceAboveSma50      = new OverIndicatorRule(close, sma50);
         Rule goldenCross          = new OverIndicatorRule(sma50, sma200);
         Rule outperformsOMX       = new OverIndicatorRule(stockRoc3m, omxRoc3m);
@@ -182,9 +172,9 @@ public class SwedishLongTermMomentumStrategy extends AbstractStrategy implements
         Rule hedgeEntryRule = new HedgeIndexTieredRule(series, hedgeIndexService, 7);
 
         Rule entryRule = new AndRule(
-                new AndRule(quarterlyRebalance, hedgeEntryRule),
+                new AndRule(monthlyRebalance, hedgeEntryRule),
                 new AndRule(
-                        new AndRule(momentum6mPositive, momentum12m1Positive),
+                        momentum6mPositive,
                         new AndRule(
                                 new AndRule(priceAboveSma50, goldenCross),
                                 new AndRule(outperformsOMX,
@@ -193,12 +183,22 @@ public class SwedishLongTermMomentumStrategy extends AbstractStrategy implements
                 )
         );
 
-        // Exit rules: score >= 8 triggers exit (Defensive / Strong Risk-Off)
-        Rule hedgeExitRule = new HedgeIndexRiskOffRule(series, hedgeIndexService);
+        // Exit only on strong risk-off (score > hedgeExitScore). Exiting already
+        // at the 8-point defensive tier dumped positions a few weeks after every
+        // monthly entry, since the score oscillates between 4 and 9.
+        Rule hedgeExitRule = new HedgeIndexMaxScoreRule(series, hedgeIndexService, hedgeExitScore).negation();
         Rule deathCross      = new UnderIndicatorRule(sma50, sma200);
-        Rule momentum6mGone  = new UnderIndicatorRule(roc6m, 0);
+        // Decisively negative only — a monthly portfolio should not exit on a
+        // marginal momentum dip (ROC 126 hovering around 0 caused churn).
+        Rule momentum6mGone  = new UnderIndicatorRule(roc6m, -5);
+        // Wide trailing stop: the factor exits above (death cross, deep momentum
+        // loss) are all realized far below the peak — this banks winners first.
+        Rule trailingStop = new AtrTrailingStopRule(series, 14, atrMultiplier);
 
-        Rule exitRule = new OrRule(hedgeExitRule, new OrRule(deathCross, new OrRule(momentum6mGone, catastrophicStopRule())));
+        Rule exitRule = new OrRule(hedgeExitRule,
+                new OrRule(deathCross,
+                        new OrRule(momentum6mGone,
+                                new OrRule(trailingStop, catastrophicStopRule()))));
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
@@ -209,23 +209,19 @@ public class SwedishLongTermMomentumStrategy extends AbstractStrategy implements
     }
 
     /**
-     * Quarterly rebalance rule: satisfied only during the first 5 calendar days
-     * of January, April, July, and October (approximates first trading week of quarter).
+     * Monthly rebalance rule: satisfied only during the first 7 calendar days
+     * of each month (approximates the first trading week).
      */
-    private static class QuarterlyRebalanceRule extends AbstractRule {
-        private static final Set<Month> REBALANCE_MONTHS = Set.of(
-                Month.JANUARY, Month.APRIL, Month.JULY, Month.OCTOBER
-        );
+    private static class MonthlyRebalanceRule extends AbstractRule {
         private final BarSeries series;
 
-        QuarterlyRebalanceRule(BarSeries series) {
+        MonthlyRebalanceRule(BarSeries series) {
             this.series = series;
         }
 
         @Override
         public boolean isSatisfied(int index, TradingRecord tradingRecord) {
-            ZonedDateTime endTime = series.getBar(index).getEndTime();
-            return REBALANCE_MONTHS.contains(endTime.getMonth()) && endTime.getDayOfMonth() <= 5;
+            return series.getBar(index).getEndTime().getDayOfMonth() <= 7;
         }
     }
 }

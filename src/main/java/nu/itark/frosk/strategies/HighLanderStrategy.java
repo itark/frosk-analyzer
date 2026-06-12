@@ -3,6 +3,7 @@ package nu.itark.frosk.strategies;
 import lombok.RequiredArgsConstructor;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.hedge.*;
+import nu.itark.frosk.strategies.rules.AtrTrailingStopRule;
 import nu.itark.frosk.strategies.rules.StopLossRule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -10,7 +11,11 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
+import org.ta4j.core.indicators.EMAIndicator;
+import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.rules.CrossedUpIndicatorRule;
+import org.ta4j.core.rules.OverIndicatorRule;
 
 import java.util.List;
 
@@ -24,8 +29,16 @@ public class HighLanderStrategy extends AbstractStrategy implements IIndicatorVa
     private final GoldenCrossRelativeStrengthStrategy goldenCrossRelativeStrengthStrategy;
     private final RecommendationStrategy recommendationStrategy;
 
-    @Value("${frosk.highlander.stoploss.percent:20.0}")
+    private static final int ATR_PERIOD = 14;
+    private static final int EMA_FAST = 20;
+    private static final int EMA_SLOW = 50;
+    private static final int SMA_LONG = 200;
+
+    @Value("${frosk.highlander.stoploss.percent:12.0}")
     private double stopLossPercent;
+
+    @Value("${frosk.highlander.atr.mult:3.0}")
+    private double atrMultiplier;
 
     /**
      * Builds a composite trading strategy by combining hedge index and beta strategies.
@@ -83,8 +96,22 @@ public class HighLanderStrategy extends AbstractStrategy implements IIndicatorVa
                           //  .and(yoYRevenueGrowthStrategy.buildStrategy(series));
                            // .and(recommendationStrategy.buildStrategy(series));
 
-        Rule entryRule = compositeStrategy.getEntryRule();
-        Rule exitRule = compositeStrategy.getExitRule().or(stopLoss);
+        // The composite gates are regime/fundamental conditions that stay true
+        // for long stretches, so on their own they trigger entries at arbitrary
+        // chart locations. Require a fresh price-action event in an uptrend.
+        EMAIndicator ema20 = new EMAIndicator(closePrice, EMA_FAST);
+        setIndicatorValues(ema20, "ema20");
+        EMAIndicator ema50 = new EMAIndicator(closePrice, EMA_SLOW);
+        setIndicatorValues(ema50, "ema50");
+        SMAIndicator sma200 = new SMAIndicator(closePrice, SMA_LONG);
+        setIndicatorValues(sma200, "sma200");
+        Rule priceTrigger = new CrossedUpIndicatorRule(ema20, ema50)
+                .and(new OverIndicatorRule(closePrice, sma200));
+
+        Rule trailingStop = new AtrTrailingStopRule(series, ATR_PERIOD, atrMultiplier);
+
+        Rule entryRule = compositeStrategy.getEntryRule().and(priceTrigger);
+        Rule exitRule = compositeStrategy.getExitRule().or(trailingStop).or(stopLoss);
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

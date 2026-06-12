@@ -43,6 +43,10 @@ public class DataController {
     @Value("${frosk.database.only:YAHOO}")
     private String databaseOnly;
 
+    /** Per-trade fee fraction used to net intraday round-trip PnL (0.0003 = 0.03%). */
+    @Value("${exchange.transaction.intradayFeePerTradePercent:0.0003}")
+    private double intradayFeePerTradePercent;
+
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
 
@@ -675,13 +679,16 @@ public class DataController {
                 List<IntradayPnlDTO.IntradayRoundTripDTO> roundTrips = new ArrayList<>();
                 IntradaySignal pendingBuy = null;
 
+                // Net PnL: deduct the fee on both the entry and the exit trade
+                BigDecimal roundTripFeePct = BigDecimal.valueOf(2 * intradayFeePerTradePercent * 100);
                 for (IntradaySignal s : signals) {
                     if ("BUY".equals(s.getSignalType())) {
                         pendingBuy = s;
                     } else if ("SELL".equals(s.getSignalType()) && pendingBuy != null) {
                         BigDecimal pnl = s.getClosePrice().subtract(pendingBuy.getClosePrice())
                                 .divide(pendingBuy.getClosePrice(), 4, java.math.RoundingMode.HALF_UP)
-                                .multiply(BigDecimal.valueOf(100));
+                                .multiply(BigDecimal.valueOf(100))
+                                .subtract(roundTripFeePct);
                         roundTrips.add(IntradayPnlDTO.IntradayRoundTripDTO.builder()
                                 .buyTime(Instant.ofEpochSecond(pendingBuy.getSignalTimestamp()).atZone(sthlm).format(fmt))
                                 .buyPrice(pendingBuy.getClosePrice())

@@ -46,12 +46,16 @@ public class PortfolioService {
     @Value("${frosk.portfolio.min.sqn:1.0}")
     private double portfolioMinSqn;
 
-    /** Minimum profitable-trades ratio (win rate) a position must have. */
-    @Value("${frosk.portfolio.min.win.rate:0.35}")
+    /**
+     * Minimum profitable-trades ratio (win rate) a position must have,
+     * in percent (e.g. 40.0 = 40%) — matching how
+     * {@code FeaturedStrategy.profitableTradesRatio} is stored.
+     */
+    @Value("${frosk.portfolio.min.win.rate:40.0}")
     private double portfolioMinWinRate;
 
-    /** Maximum number of non-SLMS (HighLander + ShortTermMomentum) positions, ranked by SQN. */
-    @Value("${frosk.portfolio.other.topN:10}")
+    /** Maximum number of non-SLMS positions combined, ranked by SQN. */
+    @Value("${frosk.portfolio.other.topN:12}")
     private int otherTopN;
 
     /**
@@ -61,13 +65,19 @@ public class PortfolioService {
     @Value("${frosk.portfolio.force.rebuild:false}")
     private boolean forceRebuild;
 
+    /** Per-trade fee fraction for intraday round-trip PnL (0.0003 = 0.03%). */
+    @Value("${exchange.transaction.intradayFeePerTradePercent:0.0003}")
+    private double intradayFeePerTradePercent;
+
     private static final String TYPE_DAILY = "DAILY";
     private static final String TYPE_INTRADAY = "INTRADAY";
 
     private static final List<String> DAILY_STRATEGIES = List.of(
             "ShortTermMomentumLongTermStrengthStrategy",
             "HighLanderStrategy",
-            "SwedishLongTermMomentumStrategy"
+            "SwedishLongTermMomentumStrategy",
+            "DailyOversoldBounceStrategy",
+            "CANSLIMStrategy"
     );
 
     private static final List<String> INTRADAY_STRATEGIES = List.of(
@@ -84,6 +94,7 @@ public class PortfolioService {
     final PortfolioPositionRepository portfolioPositionRepository;
     final HedgeIndexService hedgeIndexService;
     final IntradayBarRepository intradayBarRepository;
+    final IntradaySignalRepository intradaySignalRepository;
 
     /**
      * Builds a new Portfolio snapshot from all currently open FeaturedStrategy positions.
@@ -164,8 +175,15 @@ public class PortfolioService {
     }
 
     /**
-     * Builds an intraday portfolio snapshot from open OMX30IntradayMomentum and RunawayGAP positions.
+     * Builds an intraday portfolio snapshot from open intraday-strategy positions
+     * plus today's realized round trips.
      * Rebuilds every Tier-0 cycle (no same-day idempotency — intraday positions change frequently).
+     *
+     * <p>Unlike the daily portfolio (average unrealized PnL of open positions),
+     * the intraday {@code totalPnlPercent} is additive day-PnL: the sum of all
+     * round trips closed today (net of 2× fee) plus the unrealized PnL of any
+     * positions still open. Intraday round trips complete within hours, so an
+     * open-positions-only snapshot read 0.0000 essentially always.
      */
     @Transactional
     public Portfolio buildIntraday() {
@@ -180,26 +198,68 @@ public class PortfolioService {
         portfolio.setPortfolioType(TYPE_INTRADAY);
 
         List<PortfolioPosition> positions = new ArrayList<>();
-        List<BigDecimal> pnlValues = new ArrayList<>();
+        BigDecimal unrealizedSum = BigDecimal.ZERO;
 
         for (FeaturedStrategy fs : intradayOpen) {
             PortfolioPosition pos = buildIntradayPosition(fs, portfolio);
             if (pos != null) {
                 positions.add(pos);
                 if (pos.getUnrealizedPnlPercent() != null) {
-                    pnlValues.add(pos.getUnrealizedPnlPercent());
+                    unrealizedSum = unrealizedSum.add(pos.getUnrealizedPnlPercent());
                 }
             }
         }
 
+        RealizedIntradayPnl realized = computeTodaysRealizedIntradayPnl();
+
         portfolio.setOpenPositionCount(positions.size());
-        portfolio.setTotalPnlPercent(averagePnl(pnlValues));
+        portfolio.setRealizedPnlPercent(realized.pnlPercent().setScale(4, RoundingMode.DOWN));
+        portfolio.setClosedTradeCount(realized.roundTrips());
+        portfolio.setTotalPnlPercent(realized.pnlPercent().add(unrealizedSum).setScale(4, RoundingMode.DOWN));
         portfolio.getPositions().addAll(positions);
 
         Portfolio saved = portfolioRepository.save(portfolio);
-        log.info("Intraday portfolio snapshot saved: id={}, openPositions={}, avgPnl={}",
-                saved.getId(), saved.getOpenPositionCount(), saved.getTotalPnlPercent());
+        log.info("Intraday portfolio snapshot saved: id={}, openPositions={}, realized={} ({} round trips), totalPnl={}",
+                saved.getId(), saved.getOpenPositionCount(), saved.getRealizedPnlPercent(),
+                saved.getClosedTradeCount(), saved.getTotalPnlPercent());
         return saved;
+    }
+
+    record RealizedIntradayPnl(BigDecimal pnlPercent, int roundTrips) {}
+
+    /**
+     * Pairs today's BUY→SELL signals per (ticker, strategy) and sums the
+     * round-trip PnL, deducting the entry and exit fee.
+     */
+    private RealizedIntradayPnl computeTodaysRealizedIntradayPnl() {
+        long startOfDayEpoch = LocalDate.now().atStartOfDay(ZoneId.of("Europe/Stockholm")).toEpochSecond();
+        BigDecimal roundTripFeePct = BigDecimal.valueOf(2 * intradayFeePerTradePercent * 100);
+
+        BigDecimal sum = BigDecimal.ZERO;
+        int roundTrips = 0;
+        for (String ticker : intradaySignalRepository.findDistinctTickers()) {
+            for (String strategyName : INTRADAY_STRATEGIES) {
+                List<IntradaySignal> signals = intradaySignalRepository
+                        .findByTickerAndStrategyNameAndSignalTimestampGreaterThanEqualOrderBySignalTimestampAsc(
+                                ticker, strategyName, startOfDayEpoch);
+                IntradaySignal pendingBuy = null;
+                for (IntradaySignal s : signals) {
+                    if ("BUY".equals(s.getSignalType())) {
+                        pendingBuy = s;
+                    } else if ("SELL".equals(s.getSignalType()) && pendingBuy != null
+                            && pendingBuy.getClosePrice() != null && s.getClosePrice() != null
+                            && pendingBuy.getClosePrice().compareTo(BigDecimal.ZERO) != 0) {
+                        BigDecimal gross = s.getClosePrice().subtract(pendingBuy.getClosePrice())
+                                .divide(pendingBuy.getClosePrice(), 6, RoundingMode.HALF_UP)
+                                .multiply(BigDecimal.valueOf(100));
+                        sum = sum.add(gross.subtract(roundTripFeePct));
+                        roundTrips++;
+                        pendingBuy = null;
+                    }
+                }
+            }
+        }
+        return new RealizedIntradayPnl(sum, roundTrips);
     }
 
     /**
@@ -255,6 +315,8 @@ public class PortfolioService {
                         .snapshotDate(DateFormatUtils.format(p.getSnapshotDate(), DATE_FORMAT))
                         .openPositionCount(p.getOpenPositionCount())
                         .totalPnlPercent(p.getTotalPnlPercent())
+                        .realizedPnlPercent(p.getRealizedPnlPercent())
+                        .closedTradeCount(p.getClosedTradeCount())
                         .positions(Collections.emptyList())
                         .build())
                 .collect(Collectors.toList());
@@ -288,7 +350,7 @@ public class PortfolioService {
      * Score 8+  (Defensive)      → 0 (no SLMS positions)
      */
     private int computeTieredTopN() {
-        int score = hedgeIndexService.getScore(ZonedDateTime.now());
+        int score = hedgeIndexService.getScoreForDay(ZonedDateTime.now());
         if (score <= 3) {
             return slmsTopN;
         } else if (score <= 7) {
@@ -301,8 +363,9 @@ public class PortfolioService {
     /**
      * Minimum quality gate applied to every position before it enters the portfolio.
      * Requires SQN >= frosk.portfolio.min.sqn (default 1.0)
-     * and profitable trades ratio >= frosk.portfolio.min.win.rate (default 0.35).
-     * Positions with no track record (null SQN or win rate) are excluded.
+     * and profitable trades ratio >= frosk.portfolio.min.win.rate in percent
+     * (default 40.0 = 40%). Positions with no track record (null SQN or win
+     * rate) are excluded.
      */
     private boolean passesQualityGate(FeaturedStrategy fs) {
         if (fs.getSqn() == null || fs.getSqn().doubleValue() < portfolioMinSqn) {
@@ -473,6 +536,8 @@ public class PortfolioService {
                 .snapshotDate(DateFormatUtils.format(p.getSnapshotDate(), DATE_FORMAT))
                 .openPositionCount(p.getOpenPositionCount())
                 .totalPnlPercent(p.getTotalPnlPercent())
+                .realizedPnlPercent(p.getRealizedPnlPercent())
+                .closedTradeCount(p.getClosedTradeCount())
                 .positions(positionDTOs)
                 .build();
     }
