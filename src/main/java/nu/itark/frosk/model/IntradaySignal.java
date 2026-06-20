@@ -46,6 +46,10 @@ public class IntradaySignal {
     @Column(name = "created_at", nullable = false)
     private long createdAt = Instant.now().getEpochSecond();
 
+    /** True when a real Coinbase order was successfully placed for this signal. */
+    @Column(name = "live", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean live = false;
+
     public IntradaySignal(String strategyName, String ticker, long signalTimestamp,
                           String signalType, BigDecimal closePrice) {
         this.strategyName   = strategyName;
