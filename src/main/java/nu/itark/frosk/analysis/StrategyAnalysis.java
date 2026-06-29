@@ -51,6 +51,14 @@ public class StrategyAnalysis {
 	@Value("${frosk.strategies.hedge.strategy}")
 	private String[] excludeHedgeStrategies;
 
+	/**
+	 * Strategies skipped in the crypto daily run because they depend on
+	 * equity-only inputs (fundamentals, HedgeIndex macro) that do not exist
+	 * for crypto, so they either never trade or carry an inert regime gate.
+	 */
+	@Value("${frosk.strategies.crypto.exclude:}")
+	private String[] excludeCryptoStrategies;
+
 	@Autowired
 	BarSeriesService barSeriesService;
 
@@ -106,6 +114,9 @@ public class StrategyAnalysis {
 			// Case 1: both null - run all strategies on all securities
 			List<String> strategies = strategiesMap.buildStrategiesMap();
 			strategies.removeAll(List.of(excludeHedgeStrategies));
+			if ("COINBASE".equals(databaseOnly)) {
+				strategies.removeAll(List.of(excludeCryptoStrategies));
+			}
 			if (strategyOnly != null && !strategyOnly.isEmpty()) {
 				strategies = List.of(strategyOnly);
 			}
@@ -120,6 +131,9 @@ public class StrategyAnalysis {
 			// Case 2: strategy null, security_id set - run all strategies on one security
 			List<String> strategies = strategiesMap.buildStrategiesMap();
 			strategies.removeAll(List.of(excludeHedgeStrategies));
+			if ("COINBASE".equals(databaseOnly)) {
+				strategies.removeAll(List.of(excludeCryptoStrategies));
+			}
 			if (strategyOnly != null && !strategyOnly.isEmpty()) {
 				strategies = List.of(strategyOnly);
 			}
@@ -370,7 +384,13 @@ public class StrategyAnalysis {
 		}
 		List<String> strategies = strategiesMap.buildStrategiesMap();
 		strategies.removeAll(List.of(excludeHedgeStrategies));
-		log.info("Crypto: running {} strategies on {} securities", strategies.size(), barSeriesList.size());
+		strategies.removeAll(List.of(excludeCryptoStrategies));
+		if (strategies.isEmpty()) {
+			log.info("Crypto daily strategy run skipped — no strategies enabled " +
+					"(the crypto system is the 15m intraday pipeline). Price sync still ran.");
+			return;
+		}
+		log.info("Crypto: running {} strategies on {} securities: {}", strategies.size(), barSeriesList.size(), strategies);
 		runStrategiesInParallel(strategies, barSeriesList);
 		log.info("runCryptoStrategies() READY");
 	}

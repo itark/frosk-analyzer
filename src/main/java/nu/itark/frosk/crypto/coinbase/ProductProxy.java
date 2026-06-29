@@ -20,6 +20,11 @@ public class ProductProxy {
         return productService.getCandles(productId, start, end, granularity);
     }
 
+    /** Candles via the public market-data endpoint — no auth/signing required. */
+    public Candles getPublicCandles(String productId, Instant start, Instant end, Granularity granularity) {
+        return productService.getPublicCandles(productId, start, end, granularity);
+    }
+
     public Products getProducts() {
         return productService.getProducts();
     }

@@ -36,7 +36,7 @@ Swedish daily prices use the **same two tables** as all other securities — no 
 
 **`active` flag caveat:** `BarSeriesService.getDataSet(Database)` filters to `active=true`. Stocks with `enterpriseValue ≤ 500M` are excluded. May filter out some mid/small-caps in Månadsportföljen — check count with `SELECT COUNT(*) FROM security WHERE active = true AND name LIKE '%.ST'`.
 
-**Fundamental data:** `beta`, `pegRatio`, `yoyGrowth`, `trailingPe`, `forwardPe`, `dividendYield` stored on `Security`. All populated by `RapidApiManager` via `updateSecurityMetaData()`.
+**Fundamental data:** `beta`, `pegRatio`, `yoyGrowth`, `trailingPe`, `forwardPe`, `dividendYield` stored on `Security`. All populated by `YahooFinanceDirectClient` via `updateSecurityMetaData()`.
 
 ## Intraday Entities
 

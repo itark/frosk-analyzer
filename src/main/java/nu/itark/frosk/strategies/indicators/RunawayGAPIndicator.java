@@ -28,9 +28,12 @@ public class RunawayGAPIndicator extends CachedIndicator<Boolean> {
         Bar prevBar = getBarSeries().getBar(index - 1);
         Bar currBar = getBarSeries().getBar(index);
         if (currBar.isBullish()) {
-            final Num prevHighPrice = prevBar.getHighPrice();
-            final Num currLowPrice = currBar.getLowPrice();
-            return currLowPrice.isGreaterThan(prevHighPrice);
+            final Num prevHigh = prevBar.getHighPrice();
+            final Num currLow = currBar.getLowPrice();
+            if (!currLow.isGreaterThan(prevHigh)) return false;
+            // Gap must be at least 1% of prevHigh to filter micro-gaps in illiquid stocks
+            Num minGap = prevHigh.multipliedBy(getBarSeries().numOf(0.01));
+            return currLow.minus(prevHigh).isGreaterThanOrEqual(minGap);
         }
         return false;
     }

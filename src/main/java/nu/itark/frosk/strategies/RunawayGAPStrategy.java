@@ -23,7 +23,10 @@
 package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.service.HedgeIndexService;
 import nu.itark.frosk.strategies.indicators.RunawayGAPIndicator;
+import nu.itark.frosk.strategies.rules.HedgeIndexRiskOnRule;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
@@ -45,6 +48,9 @@ import java.util.List;
 @Component
 public class RunawayGAPStrategy extends AbstractStrategy implements IIndicatorValue {
 
+    @Autowired
+    private HedgeIndexService hedgeIndexService;
+
     public Strategy buildStrategy(BarSeries series) {
         super.setInherentExitRule();
 		indicatorValues.clear();
@@ -57,7 +63,10 @@ public class RunawayGAPStrategy extends AbstractStrategy implements IIndicatorVa
 
         setIndicatorValues(closePrice, "close");
 
-        Rule entryRule = new BooleanIndicatorRule(runawayGAPIndicator);
+        Rule gapSignal = new BooleanIndicatorRule(runawayGAPIndicator);
+        Rule riskOn = new HedgeIndexRiskOnRule(series, hedgeIndexService);
+
+        Rule entryRule = gapSignal.and(riskOn);
 
         Rule exitRule;
         Num lossPercentage = DoubleNum.valueOf(2);

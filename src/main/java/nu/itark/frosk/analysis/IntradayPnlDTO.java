@@ -28,5 +28,7 @@ public class IntradayPnlDTO {
         private String sellTime;
         private BigDecimal sellPrice;
         private BigDecimal pnlPercent;
+        /** True when both legs of this round trip were executed as real Coinbase orders. */
+        private boolean live;
     }
 }

@@ -111,6 +111,9 @@ public class HighLander {
 	@Autowired
 	nu.itark.frosk.service.IntradayStrategyRunner intradayStrategyRunner;
 
+	@Autowired
+	nu.itark.frosk.service.CryptoIntradayStrategyRunner cryptoIntradayStrategyRunner;
+
 	/**
 	 * Full setup, addition
 	 * 
@@ -179,7 +182,7 @@ public class HighLander {
 	public void syncTier0() {
 		syncTier0(false);
 	}
-
+ 
 	public void syncTier0(boolean force) {
 		if (!runIntraday) {
 			log.info("syncTier0 skipped — frosk.run.intraday=false");
@@ -254,6 +257,23 @@ public class HighLander {
 	}
 
 	/**
+	 * Crypto intraday — fetch 15m Coinbase candles for the configured products
+	 * ({@code crypto.intraday.products}). Runs around the clock; crypto has no
+	 * market hours. Strategy evaluation on these series is a separate step —
+	 * this keeps the bar history current.
+	 */
+	public void syncCryptoIntraday() {
+		if (!runCrypto) {
+			log.info("syncCryptoIntraday skipped — frosk.run.crypto=false");
+			return;
+		}
+		log.info("syncCryptoIntraday started");
+		cryptoIntradayStrategyRunner.run();
+		portfolioService.buildIntraday();
+		log.info("syncCryptoIntraday completed");
+	}
+
+	/**
 	 * Full setup, from scratch
 	 * Kill them all before.
 	 *
@@ -306,8 +326,9 @@ public class HighLander {
 		log.info("addSecurityPricesFromCoinbase executed");
 	}
 
-	public void addSecurityPriceFromDatabase(Long securityId, Database database) {
+	public void addSecurityPriceFromDatabase(Long securityId) {
 		Security security = securityRepository.findById(securityId).get();
+		Database database = Database.valueOf(security.getDatabase());
 		dataManager.insertSecurityPricesIntoDatabase(database, security.getName());
 	}
 
@@ -317,7 +338,12 @@ public class HighLander {
 
 	public void updateSecurityMetaData(Long securityId) {
 		Security security = securityRepository.findById(securityId).get();
-		dataManager.updateSecurityMetaData(Database.YAHOO, security);
+		// Route by the security's own database. Fundamental metadata (beta, PEG,
+		// income statement, analyst trends) only exists for YAHOO equities;
+		// DataManager no-ops for COINBASE, so crypto pairs like SOL-EUR are
+		// skipped instead of hitting Yahoo's stock-only quoteSummary (404 + NPE).
+		Database database = Database.valueOf(security.getDatabase());
+		dataManager.updateSecurityMetaData(database, security);
 	}
 
 	/**

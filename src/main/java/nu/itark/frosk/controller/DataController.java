@@ -90,6 +90,9 @@ public class DataController {
     SecurityRepository securityRepository;
 
     @Autowired
+    nu.itark.frosk.repo.SecurityPriceRepository securityPriceRepository;
+
+    @Autowired
     HedgeIndexService hedgeIndexService;
 
     @Autowired
@@ -177,7 +180,7 @@ public class DataController {
 
         if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.LOAD_DATA) {
             log.info("action:{}",action);
-            highLander.addSecurityPriceFromDatabase(Long.valueOf(securityId), Database.YAHOO);
+            highLander.addSecurityPriceFromDatabase(Long.valueOf(securityId));
             highLander.updateSecurityMetaData(Long.valueOf(securityId));
         }
         if (HighLander.ACTION.valueOf(action) == HighLander.ACTION.RUN_STRATEGY) {
@@ -267,6 +270,70 @@ public class DataController {
                         .sqn(dto.getSqn())
                         .sqnRaw(dto.getSqnRaw())
                         .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Top movers for the most recent session: securities with the largest positive
+     * percentage change from their previous daily close. Scoped to the active
+     * database (YAHOO for equity, COINBASE for crypto). Non-tradeable instruments
+     * (indices, FX, futures) are excluded.
+     *
+     * @Example http://localhost:8080/frosk-analyzer/topWinnersToday?limit=10
+     */
+    @RequestMapping(path = "/topWinnersToday", method = RequestMethod.GET)
+    public List<TopWinnerDTO> getTopWinnersToday(@RequestParam(value = "limit", defaultValue = "10") int limit) {
+        log.info("/topWinnersToday?limit={} (db={})", limit, databaseOnly);
+
+        List<Security> securities = new ArrayList<>();
+        securityRepository.findByDatabaseAndActive(databaseOnly, true).forEach(s -> {
+            String n = s.getName();
+            if (n == null || n.startsWith("^") || n.endsWith("=X") || n.endsWith("=F")) {
+                return;
+            }
+            securities.add(s);
+        });
+
+        Map<Long, Security> securityById = securities.stream()
+                .collect(Collectors.toMap(Security::getId, s -> s));
+        List<Long> ids = new ArrayList<>(securityById.keySet());
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, List<nu.itark.frosk.model.SecurityPrice>> pricesBySecurityId =
+                securityPriceRepository.findBySecurityIdInOrderBySecurityIdAscTimestampAsc(ids).stream()
+                        .filter(p -> p.getClose() != null && p.getClose().compareTo(BigDecimal.ZERO) > 0)
+                        .collect(Collectors.groupingBy(nu.itark.frosk.model.SecurityPrice::getSecurityId));
+
+        List<TopWinnerDTO> winners = new ArrayList<>();
+        for (Map.Entry<Long, List<nu.itark.frosk.model.SecurityPrice>> entry : pricesBySecurityId.entrySet()) {
+            List<nu.itark.frosk.model.SecurityPrice> prices = entry.getValue();
+            if (prices.size() < 2) {
+                continue;
+            }
+            nu.itark.frosk.model.SecurityPrice last = prices.get(prices.size() - 1);
+            nu.itark.frosk.model.SecurityPrice prev = prices.get(prices.size() - 2);
+            double close = last.getClose().doubleValue();
+            double previousClose = prev.getClose().doubleValue();
+            double change = close - previousClose;
+            double changePercent = (change / previousClose) * 100.0;
+            Security sec = securityById.get(entry.getKey());
+            winners.add(TopWinnerDTO.builder()
+                    .name(sec.getName())
+                    .description(sec.getDescription())
+                    .close(close)
+                    .previousClose(previousClose)
+                    .change(change)
+                    .changePercent(changePercent)
+                    .date(LocalDate.ofInstant(last.getTimestamp().toInstant(), ZoneId.systemDefault())
+                            .format(DateTimeFormatter.ISO_LOCAL_DATE))
+                    .build());
+        }
+
+        return winners.stream()
+                .sorted(Comparator.comparingDouble(TopWinnerDTO::getChangePercent).reversed())
+                .limit(Math.max(1, limit))
                 .collect(Collectors.toList());
     }
 
@@ -485,7 +552,7 @@ public class DataController {
                 .atStartOfDay(ZoneId.of("Europe/Stockholm"))
                 .toEpochSecond();
         return intradaySignalRepository.findTop20ByOrderBySignalTimestampDesc().stream()
-                .filter(s -> s.getSignalTimestamp() >= startOfDay && "BUY".equals(s.getSignalType()))
+                .filter(s -> s.getSignalTimestamp() >= startOfDay)
                 .map(this::toSignalDTO)
                 .collect(Collectors.toList());
     }
@@ -578,7 +645,7 @@ public class DataController {
                     .findByNameAndOpenOrderBySqnDesc(name, true));
         }
 
-        return openPositions.stream().map(fs -> {
+        List<IntradayOpenPositionDTO> results = openPositions.stream().map(fs -> {
             Security security = securityRepository.findByName(fs.getSecurityName());
             BigDecimal entryPrice = null;
             String entryTime = "";
@@ -617,6 +684,62 @@ public class DataController {
                     .unrealizedPnl(unrealizedPnl)
                     .build();
         }).collect(Collectors.toList());
+
+        // Augment with open positions from INTRADAY_SIGNAL (crypto strategies use this table,
+        // not FeaturedStrategy — so the equity block above returns nothing on the crypto instance).
+        DateTimeFormatter openFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        ZoneId sthlm = ZoneId.of("Europe/Stockholm");
+        for (String ticker : intradaySignalRepository.findDistinctTickers()) {
+            for (String strategy : intradaySignalRepository.findDistinctStrategyNames()) {
+                Optional<IntradaySignal> latestBuy  = intradaySignalRepository
+                        .findTopByStrategyNameAndTickerAndSignalTypeOrderBySignalTimestampDesc(strategy, ticker, "BUY");
+                Optional<IntradaySignal> latestShrt = intradaySignalRepository
+                        .findTopByStrategyNameAndTickerAndSignalTypeOrderBySignalTimestampDesc(strategy, ticker, "SHRT");
+                // Pick the more recent of BUY/SHRT as the entry signal
+                IntradaySignal entry;
+                if (latestBuy.isPresent() && (latestShrt.isEmpty()
+                        || latestBuy.get().getSignalTimestamp() >= latestShrt.get().getSignalTimestamp())) {
+                    entry = latestBuy.get();
+                } else if (latestShrt.isPresent()) {
+                    entry = latestShrt.get();
+                } else {
+                    continue;
+                }
+                boolean isShort = "SHRT".equals(entry.getSignalType());
+                String exitType = isShort ? "COVR" : "SELL";
+                Optional<IntradaySignal> latestExit = intradaySignalRepository
+                        .findTopByStrategyNameAndTickerAndSignalTypeOrderBySignalTimestampDesc(strategy, ticker, exitType);
+                // Closed when exit exists and its timestamp >= entry timestamp
+                if (latestExit.isPresent() && latestExit.get().getSignalTimestamp() >= entry.getSignalTimestamp()) {
+                    continue;
+                }
+                BigDecimal entryPrice = entry.getClosePrice();
+                String entryTime = Instant.ofEpochSecond(entry.getSignalTimestamp()).atZone(sthlm).format(openFmt);
+                BigDecimal currentPrice = null;
+                Security sec = securityRepository.findByName(ticker);
+                if (sec != null) {
+                    IntradayBar bar = intradayBarRepository.findTopBySecurityIdOrderByBarTimestampDesc(sec.getId());
+                    if (bar != null) currentPrice = bar.getClose();
+                }
+                BigDecimal unrealizedPnl = null;
+                if (entryPrice != null && currentPrice != null && entryPrice.compareTo(BigDecimal.ZERO) != 0) {
+                    BigDecimal raw = isShort
+                            ? entryPrice.subtract(currentPrice).divide(entryPrice, 4, java.math.RoundingMode.HALF_UP)
+                            : currentPrice.subtract(entryPrice).divide(entryPrice, 4, java.math.RoundingMode.HALF_UP);
+                    unrealizedPnl = raw.multiply(BigDecimal.valueOf(100));
+                }
+                results.add(IntradayOpenPositionDTO.builder()
+                        .strategyName(strategy)
+                        .securityName(ticker)
+                        .entryPrice(entryPrice)
+                        .entryTime(entryTime)
+                        .currentPrice(currentPrice)
+                        .unrealizedPnl(unrealizedPnl)
+                        .build());
+            }
+        }
+
+        return results;
     }
 
     /**
@@ -653,6 +776,19 @@ public class DataController {
                                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
                             .build()));
         }
+        // Augment with INTRADAY_SIGNAL entries for today (crypto strategies)
+        intradaySignalRepository.findTop20ByOrderBySignalTimestampDesc().stream()
+                .filter(s -> s.getSignalTimestamp() >= startOfDay)
+                .forEach(s -> signals.add(IntradayTodaySignalDTO.builder()
+                        .strategyName(s.getStrategyName())
+                        .securityName(s.getTicker())
+                        .type(s.getSignalType())
+                        .price(s.getClosePrice())
+                        .date(Instant.ofEpochSecond(s.getSignalTimestamp())
+                                .atZone(ZoneId.of("Europe/Stockholm"))
+                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                        .build()));
+
         signals.sort(Comparator.comparing(IntradayTodaySignalDTO::getDate).reversed());
         return signals;
     }
@@ -677,26 +813,32 @@ public class DataController {
                 if (signals.isEmpty()) continue;
 
                 List<IntradayPnlDTO.IntradayRoundTripDTO> roundTrips = new ArrayList<>();
-                IntradaySignal pendingBuy = null;
+                IntradaySignal pendingEntry = null; // BUY (long) or SHRT (short)
 
                 // Net PnL: deduct the fee on both the entry and the exit trade
                 BigDecimal roundTripFeePct = BigDecimal.valueOf(2 * intradayFeePerTradePercent * 100);
                 for (IntradaySignal s : signals) {
-                    if ("BUY".equals(s.getSignalType())) {
-                        pendingBuy = s;
-                    } else if ("SELL".equals(s.getSignalType()) && pendingBuy != null) {
-                        BigDecimal pnl = s.getClosePrice().subtract(pendingBuy.getClosePrice())
-                                .divide(pendingBuy.getClosePrice(), 4, java.math.RoundingMode.HALF_UP)
-                                .multiply(BigDecimal.valueOf(100))
-                                .subtract(roundTripFeePct);
+                    String type = s.getSignalType();
+                    if ("BUY".equals(type) || "SHRT".equals(type)) {
+                        pendingEntry = s;
+                    } else if (("SELL".equals(type) || "COVR".equals(type)) && pendingEntry != null) {
+                        boolean isShort = "SHRT".equals(pendingEntry.getSignalType());
+                        BigDecimal entryPrice = pendingEntry.getClosePrice();
+                        BigDecimal exitPrice  = s.getClosePrice();
+                        // Long:  (exit - entry) / entry; Short: (entry - exit) / entry
+                        BigDecimal raw = isShort
+                                ? entryPrice.subtract(exitPrice).divide(entryPrice, 4, java.math.RoundingMode.HALF_UP)
+                                : exitPrice.subtract(entryPrice).divide(entryPrice, 4, java.math.RoundingMode.HALF_UP);
+                        BigDecimal pnl = raw.multiply(BigDecimal.valueOf(100)).subtract(roundTripFeePct);
                         roundTrips.add(IntradayPnlDTO.IntradayRoundTripDTO.builder()
-                                .buyTime(Instant.ofEpochSecond(pendingBuy.getSignalTimestamp()).atZone(sthlm).format(fmt))
-                                .buyPrice(pendingBuy.getClosePrice())
+                                .buyTime(Instant.ofEpochSecond(pendingEntry.getSignalTimestamp()).atZone(sthlm).format(fmt))
+                                .buyPrice(entryPrice)
                                 .sellTime(Instant.ofEpochSecond(s.getSignalTimestamp()).atZone(sthlm).format(fmt))
-                                .sellPrice(s.getClosePrice())
+                                .sellPrice(exitPrice)
                                 .pnlPercent(pnl)
+                                .live(pendingEntry.isLive() && s.isLive())
                                 .build());
-                        pendingBuy = null;
+                        pendingEntry = null;
                     }
                 }
 

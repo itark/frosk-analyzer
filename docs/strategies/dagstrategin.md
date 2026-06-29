@@ -1,13 +1,13 @@
 # Dagstrategin (Daily Short-Term Swing)
 
-**Execution model:** Runs entirely on **daily OHLCV bars** — the same data already fetched by `RapidApiManager`. No intraday data required, no new entity or ingestion pipeline needed. After each daily close, `StrategyExecutor` evaluates signals against the updated daily `BarSeries`. A ranked **next-morning watchlist** is produced for the human trader to act on at the open.
+**Execution model:** Runs entirely on **daily OHLCV bars** — the same data already fetched by `YahooFinanceDirectClient`. No intraday data required, no new entity or ingestion pipeline needed. After each daily close, `StrategyExecutor` evaluates signals against the updated daily `BarSeries`. A ranked **next-morning watchlist** is produced for the human trader to act on at the open.
 
 **Holding period:** 2–10 trading days. Not day trading — short-term swing trading on daily bars.
 
-**Universe:** OMXS30 constituents (~30 tickers). No additional API cost beyond the existing Tier 1 daily sync.
+**Universe:** OMXS30 constituents (~30 tickers). No additional fetch cost beyond the existing Tier 1 daily sync.
 
 **Data flow (runs after Tier 1 daily price sync, `0 0 18 * * MON-FRI`):**
-1. Tier 1 sync fetches today's daily close for OMXS30 tickers via `RapidApiManager`
+1. Tier 1 sync fetches today's daily close for OMXS30 tickers via `YahooFinanceDirectClient`
 2. `StrategyExecutor` runs both Dagstrategin strategies across the OMXS30 universe
 3. Signals stored as `StrategyTrade`; metrics updated in `FeaturedStrategy`
 4. REST endpoint `GET /dagstrategin/watchlist` returns next-morning ranked candidates

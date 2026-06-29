@@ -20,10 +20,20 @@ public class IndicatorValueDTO {
 	private String name;
 
 	public IndicatorValueDTO(Date date, BigDecimal value, String name) {
+		this(date, value, name, false);
+	}
+
+	public IndicatorValueDTO(Date date, BigDecimal value, String name, boolean intraday) {
 		LocalDateTime ldt = date.toInstant()
 				.atZone(ZoneId.systemDefault())
 				.toLocalDateTime();
-		if (ldt.getHour() == 0 && ldt.getMinute() == 0) {
+		// Intraday series keep the time component even at midnight. An intraday
+		// 00:00 bar serialized as date-only ('yyyy-MM-dd') is parsed as UTC
+		// midnight by the browser (new Date('yyyy-MM-dd')), whereas the other
+		// bars ('yyyy-MM-dd HH:mm') parse as local time — the mix produces
+		// out-of-order timestamps that crash lightweight-charts ("Value is null").
+		// Daily series still collapse midnight to a date-only business day.
+		if (!intraday && ldt.getHour() == 0 && ldt.getMinute() == 0) {
 			this.setTime(ldt.format(DateTimeFormatter.ISO_LOCAL_DATE));
 		} else {
 			this.setTime(ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));

@@ -23,3 +23,9 @@ logs/
 
 no_check_in.txt
 /src/main/resources/rnnRegression/
+
+org/ta4j/core/aggregator/
+
+org/ta4j/core/analysis/
+
+org/ta4j/core/

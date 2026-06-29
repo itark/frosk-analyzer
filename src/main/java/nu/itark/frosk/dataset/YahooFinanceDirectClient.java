@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.newsdriven.NewsItem;
 import nu.itark.frosk.rapidapi.yhfinance.model.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
@@ -15,6 +16,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -293,7 +295,7 @@ public class YahooFinanceDirectClient {
         return fetchQuoteSummaryModule(symbol, module);
     }
 
-    // ── Search ───────────────────────────────────────────────────────────
+    // ── Search / News ────────────────────────────────────────────────────
 
     public void search(String query) {
         try {
@@ -305,6 +307,43 @@ public class YahooFinanceDirectClient {
             log.info("YahooFinanceDirectClient search: {}", json);
         } catch (Exception e) {
             log.warn("YahooFinanceDirectClient: search failed for {}: {}", query, e.getMessage());
+        }
+    }
+
+    /**
+     * Fetches the latest news headlines for a ticker from the Yahoo Finance search endpoint.
+     *
+     * @param ticker Yahoo Finance ticker symbol (e.g. "VOLV-B.ST")
+     * @return list of news items, newest first; empty list on error or no results
+     */
+    public List<NewsItem> getNews(String ticker) {
+        try {
+            String json = webClient().get()
+                    .uri("/v1/finance/search?q={ticker}&newsCount=10&listsCount=0", ticker)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            if (json == null) return Collections.emptyList();
+
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode newsArray = root.path("news");
+            if (newsArray.isMissingNode() || !newsArray.isArray()) return Collections.emptyList();
+
+            List<NewsItem> result = new ArrayList<>();
+            for (JsonNode node : newsArray) {
+                String title = node.path("title").asText(null);
+                if (title == null || title.isBlank()) continue;
+                String publisher = node.path("publisher").asText("");
+                String link = node.path("link").asText("");
+                long publishTime = node.path("providerPublishTime").asLong(0);
+                Instant publishedAt = publishTime > 0 ? Instant.ofEpochSecond(publishTime) : Instant.EPOCH;
+                result.add(new NewsItem(title, publisher, link, publishedAt, ticker));
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn("YahooFinanceDirectClient: getNews failed for {}: {}", ticker, e.getMessage());
+            return Collections.emptyList();
         }
     }
 

@@ -23,21 +23,33 @@ public class SessionVWAPIndicator extends CachedIndicator<Num> {
 
     private static final ZoneId STOCKHOLM = ZoneId.of("Europe/Stockholm");
 
+    private final ZoneId sessionZone;
+
+    /** Stockholm session anchor — for OMX equity series. */
     public SessionVWAPIndicator(BarSeries series) {
+        this(series, STOCKHOLM);
+    }
+
+    /**
+     * Custom session anchor. Crypto trades 24/7 with no exchange session, so
+     * crypto series anchor the VWAP "day" to UTC midnight by convention.
+     */
+    public SessionVWAPIndicator(BarSeries series, ZoneId sessionZone) {
         super(series);
+        this.sessionZone = sessionZone;
     }
 
     @Override
     protected Num calculate(int index) {
         BarSeries series = getBarSeries();
-        ZonedDateTime currentTime = series.getBar(index).getEndTime().withZoneSameInstant(STOCKHOLM);
+        ZonedDateTime currentTime = series.getBar(index).getEndTime().withZoneSameInstant(sessionZone);
         int currentDay = currentTime.getDayOfYear();
         int currentYear = currentTime.getYear();
 
         Num cumulativePV = numOf(0);
         Num cumulativeVolume = numOf(0);
         for (int i = index; i >= 0; i--) {
-            ZonedDateTime t = series.getBar(i).getEndTime().withZoneSameInstant(STOCKHOLM);
+            ZonedDateTime t = series.getBar(i).getEndTime().withZoneSameInstant(sessionZone);
             if (t.getDayOfYear() != currentDay || t.getYear() != currentYear) {
                 break;
             }

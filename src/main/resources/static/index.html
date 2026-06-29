@@ -44,8 +44,10 @@
     td { padding: 7px 10px; border-bottom: 1px solid #1e2d3d; }
     tr:hover td { background: #1e2d3d; }
     .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-    .badge-buy { background: #1b5e20; color: #66bb6a; }
+    .badge-buy  { background: #1b5e20;   color: #66bb6a; }
     .badge-sell { background: #b71c1c33; color: #ef5350; }
+    .badge-shrt { background: #4a148c33; color: #ce93d8; }
+    .badge-covr { background: #0d47a133; color: #90caf9; }
     .pnl-pos { color: #4caf50; }
     .pnl-neg { color: #f44336; }
     .empty-state { text-align: center; padding: 32px; color: #546e7a; }
@@ -154,7 +156,7 @@
                     <tr key={i}>
                       <td>{s.signalTime}</td>
                       <td style={isCrypto ? {color:'#ffb74d'} : {}}>{s.ticker}</td>
-                      <td><span className={`badge ${s.signalType === 'BUY' ? 'badge-buy' : 'badge-sell'}`}>{s.signalType}</span></td>
+                      <td><span className={`badge badge-${(s.signalType || '').toLowerCase()}`}>{s.signalType}</span></td>
                       <td>{s.closePrice != null ? Number(s.closePrice).toFixed(2) : '-'}</td>
                       <td>{s.rsi7 != null ? Number(s.rsi7).toFixed(1) : '-'}</td>
                     </tr>
@@ -273,6 +275,98 @@
       );
     }
 
+    function DailyPnlPanel({ pnlData, source }) {
+      const isCrypto = source === 'crypto';
+      const today = new Date().toLocaleDateString('sv-SE');
+
+      const allToday = [];
+      (pnlData || []).forEach(item => {
+        (item.trades || []).forEach(rt => {
+          if (rt.sellTime && rt.sellTime.startsWith(today)) {
+            allToday.push({
+              ticker: item.ticker,
+              strategy: (item.strategyName || '').replace('Strategy', ''),
+              buyPrice: rt.buyPrice,
+              sellPrice: rt.sellPrice,
+              pnl: parseFloat(rt.pnlPercent || 0),
+              entryTime: rt.buyTime ? rt.buyTime.slice(11, 16) : '-',
+              exitTime: rt.sellTime ? rt.sellTime.slice(11, 16) : '-',
+              sellKey: rt.sellTime || '',
+            });
+          }
+        });
+      });
+
+      const chrono = [...allToday].sort((a, b) => a.sellKey.localeCompare(b.sellKey));
+      let cumSum = 0;
+      const chartData = chrono.map(t => {
+        cumSum += t.pnl;
+        return { time: t.exitTime, pnl: parseFloat(cumSum.toFixed(2)) };
+      });
+
+      const tableRows = [...allToday].sort((a, b) => b.sellKey.localeCompare(a.sellKey));
+
+      return (
+        <div className="panel" style={{ gridColumn: '1 / -1' }}>
+          <div className="panel-header">
+            <h2>Daily P&amp;L — Round-trips</h2>
+            <span style={{fontSize:11,color:'#546e7a'}}>{allToday.length} stängda idag</span>
+          </div>
+          <div className="panel-body">
+            {chartData.length > 0 ? (
+              <div className="chart-container" style={{ marginBottom: 16 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4caf50" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#4caf50" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#546e7a' }} />
+                    <YAxis tick={{ fontSize: 10, fill: '#546e7a' }} tickFormatter={v => v.toFixed(1) + '%'} />
+                    <Tooltip
+                      contentStyle={{ background: '#1a2733', border: '1px solid #2a3a4a', fontSize: 12 }}
+                      formatter={v => [parseFloat(v).toFixed(2) + '%', 'Cum. PnL']}
+                    />
+                    <ReferenceLine y={0} stroke="#2a3a4a" strokeWidth={1} />
+                    <Area type="monotone" dataKey="pnl" stroke="#4caf50" strokeWidth={2} fill="url(#pnlGrad)" dot={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="empty-state" style={{ marginBottom: 12 }}>Inga stängda round-trips idag</div>
+            )}
+            {tableRows.length > 0 && (
+              <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Ticker</th><th>Strategi</th><th>Entry-pris</th><th>Exit-pris</th>
+                      <th>PnL%</th><th>Entry-tid</th><th>Exit-tid</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableRows.map((t, i) => (
+                      <tr key={i}>
+                        <td style={isCrypto ? {color:'#ffb74d'} : {}}>{t.ticker}</td>
+                        <td style={{maxWidth:110,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={t.strategy}>{t.strategy}</td>
+                        <td>{t.buyPrice != null ? Number(t.buyPrice).toFixed(2) : '-'}</td>
+                        <td>{t.sellPrice != null ? Number(t.sellPrice).toFixed(2) : '-'}</td>
+                        <td className={t.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}>{t.pnl.toFixed(2) + '%'}</td>
+                        <td>{t.entryTime}</td>
+                        <td>{t.exitTime}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     function App() {
       const [source, setSource] = useState('equity');
       const [score, setScore] = useState(null);
@@ -282,6 +376,7 @@
       const [portfolio, setPortfolio] = useState(null);
       const [securities, setSecurities] = useState([]);
       const [featuredStrategies, setFeaturedStrategies] = useState([]);
+      const [pnlData, setPnlData] = useState([]);
       const [lastRefresh, setLastRefresh] = useState('');
 
       const isCrypto = source === 'crypto';
@@ -293,6 +388,7 @@
 
         // Source-dependent endpoints
         fetch(apiUrl('/intraday/signals', source)).then(r => r.json()).then(setSignals).catch(() => setSignals([]));
+        fetch(apiUrl('/intraday/pnl', source)).then(r => r.json()).then(setPnlData).catch(() => setPnlData([]));
         fetch(apiUrl('/metadata', source)).then(r => r.json()).then(setSecurities).catch(() => setSecurities([]));
         fetch(apiUrl('/featuredStrategies', source)).then(r => r.json()).then(setFeaturedStrategies).catch(() => setFeaturedStrategies([]));
 
@@ -351,6 +447,7 @@
             }
             <PortfolioPanel portfolio={portfolio} source={source} />
             <FeaturedStrategiesPanel strategies={featuredStrategies} source={source} />
+            <DailyPnlPanel pnlData={pnlData} source={source} />
           </div>
         </div>
       );

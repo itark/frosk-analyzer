@@ -51,6 +51,9 @@ public class BarSeriesService  {
 	@Value("${exchange.transaction.intradayFeePerTradePercent:0.0003}")
 	private double intradayFeePerTradePercent;
 
+	@Value("${exchange.transaction.cryptoTakerFeePerTradePercent:0.006}")
+	private double cryptoTakerFeePerTradePercent;
+
 	@Value("${exchange.transaction.initialAmount}")
 	private double initialAmount;
 
@@ -75,7 +78,14 @@ public class BarSeriesService  {
 	public List<BarSeries> getDataSet(Database database) {
 		@NonNull Iterable<Security> securities = securityRepository.findByDatabaseAndActive(database.name(), true);
 		List<Security> securityList = new ArrayList<>();
-		securities.forEach(securityList::add);
+		securities.forEach(s -> {
+			String n = s.getName();
+			if (n != null && (n.startsWith("^") || n.endsWith("=X") || n.endsWith("=F"))) {
+				log.debug("BarSeriesService: skipping non-tradeable instrument {}", n);
+				return;
+			}
+			securityList.add(s);
+		});
 
 		// Batch-load all prices in a single query instead of N individual queries
 		List<Long> ids = securityList.stream().map(Security::getId).collect(Collectors.toList());
@@ -89,10 +99,12 @@ public class BarSeriesService  {
 		for (Security security : securityList) {
 			BarSeries series = new BaseBarSeriesBuilder().withName(String.valueOf(security.getId())).withNumTypeOf(DoubleNum.class).build();
 			List<SecurityPrice> prices = pricesBySecurityId.getOrDefault(security.getId(), Collections.emptyList());
-			prices.forEach(row -> {
-				ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(), ZoneId.systemDefault());
-				series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
-			});
+			prices.stream()
+				.filter(row -> row.getClose() != null && row.getClose().compareTo(BigDecimal.ZERO) > 0)
+				.forEach(row -> {
+					ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(), ZoneId.systemDefault());
+					series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
+				});
 			barSeriesList.add(series);
 		}
 		return barSeriesList;
@@ -141,10 +153,12 @@ public class BarSeriesService  {
 		//log.info("Database call...on security_id={}, security_name={}", security.getId(), security.getName());
 		List<SecurityPrice> securityPrices =securityPriceRepository.findBySecurityIdOrderByTimestamp(security_id);
 		//log.info("Database call ready.");
-		securityPrices.forEach(row -> {
-			ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(),ZoneId.systemDefault());
-		     series.addBar(dateTime, row.getOpen(), row.getHigh(),  row.getLow(), row.getClose(), row.getVolume());
-		});
+		securityPrices.stream()
+			.filter(row -> row.getClose() != null && row.getClose().compareTo(BigDecimal.ZERO) > 0)
+			.forEach(row -> {
+				ZonedDateTime dateTime = ZonedDateTime.ofInstant(row.getTimestamp().toInstant(), ZoneId.systemDefault());
+				series.addBar(dateTime, row.getOpen(), row.getHigh(), row.getLow(), row.getClose(), row.getVolume());
+			});
 		//log.info("Returning dataset for security_id={}", security_id);
 		return series;
 		
@@ -179,15 +193,25 @@ public class BarSeriesService  {
 			"OpeningRangeBreakoutIntradayStrategy", "VWAPMeanReversionIntradayStrategy", "GapReversalIntradayStrategy"
 	);
 
+	/**
+	 * Crypto intraday strategies are backtested with the Coinbase taker fee
+	 * (0.6%/trade) — NOT the 0.03% equity intraday broker fee, which would
+	 * overstate crypto results by a factor of ~20. Add new crypto intraday
+	 * strategy class names here.
+	 */
+	private static final java.util.Set<String> CRYPTO_INTRADAY_STRATEGIES = java.util.Set.of(
+			"CryptoRangeBreakoutIntradayStrategy", "CryptoVWAPReversionIntradayStrategy"
+	);
+
 	private static final java.util.Set<String> CURRENT_CLOSE_STRATEGIES = java.util.Set.of(
 			"EngulfingStrategy", "GoldStrategy",
-			"OpeningRangeBreakoutIntradayStrategy", "VWAPMeanReversionIntradayStrategy", "GapReversalIntradayStrategy"
+			"OpeningRangeBreakoutIntradayStrategy", "VWAPMeanReversionIntradayStrategy", "GapReversalIntradayStrategy",
+			"CryptoRangeBreakoutIntradayStrategy", "CryptoVWAPReversionIntradayStrategy"
 	);
 
 	public TradingRecord runConfiguredStrategy(BarSeries barSeries, Strategy strategyToRun) {
 		double borrowingFee = 0.00001;
-		boolean isIntraday = INTRADAY_STRATEGIES.contains(strategyToRun.getName());
-		double fee = isIntraday ? intradayFeePerTradePercent : feePerTradePercent;
+		double fee = resolveFee(strategyToRun.getName());
 		CostModel transactionCostModel = new LinearTransactionCostModel(fee);
 		CostModel borrowingCostModel = new LinearBorrowingCostModel(borrowingFee);
 		TradeExecutionModel tradeExecutionModel = CURRENT_CLOSE_STRATEGIES.contains(strategyToRun.getName())
@@ -200,6 +224,17 @@ public class BarSeriesService  {
 			return seriesManager.run(strategyToRun, Trade.TradeType.BUY, getAmount(barSeries));
 		}
 		return seriesManager.run(strategyToRun);
+	}
+
+	/** Per-trade fee fraction for backtests, by strategy type. */
+	private double resolveFee(String strategyName) {
+		if (CRYPTO_INTRADAY_STRATEGIES.contains(strategyName)) {
+			return cryptoTakerFeePerTradePercent;
+		}
+		if (INTRADAY_STRATEGIES.contains(strategyName)) {
+			return intradayFeePerTradePercent;
+		}
+		return feePerTradePercent;
 	}
 
 	public Num getAmount(BarSeries barSeries) {

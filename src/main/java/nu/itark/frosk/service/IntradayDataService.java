@@ -44,6 +44,9 @@ public class IntradayDataService {
     @Value("${intraday.retention.days:7}")
     private int retentionDays;
 
+    @Value("${yahoo.fetch.delay.ms:300}")
+    private int fetchDelayMs;
+
     @Autowired
     private YahooFinanceDirectClient yahooFinanceClient;
 
@@ -72,13 +75,29 @@ public class IntradayDataService {
         for (int i = 0; i < allSecurities.size(); i++) {
             syncSecurity(allSecurities.get(i));
             if (i < allSecurities.size() - 1) {
-                try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                sleepBetweenFetches();
             }
         }
 
         pruneOldBars();
 
         return buildSeriesMap(allSecurities);
+    }
+
+    /**
+     * Politeness pause between consecutive Yahoo ticker fetches. Yahoo's v8
+     * endpoint is free but unofficial and can throttle/IP-block bursty traffic.
+     * Controlled by {@code yahoo.fetch.delay.ms} (set to 0 to disable).
+     */
+    private void sleepBetweenFetches() {
+        if (fetchDelayMs <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(fetchDelayMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**

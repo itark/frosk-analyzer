@@ -172,11 +172,9 @@ public class StrategyExecutor {
             strategyTradeList.forEach(st -> st.setFeaturedStrategy(fsRes.get()));
             tradesRepository.saveAll(strategyTradeList);
             try {
-            List<StrategyIndicatorValue> existIv = indicatorValueRepo.findByFeaturedStrategyId(fsRes.get().getId());
-            if (!existIv.isEmpty()) {
-                indicatorValueRepo.deleteAllInBatch(existIv);
-            }
-            List<StrategyIndicatorValue> ivList = strategiesMap.getIndicatorValues(strategy, null);
+            // Use FK-targeted delete to avoid JPQL OR-chain StackOverflow on large indicator sets
+            indicatorValueRepo.deleteByFeaturedStrategyId(fsRes.get().getId());
+            List<StrategyIndicatorValue> ivList = new ArrayList<>(strategiesMap.getIndicatorValues(strategy, null));
             ivList.forEach(iv -> iv.setFeaturedStrategy(fsRes.get()));
             indicatorValueRepo.saveAll(ivList);
             } catch (DataIntegrityViolationException e) {

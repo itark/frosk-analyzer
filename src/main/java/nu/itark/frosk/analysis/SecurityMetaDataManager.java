@@ -150,6 +150,7 @@ public class SecurityMetaDataManager {
             return dto;
         }
          List<IndicatorValueDTO> indicatorValues = new ArrayList<>();
+        boolean isIntraday = fs.getName() != null && fs.getName().toLowerCase().contains("intraday");
         dto.setName(fs.getName().replace("Strategy", ""));
         dto.setSecurityName(fs.getSecurityName());
         dto.setIcon(IconManager.getIconUrl(fs.getSecurityName()));
@@ -178,23 +179,23 @@ public class SecurityMetaDataManager {
 
         if (includeIndicatorValues) {
             fs.getIndicatorValues().forEach(siv -> {
-                indicatorValues.add(new IndicatorValueDTO(siv.getDate(), siv.getValue(), siv.getIndicator()));
+                indicatorValues.add(new IndicatorValueDTO(siv.getDate(), siv.getValue(), siv.getIndicator(), isIntraday));
             });
             dto.setIndicatorValues(indicatorValues);
         }
 
-        dto.setTrades(convert(fs.getStrategyTrades()));
+        dto.setTrades(convert(fs.getStrategyTrades(), isIntraday));
 
         return dto;
     }
 
-    private Set<TradeDTO> convert(Set<StrategyTrade> tradeList) {
+    private Set<TradeDTO> convert(Set<StrategyTrade> tradeList, boolean intraday) {
         Set<TradeDTO> trades = new HashSet<TradeDTO>();
         tradeList.forEach(trade -> {
             TradeDTO tradee = new TradeDTO();
             tradee.setId(trade.getId());
             tradee.setDate(trade.getDate().toInstant().toEpochMilli());
-            tradee.setDateReadable(formatTradeDate(trade.getDate()));
+            tradee.setDateReadable(formatTradeDate(trade.getDate(), intraday));
             tradee.setPrice(trade.getPrice());
             tradee.setAmount(trade.getAmount());
             tradee.setType(trade.getType());
@@ -211,9 +212,11 @@ public class SecurityMetaDataManager {
         return trades;
     }
 
-    private static String formatTradeDate(Date date) {
+    private static String formatTradeDate(Date date, boolean intraday) {
         LocalDateTime ldt = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-        if (ldt.getHour() == 0 && ldt.getMinute() == 0) {
+        // Mirror IndicatorValueDTO: intraday trade markers keep the time even at
+        // midnight so the chart's marker times stay consistent with the series.
+        if (!intraday && ldt.getHour() == 0 && ldt.getMinute() == 0) {
             return DateFormatUtils.format(date, "yyyy-MM-dd");
         }
         return DateFormatUtils.format(date, "yyyy-MM-dd HH:mm");

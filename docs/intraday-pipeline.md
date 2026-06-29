@@ -4,7 +4,7 @@
 
 Every 10 minutes during Stockholm market hours (09:00–17:59 CET, Mon–Fri) the Tier-0 pipeline:
 
-1. Fetches the latest **15-minute bars** for all securities in the configured datasets (`intraday.datasets`, default: OMX30) via `YahooFinanceDirectClient.getIntradayBars()` — direct Yahoo Finance v8 API, no RapidAPI cost. 500ms sleep between tickers.
+1. Fetches the latest **15-minute bars** for all securities in the configured datasets (`intraday.datasets`, default: OMX30) via `YahooFinanceDirectClient.getIntradayBars()` — direct Yahoo Finance v8 API, free. `yahoo.fetch.delay.ms` (default 300ms) between tickers.
 2. Upserts new bars into the `intraday_bar` table (idempotent — existing bars are skipped by the `uq_intraday_bar` unique constraint on `(security_id, bar_timestamp, interval_code)`).
 3. Prunes bars older than `intraday.retention.days` (30 in `application.properties`) — a rolling window large enough to evaluate intraday strategy changes on a real sample.
 4. Builds a ta4j `BarSeries` per security from the retained window.
@@ -69,15 +69,16 @@ HighLander.syncTier0()
 
 Intraday round trips complete within hours, so the old open-positions-only average read 0.0000 essentially always. Test: `TestJIntradayPortfolioPnl`.
 
-## Cost Analysis
+## Sync Volume
 
-| Tier | Frequency | Client | Req/run | Monthly RapidAPI cost |
-|---|---|---|---|---|
-| Tier 0 (intraday) | Every 10 min, 09:00–17:59, Mon–Fri | `YahooFinanceDirectClient` | ~29 | **$0** (free) |
-| Tier 1 (daily) | MON-FRI 18:00 | `RapidApiManager` | ~40 | ~880 |
-| Tier 2 (weekly) | SAT 06:00 | `RapidApiManager` | ~900 | ~3,600 |
-| Tier 3 (monthly) | 1st of month 07:00 | `RapidApiManager` | ~2,400 | ~2,400 |
-| **RapidAPI total** | | | | **~6,880 / 10,000** |
+All tiers fetch via `YahooFinanceDirectClient` — free, no API key, no quota. Volumes below are for load awareness, not cost.
+
+| Tier | Frequency | Client | Req/run |
+|---|---|---|---|
+| Tier 0 (intraday) | Every 10 min, 08:00–17:59, Mon–Fri | `YahooFinanceDirectClient` | ~29 |
+| Tier 1 (daily) | MON-FRI 18:00 | `YahooFinanceDirectClient` | ~40 |
+| Tier 2 (weekly) | SAT 06:00 | `YahooFinanceDirectClient` | ~900 |
+| Tier 3 (monthly) | 1st of month 07:00 | `YahooFinanceDirectClient` | ~2,400 |
 
 ## Configuration
 

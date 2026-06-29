@@ -71,8 +71,9 @@ public class Security {
 	 */
 	@PreUpdate
 	private void syncActiveWithEnterpriseValue() {
-		if (this.enterpriseValue != null && !"COINBASE".equals(this.database)) {
-			this.active = this.enterpriseValue > 500000000;
+		if (!"COINBASE".equals(this.database)) {
+			// null enterpriseValue → index/FX/futures/unknown → treat as inactive
+			this.active = this.enterpriseValue != null && this.enterpriseValue > 500_000_000;
 		}
 	}
 

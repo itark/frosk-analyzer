@@ -83,6 +83,31 @@ public class ProductService {
         return getCandles(productId, queryParams);
     }
 
+    /**
+     * Candles via the PUBLIC market-data endpoint — no authentication, no JWT
+     * signing. Same response shape as {@link #getCandles}. Preferred for
+     * high-frequency polling (e.g. the 15m crypto intraday sync), since market
+     * data does not need a signed request.
+     *
+     * @see <a href="https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getpubliccandles">GetPublicCandles</a>
+     */
+    public Candles getPublicCandles(String productId, Instant startTime, Instant endTime, Granularity granularity) {
+        StringBuilder url = new StringBuilder(exchange.getBaseUrl())
+                .append("/market").append(PRODUCTS_ENDPOINT).append("/").append(productId).append("/candles?");
+        if (startTime != null) {
+            url.append("start=").append(startTime.getEpochSecond()).append("&");
+        }
+        if (endTime != null) {
+            url.append("end=").append(endTime.getEpochSecond()).append("&");
+        }
+        if (granularity != null) {
+            url.append("granularity=").append(granularity);
+        }
+        log.info("Retrieving public candles for:{}", productId);
+        return new org.springframework.web.client.RestTemplate()
+                .getForObject(url.toString(), Candles.class);
+    }
+
     public String getCandlesRaw(String productId, Instant startTime, Instant endTime, Granularity granularity) {
         Map<String, String> queryParams = new HashMap<>();
         if (startTime != null) {

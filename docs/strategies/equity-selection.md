@@ -2,7 +2,7 @@
 
 When the HedgeIndex is risk-on (score 0–7), the equity selection layer screens for the best long candidates. In risk-off (8+), favour defensive sectors or move to cash/hedge.
 
-## Stock Screening Criteria (from Yahoo Finance via `RapidApiManager`)
+## Stock Screening Criteria (from Yahoo Finance via `YahooFinanceDirectClient`)
 
 | Factor | Rule | Source |
 |---|---|---|

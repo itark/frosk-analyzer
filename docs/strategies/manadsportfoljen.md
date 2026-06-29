@@ -31,7 +31,7 @@ The redundant 12M−1 momentum rule was dropped — it duplicated the 6-month mo
 
 `PortfolioService.build()` includes `SwedishLongTermMomentumStrategy` positions with:
 
-- 30%-per-sector cap (requires the `Security.sector` field — populated via `RapidApiManager.getModuleAssetProfile()` inside `YAHOODataManager.updateSecurityMetaData()`)
+- 30%-per-sector cap (requires the `Security.sector` field — populated via `YahooFinanceDirectClient.getModuleAssetProfile()` inside `YAHOODataManager.updateSecurityMetaData()`)
 - Tiered HedgeIndex sizing (`computeTieredTopN()`, day-floored score): score 0–3 → full topN; 4–7 → topN/2; 8+ → 0 positions
 - topN limit ranked by SQN (`frosk.swedish.longterm.topN`, default 25)
 

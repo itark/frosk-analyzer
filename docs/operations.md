@@ -1,8 +1,8 @@
 # Operations — Data Layer & Sync Schedule
 
-## Data Layer — RapidApiManager
+## Data Layer — YahooFinanceDirectClient
 
-All external data is fetched through `RapidApiManager` using the **sparior yahoo-finance15** API on RapidAPI. This is the single entry point for all market data — any new data needed must be added here.
+All Yahoo market data is fetched through `YahooFinanceDirectClient` — direct calls to Yahoo Finance's public v8 (chart) and v10 (quoteSummary) endpoints. **No API key, no cost, no monthly quota.** This is the single entry point for all Yahoo data — any new data needed must be added here. (Crypto price data uses the Coinbase API directly via `CryptoIntradayDataService` / `ProductService`.)
 
 **Swedish stock ticker convention:** Nasdaq Stockholm tickers use the `.ST` suffix (e.g. `VOLV-B.ST`, `ERIC-B.ST`). The OMXS30 index is `^OMX`.
 
@@ -24,59 +24,54 @@ Securities are registered in the DB via `DataSetHelper.addDatasetSecuritiesFromC
 1. Add the ticker to `YAHOO-INDEX-World indexes.csv`
 2. Add the scoring rule to `HedgeIndexService`
 
-**Active endpoints (`RapidApiManager.java`):**
+**Active endpoints (`YahooFinanceDirectClient.java`):**
 
 | Endpoint | Use | Called from |
 |---|---|---|
-| `/api/v1/markets/stock/history?interval=1d` | Daily OHLCV | `YAHOODataManager.syncronize()` |
-| `/api/v1/markets/stock/modules?module=statistics` | Beta, PEG, EPS, P/E, enterprise value | `updateSecurityMetaData()` |
-| `/api/v1/markets/stock/modules?module=income-statement` | Revenue YoY growth | `updateSecurityMetaData()` |
-| `/api/v1/markets/stock/modules?module=recommendation-trend` | Analyst ratings | `updateSecurityMetaData()` |
-| `/api/v1/markets/stock/modules?module=asset-profile` | Sector, industry | `updateSecurityMetaData()` → `setSectorData()` |
+| `/v8/finance/chart/{symbol}?interval=1d` | Daily OHLCV | `YAHOODataManager.syncronize()` |
+| `/v8/finance/chart/{symbol}?interval=15m` | Intraday bars | `IntradayDataService` |
+| `/v10/finance/quoteSummary?modules=defaultKeyStatistics` | Beta, PEG, EPS, P/E, enterprise value | `updateSecurityMetaData()` |
+| `/v10/finance/quoteSummary?modules=incomeStatementHistory` | Revenue YoY growth | `updateSecurityMetaData()` |
+| `/v10/finance/quoteSummary?modules=recommendationTrend` | Analyst ratings | `updateSecurityMetaData()` |
+| `/v10/finance/quoteSummary?modules=assetProfile` | Sector, industry | `updateSecurityMetaData()` → `setSectorData()` |
 
 Index tickers (`^` prefix) and futures (`=F` suffix) are skipped by `updateSecurityMetaData()` — only called on actual stock tickers.
 
-### RapidAPI Plan Constraints
+### Rate / Resilience Notes
 
-Current plan (yahoo-finance15 via RapidAPI):
-- **10,000 requests / month** free; **$0.003 per request** overage
-- **5 requests / second** rate limit
-- **10,240 MB / month** bandwidth; $0.001 per MB overage
-
-**Tier-0 intraday uses a different path** — see below.
+The v8/v10 endpoints are unofficial and free, but not unlimited — Yahoo can throttle or IP-block on excessive request rates. The data layer stays polite via:
+- A `User-Agent: Mozilla/5.0` header (avoids occasional 401 rejections)
+- Crumb/cookie acquisition with a crumb-refresh retry on 401 (`fetchQuoteSummaryModule`)
+- A configurable delay between consecutive ticker fetches, `yahoo.fetch.delay.ms` (default 300ms, set to 0 to disable). Applied in **both** the full-universe daily/weekly loop (`YAHOODataManager.getStocks()`, ~900 tickers, Tier-2) and the Tier-0 intraday loop (`IntradayDataService`).
 
 ### Sync Schedule
 
-**Total securities in DB: ~900.** Daily sync of all 900 = 900 × 22 trading days = **19,800 req/month** — nearly 2× the free quota. A tiered approach is required.
+**Total Yahoo securities in DB: ~900.** The tier split is no longer driven by an API request budget (data is free) — it spreads load across the week and matches each data type's natural refresh cadence.
 
 **Tier 0 — Intraday (all ~29 OMX30 securities, every 10 min)**
 
-Tier-0 uses `YahooFinanceDirectClient` — a direct call to Yahoo Finance's v8 chart API, bypassing RapidAPI entirely. **No API key needed, no cost.** A 500ms sleep between ticker fetches keeps the request rate well under Yahoo's ~2 req/sec limit.
-
-| Job | Cron | Client | Req/run | Monthly cost |
-|---|---|---|---|---|
-| 5m bar sync — OMX30 dataset | `0 */10 9-17 * * MON-FRI` | `YahooFinanceDirectClient` | ~29 | **$0** (free, no RapidAPI) |
+| Job | Cron | Client | Req/run |
+|---|---|---|---|
+| 15m bar sync — OMX30 dataset | `0 */10 8-17 * * MON-FRI` | `YahooFinanceDirectClient` | ~29 |
 
 **Tier 1 — Daily (live signal securities only, ~40 tickers)**
 
-| Job | Cron | Req/run | Monthly |
-|---|---|---|---|
-| Price sync — portfolio + macro symbols | `0 0 18 * * MON-FRI` | ~40 | ~880 |
-| HedgeIndex macro sync | `0 10 18 * * MON-FRI` | 6 (subset of above) | ~0 extra |
+| Job | Cron | Req/run |
+|---|---|---|
+| Price sync — portfolio + macro symbols | `0 0 18 * * MON-FRI` | ~40 |
+| HedgeIndex macro sync | (subset of above) | 6 |
 
 **Tier 2 — Weekly (full universe, all ~900 securities)**
 
-| Job | Cron | Req/run | Monthly |
-|---|---|---|---|
-| Full price sync | `0 0 6 * * SAT` | ~900 | ~3,600 |
+| Job | Cron | Req/run |
+|---|---|---|
+| Full price sync | `0 0 6 * * SAT` | ~900 |
 
 **Tier 3 — Monthly (fundamental metadata, ~600 actual stocks)**
 
-| Job | Cron | Req/run | Monthly |
-|---|---|---|---|
-| Metadata update (4 req × 600 stocks) | `0 0 7 1 * *` | ~2,400 | ~2,400 |
-
-**RapidAPI budget (Tier 1+2+3 only): ~6,880 / 10,000 req/month** — leaves ~3,120 headroom.
+| Job | Cron | Req/run |
+|---|---|---|
+| Metadata update (4 req × 600 stocks) | `0 0 7 1 * *` | ~2,400 |
 
 **Note:** `Scheduler.java` has `@EnableScheduling` enabled with four methods (`tier0IntradaySync`, `tier1DailySync`, `tier2WeeklySync`, `tier3MonthlyMetadata`) driven by cron properties. Skip logic is built in at each tier.
 
@@ -84,7 +79,7 @@ Tier-0 uses `YahooFinanceDirectClient` — a direct call to Yahoo Finance's v8 c
 
 | Needed | Status | Notes |
 |---|---|---|
-| Swedish stock daily OHLCV | ✅ Exists | 977 securities in `YAHOO-SWEDISH` dataset; multi-year history via `RapidApiManager` |
+| Swedish stock daily OHLCV | ✅ Exists | 977 securities in `YAHOO-SWEDISH` dataset; multi-year history via `YahooFinanceDirectClient` |
 | OMXS30 constituents (daily prices) | ✅ Exists | 29 tickers in `YAHOO-OMX30` dataset; used for Dagstrategin universe |
 | OMXS30 benchmark (`^OMX`) | ✅ Exists | Present in `YAHOO-SWEDISH` dataset (line 973 of CSV); also `^OMXSPI` (all-share), `^NORDIC`, `^NORDICPI` are available |
 | Beta, PEG, Revenue Growth, Dividend Yield | ⚠️ Partial | `yoyGrowth` fetched on security insert; `beta`, `pegRatio`, `dividendYield` fields exist — populated via `updateSecurityMetaData()`. Run Tier 3 sync to backfill. |
@@ -92,15 +87,15 @@ Tier-0 uses `YahooFinanceDirectClient` — a direct call to Yahoo Finance's v8 c
 
 ## Yahoo Finance Direct Client (Tier-0)
 
-Tier-0 intraday fetching uses `YahooFinanceDirectClient` — a direct call to Yahoo Finance's native v8 chart API, bypassing RapidAPI. No API key, no cost.
+Tier-0 intraday fetching uses `YahooFinanceDirectClient` — a direct call to Yahoo Finance's native v8 chart API. No API key, no cost.
 
 **Endpoint:** `GET https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=5m&range=5d`
 
 - Same Yahoo Finance ticker format already in use (e.g. `VOLV-B.ST`, `ERIC-B.ST`)
 - `range=5d` ensures the 7-day retention window is populated on restart
 - `User-Agent: Mozilla/5.0` header avoids occasional 401 rejections
-- 500ms sleep between ticker fetches keeps rate well under ~2 req/sec limit
+- `yahoo.fetch.delay.ms` (default 300ms) between ticker fetches keeps the rate well under ~2 req/sec
 
-**Fallback:** The v8 endpoint is unofficial. If Yahoo changes the format or adds authentication, re-enable `RapidApiManager.getHistory()` for intraday by reverting `IntradayDataService` to inject `RapidApiManager` instead of `YahooFinanceDirectClient`. All errors are caught and logged — a single ticker failure does not crash the pipeline.
+**Resilience:** The v8 endpoint is unofficial. All errors are caught and logged per ticker — a single ticker failure does not crash the pipeline. If Yahoo changes the format or adds authentication, the fix lives entirely in `YahooFinanceDirectClient` (e.g. crumb/cookie handling in `fetchQuoteSummaryModule`).
 
 **Config:** `yahoo.finance.direct.base-url` (default: `https://query1.finance.yahoo.com`) — override for testing.

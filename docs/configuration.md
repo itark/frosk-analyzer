@@ -43,4 +43,5 @@
 | `frosk.intraday.hedge.max.score` | HedgeIndex entry gate for all three intraday strategies (9 — only strong risk-off blocks; a gate at 7 stopped all trading in defensive weeks) |
 | `intraday.datasets` | Datasets whose securities are synced for 15m intraday bars (OMX30) |
 | `intraday.retention.days` | Days of 15-minute bars to retain in `intraday_bar` (30, was 7) — older bars are pruned on every Tier-0 sync run |
+| `yahoo.fetch.delay.ms` | Politeness delay between consecutive Yahoo ticker fetches (300; 0 disables). Applies to both the full-universe daily/weekly sync (`YAHOODataManager`) and the Tier-0 intraday loop (`IntradayDataService`) — Yahoo's free endpoints can throttle/IP-block bursty traffic |
 | `exchange.transaction.intradayFeePerTradePercent` | Per-trade fee for intraday strategies and round-trip PnL netting (0.0003 = 0.03%) |

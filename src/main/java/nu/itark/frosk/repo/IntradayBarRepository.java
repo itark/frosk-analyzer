@@ -30,6 +30,8 @@ public interface IntradayBarRepository extends JpaRepository<IntradayBar, Long> 
 
     IntradayBar findTopBySecurityIdOrderByBarTimestampDesc(Long securityId);
 
+    IntradayBar findTopBySecurityIdOrderByBarTimestampAsc(Long securityId);
+
     /**
      * Prune old bars — called at the end of every sync run to cap table growth.
      * Deletes all bars with a timestamp strictly before the supplied cutoff.

@@ -57,8 +57,16 @@ public class StrategyComparisonReportIT extends BaseIntegrationTest {
             "GapReversalIntradayStrategy"
     );
 
+    private static final List<String> CRYPTO_INTRADAY_STRATEGIES = List.of(
+            "CryptoRangeBreakoutIntradayStrategy",
+            "CryptoVWAPReversionIntradayStrategy"
+    );
+
     /** Round-trip fee drag (2 trades) in percent, for the intraday net column. */
     private static final double INTRADAY_ROUND_TRIP_FEE_PCT = 0.06;
+
+    /** Coinbase taker round-trip (2 × 0.6%) in percent. */
+    private static final double CRYPTO_ROUND_TRIP_FEE_PCT = 1.2;
 
     @Autowired
     BarSeriesService barSeriesService;
@@ -72,6 +80,12 @@ public class StrategyComparisonReportIT extends BaseIntegrationTest {
     @Autowired
     IntradayDataService intradayDataService;
 
+    @Autowired
+    nu.itark.frosk.service.CryptoIntradayDataService cryptoIntradayDataService;
+
+    @Autowired
+    nu.itark.frosk.repo.SecurityRepository securityRepository;
+
     @Test
     public void dailyReport() {
         hedgeIndexService.warmCache();
@@ -79,7 +93,7 @@ public class StrategyComparisonReportIT extends BaseIntegrationTest {
         assertFalse(seriesList.isEmpty(), "No YAHOO series in test database");
         List<String> strategies = configuredStrategies(DEFAULT_DAILY_STRATEGIES);
         System.out.println("\n=== DAILY STRATEGY REPORT (" + seriesList.size() + " securities) ===");
-        printReport(runAll(strategies, seriesList), false);
+        printReport(runAll(strategies, seriesList), 0.0);
     }
 
     @Test
@@ -90,7 +104,35 @@ public class StrategyComparisonReportIT extends BaseIntegrationTest {
         List<BarSeries> seriesList = new ArrayList<>(seriesMap.values());
         List<String> strategies = configuredStrategies(INTRADAY_STRATEGIES);
         System.out.println("\n=== INTRADAY STRATEGY REPORT (" + seriesList.size() + " securities, 15m bars) ===");
-        printReport(runAll(strategies, seriesList), true);
+        printReport(runAll(strategies, seriesList), INTRADAY_ROUND_TRIP_FEE_PCT);
+    }
+
+    /**
+     * Crypto intraday report. Syncs live 15m candles from the public Coinbase
+     * market-data endpoint first (network read), so the evaluation always uses
+     * real recent data; securities are seeded into the test DB if missing.
+     */
+    @Test
+    public void cryptoIntradayReport() {
+        seedCryptoSecuritiesIfMissing();
+        Map<Security, BarSeries> seriesMap = cryptoIntradayDataService.syncAndBuildAllSeries();
+        assertFalse(seriesMap.isEmpty(), "No crypto intraday series — Coinbase sync failed?");
+        List<BarSeries> seriesList = new ArrayList<>(seriesMap.values());
+        List<String> strategies = configuredStrategies(CRYPTO_INTRADAY_STRATEGIES);
+        System.out.println("\n=== CRYPTO INTRADAY STRATEGY REPORT (" + seriesList.size()
+                + " products, 15m bars, taker fee 0.6%/trade) ===");
+        printReport(runAll(strategies, seriesList), CRYPTO_ROUND_TRIP_FEE_PCT);
+    }
+
+    private void seedCryptoSecuritiesIfMissing() {
+        for (String product : List.of("BTC-EUR", "ETH-EUR", "SOL-EUR")) {
+            if (securityRepository.findByName(product) == null) {
+                nu.itark.frosk.model.Security seed =
+                        new nu.itark.frosk.model.Security(product, product + " (report seed)", "COINBASE", "EUR");
+                seed.setActive(true);
+                securityRepository.save(seed);
+            }
+        }
     }
 
     private List<String> configuredStrategies(List<String> defaults) {
@@ -122,7 +164,9 @@ public class StrategyComparisonReportIT extends BaseIntegrationTest {
         return results;
     }
 
-    private void printReport(Map<String, Aggregate> results, boolean intraday) {
+    /** @param roundTripFeePct fee drag per round trip in percent for the net column; 0 = daily report */
+    private void printReport(Map<String, Aggregate> results, double roundTripFeePct) {
+        boolean intraday = roundTripFeePct > 0;
         String header = String.format("%-45s %6s %8s %10s %8s %8s %10s %10s %8s %7s",
                 "STRATEGY", "nSec", "nTrades", "avgProfit%", "avgSQN", "winRate%", "avgPnL/tr", intraday ? "netPnL/tr" : "expcy/tr", "avgMaxDD", "errors");
         System.out.println(header);
@@ -130,7 +174,7 @@ public class StrategyComparisonReportIT extends BaseIntegrationTest {
         results.forEach((name, agg) -> {
             double avgPnlPerTrade = agg.closedTrades > 0 ? agg.sumPnlPerTrade / agg.closedTrades : 0;
             double secondPerTrade = intraday
-                    ? avgPnlPerTrade - INTRADAY_ROUND_TRIP_FEE_PCT
+                    ? avgPnlPerTrade - roundTripFeePct
                     : avgPnlPerTrade; // expectancy column reuses avg for daily; SQN carries the quality signal
             System.out.println(String.format("%-45s %6d %8d %10.2f %8.2f %8.1f %10.3f %10.3f %8.2f %7d",
                     name,

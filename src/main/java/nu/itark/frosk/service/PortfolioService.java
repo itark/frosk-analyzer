@@ -80,10 +80,16 @@ public class PortfolioService {
             "CANSLIMStrategy"
     );
 
+    /**
+     * Equity and crypto names both listed — the two processes have separate
+     * databases, so each only ever finds its own strategies' positions.
+     */
     private static final List<String> INTRADAY_STRATEGIES = List.of(
             "OpeningRangeBreakoutIntradayStrategy",
             "VWAPMeanReversionIntradayStrategy",
-            "GapReversalIntradayStrategy"
+            "GapReversalIntradayStrategy",
+            "CryptoRangeBreakoutIntradayStrategy",
+            "CryptoVWAPReversionIntradayStrategy"
     );
 
     final FeaturedStrategyRepository featuredStrategyRepository;
@@ -285,6 +291,9 @@ public class PortfolioService {
             return PortfolioDTO.builder()
                     .snapshotDate("none")
                     .openPositionCount(0)
+                    .totalPnlPercent(BigDecimal.ZERO)
+                    .realizedPnlPercent(BigDecimal.ZERO)
+                    .closedTradeCount(0)
                     .positions(Collections.emptyList())
                     .build();
         }

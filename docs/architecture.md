@@ -4,7 +4,7 @@
 HighLander (startup runner + scheduler target)
   ├─ syncTier0()  → IntradayStrategyRunner.run()
   │    ├─ IntradayDataService.syncAndBuildSeries()
-  │    │    ├─ RapidApiManager.getHistory(^OMX, 5m) — 1 API call
+  │    │    ├─ YahooFinanceDirectClient.getHistory(^OMX, 15m) — 1 API call
   │    │    ├─ upsert IntradayBar rows (idempotent)
   │    │    ├─ deleteOlderThan(now - retentionDays)
   │    │    └─ buildSeriesFromDb() → ta4j BarSeries

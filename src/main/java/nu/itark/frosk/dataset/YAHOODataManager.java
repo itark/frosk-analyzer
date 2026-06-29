@@ -46,6 +46,9 @@ public class YAHOODataManager {
     @Value("${enterprise.value.threshold:500000000}")
     int enterpriseValueThreshold;
 
+    @Value("${yahoo.fetch.delay.ms:300}")
+    int fetchDelayMs;
+
     @Autowired
     SecurityPriceRepository securityPriceRepository;
 
@@ -165,6 +168,10 @@ public class YAHOODataManager {
         if (stockQuotes != null) {
             stockQuotes.forEach((sec_id, quote) -> {
                 quote.forEach(row -> {
+                    if (row.getClose() <= 0.0) {
+                        log.warn("YAHOODataManager: skipping zero/negative close for sec_id={} date={}", sec_id, row.getDate());
+                        return;
+                    }
                     Date date;
                     try {
                         date = formatter.parse(row.getDate());
@@ -221,6 +228,7 @@ public class YAHOODataManager {
                     log.error("ERROR:", e);
                     // throw e;
                 }
+                sleepBetweenFetches();
 
             } else {
                 log.info("Today, no action.");
@@ -229,6 +237,23 @@ public class YAHOODataManager {
 
         return stocks;
 
+    }
+
+    /**
+     * Politeness pause between consecutive Yahoo ticker fetches in the
+     * full-universe loop. Yahoo's endpoints are free but unofficial and can
+     * throttle/IP-block bursty traffic. Controlled by {@code yahoo.fetch.delay.ms}
+     * (set to 0 to disable).
+     */
+    private void sleepBetweenFetches() {
+        if (fetchDelayMs <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(fetchDelayMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private Map<String, StockHistoryDTO.StockData> filterFromHistory(Calendar from, Map<String, StockHistoryDTO.StockData> history) {

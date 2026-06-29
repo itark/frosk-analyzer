@@ -80,7 +80,7 @@ The strategy class must:
 - **Strategies excluded from batch all-strategies runs** (they run via dedicated code paths): all hedge/FX/index strategies, both Dagstrategin strategies, and `OMXS30SwingStrategy`. Configured via `frosk.strategies.exclude`.
 - **New REST endpoints**: only add when there's a concrete consumer (frontend or external integration). Results are queryable directly via `/h2-console`.
 - **Adding a HedgeIndex indicator** is a two-step operation: (1) add the ticker to `YAHOO-INDEX-World indexes.csv`, (2) add the scoring rule to `HedgeIndexService`. See `docs/strategies/hedgeindex.md`.
-- **All external market data** flows through `RapidApiManager` (sparior yahoo-finance15 on RapidAPI). Any new data source must be added there. See `docs/operations.md` for plan limits.
+- **All external market data** flows through `YahooFinanceDirectClient` (direct calls to Yahoo's public v8/v10 endpoints — no API key, no cost, no quota). Any new Yahoo data source must be added there. See `docs/operations.md`.
 
 ## Where Things Live
 
@@ -100,7 +100,7 @@ When working on a specific area, read the relevant doc first.
 | System architecture (call tree, runners, schedulers) | `docs/architecture.md` |
 | Data model (`Security`, `SecurityPrice`, `IntradayBar/Signal`, `FeaturedStrategy`) | `docs/data-model.md` |
 | Configuration reference (`application.properties` table) | `docs/configuration.md` |
-| Operations (RapidAPI plan, Tier 1/2/3 sync schedule) | `docs/operations.md` |
+| Operations (data layer, Tier 0/1/2/3 sync schedule) | `docs/operations.md` |
 | Tier-0 intraday pipeline mechanics | `docs/intraday-pipeline.md` |
 | Useful H2 queries | `docs/queries.md` |
 | Strategy inventory (one-line summaries) | `docs/strategies/README.md` |
