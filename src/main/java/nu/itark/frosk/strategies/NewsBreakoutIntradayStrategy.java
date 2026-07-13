@@ -51,6 +51,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class NewsBreakoutIntradayStrategy extends AbstractStrategy implements IIndicatorValue, IntradayStrategy {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private static final double GAP_UP_MIN_PCT    = 1.5;  // Opening gap threshold (%)
     private static final double MOMENTUM_FACTOR   = 1.02; // +2% intraday from prev close

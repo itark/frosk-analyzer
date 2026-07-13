@@ -45,6 +45,7 @@ import java.util.List;
  */
 @Component
 public class ShortTermMomentumLongTermStrengthStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private static final int ATR_PERIOD = 14;
     private static final int ADX_PERIOD = 14;

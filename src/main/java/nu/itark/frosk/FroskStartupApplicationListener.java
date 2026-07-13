@@ -32,6 +32,11 @@ public class FroskStartupApplicationListener implements ApplicationListener<Cont
         } else {
             highLander.runInstall(Database.YAHOO);
         }
+        // Crypto's Tier-0 pipeline otherwise only fires on its 15-minute cron
+        // (scheduler.crypto.intraday.cron); kick it once at startup so live/paper
+        // trading isn't idle for up to 15 minutes after a restart. No-op on the
+        // equity profile — syncCryptoIntraday() self-gates on frosk.run.crypto.
+        highLander.syncCryptoIntraday();
     }
 
 }

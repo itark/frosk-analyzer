@@ -175,8 +175,15 @@ public class StrategyExecutor {
             // Use FK-targeted delete to avoid JPQL OR-chain StackOverflow on large indicator sets
             indicatorValueRepo.deleteByFeaturedStrategyId(fsRes.get().getId());
             List<StrategyIndicatorValue> ivList = new ArrayList<>(strategiesMap.getIndicatorValues(strategy, null));
-            ivList.forEach(iv -> iv.setFeaturedStrategy(fsRes.get()));
-            indicatorValueRepo.saveAll(ivList);
+            // Defend against (indicator, date) collisions within the same batch —
+            // last value wins, matching the semantics of re-running buildStrategy().
+            Map<String, StrategyIndicatorValue> deduped = new LinkedHashMap<>();
+            ivList.forEach(iv -> deduped.put(iv.getIndicator() + "|" + iv.getDate().getTime(), iv));
+            deduped.values().forEach(iv -> iv.setFeaturedStrategy(fsRes.get()));
+            // Flush inside the try so a constraint violation surfaces here — the delete/insert
+            // would otherwise flush lazily at transaction commit, past this catch block.
+            indicatorValueRepo.saveAll(deduped.values());
+            indicatorValueRepo.flush();
             } catch (DataIntegrityViolationException e) {
                 log.warn("Indicator value save failed for strategy={}, securityId={}: {}", strategy, fsRes.get().getId(), e.getMessage());
             }

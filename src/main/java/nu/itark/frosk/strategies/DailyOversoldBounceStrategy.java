@@ -38,6 +38,7 @@ import java.util.List;
  */
 @Component
 public class DailyOversoldBounceStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     @Autowired
     private HedgeIndexService hedgeIndexService;

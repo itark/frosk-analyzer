@@ -22,6 +22,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class DXYStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     final BarSeriesService barSeriesService;
     final String securityName = "DX-Y.NYB";

@@ -43,6 +43,7 @@ import java.util.List;
 @Slf4j
 @Component
 public class SimpleMovingMomentumStrategy extends AbstractStrategy implements IIndicatorValue  {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     EMAIndicator shortEma, longEma = null;
 
     public Strategy buildStrategy(BarSeries series) {

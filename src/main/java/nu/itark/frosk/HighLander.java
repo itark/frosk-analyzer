@@ -209,6 +209,7 @@ public class HighLander {
 	public void syncTier1() {
 		log.info("syncTier1 started");
 		yahooDataManager.syncronizeByDataset("OMX30");
+		yahooDataManager.syncronizeActiveSwedish();
 		strategyAnalysis.runHedgeIndexStrategies();
 		strategyAnalysis.runDagstrateginStrategies();
 		log.info("syncTier1 completed");

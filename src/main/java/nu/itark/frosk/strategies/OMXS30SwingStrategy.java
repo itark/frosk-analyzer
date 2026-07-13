@@ -34,6 +34,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class OMXS30SwingStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private static final int    EMA_FAST        = 20;
     private static final int    EMA_SLOW        = 50;

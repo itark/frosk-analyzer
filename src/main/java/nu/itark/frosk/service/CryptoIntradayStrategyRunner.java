@@ -75,8 +75,8 @@ public class CryptoIntradayStrategyRunner {
     @Autowired(required = false)
     private LiveOrderRepository liveOrderRepository;
 
-    @Value("${crypto.live.trading.max.position.eur:500}")
-    private BigDecimal maxPositionEur;
+    @Autowired(required = false)
+    private CryptoPaperTradingService paperTradingService;
 
     @Value("${crypto.short.excluded.products:}")
     private String shortExcludedProductsRaw;
@@ -207,6 +207,24 @@ public class CryptoIntradayStrategyRunner {
         // Fix: if the real-world position is unmatched AND the backtest agrees to exit
         // (or the position is older than MAX_BARS_FORCE_CLOSE), emit the exit now.
         if (hasRealWorldOpenPosition(strategyName, security.getName(), isShort)) {
+            // Never reconcile a position that was opened on the current bar. The
+            // backtest is stateless (re-simulated from scratch every call), so two
+            // invocations against the same not-yet-advanced bar (e.g. a restart
+            // shortly after a cron tick — FroskStartupApplicationListener kicks
+            // syncCryptoIntraday() once at startup, independent of the 15m cron)
+            // can disagree with each other. If that happens here, the position
+            // would be entered and immediately closed on the same bar/price — a
+            // guaranteed fee-only loss with zero real market exposure. Confirmed
+            // in production data (intraday_signal ids 20252-20305 and 15 other
+            // occurrences): wait for a genuinely new bar before reconciling.
+            long currentBarEpoch = barStartEpoch(series, lastIndex);
+            Optional<IntradaySignal> latestEntry = latestRealWorldEntry(strategyName, security.getName(), isShort);
+            if (latestEntry.isPresent() && latestEntry.get().getSignalTimestamp() == currentBarEpoch) {
+                log.debug("CryptoIntradayStrategyRunner: skip reconcile for {}/{} — entry is on the current bar, no new bar since entry",
+                        strategyName, security.getName());
+                return 0;
+            }
+
             boolean backtestClosed    = tradingRecord.getCurrentPosition().isNew();
             boolean backtestShouldExit = tradingRecord.getCurrentPosition().isOpened()
                                          && ta4jStrategy.shouldExit(lastIndex, tradingRecord);
@@ -236,10 +254,8 @@ public class CryptoIntradayStrategyRunner {
     }
 
     private boolean hasRealWorldOpenPosition(String strategyName, String ticker, boolean isShort) {
-        String entryType = isShort ? "SHRT" : "BUY";
-        String exitType  = isShort ? "COVR" : "SELL";
-        Optional<IntradaySignal> latestEntry = signalRepository
-                .findTopByStrategyNameAndTickerAndSignalTypeOrderBySignalTimestampDesc(strategyName, ticker, entryType);
+        String exitType = isShort ? "COVR" : "SELL";
+        Optional<IntradaySignal> latestEntry = latestRealWorldEntry(strategyName, ticker, isShort);
         if (latestEntry.isEmpty()) return false;
         Optional<IntradaySignal> latestExit = signalRepository
                 .findTopByStrategyNameAndTickerAndSignalTypeOrderBySignalTimestampDesc(strategyName, ticker, exitType);
@@ -249,10 +265,19 @@ public class CryptoIntradayStrategyRunner {
                 || latestEntry.get().getSignalTimestamp() > latestExit.get().getSignalTimestamp();
     }
 
-    private boolean isRealWorldPositionExpired(String strategyName, String ticker, boolean isShort) {
+    private Optional<IntradaySignal> latestRealWorldEntry(String strategyName, String ticker, boolean isShort) {
         String entryType = isShort ? "SHRT" : "BUY";
-        Optional<IntradaySignal> latestEntry = signalRepository
+        return signalRepository
                 .findTopByStrategyNameAndTickerAndSignalTypeOrderBySignalTimestampDesc(strategyName, ticker, entryType);
+    }
+
+    private long barStartEpoch(BarSeries series, int index) {
+        Bar bar = series.getBar(index);
+        return bar.getEndTime().toEpochSecond() - BAR_DURATION.getSeconds();
+    }
+
+    private boolean isRealWorldPositionExpired(String strategyName, String ticker, boolean isShort) {
+        Optional<IntradaySignal> latestEntry = latestRealWorldEntry(strategyName, ticker, isShort);
         if (latestEntry.isEmpty()) return false;
         long entryEpoch = latestEntry.get().getSignalTimestamp();
         long nowEpoch   = ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond();
@@ -278,8 +303,7 @@ public class CryptoIntradayStrategyRunner {
     private void emitSignal(String signalType, String strategyName, String ticker,
                             BarSeries series, int index) {
         Bar bar = series.getBar(index);
-        ZonedDateTime barEnd = bar.getEndTime();
-        long barStartEpoch = barEnd.toEpochSecond() - BAR_DURATION.getSeconds();
+        long barStartEpoch = barStartEpoch(series, index);
 
         if (signalRepository.existsByStrategyNameAndTickerAndSignalTimestampAndSignalType(
                 strategyName, ticker, barStartEpoch, signalType)) {
@@ -295,7 +319,25 @@ public class CryptoIntradayStrategyRunner {
         log.info("CryptoIntradayStrategyRunner: {} {} — ticker={}, bar={}, close={}",
                 strategyName, signalType, ticker, barStartEpoch, signal.getClosePrice());
 
+        dispatchPaperOrder(signalType, strategyName, ticker, signal.getClosePrice());
         dispatchLiveOrder(signalType, strategyName, ticker, signal.getClosePrice(), signal);
+    }
+
+    /**
+     * Simulates a fill against the shared crypto paper account for long-only
+     * strategies, regardless of whether live trading is enabled. SHRT/COVR
+     * signals (short strategies) are skipped — paper trading mirrors what live
+     * trading would actually do, and Coinbase doesn't support shorting.
+     */
+    private void dispatchPaperOrder(String signalType, String strategyName, String ticker, BigDecimal closePrice) {
+        if (paperTradingService == null) return;
+        if (!"BUY".equals(signalType) && !"SELL".equals(signalType)) return;
+
+        if ("BUY".equals(signalType)) {
+            paperTradingService.dispatchBuy(strategyName, ticker, closePrice);
+        } else {
+            paperTradingService.dispatchSell(strategyName, ticker, closePrice);
+        }
     }
 
     /**
@@ -316,15 +358,16 @@ public class CryptoIntradayStrategyRunner {
     }
 
     private void dispatchBuy(String strategyName, String ticker, BigDecimal closePrice, IntradaySignal signal) {
-        if (!liveTradingGate.canTrade(ticker, maxPositionEur)) return;
+        BigDecimal positionEur = liveTradingGate.computePositionSizeEur();
+        if (!liveTradingGate.canTrade(ticker, positionEur)) return;
 
-        OrderResponse resp = coinbaseOrderClient.placeBuyOrder(ticker, maxPositionEur);
+        OrderResponse resp = coinbaseOrderClient.placeBuyOrder(ticker, positionEur);
 
         LiveOrder order = new LiveOrder();
         order.setTicker(ticker);
         order.setSide("BUY");
         order.setStrategyName(strategyName);
-        order.setEurAmount(maxPositionEur);
+        order.setEurAmount(positionEur);
         order.setCoinbaseOrderId(resp.getOrderId());
         order.setClientOrderId(resp.getClientOrderId());
 

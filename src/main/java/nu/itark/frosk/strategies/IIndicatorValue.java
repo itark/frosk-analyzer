@@ -9,12 +9,10 @@ import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.num.Num;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public interface IIndicatorValue {
-	List<StrategyIndicatorValue> indicatorValues = new ArrayList<>();
 	List<StrategyIndicatorValue> getIndicatorValues();
 
 	default void setIndicatorValues(MACDIndicator indicator, String name) {
@@ -24,7 +22,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 
@@ -35,7 +33,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 
@@ -46,7 +44,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 
@@ -57,7 +55,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 
@@ -68,7 +66,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 
@@ -79,7 +77,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 
@@ -90,7 +88,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 
@@ -101,7 +99,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 	default void setIndicatorValues(ADXIndicator indicator, String name) {
@@ -111,7 +109,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 
@@ -122,7 +120,7 @@ public interface IIndicatorValue {
 			if (indicator.getValue(i).isNaN()) continue;
 			BigDecimal value = BigDecimal.valueOf(indicator.getValue(i).doubleValue());
 			iv = new StrategyIndicatorValue(date,value, name);
-			indicatorValues.add(iv);
+			getIndicatorValues().add(iv);
 		}
 	}
 

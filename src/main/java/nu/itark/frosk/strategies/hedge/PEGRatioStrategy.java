@@ -36,6 +36,7 @@ import java.util.List;
  */
 @Component
 public class PEGRatioStrategy extends AbstractStrategy implements IIndicatorValue  {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     // PEG ratio thresholds
     private static final double EXCELLENT_PEG = 0.5;
     private static final double GOOD_PEG = 1.0;

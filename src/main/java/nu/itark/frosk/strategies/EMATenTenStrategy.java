@@ -38,6 +38,7 @@ import java.util.List;
 
 @Component
 public class EMATenTenStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     EMAIndicator closeEma, openEma = null;
 
     public Strategy buildStrategy(BarSeries series) {

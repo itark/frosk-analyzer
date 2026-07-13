@@ -18,6 +18,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class NasdaqVsSPStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     private final BarSeriesService barSeriesService;
 
     /**

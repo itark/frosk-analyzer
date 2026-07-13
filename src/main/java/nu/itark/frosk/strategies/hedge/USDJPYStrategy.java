@@ -21,6 +21,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class USDJPYStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     final BarSeriesService barSeriesService;
     final String securityName = "JPY=X";

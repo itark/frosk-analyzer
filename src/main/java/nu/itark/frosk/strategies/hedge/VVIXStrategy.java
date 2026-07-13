@@ -25,6 +25,7 @@ import java.util.List;
  */
 @Component
 public class VVIXStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private final BarSeriesService barSeriesService;
 

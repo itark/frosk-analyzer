@@ -35,6 +35,7 @@ import java.util.List;
  */
 @Deprecated
 public class SimplePEGRatioStrategy extends AbstractStrategy implements IIndicatorValue  {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     @Value("${frosk.hedge.criteria.pegratio.threshold}")
     private Double pegRatioThreshold;

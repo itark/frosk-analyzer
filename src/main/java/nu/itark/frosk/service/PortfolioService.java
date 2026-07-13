@@ -89,7 +89,8 @@ public class PortfolioService {
             "VWAPMeanReversionIntradayStrategy",
             "GapReversalIntradayStrategy",
             "CryptoRangeBreakoutIntradayStrategy",
-            "CryptoVWAPReversionIntradayStrategy"
+            "CryptoVWAPReversionIntradayStrategy",
+            "CryptoEMACrossLongIntradayStrategy"
     );
 
     final FeaturedStrategyRepository featuredStrategyRepository;

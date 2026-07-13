@@ -40,6 +40,7 @@ import java.util.List;
 
 @Component
 public class VWAPStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     VWAPIndicator vwap;
 
     public Strategy buildStrategy(BarSeries series) {

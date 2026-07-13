@@ -24,6 +24,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class OMXvsSTOXX50Strategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private final BarSeriesService barSeriesService;
 

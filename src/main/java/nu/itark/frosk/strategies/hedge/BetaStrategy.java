@@ -40,6 +40,7 @@ import java.util.List;
 
 @Slf4j
 public class BetaStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     /**
      * Beta (5Y Monthly): > 1.3
      */

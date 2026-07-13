@@ -49,6 +49,7 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  */
 @Component
 public class RSI2Strategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 	private RSIIndicator rsi = null;
 
     public Strategy buildStrategy(BarSeries series) {

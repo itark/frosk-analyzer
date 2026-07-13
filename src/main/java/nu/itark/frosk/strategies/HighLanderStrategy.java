@@ -22,6 +22,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class HighLanderStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     private final HedgeIndexStrategy hedgeIndexStrategy;
     private final BetaStrategy betaStrategy;
     private final YoYRevenueGrowthStrategy yoYRevenueGrowthStrategy;

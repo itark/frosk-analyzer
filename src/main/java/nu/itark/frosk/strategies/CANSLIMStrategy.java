@@ -42,6 +42,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class CANSLIMStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private final HedgeIndexStrategy hedgeIndexStrategy;
     private final GoldenCrossRelativeStrengthStrategy goldenCrossRelativeStrengthStrategy;

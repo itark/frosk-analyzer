@@ -50,6 +50,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class HaramiStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
 	/**
      * @return a CCI correction strategy

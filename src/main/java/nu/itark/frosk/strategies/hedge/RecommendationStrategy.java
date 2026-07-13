@@ -19,6 +19,7 @@ import java.util.List;
 
 @Component
 public class RecommendationStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
 
 /*

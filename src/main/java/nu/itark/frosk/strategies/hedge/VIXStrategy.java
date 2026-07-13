@@ -17,6 +17,7 @@ import java.util.List;
 
 @Component
 public class VIXStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     final BarSeriesService barSeriesService;
     final HedgeIndexService hedgeIndexService;
 

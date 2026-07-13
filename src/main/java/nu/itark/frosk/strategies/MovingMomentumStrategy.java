@@ -46,6 +46,7 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
  */
 @Component
 public class MovingMomentumStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 	MACDIndicator macd = null;
 	EMAIndicator shortEma, longEma = null;
 

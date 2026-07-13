@@ -49,6 +49,7 @@ import java.util.List;
 * https://www.investopedia.com/terms/b/bearishengulfingp.asp
  */
 public class EngulfingStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     public Strategy buildStrategy(BarSeries series) {
         super.setInherentExitRule();

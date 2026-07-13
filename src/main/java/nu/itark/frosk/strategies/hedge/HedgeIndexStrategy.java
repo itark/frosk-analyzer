@@ -42,6 +42,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class HedgeIndexStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     final HedgeIndexService hedgeIndexService;
 
     public Strategy buildStrategy(BarSeries barSeries) {

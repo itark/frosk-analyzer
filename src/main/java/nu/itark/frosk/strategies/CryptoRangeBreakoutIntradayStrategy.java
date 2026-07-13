@@ -64,6 +64,7 @@ import java.util.List;
 @Slf4j
 public class CryptoRangeBreakoutIntradayStrategy extends AbstractStrategy
         implements IIndicatorValue, CryptoIntradayStrategy {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private static final int ATR_PERIOD = 14;
 

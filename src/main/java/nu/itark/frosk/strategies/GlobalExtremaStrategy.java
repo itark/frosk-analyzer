@@ -38,6 +38,7 @@ import java.util.List;
  */
 @Component
 public class GlobalExtremaStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
     // We assume that there were at least one trade every 5 minutes during the whole week
     private static final int NB_TICKS_PER_WEEK = 12 * 24 * 7;
     private static final int TICKS_PER_WEEK = 24 * 7;

@@ -2,7 +2,9 @@ package nu.itark.frosk.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.analysis.CryptoPaperAccountDTO;
 import nu.itark.frosk.analysis.CryptoPortfolioItemDTO;
+import nu.itark.frosk.service.CryptoPaperTradingService;
 import nu.itark.frosk.service.CryptoPortfolioService;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
@@ -19,6 +21,7 @@ import java.util.List;
 public class CryptoDashboardController {
 
     private final CryptoPortfolioService cryptoPortfolioService;
+    private final CryptoPaperTradingService cryptoPaperTradingService;
 
     /**
      * @Example GET http://localhost:8081/crypto/portfolio
@@ -27,6 +30,15 @@ public class CryptoDashboardController {
     public List<CryptoPortfolioItemDTO> getCryptoPortfolio() {
         log.info("GET /crypto/portfolio");
         return cryptoPortfolioService.getOpenPositions();
+    }
+
+    /**
+     * @Example GET http://localhost:8081/crypto/paper-account
+     */
+    @GetMapping(value = "/crypto/paper-account")
+    public CryptoPaperAccountDTO getPaperAccount() {
+        log.info("GET /crypto/paper-account");
+        return cryptoPaperTradingService.getAccountSummary();
     }
 
     @GetMapping(value = "/crypto", produces = MediaType.TEXT_HTML_VALUE)

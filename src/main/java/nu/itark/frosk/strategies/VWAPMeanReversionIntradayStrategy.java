@@ -59,6 +59,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class VWAPMeanReversionIntradayStrategy extends AbstractStrategy implements IIndicatorValue, IntradayStrategy {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     // ── Parameters ─────────────────────────────────────────────────────────
     private static final double VWAP_STRETCH      = 0.9985; // Entry at >=0.15% below VWAP

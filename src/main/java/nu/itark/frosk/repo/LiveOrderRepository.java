@@ -35,4 +35,10 @@ public interface LiveOrderRepository extends JpaRepository<LiveOrder, Long> {
                    "WHERE realized_pnl_eur IS NOT NULL AND created_at >= :since",
            nativeQuery = true)
     BigDecimal sumRealizedPnlSince(@Param("since") LocalDateTime since);
+
+    /** EUR cost basis of all currently open positions (filled BUYs not yet matched by a SELL). */
+    @Query(value = "SELECT COALESCE(SUM(eur_amount), 0) FROM live_order " +
+                   "WHERE side = 'BUY' AND status = 'FILLED'",
+           nativeQuery = true)
+    BigDecimal sumOpenExposureEur();
 }

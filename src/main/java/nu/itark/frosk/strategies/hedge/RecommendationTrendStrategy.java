@@ -31,6 +31,7 @@ import java.util.List;
  */
 @Component
 public class RecommendationTrendStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private static final double BULLISH_THRESHOLD = 60.0;
     private static final double BEARISH_THRESHOLD = 40.0;

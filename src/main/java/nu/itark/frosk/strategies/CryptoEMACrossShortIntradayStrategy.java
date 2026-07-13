@@ -48,6 +48,7 @@ import java.util.List;
 @Slf4j
 public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
         implements IIndicatorValue, CryptoIntradayStrategy {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     @Autowired
     private CryptoRegimeService cryptoRegimeService;

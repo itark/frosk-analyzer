@@ -55,6 +55,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class GapReversalIntradayStrategy extends AbstractStrategy implements IIndicatorValue, IntradayStrategy {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     // ── Parameters ─────────────────────────────────────────────────────────
     private static final double GAP_MIN_PCT       = -3.5; // Max gap-down (more negative = larger gap)

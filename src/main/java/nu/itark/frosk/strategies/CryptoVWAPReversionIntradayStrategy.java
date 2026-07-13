@@ -55,6 +55,7 @@ import java.util.List;
 @Slf4j
 public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
         implements IIndicatorValue, CryptoIntradayStrategy {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private static final ZoneId UTC = ZoneId.of("UTC");
     @Value("${crypto.vwap.rsi.period:7}")

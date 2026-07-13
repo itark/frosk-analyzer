@@ -49,6 +49,7 @@ import org.ta4j.core.rules.UnderIndicatorRule;
  */
 @Component
 public class ThreeBlackWhiteStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     public Strategy buildStrategy(BarSeries series) {
         super.setInherentExitRule();

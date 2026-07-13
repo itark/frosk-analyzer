@@ -37,6 +37,7 @@ import java.util.List;
  */
 @Component
 public class DailyBreakoutStrategy extends AbstractStrategy implements IIndicatorValue {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     @Autowired
     private HedgeIndexService hedgeIndexService;

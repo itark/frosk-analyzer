@@ -60,6 +60,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class OpeningRangeBreakoutIntradayStrategy extends AbstractStrategy implements IIndicatorValue, IntradayStrategy {
+    private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     // ── Parameters ─────────────────────────────────────────────────────────
     private static final int    OR_BARS          = 2;    // 30 min on 15m bars
