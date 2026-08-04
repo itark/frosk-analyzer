@@ -13,6 +13,7 @@ public interface SecurityRepository extends JpaRepository<Security, Long>{
 	List<Security> findByDatabaseAndActive(String database, boolean active);
 	List<Security> findByDatabaseAndActiveAndQuoteCurrency(String database, boolean active,String quoteCurrency);
 	List<Security> findByDatabaseAndQuoteCurrency(String database, String quoteCurrency);
+	List<Security> findByDatabaseAndQuoteCurrencyIn(String database, List<String> quoteCurrencies);
 	List<Security> findByDatabase(String database);
 	List<Security> findAllByActiveAndQuoteCurrency(boolean active, String quoteCurrency);
 	List<Security> findAllByQuoteCurrency(String quoteCurrency);

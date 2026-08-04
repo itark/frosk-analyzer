@@ -57,6 +57,22 @@ public class CANSLIMStrategy extends AbstractStrategy implements IIndicatorValue
     @Value("${frosk.canslim.fiftytwo.week.threshold:0.95}")
     private double fiftyTwoWeekThreshold;
 
+    /**
+     * Use the C (Current Earnings) and A (Annual Earnings) fundamental criteria.
+     *
+     * <p>Default FALSE because both are look-ahead biased as currently implemented:
+     * {@code security.trailingEps} and {@code security.yoyGrowth} are single columns
+     * holding TODAY's value, with no date dimension. Both are read once per backtest
+     * and applied as a constant to every historical bar, so the strategy only ever
+     * traded companies profitable and growing *now* — every company that looked good
+     * in 2023 and later deteriorated was silently excluded from the whole backtest.
+     *
+     * <p>Re-enable only once fundamentals are stored per period (quarterly EPS and
+     * revenue keyed by date), not before.
+     */
+    @Value("${frosk.canslim.use.fundamentals:false}")
+    private boolean useFundamentals;
+
     private static final int VOLUME_SMA_PERIOD = 20;
     private static final int FIFTY_TWO_WEEK_BARS = 252;
 
@@ -90,14 +106,27 @@ public class CANSLIMStrategy extends AbstractStrategy implements IIndicatorValue
         Strategy goldenCrossStrategy = goldenCrossRelativeStrengthStrategy.buildStrictGoldenCrossStrategy(series);
         Rule leaderRule = goldenCrossStrategy.getEntryRule();
 
-        // --- A: Annual Earnings — yoyGrowth > frosk.hedge.criteria.yoygrowth.threshold ---
-        Strategy yoyStrategy = yoYRevenueGrowthStrategy.buildStrategy(series);
-        Rule annualGrowthRule = yoyStrategy.getEntryRule();
+        // --- A: Annual Earnings — yoyGrowth > threshold, AND SMA(10) > SMA(30) ---
+        // With fundamentals disabled, only the fundamental half is dropped: the SMA
+        // crossover inside YoYRevenueGrowthStrategy is rebuilt here so turning off the
+        // lookahead does not silently also remove a technical trend condition.
+        Rule annualGrowthRule;
+        if (useFundamentals) {
+            annualGrowthRule = yoYRevenueGrowthStrategy.buildStrategy(series).getEntryRule();
+        } else {
+            annualGrowthRule = new OverIndicatorRule(
+                    new SMAIndicator(closePrice, 10), new SMAIndicator(closePrice, 30));
+        }
 
         // --- C: Current Earnings — trailingEps > 0 (company is profitable) ---
-        Double trailingEps = getTrailingEps(series.getName());
-        Rule epsPositiveRule = new BooleanRule(trailingEps != null && trailingEps > 0);
-        log.debug("CANSLIM [{}] trailingEps={}", series.getName(), trailingEps);
+        Rule epsPositiveRule;
+        if (useFundamentals) {
+            Double trailingEps = getTrailingEps(series.getName());
+            epsPositiveRule = new BooleanRule(trailingEps != null && trailingEps > 0);
+            log.debug("CANSLIM [{}] trailingEps={}", series.getName(), trailingEps);
+        } else {
+            epsPositiveRule = new BooleanRule(true);
+        }
 
         // --- S: Supply & Demand — volume > volumeMultiplier × SMA(volume, 20) ---
         VolumeIndicator volume = new VolumeIndicator(series);
@@ -110,13 +139,22 @@ public class CANSLIMStrategy extends AbstractStrategy implements IIndicatorValue
         MultipliedIndicator highThreshold = new MultipliedIndicator(fiftyTwoWeekHigh, series.numOf(fiftyTwoWeekThreshold));
         Rule nearNewHighRule = new OverIndicatorRule(closePrice, highThreshold);
 
+        // --- Liquidity gate: the position must be fillable at all ---
+        // Not one of O'Neil's criteria — a tradability precondition. Without it the
+        // backtest fills any size at the bar close, inventing liquidity that is not
+        // there: 13 of 61 securities in this universe could not absorb a 20,000 SEK
+        // position within 2% of median daily turnover, one of them (MTG-A.ST) turning
+        // over less per day than the position itself.
+        Rule liquidityRule = liquidityRule(series);
+
         // --- Composite entry: ALL six criteria must be satisfied ---
         Rule entryRule = marketDirectionRule
                 .and(leaderRule)
                 .and(annualGrowthRule)
                 .and(epsPositiveRule)
                 .and(volumeSurgeRule)
-                .and(nearNewHighRule);
+                .and(nearNewHighRule)
+                .and(liquidityRule);
 
         // --- Exit: any one of four conditions triggers ---
         Rule stopLoss        = new StopLossRule(closePrice, stopLossPercent);

@@ -6,6 +6,8 @@ import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.RecommendationTrendRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.service.TradingAccountService;
+import nu.itark.frosk.strategies.indicators.MedianTurnoverIndicator;
+import nu.itark.frosk.strategies.rules.LiquidityRule;
 import nu.itark.frosk.strategies.rules.StopLossRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,9 +17,11 @@ import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.ParabolicSarIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.rules.BooleanRule;
 import org.ta4j.core.rules.IsFallingRule;
 import org.ta4j.core.rules.TrailingStopLossRule;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +36,14 @@ public abstract  class AbstractStrategy {
 
     @Value("${frosk.strategy.catastrophic.stop.pct:15.0}")
     protected double catastrophicStopPct;
+
+    /** Largest share of median daily turnover one position may take, in percent. 0 disables. */
+    @Value("${frosk.liquidity.max.position.pct.of.turnover:1.0}")
+    private double maxPositionPctOfTurnover;
+
+    /** Bars used for the median turnover estimate (~1 quarter of trading days). */
+    @Value("${frosk.liquidity.turnover.bars:60}")
+    private int liquidityTurnoverBars;
 
     @Autowired
     private TradingAccountService tradingAccountService;
@@ -49,6 +61,43 @@ public abstract  class AbstractStrategy {
     protected Rule catastrophicStopRule() {
         ClosePriceIndicator close = new ClosePriceIndicator(barSeries);
         return new StopLossRule(close, catastrophicStopPct);
+    }
+
+    /**
+     * Entry gate: only allow trades the intended position size could realistically
+     * be filled at, measured as a share of the instrument's median daily turnover.
+     *
+     * <p>Backtests fill any size at the bar close, which invents liquidity that does
+     * not exist. Measured on this universe, a 20,000 SEK position exceeds 1% of median
+     * daily turnover in a large share of the securities these strategies trade — those
+     * fills are fiction, and the "profit" attached to them is noise in both directions.
+     *
+     * <p>Fails OPEN (always-true) when disabled by configuration or when no position
+     * value is available: a missing setting must never silently suppress every signal.
+     * The underlying {@link MedianTurnoverIndicator} fails CLOSED on missing data, so
+     * an instrument with no volume history is still blocked.
+     *
+     * <p>Do NOT register the turnover indicator via {@code setIndicatorValues()} —
+     * {@code strat_indicator_value.value_} is NUMERIC(12,6) and overflows on turnover
+     * in the millions, which also poisons the Hibernate session for the whole run.
+     */
+    protected Rule liquidityRule(BarSeries series) {
+        if (maxPositionPctOfTurnover <= 0) {
+            return new BooleanRule(true);
+        }
+        BigDecimal positionValue = null;
+        try {
+            positionValue = tradingAccountService.getDefaultActiveTradingAccount().getPositionValue();
+        } catch (Exception e) {
+            log.warn("[{}] could not read position value — liquidity gate open: {}",
+                    series.getName(), e.toString());
+        }
+        if (positionValue == null || positionValue.signum() <= 0) {
+            return new BooleanRule(true);
+        }
+        return new LiquidityRule(new MedianTurnoverIndicator(series, liquidityTurnoverBars),
+                series.numOf(positionValue),
+                series.numOf(maxPositionPctOfTurnover));
     }
 
     Rule exitRule() {

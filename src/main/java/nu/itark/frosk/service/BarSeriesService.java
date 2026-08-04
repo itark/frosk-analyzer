@@ -45,14 +45,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class BarSeriesService  {
 
-	@Value("${exchange.transaction.feePerTradePercent}")
-	private double feePerTradePercent;
-
 	@Value("${exchange.transaction.intradayFeePerTradePercent:0.0003}")
 	private double intradayFeePerTradePercent;
 
-	@Value("${exchange.transaction.cryptoTakerFeePerTradePercent:0.006}")
-	private double cryptoTakerFeePerTradePercent;
+	@Autowired
+	private TransactionFeeService transactionFeeService;
 
 	@Value("${exchange.transaction.initialAmount}")
 	private double initialAmount;
@@ -193,16 +190,6 @@ public class BarSeriesService  {
 			"OpeningRangeBreakoutIntradayStrategy", "VWAPMeanReversionIntradayStrategy", "GapReversalIntradayStrategy"
 	);
 
-	/**
-	 * Crypto intraday strategies are backtested with the Coinbase taker fee
-	 * (0.6%/trade) — NOT the 0.03% equity intraday broker fee, which would
-	 * overstate crypto results by a factor of ~20. Add new crypto intraday
-	 * strategy class names here.
-	 */
-	private static final java.util.Set<String> CRYPTO_INTRADAY_STRATEGIES = java.util.Set.of(
-			"CryptoRangeBreakoutIntradayStrategy", "CryptoVWAPReversionIntradayStrategy"
-	);
-
 	private static final java.util.Set<String> CURRENT_CLOSE_STRATEGIES = java.util.Set.of(
 			"EngulfingStrategy", "GoldStrategy",
 			"OpeningRangeBreakoutIntradayStrategy", "VWAPMeanReversionIntradayStrategy", "GapReversalIntradayStrategy",
@@ -228,13 +215,7 @@ public class BarSeriesService  {
 
 	/** Per-trade fee fraction for backtests, by strategy type. */
 	private double resolveFee(String strategyName) {
-		if (CRYPTO_INTRADAY_STRATEGIES.contains(strategyName)) {
-			return cryptoTakerFeePerTradePercent;
-		}
-		if (INTRADAY_STRATEGIES.contains(strategyName)) {
-			return intradayFeePerTradePercent;
-		}
-		return feePerTradePercent;
+		return transactionFeeService.resolveFeeFraction(strategyName);
 	}
 
 	public Num getAmount(BarSeries barSeries) {

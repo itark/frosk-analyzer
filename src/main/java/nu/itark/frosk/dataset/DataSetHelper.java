@@ -6,7 +6,6 @@ import com.opencsv.CSVWriter;
 import lombok.SneakyThrows;
 import nu.itark.frosk.crypto.coinbase.ProductProxy;
 import nu.itark.frosk.crypto.coinbase.model.Product;
-import nu.itark.frosk.crypto.coinbase.model.Products;
 import nu.itark.frosk.model.DataSet;
 import nu.itark.frosk.model.Security;
 import nu.itark.frosk.rapidapi.yhfinance.model.Body;
@@ -22,8 +21,12 @@ import jakarta.annotation.PostConstruct;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -77,6 +80,15 @@ public class DataSetHelper {
 		saveCoinbaseToRepo();
 	}
 
+	/**
+	 * Quote currencies eligible for gap-filling: coins with no EUR pair still
+	 * get one security, using whichever of these has the highest 24h volume.
+	 * Kept separate from live trading — {@code crypto.intraday.products} (the
+	 * live/intraday whitelist) is EUR-only and untouched by this method, so
+	 * gap-filled securities are backtest/screening data only.
+	 */
+	private static final List<String> GAP_FILL_QUOTE_CURRENCIES = List.of("USD", "USDC");
+
 	@SneakyThrows
 	private void saveCoinbaseToRepo() {
 		DataSet dataset;
@@ -90,9 +102,39 @@ public class DataSetHelper {
 			logger.info("Saved dataset="+dataset.getName()+ " to database.");
 		}
 
-		Products products = productProxy.getProducts();
-		for (Product product: products.getProducts()) {
-			if (!product.getQuote_currency_id().equals("EUR")) continue;
+		List<Product> allProducts = productProxy.getProducts().getProducts();
+
+		Set<String> eurBaseCurrencies = new HashSet<>();
+		for (Product product : allProducts) {
+			if ("EUR".equals(product.getQuote_currency_id())) {
+				eurBaseCurrencies.add(product.getBase_currency_id());
+			}
+		}
+
+		// Coins without an EUR pair: gap-fill with the single highest-volume USD/USDC pair.
+		Map<String, Product> bestGapProductByBase = new HashMap<>();
+		for (Product product : allProducts) {
+			if (!GAP_FILL_QUOTE_CURRENCIES.contains(product.getQuote_currency_id())) continue;
+			if (!isTradeable(product)) continue;
+			String base = product.getBase_currency_id();
+			if (eurBaseCurrencies.contains(base)) continue;
+			double volume = parseVolume(product.getApproximate_quote_24h_volume());
+			Product existing = bestGapProductByBase.get(base);
+			if (existing == null || volume > parseVolume(existing.getApproximate_quote_24h_volume())) {
+				bestGapProductByBase.put(base, product);
+			}
+		}
+
+		List<Product> toInsert = new ArrayList<>();
+		for (Product product : allProducts) {
+			if ("EUR".equals(product.getQuote_currency_id())) {
+				toInsert.add(product);
+			}
+		}
+		toInsert.addAll(bestGapProductByBase.values());
+		logger.info("Coinbase sync: "+eurBaseCurrencies.size()+" EUR pairs, "+bestGapProductByBase.size()+" gap-filled USD/USDC pairs (no EUR listing).");
+
+		for (Product product: toInsert) {
 			Security security = securityRepository.findByName(product.getProduct_id());
 			if (Objects.nonNull(security) ) {
 				//logger.info("Security="+security.getName()+ " exist in database:" + database);
@@ -104,6 +146,22 @@ public class DataSetHelper {
 			}
 		}
 		datasetRepository.saveAndFlush(dataset);
+	}
+
+	private double parseVolume(String value) {
+		if (value == null || value.isBlank()) return 0.0;
+		try {
+			return Double.parseDouble(value);
+		} catch (NumberFormatException e) {
+			return 0.0;
+		}
+	}
+
+	/** Excludes delisted/disabled/view-only gap-fill candidates (no live orders and often no fresh candle data). */
+	private boolean isTradeable(Product product) {
+		return "online".equals(product.getStatus())
+				&& !Boolean.parseBoolean(product.getIs_disabled())
+				&& !Boolean.parseBoolean(product.getTrading_disabled());
 	}
 
 	@SneakyThrows

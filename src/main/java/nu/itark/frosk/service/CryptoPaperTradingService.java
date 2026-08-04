@@ -48,6 +48,16 @@ public class CryptoPaperTradingService {
     @Value("${crypto.live.trading.max.total.exposure.pct:0.5}")
     private BigDecimal maxTotalExposurePct;
 
+    /**
+     * Coinbase taker fee per leg — taker because {@code CoinbaseOrderClient} only
+     * sends {@code market_market_ioc}, so every simulated fill mirrors a taker fill.
+     * Charged on both entry and exit, exactly as a real order would be; without it
+     * this account reported gross PnL as if it were net, and at ~60x turnover on the
+     * account balance that gap is larger than the strategies' entire edge.
+     */
+    @Value("${exchange.transaction.cryptoTakerFeePerTradePercent:0.006}")
+    private BigDecimal takerFeeFraction;
+
     @Autowired
     private CryptoPaperAccountRepository accountRepository;
 
@@ -93,8 +103,12 @@ public class CryptoPaperTradingService {
                     ticker, openExposure, eurAmount, maxTotalExposure, maxTotalExposurePct, equity);
             return;
         }
-        if (account.getCashEur().compareTo(eurAmount) < 0) {
-            log.debug("CryptoPaperTradingService: skip BUY {} — cash {} < {}", ticker, account.getCashEur(), eurAmount);
+        // The taker fee is paid on top of the notional, so cash must cover both legs' worth of it
+        BigDecimal entryFee = eurAmount.multiply(takerFeeFraction).setScale(8, RoundingMode.HALF_UP);
+        BigDecimal cashNeeded = eurAmount.add(entryFee);
+        if (account.getCashEur().compareTo(cashNeeded) < 0) {
+            log.debug("CryptoPaperTradingService: skip BUY {} — cash {} < {} (incl. {} fee)",
+                    ticker, account.getCashEur(), cashNeeded, entryFee);
             return;
         }
 
@@ -109,11 +123,12 @@ public class CryptoPaperTradingService {
         order.setFilledQuantity(quantity);
         orderRepository.save(order);
 
-        account.setCashEur(account.getCashEur().subtract(eurAmount));
+        account.setCashEur(account.getCashEur().subtract(cashNeeded));
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
 
-        log.info("PAPER ORDER: BUY {} {} @ {}EUR (qty={}, strategy={})", ticker, eurAmount, closePrice, quantity, strategyName);
+        log.info("PAPER ORDER: BUY {} {} @ {}EUR (qty={}, fee={}, strategy={})",
+                ticker, eurAmount, closePrice, quantity, entryFee, strategyName);
     }
 
     public void dispatchSell(String strategyName, String ticker, BigDecimal closePrice) {
@@ -125,7 +140,12 @@ public class CryptoPaperTradingService {
         }
         CryptoPaperOrder buyOrder = openBuy.get();
         BigDecimal proceeds = buyOrder.getFilledQuantity().multiply(closePrice);
-        BigDecimal pnl = proceeds.subtract(buyOrder.getEurAmount());
+        // Both legs pay the taker fee: the entry fee was charged at BUY (recomputed
+        // here from the same constant), the exit fee comes off the proceeds.
+        BigDecimal entryFee = buyOrder.getEurAmount().multiply(takerFeeFraction).setScale(8, RoundingMode.HALF_UP);
+        BigDecimal exitFee = proceeds.multiply(takerFeeFraction).setScale(8, RoundingMode.HALF_UP);
+        BigDecimal netProceeds = proceeds.subtract(exitFee);
+        BigDecimal pnl = netProceeds.subtract(buyOrder.getEurAmount().add(entryFee));
 
         CryptoPaperOrder sellOrder = new CryptoPaperOrder();
         sellOrder.setTicker(ticker);
@@ -141,13 +161,13 @@ public class CryptoPaperTradingService {
         orderRepository.save(buyOrder);
 
         CryptoPaperAccount account = getAccount();
-        account.setCashEur(account.getCashEur().add(proceeds));
+        account.setCashEur(account.getCashEur().add(netProceeds));
         account.setRealizedPnlEur(account.getRealizedPnlEur().add(pnl));
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
 
-        log.info("PAPER ORDER: SELL {} {} @ {}EUR (pnl={}EUR, strategy={})",
-                ticker, buyOrder.getFilledQuantity(), closePrice, pnl, strategyName);
+        log.info("PAPER ORDER: SELL {} {} @ {}EUR (pnl={}EUR net of {} fees, strategy={})",
+                ticker, buyOrder.getFilledQuantity(), closePrice, pnl, entryFee.add(exitFee), strategyName);
     }
 
     public CryptoPaperAccountDTO getAccountSummary() {

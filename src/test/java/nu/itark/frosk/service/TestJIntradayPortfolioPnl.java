@@ -35,6 +35,9 @@ public class TestJIntradayPortfolioPnl extends BaseIntegrationTest {
     @Autowired
     PortfolioRepository portfolioRepository;
 
+    @Autowired
+    TransactionFeeService transactionFeeService;
+
     @Test
     public void realizedRoundTripsNetOfFeesFlowIntoIntradayPortfolio() {
         List<IntradaySignal> created = new ArrayList<>();
@@ -63,6 +66,50 @@ public class TestJIntradayPortfolioPnl extends BaseIntegrationTest {
             assertTrue(snapshot.getTotalPnlPercent().compareTo(snapshot.getRealizedPnlPercent()) >= 0
                             || snapshot.getOpenPositionCount() > 0,
                     "total=" + snapshot.getTotalPnlPercent());
+        } finally {
+            intradaySignalRepository.deleteAll(created);
+            if (snapshot != null) {
+                portfolioRepository.deleteById(snapshot.getId());
+            }
+        }
+    }
+
+    /**
+     * Crypto round trips must be netted with the Coinbase fee, not the equity
+     * intraday fee — the bug this guards against was crypto trades being charged
+     * the 0.03% equity rate, overstating every round trip.
+     *
+     * <p>Deliberately asserts the fee is ROUTED correctly rather than hardcoding a
+     * rate: the account's Coinbase volume tier changes over time (0.60% → 0.10% in
+     * Aug 2026), and a literal here would fail on every tier change while still
+     * not testing the thing that actually broke.
+     */
+    @Test
+    public void cryptoRoundTripsUseTheCoinbaseFeeNotTheEquityFee() {
+        List<IntradaySignal> created = new ArrayList<>();
+        Portfolio snapshot = null;
+        long t0 = ZonedDateTime.now(STOCKHOLM).withHour(9).withMinute(30).toEpochSecond();
+
+        BigDecimal cryptoRoundTrip = BigDecimal.valueOf(
+                transactionFeeService.resolveRoundTripPercent("CryptoVWAPReversionIntradayStrategy"));
+        BigDecimal equityRoundTrip = BigDecimal.valueOf(
+                transactionFeeService.resolveRoundTripPercent("GapReversalIntradayStrategy"));
+        assertTrue(cryptoRoundTrip.compareTo(equityRoundTrip) != 0,
+                "crypto and equity fees must differ, else this test proves nothing");
+
+        try {
+            // Same +2% gross move as the equity case above, on a crypto strategy
+            created.add(intradaySignalRepository.save(new IntradaySignal(
+                    "CryptoVWAPReversionIntradayStrategy", "TEST-BTC-EUR", t0, "BUY", new BigDecimal("100"))));
+            created.add(intradaySignalRepository.save(new IntradaySignal(
+                    "CryptoVWAPReversionIntradayStrategy", "TEST-BTC-EUR", t0 + 900, "SELL", new BigDecimal("102"))));
+
+            snapshot = portfolioService.buildIntraday();
+
+            BigDecimal expected = new BigDecimal("2.0000").subtract(cryptoRoundTrip);
+            assertEquals(1, snapshot.getClosedTradeCount());
+            assertEquals(0, snapshot.getRealizedPnlPercent().compareTo(expected),
+                    "expected=" + expected + " realized=" + snapshot.getRealizedPnlPercent());
         } finally {
             intradaySignalRepository.deleteAll(created);
             if (snapshot != null) {

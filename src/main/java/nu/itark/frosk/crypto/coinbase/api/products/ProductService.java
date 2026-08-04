@@ -20,6 +20,8 @@ public class ProductService {
 
     public static final String PRODUCTS_ENDPOINT = "/products";
 
+    public static final String PRODUCT_BOOK_ENDPOINT = "/product_book";
+
     //For raw tests
     public static final String PRODUCTS_ENDPOINT_LIMIT = "/products?limit=2";
 
@@ -31,6 +33,23 @@ public class ProductService {
 
     public Product getProduct(String productId) {
         return exchange.get(PRODUCTS_ENDPOINT + "/" + productId, new ParameterizedTypeReference<Product>() {} );
+    }
+
+    /**
+     * Top-of-book snapshot for {@code productId}, used to record the bid/ask spread
+     * at signal time — the cost that a fill-at-bar-close assumption silently omits.
+     *
+     * <p>Returns null on any failure. Spread is diagnostic data; it must never fail
+     * or delay a trading signal.
+     */
+    public ProductBook getProductBook(String productId) {
+        try {
+            return exchange.get(PRODUCT_BOOK_ENDPOINT + "?product_id=" + productId + "&limit=1",
+                    new ParameterizedTypeReference<ProductBook>() {});
+        } catch (Exception e) {
+            log.warn("ProductService: could not read book for {} — {}", productId, e.toString());
+            return null;
+        }
     }
 
     public String getProductRaw(String productId) {

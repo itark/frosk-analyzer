@@ -50,6 +50,25 @@ public class IntradaySignal {
     @Column(name = "live", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean live = false;
 
+    /**
+     * Bid/ask spread as a percentage of mid, captured when the signal fired.
+     * Null when the book could not be read, or for non-crypto signals.
+     *
+     * <p>Both the backtest and the paper account fill at the bar close, which
+     * charges no spread at all. A market entry pays the ask and a market exit
+     * hits the bid, so the true round trip gives up roughly one full spread on
+     * top of the taker fee. Recording it per signal is what makes the realized
+     * edge measurable instead of assumed.
+     */
+    @Column(name = "spread_percent", precision = 10, scale = 6)
+    private BigDecimal spreadPercent;
+
+    @Column(name = "best_bid", precision = 20, scale = 10)
+    private BigDecimal bestBid;
+
+    @Column(name = "best_ask", precision = 20, scale = 10)
+    private BigDecimal bestAsk;
+
     public IntradaySignal(String strategyName, String ticker, long signalTimestamp,
                           String signalType, BigDecimal closePrice) {
         this.strategyName   = strategyName;

@@ -113,6 +113,8 @@ public class StrategiesMap {
 	@Autowired
 	private CryptoVWAPReversionIntradayStrategy cryptoVWAPReversionIntradayStrategy;
 	@Autowired
+	private CryptoLiquiditySweepIntradayStrategy cryptoLiquiditySweepIntradayStrategy;
+	@Autowired
 	private CryptoShortIntradayStrategy cryptoShortIntradayStrategy;
 	@Autowired
 	private CryptoEMACrossLongIntradayStrategy cryptoEMACrossLongIntradayStrategy;
@@ -318,6 +320,8 @@ public class StrategiesMap {
 			return cryptoRangeBreakoutIntradayStrategy.buildStrategy(series);
 		} else if (strategy.equals(CryptoVWAPReversionIntradayStrategy.class.getSimpleName())) {
 			return cryptoVWAPReversionIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoLiquiditySweepIntradayStrategy.class.getSimpleName())) {
+			return cryptoLiquiditySweepIntradayStrategy.buildStrategy(series);
 		} else if (strategy.equals(CryptoShortIntradayStrategy.class.getSimpleName())) {
 			return cryptoShortIntradayStrategy.buildStrategy(series);
 		} else if (strategy.equals(CryptoEMACrossLongIntradayStrategy.class.getSimpleName())) {
@@ -416,6 +420,8 @@ public class StrategiesMap {
 			return cryptoRangeBreakoutIntradayStrategy.getIndicatorValues();
 		} else if (strategyName.equals(CryptoVWAPReversionIntradayStrategy.class.getSimpleName())) {
 			return cryptoVWAPReversionIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoLiquiditySweepIntradayStrategy.class.getSimpleName())) {
+			return cryptoLiquiditySweepIntradayStrategy.getIndicatorValues();
 		} else if (strategyName.equals(CryptoShortIntradayStrategy.class.getSimpleName())) {
 			return cryptoShortIntradayStrategy.getIndicatorValues();
 		} else if (strategyName.equals(CryptoEMACrossLongIntradayStrategy.class.getSimpleName())) {

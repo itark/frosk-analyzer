@@ -20,6 +20,7 @@ import nu.itark.frosk.repo.HedgeIndexRepository;
 import nu.itark.frosk.repo.IntradaySignalRepository;
 import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.TradingAccountService;
+import nu.itark.frosk.service.TransactionFeeService;
 import nu.itark.frosk.strategies.filter.StrategyFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,9 +44,9 @@ public class DataController {
     @Value("${frosk.database.only:YAHOO}")
     private String databaseOnly;
 
-    /** Per-trade fee fraction used to net intraday round-trip PnL (0.0003 = 0.03%). */
-    @Value("${exchange.transaction.intradayFeePerTradePercent:0.0003}")
-    private double intradayFeePerTradePercent;
+    /** Resolves the per-trade fee by strategy — equity intraday vs Coinbase taker. */
+    @Autowired
+    TransactionFeeService transactionFeeService;
 
     @Autowired
     FeaturedStrategyRepository featuredStrategyRepository;
@@ -815,8 +816,11 @@ public class DataController {
                 List<IntradayPnlDTO.IntradayRoundTripDTO> roundTrips = new ArrayList<>();
                 IntradaySignal pendingEntry = null; // BUY (long) or SHRT (short)
 
-                // Net PnL: deduct the fee on both the entry and the exit trade
-                BigDecimal roundTripFeePct = BigDecimal.valueOf(2 * intradayFeePerTradePercent * 100);
+                // Net PnL: deduct the fee on both the entry and the exit trade.
+                // Resolved per strategy — crypto pays the Coinbase taker fee (1.2%
+                // round trip), twenty times the equity intraday fee.
+                BigDecimal roundTripFeePct =
+                        BigDecimal.valueOf(transactionFeeService.resolveRoundTripPercent(strategyName));
                 for (IntradaySignal s : signals) {
                     String type = s.getSignalType();
                     if ("BUY".equals(type) || "SHRT".equals(type)) {

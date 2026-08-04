@@ -58,6 +58,14 @@ public class StrategyExecutor {
     @Value("${frosk.strategy.force.rerun:false}")
     private boolean forceRerun;
 
+    /**
+     * Persist per-bar indicator values to {@code strat_indicator_value}. Off by default:
+     * the table reached 6.9M rows and dominates the 12 GB database, while being used only
+     * for chart overlays. Backtest results, signals and portfolio building do not read it.
+     */
+    @Value("${frosk.strategy.persist.indicator.values:false}")
+    private boolean persistIndicatorValues;
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void execute(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException {
         log.info("execute strategy={}, size={}", strategy, barSeriesList.size());
@@ -171,6 +179,12 @@ public class StrategyExecutor {
             }
             strategyTradeList.forEach(st -> st.setFeaturedStrategy(fsRes.get()));
             tradesRepository.saveAll(strategyTradeList);
+            if (!persistIndicatorValues) {
+                // Still clear stale rows so the table does not keep values that no
+                // longer match the current run — just don't write new ones.
+                indicatorValueRepo.deleteByFeaturedStrategyId(fsRes.get().getId());
+                return;
+            }
             try {
             // Use FK-targeted delete to avoid JPQL OR-chain StackOverflow on large indicator sets
             indicatorValueRepo.deleteByFeaturedStrategyId(fsRes.get().getId());

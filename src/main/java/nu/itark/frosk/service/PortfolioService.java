@@ -8,6 +8,7 @@ import nu.itark.frosk.model.*;
 import nu.itark.frosk.repo.*;
 import nu.itark.frosk.util.FroskUtil;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,9 +66,9 @@ public class PortfolioService {
     @Value("${frosk.portfolio.force.rebuild:false}")
     private boolean forceRebuild;
 
-    /** Per-trade fee fraction for intraday round-trip PnL (0.0003 = 0.03%). */
-    @Value("${exchange.transaction.intradayFeePerTradePercent:0.0003}")
-    private double intradayFeePerTradePercent;
+    /** Resolves the per-trade fee by strategy — equity intraday vs Coinbase taker. */
+    @Autowired
+    private TransactionFeeService transactionFeeService;
 
     private static final String TYPE_DAILY = "DAILY";
     private static final String TYPE_INTRADAY = "INTRADAY";
@@ -240,12 +241,15 @@ public class PortfolioService {
      */
     private RealizedIntradayPnl computeTodaysRealizedIntradayPnl() {
         long startOfDayEpoch = LocalDate.now().atStartOfDay(ZoneId.of("Europe/Stockholm")).toEpochSecond();
-        BigDecimal roundTripFeePct = BigDecimal.valueOf(2 * intradayFeePerTradePercent * 100);
 
         BigDecimal sum = BigDecimal.ZERO;
         int roundTrips = 0;
         for (String ticker : intradaySignalRepository.findDistinctTickers()) {
             for (String strategyName : INTRADAY_STRATEGIES) {
+                // INTRADAY_STRATEGIES mixes equity and crypto strategies, which pay
+                // very different fees — resolve per strategy, never one flat rate.
+                BigDecimal roundTripFeePct =
+                        BigDecimal.valueOf(transactionFeeService.resolveRoundTripPercent(strategyName));
                 List<IntradaySignal> signals = intradaySignalRepository
                         .findByTickerAndStrategyNameAndSignalTimestampGreaterThanEqualOrderBySignalTimestampAsc(
                                 ticker, strategyName, startOfDayEpoch);

@@ -3,6 +3,8 @@ package nu.itark.frosk.service;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.StrategyExecutor;
+import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
+import nu.itark.frosk.crypto.coinbase.model.ProductBook;
 import nu.itark.frosk.crypto.coinbase.service.CoinbaseOrderClient;
 import nu.itark.frosk.crypto.livetrading.LiveTradingGate;
 import nu.itark.frosk.crypto.livetrading.OrderResponse;
@@ -78,11 +80,50 @@ public class CryptoIntradayStrategyRunner {
     @Autowired(required = false)
     private CryptoPaperTradingService paperTradingService;
 
-    @Value("${crypto.short.excluded.products:}")
-    private String shortExcludedProductsRaw;
+    @Autowired
+    private ProductService productService;
 
-    @Value("${crypto.emacrossshort.excluded.products:}")
-    private String emaCrossShortExcludedProductsRaw;
+    // Global switches, not per-product lists — Coinbase doesn't support short
+    // selling, so these stay off regardless of how crypto.intraday.products grows.
+    @Value("${crypto.short.enabled:false}")
+    private boolean shortEnabled;
+
+    @Value("${crypto.emacrossshort.enabled:false}")
+    private boolean emaCrossShortEnabled;
+
+    // Kill switches for the two long strategies whose gross edge is negative
+    // BEFORE any fee — no fee tier or venue makes them profitable. Default true
+    // so the code stays neutral; the crypto profile turns them off.
+    @Value("${crypto.emacrosslong.enabled:true}")
+    private boolean emaCrossLongEnabled;
+
+    @Value("${crypto.breakout.enabled:true}")
+    private boolean breakoutEnabled;
+
+    /**
+     * PDH/PDL liquidity sweep. Runs to ACCUMULATE FORWARD DATA for the pre-registered
+     * test in ~/itark/PREREG_liquidity_sweep_15m.md — it is not a validated strategy.
+     * Its paper P&L must not be inspected before that document's data gate is met;
+     * peeking early turns a pre-registered test into an unregistered one.
+     */
+    @Value("${crypto.sweep.enabled:true}")
+    private boolean sweepEnabled;
+
+    /**
+     * Bars before a position in an EXCLUDED/disabled (ticker, strategy) pair is
+     * force-closed. Separate from {@link #MAX_BARS_FORCE_CLOSE}, which still governs
+     * live strategies — lowering that one would force-close healthy open positions
+     * on strategies that are running, producing same-bar fee-only exits. Defaults to
+     * the same 120 bars (30h); lower it temporarily to flush a strategy you just
+     * disabled. Never set below 1: a position entered on the current bar would be
+     * closed at its own entry price, which is a guaranteed fee-only loss.
+     */
+    @Value("${crypto.excluded.force.close.bars:120}")
+    private long excludedForceCloseBars;
+
+    /** Capture the bid/ask spread on every emitted signal (one REST call per signal). */
+    @Value("${crypto.spread.logging.enabled:true}")
+    private boolean spreadLoggingEnabled;
 
     @Value("${crypto.vwap.excluded.products:}")
     private String vwapExcludedProductsRaw;
@@ -90,19 +131,17 @@ public class CryptoIntradayStrategyRunner {
     @Value("${crypto.emacrosslong.excluded.products:}")
     private String emaCrossLongExcludedProductsRaw;
 
-    private Set<String> shortExcludedProducts;
-    private Set<String> emaCrossShortExcludedProducts;
     private Set<String> vwapExcludedProducts;
     private Set<String> emaCrossLongExcludedProducts;
 
     @PostConstruct
     private void initExclusions() {
-        shortExcludedProducts = parseExclusions(shortExcludedProductsRaw);
-        emaCrossShortExcludedProducts = parseExclusions(emaCrossShortExcludedProductsRaw);
         vwapExcludedProducts = parseExclusions(vwapExcludedProductsRaw);
         emaCrossLongExcludedProducts = parseExclusions(emaCrossLongExcludedProductsRaw);
-        log.info("CryptoIntradayStrategyRunner: exclusions loaded — CryptoShort={}, EMACrossShort={}, VWAP={}, EMACrossLong={}",
-                shortExcludedProducts, emaCrossShortExcludedProducts, vwapExcludedProducts, emaCrossLongExcludedProducts);
+        log.info("CryptoIntradayStrategyRunner: enabled — Short={}, EMACrossShort={}, EMACrossLong={}, "
+                        + "RangeBreakout={}, LiquiditySweep={}; VWAP exclusions={}, EMACrossLong exclusions={}",
+                shortEnabled, emaCrossShortEnabled, emaCrossLongEnabled, breakoutEnabled, sweepEnabled,
+                vwapExcludedProducts, emaCrossLongExcludedProducts);
     }
 
     private Set<String> parseExclusions(String raw) {
@@ -115,16 +154,22 @@ public class CryptoIntradayStrategyRunner {
 
     private boolean isExcluded(String strategyName, String ticker) {
         if ("CryptoShortIntradayStrategy".equals(strategyName)) {
-            return shortExcludedProducts.contains(ticker);
+            return !shortEnabled;
         }
         if ("CryptoEMACrossShortIntradayStrategy".equals(strategyName)) {
-            return emaCrossShortExcludedProducts.contains(ticker);
+            return !emaCrossShortEnabled;
+        }
+        if ("CryptoRangeBreakoutIntradayStrategy".equals(strategyName)) {
+            return !breakoutEnabled;
+        }
+        if ("CryptoLiquiditySweepIntradayStrategy".equals(strategyName)) {
+            return !sweepEnabled;
         }
         if ("CryptoVWAPReversionIntradayStrategy".equals(strategyName)) {
             return vwapExcludedProducts.contains(ticker);
         }
         if ("CryptoEMACrossLongIntradayStrategy".equals(strategyName)) {
-            return emaCrossLongExcludedProducts.contains(ticker);
+            return !emaCrossLongEnabled || emaCrossLongExcludedProducts.contains(ticker);
         }
         return false;
     }
@@ -277,12 +322,17 @@ public class CryptoIntradayStrategyRunner {
     }
 
     private boolean isRealWorldPositionExpired(String strategyName, String ticker, boolean isShort) {
+        return isRealWorldPositionExpired(strategyName, ticker, isShort, MAX_BARS_FORCE_CLOSE);
+    }
+
+    private boolean isRealWorldPositionExpired(String strategyName, String ticker, boolean isShort,
+                                               long maxBars) {
         Optional<IntradaySignal> latestEntry = latestRealWorldEntry(strategyName, ticker, isShort);
         if (latestEntry.isEmpty()) return false;
         long entryEpoch = latestEntry.get().getSignalTimestamp();
         long nowEpoch   = ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond();
         long elapsedBars = (nowEpoch - entryEpoch) / BAR_DURATION.getSeconds();
-        return elapsedBars >= MAX_BARS_FORCE_CLOSE;
+        return elapsedBars >= maxBars;
     }
 
     /**
@@ -293,11 +343,31 @@ public class CryptoIntradayStrategyRunner {
     private void reconcileExcludedIfStaleOpen(String strategyName, boolean isShort,
                                                Security security, BarSeries series) {
         if (!hasRealWorldOpenPosition(strategyName, security.getName(), isShort)) return;
-        if (!isRealWorldPositionExpired(strategyName, security.getName(), isShort)) return;
+        if (!isRealWorldPositionExpired(strategyName, security.getName(), isShort,
+                excludedForceCloseBars)) return;
         String exitSignal = isShort ? "COVR" : "SELL";
         log.warn("CryptoIntradayStrategyRunner: excluded pair {}/{} has stale open position — force-closing with {}",
                 strategyName, security.getName(), exitSignal);
         emitSignal(exitSignal, strategyName, security.getName(), series, series.getEndIndex());
+    }
+
+    /**
+     * Captures the top-of-book spread at signal time. Best-effort by design: the
+     * spread is diagnostic data used to measure the true cost of a round trip, and
+     * must never fail, delay or block a trading signal. One extra REST call per
+     * emitted signal (a handful per 15m cycle), not per evaluated product.
+     */
+    private void recordSpread(IntradaySignal signal, String ticker) {
+        if (!spreadLoggingEnabled) return;
+        try {
+            ProductBook book = productService.getProductBook(ticker);
+            if (book == null) return;
+            signal.setSpreadPercent(book.spreadPercent());
+            signal.setBestBid(book.bestBid());
+            signal.setBestAsk(book.bestAsk());
+        } catch (Exception e) {
+            log.warn("CryptoIntradayStrategyRunner: spread capture failed for {} — {}", ticker, e.toString());
+        }
     }
 
     private void emitSignal(String signalType, String strategyName, String ticker,
@@ -314,10 +384,12 @@ public class CryptoIntradayStrategyRunner {
                 strategyName, ticker, barStartEpoch, signalType,
                 BigDecimal.valueOf(bar.getClosePrice().doubleValue())
         );
+        recordSpread(signal, ticker);
         signalRepository.save(signal);
 
-        log.info("CryptoIntradayStrategyRunner: {} {} — ticker={}, bar={}, close={}",
-                strategyName, signalType, ticker, barStartEpoch, signal.getClosePrice());
+        log.info("CryptoIntradayStrategyRunner: {} {} — ticker={}, bar={}, close={}, spread={}",
+                strategyName, signalType, ticker, barStartEpoch, signal.getClosePrice(),
+                signal.getSpreadPercent() != null ? signal.getSpreadPercent() + "%" : "n/a");
 
         dispatchPaperOrder(signalType, strategyName, ticker, signal.getClosePrice());
         dispatchLiveOrder(signalType, strategyName, ticker, signal.getClosePrice(), signal);

@@ -107,6 +107,13 @@ public class CryptoIntradayDataService {
         fetchRange(security, from, now);
     }
 
+    /**
+     * Pause between Coinbase requests — the public candles endpoint has no
+     * built-in throttling here, and a multi-chunk backfill across many newly
+     * added products can otherwise burst hundreds of requests at once.
+     */
+    private static final long REQUEST_PAUSE_MILLIS = 200;
+
     private void fetchRange(Security security, long from, long until) {
         long now = Instant.now().getEpochSecond();
         int inserted = 0;
@@ -115,6 +122,7 @@ public class CryptoIntradayDataService {
             long end = Math.min(start + chunkSeconds, until);
             Candles candles = productProxy.getPublicCandles(security.getName(),
                     Instant.ofEpochSecond(start), Instant.ofEpochSecond(end), Granularity.FIFTEEN_MINUTE);
+            pauseBetweenRequests();
             if (candles == null || candles.getCandles() == null) {
                 continue;
             }
@@ -146,6 +154,14 @@ public class CryptoIntradayDataService {
         }
         if (inserted > 0) {
             log.info("CryptoIntradayDataService: inserted {} new 15m bars for {}", inserted, security.getName());
+        }
+    }
+
+    private void pauseBetweenRequests() {
+        try {
+            Thread.sleep(REQUEST_PAUSE_MILLIS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

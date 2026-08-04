@@ -67,7 +67,11 @@ public class RunawayGAPStrategy extends AbstractStrategy implements IIndicatorVa
         Rule gapSignal = new BooleanIndicatorRule(runawayGAPIndicator);
         Rule riskOn = new HedgeIndexRiskOnRule(series, hedgeIndexService);
 
-        Rule entryRule = gapSignal.and(riskOn);
+        // Tradability precondition, not a signal: gaps fire most often in thin names,
+        // where a fill at the bar close is fiction. Measured over 3056 trades, removing
+        // the untradeable ones raised gross edge from +0.182% to +0.400% per trade —
+        // the edge lives in the liquid names, the rest was noise in both directions.
+        Rule entryRule = gapSignal.and(riskOn).and(liquidityRule(series));
 
         Rule exitRule;
         Num lossPercentage = DoubleNum.valueOf(2);

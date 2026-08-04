@@ -32,8 +32,12 @@ import java.util.List;
  * <h3>Entry rules (all must be true)</h3>
  * <ul>
  *   <li>Close stretched at least {@code stretchPct} below the UTC-day VWAP.
- *       The stretch IS the gross profit target (exit at VWAP), so it must
- *       clear the 1.2% taker round-trip — default 1.8% leaves ~0.6% net</li>
+ *       The stretch IS the gross profit target (exit at VWAP), so it must clear
+ *       the taker round trip with room to spare. At the current 0.10% taker tier
+ *       (0.20% round trip) the configured 1.2% stretch leaves ~1.0% net. This
+ *       margin is tier-dependent: at the 0.60% entry-tier rate the round trip is
+ *       1.2%, i.e. exactly the stretch, and a perfect winner nets zero — re-check
+ *       this setting whenever the fee tier changes</li>
  *   <li>RSI(14) &lt; {@code rsiEntry} — oversold confirmation</li>
  *   <li>{@link CryptoRegimeRule} — never catch falling knives while BTC is
  *       below its daily SMA(20); stretched prices keep stretching in
@@ -48,8 +52,8 @@ import java.util.List;
  *       than half a day is a trend, not a stretch</li>
  * </ul>
  *
- * <p>Backtested with the Coinbase taker fee (0.6%/trade) via
- * {@code BarSeriesService.resolveFee} — never the equity intraday fee.
+ * <p>Backtested with the Coinbase taker fee via {@code TransactionFeeService}
+ * — never the equity intraday fee.
  */
 @Component
 @Slf4j

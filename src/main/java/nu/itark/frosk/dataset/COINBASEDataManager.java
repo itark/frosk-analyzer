@@ -45,14 +45,17 @@ public class COINBASEDataManager {
     @Autowired
     ProductProxy productProxy;
 
+    /** EUR-quoted securities plus USD/USDC gap-filled securities (coins with no EUR listing on Coinbase). */
+    private static final List<String> SYNCED_QUOTE_CURRENCIES = List.of("EUR", "USD", "USDC");
+
     /**
      * Download prices and insert into database.
      */
     public void syncronize() {
-        log.info("sync=" + Database.COINBASE.toString()+ " on EUR");
+        log.info("sync=" + Database.COINBASE.toString()+ " on EUR/USD/USDC");
      //   List<Security> securities = securityRepository.findByDatabaseAndActiveAndQuoteCurrency(Database.COINBASE.toString(), true, "EUR");
-        List<Security> securities = securityRepository.findByDatabaseAndQuoteCurrency(Database.COINBASE.toString(), "EUR");
-        log.info("About to sync {} EUR securities", securities.size());
+        List<Security> securities = securityRepository.findByDatabaseAndQuoteCurrencyIn(Database.COINBASE.toString(), SYNCED_QUOTE_CURRENCIES);
+        log.info("About to sync {} securities (EUR + gap-filled USD/USDC)", securities.size());
         if(securities.size() == 0) {
             log.error("Something is wrong with securities, total rows of securities:{}", securityRepository.count());
             log.error("First security: {}", ReflectionToStringBuilder.toString(securityRepository.findAll().get(0), ToStringStyle.MULTI_LINE_STYLE));

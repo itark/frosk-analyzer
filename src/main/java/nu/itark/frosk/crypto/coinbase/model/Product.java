@@ -70,6 +70,7 @@ public class Product {
     private String price_percentage_change_24h;
     private String volume_24h;
     private String volume_percentage_change_24h;
+    private String approximate_quote_24h_volume;
     private String base_increment;
     private String quote_increment;
     private String quote_min_size;
