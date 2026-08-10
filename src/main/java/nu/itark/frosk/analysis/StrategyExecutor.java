@@ -59,12 +59,48 @@ public class StrategyExecutor {
     private boolean forceRerun;
 
     /**
-     * Persist per-bar indicator values to {@code strat_indicator_value}. Off by default:
-     * the table reached 6.9M rows and dominates the 12 GB database, while being used only
-     * for chart overlays. Backtest results, signals and portfolio building do not read it.
+     * Master on/off switch for persisting per-bar indicator values to
+     * {@code strat_indicator_value}. Off by default: the table reached 6.9M rows and
+     * dominated a 12 GB database. Even with the retention window below, turning this
+     * on for every strategy reproduces that (measured live 2026-08-07: 7 of ~35 daily
+     * strategies alone added 2.24M rows, projecting to 11-13M for the full batch) —
+     * {@link #persistIndicatorValuesStrategies} is what actually keeps this safe now.
      */
     @Value("${frosk.strategy.persist.indicator.values:false}")
     private boolean persistIndicatorValues;
+
+    /**
+     * Comma-separated allowlist of strategy names that persist indicator values when
+     * the master switch above is on. Every other strategy behaves as if the switch
+     * were off. This, not the retention window, is what bounds row count at the fleet
+     * level — the window only bounds it per security/strategy, which does nothing
+     * against ~35 strategies x ~539 securities all writing at once.
+     */
+    @Value("${frosk.strategy.persist.indicator.values.strategies:}")
+    private String persistIndicatorValuesStrategiesRaw;
+
+    private Set<String> persistIndicatorValuesStrategies = Set.of();
+
+    @jakarta.annotation.PostConstruct
+    private void initPersistIndicatorValuesStrategies() {
+        persistIndicatorValuesStrategies = persistIndicatorValuesStrategiesRaw == null || persistIndicatorValuesStrategiesRaw.isBlank()
+                ? Set.of()
+                : Arrays.stream(persistIndicatorValuesStrategiesRaw.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(java.util.stream.Collectors.toSet());
+        log.info("StrategyExecutor: indicator value persistence master={}, allowlisted strategies={}",
+                persistIndicatorValues, persistIndicatorValuesStrategies);
+    }
+
+    /**
+     * Only indicator points newer than this many days are written, regardless of how
+     * much history the backtest itself ran over — a dashboard chart overlay has no use
+     * for a decade of daily EMA points. Bounds row count per security/strategy, not
+     * across the fleet — see {@link #persistIndicatorValuesStrategies} for that.
+     */
+    @Value("${frosk.strategy.persist.indicator.values.retention.days:730}")
+    private int indicatorRetentionDays;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void execute(String strategy, List<BarSeries> barSeriesList) throws DataIntegrityViolationException {
@@ -179,7 +215,7 @@ public class StrategyExecutor {
             }
             strategyTradeList.forEach(st -> st.setFeaturedStrategy(fsRes.get()));
             tradesRepository.saveAll(strategyTradeList);
-            if (!persistIndicatorValues) {
+            if (!persistIndicatorValues || !persistIndicatorValuesStrategies.contains(strategy)) {
                 // Still clear stale rows so the table does not keep values that no
                 // longer match the current run — just don't write new ones.
                 indicatorValueRepo.deleteByFeaturedStrategyId(fsRes.get().getId());
@@ -194,9 +230,18 @@ public class StrategyExecutor {
             Map<String, StrategyIndicatorValue> deduped = new LinkedHashMap<>();
             ivList.forEach(iv -> deduped.put(iv.getIndicator() + "|" + iv.getDate().getTime(), iv));
             deduped.values().forEach(iv -> iv.setFeaturedStrategy(fsRes.get()));
+            // Cap what actually gets written to a recent window — this, not the
+            // delete-before-reinsert above, is what bounds table size. Without it a
+            // strategy backtest over years of history persists every one of those
+            // points on every run, which is how the table reached 6.9M rows.
+            java.util.Date retentionCutoff = java.util.Date.from(
+                    java.time.Instant.now().minus(java.time.Duration.ofDays(indicatorRetentionDays)));
+            List<StrategyIndicatorValue> toSave = deduped.values().stream()
+                    .filter(iv -> iv.getDate() != null && !iv.getDate().before(retentionCutoff))
+                    .collect(java.util.stream.Collectors.toList());
             // Flush inside the try so a constraint violation surfaces here — the delete/insert
             // would otherwise flush lazily at transaction commit, past this catch block.
-            indicatorValueRepo.saveAll(deduped.values());
+            indicatorValueRepo.saveAll(toSave);
             indicatorValueRepo.flush();
             } catch (DataIntegrityViolationException e) {
                 log.warn("Indicator value save failed for strategy={}, securityId={}: {}", strategy, fsRes.get().getId(), e.getMessage());

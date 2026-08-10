@@ -418,6 +418,14 @@ public class HedgeIndexService {
         return getScore(day);
     }
 
+    /** Human-readable regime label for a score, shared by the score/history endpoints and the portfolio view. */
+    public static String regimeLabel(int score) {
+        if (score <= 3) return "Strong Risk-On";
+        if (score <= 7) return "Cautious / Transition";
+        if (score <= 11) return "Neutral / Defensive";
+        return "Strong Risk-Off";
+    }
+
     private int countRisksIndicators(List<HedgeIndex> hedgeIndexList) {
         int count = 0;
         for (HedgeIndex hedgeIndex : hedgeIndexList) {

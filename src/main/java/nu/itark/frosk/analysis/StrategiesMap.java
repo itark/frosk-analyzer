@@ -101,7 +101,11 @@ public class StrategiesMap {
 	@Autowired
 	private CANSLIMStrategy canslimStrategy;
 	@Autowired
+	private TrendFollowingStrategy trendFollowingStrategy;
+	@Autowired
 	private NewsBreakoutIntradayStrategy newsBreakoutIntradayStrategy;
+	@Autowired
+	private NewsBreakoutStrategy newsBreakoutStrategy;
 	@Autowired
 	private OpeningRangeBreakoutIntradayStrategy openingRangeBreakoutIntradayStrategy;
 	@Autowired
@@ -161,6 +165,7 @@ public class StrategiesMap {
 		strategies.add(dailyOversoldBounceStrategy.getClass().getSimpleName());
 		strategies.add(canslimStrategy.getClass().getSimpleName());
 		strategies.add(newsBreakoutIntradayStrategy.getClass().getSimpleName());
+		strategies.add(newsBreakoutStrategy.getClass().getSimpleName());
 		strategies.add(openingRangeBreakoutIntradayStrategy.getClass().getSimpleName());
 		strategies.add(vwapMeanReversionIntradayStrategy.getClass().getSimpleName());
 		strategies.add(gapReversalIntradayStrategy.getClass().getSimpleName());
@@ -215,6 +220,7 @@ public class StrategiesMap {
 		strategies.add(dailyOversoldBounceStrategy.buildStrategy(series));
 		strategies.add(canslimStrategy.buildStrategy(series));
 		strategies.add(newsBreakoutIntradayStrategy.buildStrategy(series));
+		strategies.add(newsBreakoutStrategy.buildStrategy(series));
 		strategies.add(openingRangeBreakoutIntradayStrategy.buildStrategy(series));
 		strategies.add(vwapMeanReversionIntradayStrategy.buildStrategy(series));
 		strategies.add(gapReversalIntradayStrategy.buildStrategy(series));
@@ -308,8 +314,12 @@ public class StrategiesMap {
 			return dailyOversoldBounceStrategy.buildStrategy(series);
 		} else if (strategy.equals(CANSLIMStrategy.class.getSimpleName())) {
 			return canslimStrategy.buildStrategy(series);
+		} else if (strategy.equals(TrendFollowingStrategy.class.getSimpleName())) {
+			return trendFollowingStrategy.buildStrategy(series);
 		} else if (strategy.equals(NewsBreakoutIntradayStrategy.class.getSimpleName())) {
 			return newsBreakoutIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(NewsBreakoutStrategy.class.getSimpleName())) {
+			return newsBreakoutStrategy.buildStrategy(series);
 		} else if (strategy.equals(OpeningRangeBreakoutIntradayStrategy.class.getSimpleName())) {
 			return openingRangeBreakoutIntradayStrategy.buildStrategy(series);
 		} else if (strategy.equals(VWAPMeanReversionIntradayStrategy.class.getSimpleName())) {
@@ -408,8 +418,12 @@ public class StrategiesMap {
 			return dailyOversoldBounceStrategy.getIndicatorValues();
 		} else if (strategyName.equals(CANSLIMStrategy.class.getSimpleName())) {
 			return canslimStrategy.getIndicatorValues();
+		} else if (strategyName.equals(TrendFollowingStrategy.class.getSimpleName())) {
+			return trendFollowingStrategy.getIndicatorValues();
 		} else if (strategyName.equals(NewsBreakoutIntradayStrategy.class.getSimpleName())) {
 			return newsBreakoutIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(NewsBreakoutStrategy.class.getSimpleName())) {
+			return newsBreakoutStrategy.getIndicatorValues();
 		} else if (strategyName.equals(OpeningRangeBreakoutIntradayStrategy.class.getSimpleName())) {
 			return openingRangeBreakoutIntradayStrategy.getIndicatorValues();
 		} else if (strategyName.equals(VWAPMeanReversionIntradayStrategy.class.getSimpleName())) {

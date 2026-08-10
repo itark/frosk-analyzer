@@ -3,6 +3,7 @@ package nu.itark.frosk.crypto.livetrading;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.crypto.coinbase.service.CoinbaseOrderClient;
 import nu.itark.frosk.repo.LiveOrderRepository;
+import nu.itark.frosk.strategies.SignalStrength;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -51,6 +52,13 @@ public class LiveTradingGate {
     @Value("${crypto.live.trading.max.total.exposure.pct:0.5}")
     private BigDecimal maxTotalExposurePct;
 
+    /** Mirrors {@code CryptoPaperTradingService}'s multipliers — kept in sync deliberately. */
+    @Value("${crypto.signal.strength.elevated.multiplier:1.5}")
+    private BigDecimal elevatedMultiplier;
+
+    @Value("${crypto.signal.strength.strong.multiplier:2.0}")
+    private BigDecimal strongMultiplier;
+
     @Autowired
     private LiveOrderRepository liveOrderRepository;
 
@@ -84,9 +92,28 @@ public class LiveTradingGate {
      * above the absolute per-trade ceiling.
      */
     public BigDecimal computePositionSizeEur() {
+        return computePositionSizeEur(null);
+    }
+
+    /**
+     * As above, scaled by the rule-based confidence tier of the signal that
+     * triggered this entry. {@code null} (or {@link SignalStrength#BASE}) applies
+     * no scaling. The multiplier is applied before clamping, so a strong signal
+     * can reach the cap sooner but never exceed {@code maxPositionEur}.
+     */
+    public BigDecimal computePositionSizeEur(SignalStrength strength) {
         BigDecimal equity = computeEquity();
-        BigDecimal raw = equity.multiply(positionPctOfEquity);
+        BigDecimal raw = equity.multiply(positionPctOfEquity).multiply(multiplierFor(strength));
         return raw.max(minPositionEur).min(maxPositionEur);
+    }
+
+    private BigDecimal multiplierFor(SignalStrength strength) {
+        if (strength == null) return BigDecimal.ONE;
+        return switch (strength) {
+            case STRONG -> strongMultiplier;
+            case ELEVATED -> elevatedMultiplier;
+            case BASE -> BigDecimal.ONE;
+        };
     }
 
     /**

@@ -18,6 +18,8 @@ public class IntradayPnlDTO {
     private BigDecimal avgPnlPercent;
     private BigDecimal bestTradePercent;
     private BigDecimal worstTradePercent;
+    /** True while this strategy is still accumulating forward data for a pre-registered test — see DataController.PRE_REGISTRATION_PENDING_STRATEGIES. */
+    private boolean preRegistrationPending;
     private List<IntradayRoundTripDTO> trades;
 
     @Data

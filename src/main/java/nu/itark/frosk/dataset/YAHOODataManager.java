@@ -270,12 +270,38 @@ public class YAHOODataManager {
     }
 
 
+    /** Full sweep over every active security. Used by the install path, not by the scheduler. */
     public void updateSecurityMetaData() {
+        updateSecurityMetaData(1, 0);
+    }
+
+    /**
+     * Refreshes one deterministic slice of the universe: securities whose id falls in
+     * {@code id % sliceCount == sliceIndex}.
+     *
+     * <p>Run daily with {@code sliceCount = 20}, every security is refreshed roughly
+     * once a month — the same cadence the old monthly Tier 3 gave — but at ~140
+     * requests a day instead of ~2,800 in a single burst. Coverage is unchanged; only
+     * the traffic shape is. The burst was not a theoretical risk: it throttled the
+     * account on 2026-06-01 and cost most of OMXS30.
+     *
+     * <p>Slicing on id rather than on a stored cursor keeps it stateless and idempotent:
+     * a missed or repeated day costs nothing and needs no recovery logic.
+     */
+    public void updateSecurityMetaData(int sliceCount, int sliceIndex) {
         Iterable<Security> securities = securityRepository.findByDatabaseAndActive(Database.YAHOO.toString(), true);
-        securities.forEach((security -> {
-            if (security.getName().contains("^") || security.getName().contains("=")) return;
+        int done = 0, skipped = 0;
+        for (Security security : securities) {
+            if (security.getName().contains("^") || security.getName().contains("=")) continue;
+            if (sliceCount > 1 && Math.floorMod(security.getId(), sliceCount) != sliceIndex) {
+                skipped++;
+                continue;
+            }
             updateWithMetaData(security);
-        }));
+            done++;
+        }
+        log.info("updateSecurityMetaData: slice {}/{} — refreshed {}, skipped {}",
+                sliceIndex, sliceCount, done, skipped);
     }
 
     public void updateSecurityMetaData(Security security) {
@@ -288,10 +314,21 @@ public class YAHOODataManager {
      * @param security
      */
     void updateWithMetaData(Security security) {
+        // One polite pause per MODULE, not per security: this method makes four
+        // separate Yahoo calls, so sleeping once per security would still fire them
+        // in bursts of four. Until 2026-08 this path had no delay at all — the price
+        // loop was throttled but the metadata loop fired ~2,800 requests back to back,
+        // which is the traffic profile that got the account throttled on 2026-06-01
+        // and, via the then-destructive setActive(false), silently removed 25 of the
+        // 30 OMXS30 companies from the universe.
         setIncomeStatementData(security);
+        sleepBetweenFetches();
         setStatisticsData(security);
+        sleepBetweenFetches();
         setRecommendationTrend(security);
+        sleepBetweenFetches();
         setSectorData(security);
+        sleepBetweenFetches();
 
         securityRepository.save(security);
     }
@@ -309,6 +346,11 @@ public class YAHOODataManager {
         double trailingEpsRaw = 0.0;
 
         long enterpriseValueRaw = 0;
+        // Distinguishes "Yahoo actually reported a value" from "the fetch produced
+        // nothing". Without this the two are indistinguishable, because a failed call
+        // leaves enterpriseValueRaw at its 0 initialiser — see the deactivation guard
+        // at the end of this method.
+        boolean enterpriseValueKnown = false;
 
         StatisticsBody moduleStatistics = null;
         try {
@@ -338,6 +380,7 @@ public class YAHOODataManager {
             if (moduleStatistics.getEnterpriseValue() != null) {
                 FinancialValue enterpriseValue = moduleStatistics.getEnterpriseValue();
                 enterpriseValueRaw  = enterpriseValue.getRaw();
+                enterpriseValueKnown = true;
             }
         } catch (Exception e) {
             log.error("Error in Statistics for:{}, error:{}", security.getName(), e.getMessage());
@@ -364,8 +407,31 @@ public class YAHOODataManager {
         security.setForwardPe(forwardPe);
         security.setEnterpriseValue(enterpriseValueRaw);
         security.setDividendYield(dividendYield);
-        if (enterpriseValueRaw < enterpriseValueThreshold) {
-            security.setActive(false);
+
+        // Activation is decided ONLY on data we actually received.
+        //
+        // This guard previously ran unconditionally, and enterpriseValueRaw defaults
+        // to 0 — so any transient Yahoo failure (rate limit, schema change, timeout)
+        // produced 0 < threshold and deactivated the security. Nothing ever set it
+        // back, and findByDatabaseAndActive("YAHOO", true) excludes inactive rows from
+        // every subsequent sync, so one bad call removed a company permanently.
+        // Measured damage before this fix: 311 of 645 inactive securities had
+        // enterprise_value 0/NULL (never successfully assessed), 34 of them still had
+        // price data from the current month. The universe fell 958 -> 441 in June 2026.
+        //
+        // Deactivation is now reversible in both directions, so a company that recovers
+        // above the threshold rejoins the universe on the next metadata sync.
+        if (!enterpriseValueKnown) {
+            log.warn("No enterpriseValue returned for {} — leaving active flag unchanged (currently {})",
+                    security.getName(), security.isActive());
+            return;
+        }
+        boolean shouldBeActive = enterpriseValueRaw >= enterpriseValueThreshold;
+        if (shouldBeActive != security.isActive()) {
+            log.info("{}: active {} -> {} (enterpriseValue={}, threshold={})",
+                    security.getName(), security.isActive(), shouldBeActive,
+                    enterpriseValueRaw, enterpriseValueThreshold);
+            security.setActive(shouldBeActive);
         }
     }
 

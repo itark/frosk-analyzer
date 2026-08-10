@@ -44,6 +44,19 @@ public class DataController {
     @Value("${frosk.database.only:YAHOO}")
     private String databaseOnly;
 
+    /**
+     * Strategies still accumulating forward data for a pre-registered test (see
+     * {@code ~/itark/PREREG_*.md}) and not yet validated. Shown on
+     * /intraday/pnl, /intradayTodaySignals and /intradayOpenPositions with
+     * {@code preRegistrationPending=true} rather than hidden — an explicit,
+     * owner-acknowledged choice to accept the peeking risk the pre-registration
+     * warns against, in exchange for visibility. The frontend is responsible for
+     * flagging these rows; this list is not a filter.
+     */
+    private static final Set<String> PRE_REGISTRATION_PENDING_STRATEGIES = Set.of(
+            "CryptoLiquiditySweepIntradayStrategy"
+    );
+
     /** Resolves the per-trade fee by strategy — equity intraday vs Coinbase taker. */
     @Autowired
     TransactionFeeService transactionFeeService;
@@ -580,7 +593,7 @@ public class DataController {
         return HedgeIndexScoreDTO.builder()
                 .date(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
                 .score(score)
-                .regime(regimeLabel(score))
+                .regime(HedgeIndexService.regimeLabel(score))
                 .build();
     }
 
@@ -596,16 +609,9 @@ public class DataController {
                 .map(p -> HedgeIndexScoreDTO.builder()
                         .date(p.getDayDate().format(DateTimeFormatter.ISO_LOCAL_DATE))
                         .score(p.getRiskyCount().intValue())
-                        .regime(regimeLabel(p.getRiskyCount().intValue()))
+                        .regime(HedgeIndexService.regimeLabel(p.getRiskyCount().intValue()))
                         .build())
                 .collect(Collectors.toList());
-    }
-
-    private String regimeLabel(int score) {
-        if (score <= 3) return "Strong Risk-On";
-        if (score <= 7) return "Cautious / Transition";
-        if (score <= 11) return "Neutral / Defensive";
-        return "Strong Risk-Off";
     }
 
     /**
@@ -683,6 +689,9 @@ public class DataController {
                     .entryTime(entryTime)
                     .currentPrice(currentPrice)
                     .unrealizedPnl(unrealizedPnl)
+                    .historicalWinRate(fs.getProfitableTradesRatio())
+                    .historicalSqn(fs.getSqn())
+                    .historicalTrades(fs.getNumberofTrades())
                     .build();
         }).collect(Collectors.toList());
 
@@ -729,6 +738,7 @@ public class DataController {
                             : currentPrice.subtract(entryPrice).divide(entryPrice, 4, java.math.RoundingMode.HALF_UP);
                     unrealizedPnl = raw.multiply(BigDecimal.valueOf(100));
                 }
+                FeaturedStrategy cryptoFs = featuredStrategyRepository.findByNameAndSecurityName(strategy, ticker);
                 results.add(IntradayOpenPositionDTO.builder()
                         .strategyName(strategy)
                         .securityName(ticker)
@@ -736,6 +746,11 @@ public class DataController {
                         .entryTime(entryTime)
                         .currentPrice(currentPrice)
                         .unrealizedPnl(unrealizedPnl)
+                        .preRegistrationPending(PRE_REGISTRATION_PENDING_STRATEGIES.contains(strategy))
+                        .signalStrength(entry.getSignalStrength())
+                        .historicalWinRate(cryptoFs != null ? cryptoFs.getProfitableTradesRatio() : null)
+                        .historicalSqn(cryptoFs != null ? cryptoFs.getSqn() : null)
+                        .historicalTrades(cryptoFs != null ? cryptoFs.getNumberofTrades() : null)
                         .build());
             }
         }
@@ -772,26 +787,48 @@ public class DataController {
                             .securityName(fs.getSecurityName())
                             .type(t.getType())
                             .price(t.getPrice())
+                            .currentPrice(getLatestIntradayPrice(fs.getSecurityName()))
                             .date(t.getDate().toInstant()
                                     .atZone(ZoneId.of("Europe/Stockholm"))
                                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                            .historicalWinRate(fs.getProfitableTradesRatio())
+                            .historicalSqn(fs.getSqn())
+                            .historicalTrades(fs.getNumberofTrades())
                             .build()));
         }
         // Augment with INTRADAY_SIGNAL entries for today (crypto strategies)
         intradaySignalRepository.findTop20ByOrderBySignalTimestampDesc().stream()
                 .filter(s -> s.getSignalTimestamp() >= startOfDay)
-                .forEach(s -> signals.add(IntradayTodaySignalDTO.builder()
+                .forEach(s -> {
+                    FeaturedStrategy cryptoFs = featuredStrategyRepository
+                            .findByNameAndSecurityName(s.getStrategyName(), s.getTicker());
+                    signals.add(IntradayTodaySignalDTO.builder()
                         .strategyName(s.getStrategyName())
                         .securityName(s.getTicker())
                         .type(s.getSignalType())
                         .price(s.getClosePrice())
+                        .currentPrice(getLatestIntradayPrice(s.getTicker()))
                         .date(Instant.ofEpochSecond(s.getSignalTimestamp())
                                 .atZone(ZoneId.of("Europe/Stockholm"))
                                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
-                        .build()));
+                        .preRegistrationPending(PRE_REGISTRATION_PENDING_STRATEGIES.contains(s.getStrategyName()))
+                        .historicalWinRate(cryptoFs != null ? cryptoFs.getProfitableTradesRatio() : null)
+                        .historicalSqn(cryptoFs != null ? cryptoFs.getSqn() : null)
+                        .historicalTrades(cryptoFs != null ? cryptoFs.getNumberofTrades() : null)
+                        .signalStrength(s.getSignalStrength())
+                        .build());
+                });
 
         signals.sort(Comparator.comparing(IntradayTodaySignalDTO::getDate).reversed());
         return signals;
+    }
+
+    /** Latest intraday bar close for a security — the "current price" shown alongside today's signals. */
+    private BigDecimal getLatestIntradayPrice(String securityName) {
+        Security security = securityRepository.findByName(securityName);
+        if (security == null) return null;
+        IntradayBar latestBar = intradayBarRepository.findTopBySecurityIdOrderByBarTimestampDesc(security.getId());
+        return latestBar != null ? latestBar.getClose() : null;
     }
 
     /**
@@ -871,6 +908,7 @@ public class DataController {
                         .avgPnlPercent(avg)
                         .bestTradePercent(best)
                         .worstTradePercent(worst)
+                        .preRegistrationPending(PRE_REGISTRATION_PENDING_STRATEGIES.contains(strategyName))
                         .trades(roundTrips)
                         .build());
             }

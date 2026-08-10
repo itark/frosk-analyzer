@@ -47,7 +47,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
-        implements IIndicatorValue, CryptoIntradayStrategy {
+        implements IIndicatorValue, CryptoIntradayStrategy, ISignalStrength {
     private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     @Autowired
@@ -65,6 +65,11 @@ public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
     @Value("${crypto.emacross.max.bars.held:32}")
     private int maxBarsHeld;
 
+    private ClosePriceIndicator close;
+    private EMAIndicator emaF;
+    private EMAIndicator emaS;
+    private RSIIndicator rsi;
+
     @Override
     public boolean isShort() { return true; }
 
@@ -75,10 +80,10 @@ public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
         if (series == null) throw new IllegalArgumentException("BarSeries cannot be null");
         super.barSeries = series;
 
-        ClosePriceIndicator close = new ClosePriceIndicator(series);
-        EMAIndicator emaF = new EMAIndicator(close, emaFast);
-        EMAIndicator emaS = new EMAIndicator(close, emaSlow);
-        RSIIndicator  rsi  = new RSIIndicator(close, rsiPeriod);
+        close = new ClosePriceIndicator(series);
+        emaF = new EMAIndicator(close, emaFast);
+        emaS = new EMAIndicator(close, emaSlow);
+        rsi  = new RSIIndicator(close, rsiPeriod);
 
         setIndicatorValues(close, "close");
         setIndicatorValues(emaF, "ema" + emaFast);
@@ -107,5 +112,26 @@ public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
     @Override
     public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
+    }
+
+    /**
+     * Neutralized — always BASE, so the position-size multiplier is a no-op.
+     *
+     * <p>Unlike {@link CryptoVWAPReversionIntradayStrategy} and
+     * {@link CryptoRangeBreakoutIntradayStrategy} (both backtested 2026-08-10 and
+     * found <b>inverted</b>), this one has not been backtested at all: the
+     * inverted regime gate ({@link CryptoRegimeRule} requiring BTC below its
+     * SMA(50)) means it only fires during a sustained downtrend, and BTC was
+     * in an uptrend for the entirety of the available 30-day window
+     * ({@code CryptoSignalStrengthBacktestIT} — 0 closed trades). Was a mirror
+     * of {@link CryptoEMACrossLongIntradayStrategy}'s (validated, correctly
+     * ordered) scoring, on the unverified assumption the long-side logic
+     * transfers to the short side. Re-enable and re-backtest once BTC has
+     * actually traded below its SMA(50) for long enough to produce a sample —
+     * do not re-enable on the strength of the long-side result alone.
+     */
+    @Override
+    public SignalStrength getSignalStrength(int index) {
+        return SignalStrength.BASE;
     }
 }

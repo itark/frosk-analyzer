@@ -14,6 +14,8 @@ import nu.itark.frosk.model.Security;
 import nu.itark.frosk.repo.IntradaySignalRepository;
 import nu.itark.frosk.repo.LiveOrderRepository;
 import nu.itark.frosk.strategies.CryptoIntradayStrategy;
+import nu.itark.frosk.strategies.ISignalStrength;
+import nu.itark.frosk.strategies.SignalStrength;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -214,7 +216,9 @@ public class CryptoIntradayStrategyRunner {
                     continue;
                 }
                 Strategy ta4j = cryptoStrategy.buildStrategy(series);
-                totalSignals += evaluateStrategy(ta4j, strategyName, cryptoStrategy.isShort(), security, series);
+                ISignalStrength strengthSource = cryptoStrategy instanceof ISignalStrength
+                        ? (ISignalStrength) cryptoStrategy : null;
+                totalSignals += evaluateStrategy(ta4j, strategyName, cryptoStrategy.isShort(), security, series, strengthSource);
             }
             eligibleSeries.add(series);
         }
@@ -233,7 +237,7 @@ public class CryptoIntradayStrategyRunner {
     }
 
     private int evaluateStrategy(Strategy ta4jStrategy, String strategyName, boolean isShort,
-                                  Security security, BarSeries series) {
+                                  Security security, BarSeries series, ISignalStrength strengthSource) {
         BarSeriesManager manager = new BarSeriesManager(series);
         TradingRecord tradingRecord = manager.run(ta4jStrategy);
 
@@ -278,7 +282,7 @@ public class CryptoIntradayStrategyRunner {
                 log.warn("CryptoIntradayStrategyRunner: stale/expired open position — emitting {} for {}/{} "
                         + "(backtestClosed={}, backtestShouldExit={}, realWorldExpired={})",
                         exitSignal, strategyName, security.getName(), backtestClosed, backtestShouldExit, realWorldExpired);
-                emitSignal(exitSignal, strategyName, security.getName(), series, lastIndex);
+                emitSignal(exitSignal, strategyName, security.getName(), series, lastIndex, null);
                 return 1;
             }
             return 0;
@@ -286,12 +290,14 @@ public class CryptoIntradayStrategyRunner {
 
         if (tradingRecord.getCurrentPosition().isNew()) {
             if (ta4jStrategy.shouldEnter(lastIndex, tradingRecord)) {
-                emitSignal(enterSignal, strategyName, security.getName(), series, lastIndex);
+                SignalStrength strength = strengthSource != null
+                        ? strengthSource.getSignalStrength(lastIndex) : null;
+                emitSignal(enterSignal, strategyName, security.getName(), series, lastIndex, strength);
                 return 1;
             }
         } else if (tradingRecord.getCurrentPosition().isOpened()) {
             if (ta4jStrategy.shouldExit(lastIndex, tradingRecord)) {
-                emitSignal(exitSignal, strategyName, security.getName(), series, lastIndex);
+                emitSignal(exitSignal, strategyName, security.getName(), series, lastIndex, null);
                 return 1;
             }
         }
@@ -348,7 +354,7 @@ public class CryptoIntradayStrategyRunner {
         String exitSignal = isShort ? "COVR" : "SELL";
         log.warn("CryptoIntradayStrategyRunner: excluded pair {}/{} has stale open position — force-closing with {}",
                 strategyName, security.getName(), exitSignal);
-        emitSignal(exitSignal, strategyName, security.getName(), series, series.getEndIndex());
+        emitSignal(exitSignal, strategyName, security.getName(), series, series.getEndIndex(), null);
     }
 
     /**
@@ -371,7 +377,7 @@ public class CryptoIntradayStrategyRunner {
     }
 
     private void emitSignal(String signalType, String strategyName, String ticker,
-                            BarSeries series, int index) {
+                            BarSeries series, int index, SignalStrength strength) {
         Bar bar = series.getBar(index);
         long barStartEpoch = barStartEpoch(series, index);
 
@@ -384,15 +390,19 @@ public class CryptoIntradayStrategyRunner {
                 strategyName, ticker, barStartEpoch, signalType,
                 BigDecimal.valueOf(bar.getClosePrice().doubleValue())
         );
+        if (strength != null) {
+            signal.setSignalStrength(strength.name());
+        }
         recordSpread(signal, ticker);
         signalRepository.save(signal);
 
-        log.info("CryptoIntradayStrategyRunner: {} {} — ticker={}, bar={}, close={}, spread={}",
+        log.info("CryptoIntradayStrategyRunner: {} {} — ticker={}, bar={}, close={}, strength={}, spread={}",
                 strategyName, signalType, ticker, barStartEpoch, signal.getClosePrice(),
+                strength != null ? strength : "n/a",
                 signal.getSpreadPercent() != null ? signal.getSpreadPercent() + "%" : "n/a");
 
-        dispatchPaperOrder(signalType, strategyName, ticker, signal.getClosePrice());
-        dispatchLiveOrder(signalType, strategyName, ticker, signal.getClosePrice(), signal);
+        dispatchPaperOrder(signalType, strategyName, ticker, signal.getClosePrice(), strength);
+        dispatchLiveOrder(signalType, strategyName, ticker, signal.getClosePrice(), signal, strength);
     }
 
     /**
@@ -401,12 +411,13 @@ public class CryptoIntradayStrategyRunner {
      * signals (short strategies) are skipped — paper trading mirrors what live
      * trading would actually do, and Coinbase doesn't support shorting.
      */
-    private void dispatchPaperOrder(String signalType, String strategyName, String ticker, BigDecimal closePrice) {
+    private void dispatchPaperOrder(String signalType, String strategyName, String ticker,
+                                    BigDecimal closePrice, SignalStrength strength) {
         if (paperTradingService == null) return;
         if (!"BUY".equals(signalType) && !"SELL".equals(signalType)) return;
 
         if ("BUY".equals(signalType)) {
-            paperTradingService.dispatchBuy(strategyName, ticker, closePrice);
+            paperTradingService.dispatchBuy(strategyName, ticker, closePrice, strength);
         } else {
             paperTradingService.dispatchSell(strategyName, ticker, closePrice);
         }
@@ -418,19 +429,20 @@ public class CryptoIntradayStrategyRunner {
      * Marks {@code signal.live = true} when the order is successfully filled.
      */
     private void dispatchLiveOrder(String signalType, String strategyName, String ticker,
-                                   BigDecimal closePrice, IntradaySignal signal) {
+                                   BigDecimal closePrice, IntradaySignal signal, SignalStrength strength) {
         if (liveTradingGate == null || coinbaseOrderClient == null || liveOrderRepository == null) return;
         if (!"BUY".equals(signalType) && !"SELL".equals(signalType)) return; // skip SHRT/COVR
 
         if ("BUY".equals(signalType)) {
-            dispatchBuy(strategyName, ticker, closePrice, signal);
+            dispatchBuy(strategyName, ticker, closePrice, signal, strength);
         } else {
             dispatchSell(strategyName, ticker, signal);
         }
     }
 
-    private void dispatchBuy(String strategyName, String ticker, BigDecimal closePrice, IntradaySignal signal) {
-        BigDecimal positionEur = liveTradingGate.computePositionSizeEur();
+    private void dispatchBuy(String strategyName, String ticker, BigDecimal closePrice,
+                             IntradaySignal signal, SignalStrength strength) {
+        BigDecimal positionEur = liveTradingGate.computePositionSizeEur(strength);
         if (!liveTradingGate.canTrade(ticker, positionEur)) return;
 
         OrderResponse resp = coinbaseOrderClient.placeBuyOrder(ticker, positionEur);

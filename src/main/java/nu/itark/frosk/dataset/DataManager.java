@@ -84,6 +84,13 @@ public class DataManager {
 
 	}
 
+	/** Refreshes one slice of the universe — see YAHOODataManager for the rationale. */
+	public void updateSecurityMetaData(Database database, int sliceCount, int sliceIndex) {
+		if (database.equals(Database.YAHOO)) {
+			yahooDataManager.updateSecurityMetaData(sliceCount, sliceIndex);
+		}
+	}
+
 	public void updateSecurityMetaData(Database database) {
 		if (database.equals(Database.YAHOO)) {
 			yahooDataManager.updateSecurityMetaData();

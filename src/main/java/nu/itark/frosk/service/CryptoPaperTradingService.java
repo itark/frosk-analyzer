@@ -6,8 +6,11 @@ import nu.itark.frosk.analysis.CryptoPaperAccountDTO;
 import nu.itark.frosk.analysis.CryptoPaperPositionDTO;
 import nu.itark.frosk.model.CryptoPaperAccount;
 import nu.itark.frosk.model.CryptoPaperOrder;
+import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.repo.CryptoPaperAccountRepository;
 import nu.itark.frosk.repo.CryptoPaperOrderRepository;
+import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.strategies.SignalStrength;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -24,9 +27,9 @@ import java.util.Optional;
  * independent of whether live trading is enabled — a continuously running paper track record.
  *
  * <p>Sizes positions the same way {@link nu.itark.frosk.crypto.livetrading.LiveTradingGate}
- * sizes real orders (equity * pct.of.equity, clamped to [min, max], capped by a total-exposure
- * fraction of equity), but against this account's own simulated equity so the simulation stays
- * a faithful preview of how live trading would behave.
+ * sizes real orders (equity * pct.of.equity * signal-strength multiplier, clamped to [min, max],
+ * capped by a total-exposure fraction of equity), but against this account's own simulated
+ * equity so the simulation stays a faithful preview of how live trading would behave.
  */
 @Service
 @Profile("crypto")
@@ -49,6 +52,18 @@ public class CryptoPaperTradingService {
     private BigDecimal maxTotalExposurePct;
 
     /**
+     * Multiplier applied to the base position size for {@link SignalStrength#ELEVATED}
+     * and {@link SignalStrength#STRONG} entries. {@code BASE} always multiplies by 1.
+     * Result is still clamped to {@code [minPositionEur, maxPositionEur]} — a strong
+     * signal scales the bet, it never bypasses the account's own risk ceiling.
+     */
+    @Value("${crypto.signal.strength.elevated.multiplier:1.5}")
+    private BigDecimal elevatedMultiplier;
+
+    @Value("${crypto.signal.strength.strong.multiplier:2.0}")
+    private BigDecimal strongMultiplier;
+
+    /**
      * Coinbase taker fee per leg — taker because {@code CoinbaseOrderClient} only
      * sends {@code market_market_ioc}, so every simulated fill mirrors a taker fill.
      * Charged on both entry and exit, exactly as a real order would be; without it
@@ -63,6 +78,9 @@ public class CryptoPaperTradingService {
 
     @Autowired
     private CryptoPaperOrderRepository orderRepository;
+
+    @Autowired
+    private FeaturedStrategyRepository featuredStrategyRepository;
 
     @PostConstruct
     private void initAccount() {
@@ -84,18 +102,33 @@ public class CryptoPaperTradingService {
     }
 
     public BigDecimal computePositionSizeEur() {
-        return sizePosition(computeEquity());
+        return sizePosition(computeEquity(), null);
     }
 
-    private BigDecimal sizePosition(BigDecimal equity) {
-        return equity.multiply(positionPctOfEquity).max(minPositionEur).min(maxPositionEur);
+    /** @param strength null is treated the same as {@link SignalStrength#BASE} (multiplier 1). */
+    private BigDecimal sizePosition(BigDecimal equity, SignalStrength strength) {
+        BigDecimal base = equity.multiply(positionPctOfEquity).multiply(multiplierFor(strength));
+        return base.max(minPositionEur).min(maxPositionEur);
+    }
+
+    private BigDecimal multiplierFor(SignalStrength strength) {
+        if (strength == null) return BigDecimal.ONE;
+        return switch (strength) {
+            case STRONG -> strongMultiplier;
+            case ELEVATED -> elevatedMultiplier;
+            case BASE -> BigDecimal.ONE;
+        };
     }
 
     public void dispatchBuy(String strategyName, String ticker, BigDecimal closePrice) {
+        dispatchBuy(strategyName, ticker, closePrice, null);
+    }
+
+    public void dispatchBuy(String strategyName, String ticker, BigDecimal closePrice, SignalStrength strength) {
         CryptoPaperAccount account = getAccount();
         BigDecimal openExposure = orderRepository.sumOpenExposureEur();
         BigDecimal equity = account.getCashEur().add(openExposure);
-        BigDecimal eurAmount = sizePosition(equity);
+        BigDecimal eurAmount = sizePosition(equity, strength);
 
         BigDecimal maxTotalExposure = equity.multiply(maxTotalExposurePct);
         if (openExposure.add(eurAmount).compareTo(maxTotalExposure) > 0) {
@@ -121,14 +154,18 @@ public class CryptoPaperTradingService {
         order.setEurAmount(eurAmount);
         order.setFilledPrice(closePrice);
         order.setFilledQuantity(quantity);
+        if (strength != null) {
+            order.setSignalStrength(strength.name());
+        }
         orderRepository.save(order);
 
         account.setCashEur(account.getCashEur().subtract(cashNeeded));
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
 
-        log.info("PAPER ORDER: BUY {} {} @ {}EUR (qty={}, fee={}, strategy={})",
-                ticker, eurAmount, closePrice, quantity, entryFee, strategyName);
+        log.info("PAPER ORDER: BUY {} {} @ {}EUR (qty={}, fee={}, strategy={}, strength={})",
+                ticker, eurAmount, closePrice, quantity, entryFee, strategyName,
+                strength != null ? strength : "n/a");
     }
 
     public void dispatchSell(String strategyName, String ticker, BigDecimal closePrice) {
@@ -192,14 +229,22 @@ public class CryptoPaperTradingService {
                 .openPositionsCount(openOrders.size())
                 .updatedAt(account.getUpdatedAt() != null ? account.getUpdatedAt().toString() : null)
                 .openPositions(openOrders.stream()
-                        .map(o -> CryptoPaperPositionDTO.builder()
-                                .ticker(o.getTicker())
-                                .strategyName(o.getStrategyName())
-                                .eurAmount(o.getEurAmount())
-                                .filledPrice(o.getFilledPrice())
-                                .filledQuantity(o.getFilledQuantity())
-                                .createdAt(o.getCreatedAt().toString())
-                                .build())
+                        .map(o -> {
+                            FeaturedStrategy fs = featuredStrategyRepository
+                                    .findByNameAndSecurityName(o.getStrategyName(), o.getTicker());
+                            return CryptoPaperPositionDTO.builder()
+                                    .ticker(o.getTicker())
+                                    .strategyName(o.getStrategyName())
+                                    .eurAmount(o.getEurAmount())
+                                    .filledPrice(o.getFilledPrice())
+                                    .filledQuantity(o.getFilledQuantity())
+                                    .createdAt(o.getCreatedAt().toString())
+                                    .signalStrength(o.getSignalStrength())
+                                    .historicalWinRate(fs != null ? fs.getProfitableTradesRatio() : null)
+                                    .historicalSqn(fs != null ? fs.getSqn() : null)
+                                    .historicalTrades(fs != null ? fs.getNumberofTrades() : null)
+                                    .build();
+                        })
                         .toList())
                 .build();
     }

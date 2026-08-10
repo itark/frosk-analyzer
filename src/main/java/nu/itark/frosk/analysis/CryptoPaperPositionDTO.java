@@ -14,4 +14,9 @@ public class CryptoPaperPositionDTO {
     private BigDecimal filledPrice;
     private BigDecimal filledQuantity;
     private String createdAt;
+    private String signalStrength;
+    /** Historical stats for this (strategy, ticker) pair, from FeaturedStrategy — context, not a per-signal score. */
+    private BigDecimal historicalWinRate;
+    private BigDecimal historicalSqn;
+    private Integer historicalTrades;
 }

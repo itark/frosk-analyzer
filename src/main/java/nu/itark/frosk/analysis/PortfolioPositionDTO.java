@@ -16,6 +16,8 @@ public class PortfolioPositionDTO {
     private BigDecimal latestPrice;
     private BigDecimal unrealizedPnlPercent;
     private boolean open;
+    /** True if this position's entry trade was opened on the snapshot's build date (i.e. new this run). */
+    private boolean newPosition;
     private BigDecimal sqn;
     private BigDecimal expectency;
     private BigDecimal profitableTradesRatio;

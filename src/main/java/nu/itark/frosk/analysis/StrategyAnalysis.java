@@ -11,6 +11,7 @@ import nu.itark.frosk.service.HedgeIndexService;
 import nu.itark.frosk.strategies.DailyBreakoutStrategy;
 import nu.itark.frosk.strategies.DailyOversoldBounceStrategy;
 import nu.itark.frosk.strategies.OMXS30SwingStrategy;
+import nu.itark.frosk.strategies.TrendFollowingStrategy;
 import nu.itark.frosk.strategies.SwedishLongTermMomentumStrategy;
 import nu.itark.frosk.strategies.hedge.*;
 import nu.itark.frosk.util.DateTimeManager;
@@ -351,6 +352,38 @@ public class StrategyAnalysis {
 	 * Called from HighLander.syncTier2() after the weekly price sync so that
 	 * fresh prices are available before the factor scores are recomputed.
 	 */
+	/**
+	 * Trend following on the futures universe only.
+	 *
+	 * <p>Scoped like Månadsportföljen rather than added to the batch run, because
+	 * TrendFollowingStrategy is meaningless on Swedish single stocks: the effect it
+	 * replicates is documented across diversified futures, and running it on 671
+	 * correlated .ST names would produce one large equity-beta bet wearing a
+	 * trend-following label.
+	 *
+	 * <p>Universe is the "=F" tickers loaded from
+	 * codes/YAHOO-FUTURES-Trend following universe.csv — 32 markets that passed the
+	 * roll-gap screen documented in ~/itark/futures/MANIFEST.md.
+	 */
+	public void runTrendFollowingStrategies() {
+		log.info("runTrendFollowingStrategies()");
+		List<Security> futures = securityRepository.findByDatabaseAndActive("YAHOO", true)
+				.stream()
+				.filter(sec -> sec.getName() != null && sec.getName().endsWith("=F"))
+				.collect(java.util.stream.Collectors.toList());
+		if (futures.isEmpty()) {
+			log.warn("No active futures (=F) securities found — skipping trend following");
+			return;
+		}
+		List<BarSeries> barSeriesList = futures.stream()
+				.map(sec -> barSeriesService.getDataSet(sec.getId()))
+				.filter(bs -> bs != null && !bs.isEmpty())
+				.collect(java.util.stream.Collectors.toList());
+		log.info("Trend following: running on {} futures markets", barSeriesList.size());
+		strategyExecutor.execute(TrendFollowingStrategy.class.getSimpleName(), barSeriesList);
+		log.info("runTrendFollowingStrategies() READY");
+	}
+
 	public void runMånadsportföljStrategies() {
 		log.info("runMånadsportföljStrategies()");
 		List<Security> swedishStocks = securityRepository.findByDatabaseAndActive("YAHOO", true)

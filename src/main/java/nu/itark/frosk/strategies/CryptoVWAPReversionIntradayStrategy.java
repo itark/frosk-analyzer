@@ -58,10 +58,11 @@ import java.util.List;
 @Component
 @Slf4j
 public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
-        implements IIndicatorValue, CryptoIntradayStrategy {
+        implements IIndicatorValue, CryptoIntradayStrategy, ISignalStrength {
     private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private static final ZoneId UTC = ZoneId.of("UTC");
+
     @Value("${crypto.vwap.rsi.period:7}")
     private int rsiPeriod;
 
@@ -80,6 +81,10 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
     @Value("${crypto.vwap.max.bars.held:48}")
     private int maxBarsHeld;
 
+    private ClosePriceIndicator close;
+    private SessionVWAPIndicator vwap;
+    private RSIIndicator rsi;
+
     @Override
     public Strategy buildStrategy(BarSeries series) {
         super.setInherentExitRule();
@@ -89,10 +94,10 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
         }
         super.barSeries = series;
 
-        ClosePriceIndicator close = new ClosePriceIndicator(series);
-        SessionVWAPIndicator vwap = new SessionVWAPIndicator(series, UTC);
+        close = new ClosePriceIndicator(series);
+        vwap = new SessionVWAPIndicator(series, UTC);
         TransformIndicator vwapStretched = TransformIndicator.multiply(vwap, 1.0 - stretchPct / 100.0);
-        RSIIndicator rsi = new RSIIndicator(close, rsiPeriod);
+        rsi = new RSIIndicator(close, rsiPeriod);
 
         setIndicatorValues(close, "close");
         setIndicatorValues(vwap, "utcDayVwap");
@@ -119,5 +124,24 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
     @Override
     public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
+    }
+
+    /**
+     * Neutralized — always BASE, so the position-size multiplier is a no-op.
+     *
+     * <p>Backtested 2026-08-10 on 561 closed trades (37 products, full 30-day
+     * window, see {@code CryptoSignalStrengthBacktestIT}): the original scoring
+     * (deeper VWAP stretch + more oversold RSI = more bonus conditions = bigger
+     * size) was <b>inverted</b> — BASE won 60.0% at +0.231%/trade, STRONG won
+     * only 47.3% at -0.325%/trade, monotonically worse at every tier. For a
+     * mean-reversion strategy a more extreme dislocation is more often a real
+     * breakdown than an extra-attractive dip — exactly what this class's own
+     * entry-rule comment already warned about ("never catch falling knives...
+     * stretched prices keep stretching in crypto downtrends"). Do not re-enable
+     * scoring here without re-backtesting against that same evidence.
+     */
+    @Override
+    public SignalStrength getSignalStrength(int index) {
+        return SignalStrength.BASE;
     }
 }

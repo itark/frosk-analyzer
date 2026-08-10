@@ -57,6 +57,9 @@ public class HighLander {
 	@Value("${frosk.run.manedsportfolj:false}")
 	private boolean runManedsportfolj;
 
+	@Value("${frosk.run.trendfollowing:false}")
+	private boolean runTrendFollowing;
+
 	@Value("${frosk.run.intraday:true}")
 	private boolean runIntraday;
 
@@ -65,6 +68,10 @@ public class HighLander {
 
 	@Value("${frosk.updatesecuritymetadata}")
 	private boolean updateSecurityMetaData;
+
+	/** Number of slices the metadata refresh is spread over; 1 = full sweep each run. */
+	@Value("${frosk.metadata.slice.count:20}")
+	private int metadataSliceCount;
 
 	@Autowired
 	DataManager dataManager;
@@ -95,6 +102,9 @@ public class HighLander {
 
 	@Autowired
 	StrategyAnalysis strategyAnalysis;
+
+	@Autowired
+	nu.itark.frosk.service.EarningsCalendarService earningsCalendarService;
 
 	@Autowired
 	BarSeriesService barSeriesService;
@@ -168,6 +178,9 @@ public class HighLander {
 			yahooDataManager.syncronizeActiveSwedish();
 			strategyAnalysis.runMånadsportföljStrategies();
 		}
+		if (runTrendFollowing) {
+			strategyAnalysis.runTrendFollowingStrategies();
+		}
 	}
 
 	private static final ZoneId STOCKHOLM = ZoneId.of("Europe/Stockholm");
@@ -212,29 +225,58 @@ public class HighLander {
 		yahooDataManager.syncronizeActiveSwedish();
 		strategyAnalysis.runHedgeIndexStrategies();
 		strategyAnalysis.runDagstrateginStrategies();
+		// Daily portfolio snapshot. Moved here from Tier 2 on 2026-08-05: Tier 2 runs
+		// Saturdays only, so the snapshot was up to six days stale on any given weekday
+		// while the prices and signals feeding it refreshed daily. build() is idempotent
+		// per day, so the Saturday call in Tier 2 is harmless overlap, not a double build.
+		portfolioService.build();
+		// Append-only capture of the forward earnings calendar and analyst consensus.
+		// Runs last and swallows its own failures: it is data collection for a future
+		// experiment and must never break the sync it rides on. Yahoo overwrites these
+		// values silently, so a day missed here is a day of revision history lost for good.
+		try {
+			earningsCalendarService.captureAll();
+		} catch (Exception e) {
+			log.warn("syncTier1: earnings capture failed — {}", e.toString());
+		}
 		log.info("syncTier1 completed");
 	}
 
 	/**
-	 * Tier 2 — Weekly (SAT morning).
-	 * Syncs price history for all active YAHOO securities, then re-runs
-	 * Månadsportföljen (SwedishLongTermMomentumStrategy) on the fresh prices.
+	 * Tier 2 — Weekly (SAT morning). Computation only; no price sync.
+	 * Re-runs Månadsportföljen (SwedishLongTermMomentumStrategy) and rebuilds the
+	 * daily portfolio snapshot on prices Tier 1 already refreshed during the week.
 	 */
 	public void syncTier2() {
 		log.info("syncTier2 started");
-		addSecurityPricesFromYahoo();
+		// Price sync deliberately removed 2026-08-05. It was redundant: Tier 1 runs
+		// syncronizeActiveSwedish() every weekday over all active .ST securities, and
+		// runHedgeIndexStrategies() covers the macro tickers — together that is the
+		// whole active YAHOO universe. Fetching is incremental (getStocks() resumes
+		// from the last stored bar), so daily coverage costs one bar per security,
+		// not a re-download of history. Tier 2 now exists only for the weekly
+		// computation below, which genuinely belongs on a weekly cadence.
 		strategyAnalysis.runMånadsportföljStrategies();
+		// Trend following rebalances monthly by design; running it weekly only refreshes
+		// the signal, it does not add turnover — the strategy is flat-or-long on a
+		// 252-day lookback, which cannot flip more than a few times a year.
+		strategyAnalysis.runTrendFollowingStrategies();
 		portfolioService.build();
 		log.info("syncTier2 completed");
 	}
 
 	/**
-	 * Tier 3 — Monthly (1st of month).
-	 * Updates fundamental metadata (Beta, PEG, sector, etc.) for all active stocks.
+	 * Tier 3 — One metadata slice per weekday (Beta, PEG, sector, analyst trend).
+	 * Every security is still refreshed about monthly; only the traffic shape changed.
 	 */
 	public void syncTier3() {
-		log.info("syncTier3 started");
-		updateSecurityMetaData();
+		// One slice per run instead of the whole universe. With the default 20 slices
+		// on a weekday schedule every security is refreshed about monthly — the old
+		// cadence — at ~140 requests a day instead of ~2,800 at once. Slice chosen from
+		// the day of year, so it is stateless: a missed day self-corrects next cycle.
+		int slice = Math.floorMod(java.time.LocalDate.now().getDayOfYear(), metadataSliceCount);
+		log.info("syncTier3 started (slice {}/{})", slice, metadataSliceCount);
+		dataManager.updateSecurityMetaData(Database.YAHOO, metadataSliceCount, slice);
 		log.info("syncTier3 completed");
 	}
 

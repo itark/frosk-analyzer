@@ -69,6 +69,14 @@ public class IntradaySignal {
     @Column(name = "best_ask", precision = 20, scale = 10)
     private BigDecimal bestAsk;
 
+    /**
+     * Rule-based confidence tier ("BASE"/"ELEVATED"/"STRONG") at entry time, from
+     * {@link nu.itark.frosk.strategies.ISignalStrength}. Null for exit signals,
+     * strategies that don't implement the interface, and non-crypto signals.
+     */
+    @Column(name = "signal_strength", length = 10)
+    private String signalStrength;
+
     public IntradaySignal(String strategyName, String ticker, long signalTimestamp,
                           String signalType, BigDecimal closePrice) {
         this.strategyName   = strategyName;

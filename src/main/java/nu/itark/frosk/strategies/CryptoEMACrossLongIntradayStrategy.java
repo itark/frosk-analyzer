@@ -43,8 +43,13 @@ import java.util.List;
 @Component
 @Slf4j
 public class CryptoEMACrossLongIntradayStrategy extends AbstractStrategy
-        implements IIndicatorValue, CryptoIntradayStrategy {
+        implements IIndicatorValue, CryptoIntradayStrategy, ISignalStrength {
     private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
+
+    /** RSI past this (vs. the 50 entry threshold) counts as a bonus condition. */
+    private static final double RSI_STRONG_THRESHOLD = 60.0;
+    /** EMA spread past this fraction of price counts as a decisive, not marginal, cross. */
+    private static final double EMA_SPREAD_STRONG_PCT = 0.3;
 
     @Autowired
     private CryptoRegimeService cryptoRegimeService;
@@ -61,6 +66,11 @@ public class CryptoEMACrossLongIntradayStrategy extends AbstractStrategy
     @Value("${crypto.emacross.max.bars.held:32}")
     private int maxBarsHeld;
 
+    private ClosePriceIndicator close;
+    private EMAIndicator emaF;
+    private EMAIndicator emaS;
+    private RSIIndicator rsi;
+
     @Override
     public Strategy buildStrategy(BarSeries series) {
         super.setInherentExitRule();
@@ -68,10 +78,10 @@ public class CryptoEMACrossLongIntradayStrategy extends AbstractStrategy
         if (series == null) throw new IllegalArgumentException("BarSeries cannot be null");
         super.barSeries = series;
 
-        ClosePriceIndicator close = new ClosePriceIndicator(series);
-        EMAIndicator emaF = new EMAIndicator(close, emaFast);
-        EMAIndicator emaS = new EMAIndicator(close, emaSlow);
-        RSIIndicator  rsi  = new RSIIndicator(close, rsiPeriod);
+        close = new ClosePriceIndicator(series);
+        emaF = new EMAIndicator(close, emaFast);
+        emaS = new EMAIndicator(close, emaSlow);
+        rsi  = new RSIIndicator(close, rsiPeriod);
 
         setIndicatorValues(close, "close");
         setIndicatorValues(emaF, "ema" + emaFast);
@@ -97,5 +107,25 @@ public class CryptoEMACrossLongIntradayStrategy extends AbstractStrategy
     @Override
     public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
+    }
+
+    /**
+     * Bonus conditions: RSI decisively above 50 (not just past it), and an EMA
+     * spread wide enough to be a decisive cross rather than a marginal one.
+     */
+    @Override
+    public SignalStrength getSignalStrength(int index) {
+        int bonuses = 0;
+        if (rsi.getValue(index).doubleValue() > RSI_STRONG_THRESHOLD) {
+            bonuses++;
+        }
+        double closeVal = close.getValue(index).doubleValue();
+        if (closeVal > 0) {
+            double spreadPct = 100.0 * (emaF.getValue(index).doubleValue() - emaS.getValue(index).doubleValue()) / closeVal;
+            if (spreadPct >= EMA_SPREAD_STRONG_PCT) {
+                bonuses++;
+            }
+        }
+        return bonuses >= 2 ? SignalStrength.STRONG : bonuses == 1 ? SignalStrength.ELEVATED : SignalStrength.BASE;
     }
 }

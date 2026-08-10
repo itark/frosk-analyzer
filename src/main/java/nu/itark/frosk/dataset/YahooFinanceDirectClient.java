@@ -225,6 +225,27 @@ public class YahooFinanceDirectClient {
 
     // ── Module: income-statement ─────────────────────────────────────────
 
+    /**
+     * Raw {@code calendarEvents} module: expected earnings date, whether that date is
+     * an estimate, and the analyst consensus EPS with its low/high range.
+     *
+     * <p>Returned as a {@link JsonNode} rather than a typed DTO because only a handful
+     * of leaves are used and Yahoo reshapes this module more often than the statement
+     * modules. Returns null on any failure — earnings capture is data collection, and
+     * must never fail a sync.
+     */
+    public JsonNode getModuleCalendarEvents(String symbol) {
+        try {
+            String json = fetchQuoteSummaryModule(symbol, "calendarEvents");
+            if (json == null) return null;
+            JsonNode module = extractQuoteSummaryResult(json);
+            return module == null ? null : module.path("calendarEvents");
+        } catch (Exception e) {
+            log.warn("YahooFinanceDirectClient: calendarEvents failed for {}: {}", symbol, e.toString());
+            return null;
+        }
+    }
+
     public Body getModuleIncomeStatement(String symbol) throws JsonProcessingException {
         String json = fetchQuoteSummaryModule(symbol, "incomeStatementHistory,incomeStatementHistoryQuarterly");
         if (json == null) return null;

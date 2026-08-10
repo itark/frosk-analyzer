@@ -54,10 +54,13 @@ import java.util.List;
 @Component
 @Slf4j
 public class CryptoShortIntradayStrategy extends AbstractStrategy
-        implements IIndicatorValue, CryptoIntradayStrategy {
+        implements IIndicatorValue, CryptoIntradayStrategy, ISignalStrength {
     private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private static final int ATR_PERIOD = 14;
+
+    private static final double RANGE_WIDTH_STRONG_MULTIPLIER = 1.5;
+    private static final double TREND_MARGIN_STRONG_PCT = 0.5;
 
     @Autowired
     private CryptoRegimeService cryptoRegimeService;
@@ -80,6 +83,11 @@ public class CryptoShortIntradayStrategy extends AbstractStrategy
     @Value("${crypto.short.max.bars.held:96}")
     private int maxBarsHeld;
 
+    private ClosePriceIndicator close;
+    private PreviousValueIndicator prevHigh;
+    private PreviousValueIndicator prevLow;
+    private EMAIndicator trendEma;
+
     @Override
     public boolean isShort() { return true; }
 
@@ -92,12 +100,12 @@ public class CryptoShortIntradayStrategy extends AbstractStrategy
         }
         super.barSeries = series;
 
-        ClosePriceIndicator close = new ClosePriceIndicator(series);
-        PreviousValueIndicator prevHigh = new PreviousValueIndicator(
+        close = new ClosePriceIndicator(series);
+        prevHigh = new PreviousValueIndicator(
                 new HighestValueIndicator(new HighPriceIndicator(series), rangeBars));
-        PreviousValueIndicator prevLow = new PreviousValueIndicator(
+        prevLow = new PreviousValueIndicator(
                 new LowestValueIndicator(new LowPriceIndicator(series), rangeBars));
-        EMAIndicator trendEma = new EMAIndicator(close, trendPeriod);
+        trendEma = new EMAIndicator(close, trendPeriod);
 
         setIndicatorValues(close, "close");
         setIndicatorValues(prevHigh, "rangeHigh");
@@ -128,6 +136,28 @@ public class CryptoShortIntradayStrategy extends AbstractStrategy
     @Override
     public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
+    }
+
+    /** Mirror of the long side: range width well beyond the minimum, decisive break below trend. */
+    @Override
+    public SignalStrength getSignalStrength(int index) {
+        int bonuses = 0;
+        double high = prevHigh.getValue(index).doubleValue();
+        double low = prevLow.getValue(index).doubleValue();
+        if (low > 0) {
+            double widthPct = 100.0 * (high - low) / low;
+            if (widthPct >= minRangeWidthPct * RANGE_WIDTH_STRONG_MULTIPLIER) {
+                bonuses++;
+            }
+        }
+        double trendVal = trendEma.getValue(index).doubleValue();
+        if (trendVal > 0) {
+            double marginPct = 100.0 * (trendVal - close.getValue(index).doubleValue()) / trendVal;
+            if (marginPct >= TREND_MARGIN_STRONG_PCT) {
+                bonuses++;
+            }
+        }
+        return bonuses >= 2 ? SignalStrength.STRONG : bonuses == 1 ? SignalStrength.ELEVATED : SignalStrength.BASE;
     }
 
     private static class RangeWidthRule extends AbstractRule {

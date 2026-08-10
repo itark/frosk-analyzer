@@ -57,4 +57,12 @@ public class CryptoPaperOrder {
     /** Realized PnL in EUR for this leg (set only on SELL rows). */
     @Column(name = "realized_pnl_eur", precision = 14, scale = 4)
     private BigDecimal realizedPnlEur;
+
+    /**
+     * Rule-based confidence tier ("BASE"/"ELEVATED"/"STRONG") of the signal that
+     * triggered this BUY, from {@link nu.itark.frosk.strategies.ISignalStrength}.
+     * Null on SELL rows and on BUYs from strategies that don't implement it.
+     */
+    @Column(name = "signal_strength", length = 10)
+    private String signalStrength;
 }

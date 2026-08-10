@@ -63,7 +63,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class CryptoRangeBreakoutIntradayStrategy extends AbstractStrategy
-        implements IIndicatorValue, CryptoIntradayStrategy {
+        implements IIndicatorValue, CryptoIntradayStrategy, ISignalStrength {
     private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
 
     private static final int ATR_PERIOD = 14;
@@ -93,6 +93,11 @@ public class CryptoRangeBreakoutIntradayStrategy extends AbstractStrategy
     @Value("${crypto.breakout.max.bars.held:96}")
     private int maxBarsHeld;
 
+    private ClosePriceIndicator close;
+    private PreviousValueIndicator prevHigh;
+    private PreviousValueIndicator prevLow;
+    private EMAIndicator trendEma;
+
     @Override
     public Strategy buildStrategy(BarSeries series) {
         super.setInherentExitRule();
@@ -102,14 +107,14 @@ public class CryptoRangeBreakoutIntradayStrategy extends AbstractStrategy
         }
         super.barSeries = series;
 
-        ClosePriceIndicator close = new ClosePriceIndicator(series);
+        close = new ClosePriceIndicator(series);
         // Previous N-bar high/low — shifted one bar so the current bar's own
         // high cannot be the level it "breaks out" of
-        PreviousValueIndicator prevHigh = new PreviousValueIndicator(
+        prevHigh = new PreviousValueIndicator(
                 new HighestValueIndicator(new HighPriceIndicator(series), rangeBars));
-        PreviousValueIndicator prevLow = new PreviousValueIndicator(
+        prevLow = new PreviousValueIndicator(
                 new LowestValueIndicator(new LowPriceIndicator(series), rangeBars));
-        EMAIndicator trendEma = new EMAIndicator(close, trendPeriod);
+        trendEma = new EMAIndicator(close, trendPeriod);
 
         setIndicatorValues(close, "close");
         setIndicatorValues(prevHigh, "rangeHigh");
@@ -140,6 +145,23 @@ public class CryptoRangeBreakoutIntradayStrategy extends AbstractStrategy
     @Override
     public List<StrategyIndicatorValue> getIndicatorValues() {
         return indicatorValues;
+    }
+
+    /**
+     * Neutralized — always BASE, so the position-size multiplier is a no-op.
+     *
+     * <p>Backtested 2026-08-10 on 506 closed trades (37 products, full 30-day
+     * window, see {@code CryptoSignalStrengthBacktestIT}): the original scoring
+     * (wider range + more decisive trend margin = more bonus conditions = bigger
+     * size) was <b>inverted</b> — BASE won 32.6% at +0.448%/trade, ELEVATED and
+     * STRONG both won only 28.5% at roughly -0.08%/trade. Same pattern as
+     * {@link CryptoVWAPReversionIntradayStrategy}: the "wider/more extreme"
+     * bonus criteria do not predict better outcomes here either. Do not
+     * re-enable scoring here without re-backtesting against that same evidence.
+     */
+    @Override
+    public SignalStrength getSignalStrength(int index) {
+        return SignalStrength.BASE;
     }
 
     /** Satisfied when (high − low) / low exceeds the configured percentage. */

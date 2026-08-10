@@ -63,6 +63,7 @@ public class DataSetHelper {
 		datasets.add("codes/YAHOO-OMX30-All securites included in OMX30.csv");
 		datasets.add("codes/YAHOO-OSCAR-The Money Machine.csv");
 		datasets.add("codes/YAHOO-INDEX-World indexes.csv");
+		datasets.add("codes/YAHOO-FUTURES-Trend following universe.csv");
 	}
 
 	/**

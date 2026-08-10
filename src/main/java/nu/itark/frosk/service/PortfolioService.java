@@ -39,6 +39,7 @@ public class PortfolioService {
 
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm";
     private static final double SLMS_MAX_SECTOR_RATIO = 0.30;
+    private static final ZoneId STOCKHOLM = ZoneId.of("Europe/Stockholm");
 
     @Value("${frosk.swedish.longterm.topN:20}")
     private int slmsTopN;
@@ -78,7 +79,8 @@ public class PortfolioService {
             "HighLanderStrategy",
             "SwedishLongTermMomentumStrategy",
             "DailyOversoldBounceStrategy",
-            "CANSLIMStrategy"
+            "CANSLIMStrategy",
+            "NewsBreakoutStrategy"
     );
 
     /**
@@ -293,12 +295,15 @@ public class PortfolioService {
         Optional<Portfolio> latest = portfolioRepository.findTopByPortfolioTypeOrderBySnapshotDateDesc(type);
         if (latest.isEmpty()) {
             log.warn("No {} portfolio snapshot found.", type);
+            int hedgeScore = hedgeIndexService.getScore(ZonedDateTime.now(STOCKHOLM));
             return PortfolioDTO.builder()
                     .snapshotDate("none")
                     .openPositionCount(0)
                     .totalPnlPercent(BigDecimal.ZERO)
                     .realizedPnlPercent(BigDecimal.ZERO)
                     .closedTradeCount(0)
+                    .hedgeIndexScore(hedgeScore)
+                    .hedgeIndexRegime(HedgeIndexService.regimeLabel(hedgeScore))
                     .positions(Collections.emptyList())
                     .build();
         }
@@ -324,15 +329,20 @@ public class PortfolioService {
 
     private List<PortfolioDTO> getHistoryByType(String type) {
         return portfolioRepository.findByPortfolioTypeOrderBySnapshotDateDesc(type).stream()
-                .map(p -> PortfolioDTO.builder()
-                        .id(p.getId())
-                        .snapshotDate(DateFormatUtils.format(p.getSnapshotDate(), DATE_FORMAT))
-                        .openPositionCount(p.getOpenPositionCount())
-                        .totalPnlPercent(p.getTotalPnlPercent())
-                        .realizedPnlPercent(p.getRealizedPnlPercent())
-                        .closedTradeCount(p.getClosedTradeCount())
-                        .positions(Collections.emptyList())
-                        .build())
+                .map(p -> {
+                    int hedgeScore = hedgeIndexService.getScore(p.getSnapshotDate().toInstant().atZone(STOCKHOLM));
+                    return PortfolioDTO.builder()
+                            .id(p.getId())
+                            .snapshotDate(DateFormatUtils.format(p.getSnapshotDate(), DATE_FORMAT))
+                            .openPositionCount(p.getOpenPositionCount())
+                            .totalPnlPercent(p.getTotalPnlPercent())
+                            .realizedPnlPercent(p.getRealizedPnlPercent())
+                            .closedTradeCount(p.getClosedTradeCount())
+                            .hedgeIndexScore(hedgeScore)
+                            .hedgeIndexRegime(HedgeIndexService.regimeLabel(hedgeScore))
+                            .positions(Collections.emptyList())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -527,6 +537,10 @@ public class PortfolioService {
     }
 
     private PortfolioDTO toDTO(Portfolio p) {
+        ZonedDateTime snapshotZdt = p.getSnapshotDate().toInstant().atZone(STOCKHOLM);
+        LocalDate snapshotLocalDate = snapshotZdt.toLocalDate();
+        int hedgeScore = hedgeIndexService.getScore(snapshotZdt);
+
         List<PortfolioPositionDTO> positionDTOs = p.getPositions().stream()
                 .map(pos -> PortfolioPositionDTO.builder()
                         .securityName(pos.getSecurityName())
@@ -539,6 +553,8 @@ public class PortfolioService {
                         .latestPrice(pos.getLatestPrice())
                         .unrealizedPnlPercent(pos.getUnrealizedPnlPercent())
                         .open(pos.isOpen())
+                        .newPosition(pos.getEntryDate() != null
+                                && pos.getEntryDate().toInstant().atZone(STOCKHOLM).toLocalDate().equals(snapshotLocalDate))
                         .sqn(pos.getSqn())
                         .expectency(pos.getExpectency())
                         .profitableTradesRatio(pos.getProfitableTradesRatio())
@@ -552,6 +568,8 @@ public class PortfolioService {
                 .totalPnlPercent(p.getTotalPnlPercent())
                 .realizedPnlPercent(p.getRealizedPnlPercent())
                 .closedTradeCount(p.getClosedTradeCount())
+                .hedgeIndexScore(hedgeScore)
+                .hedgeIndexRegime(HedgeIndexService.regimeLabel(hedgeScore))
                 .positions(positionDTOs)
                 .build();
     }

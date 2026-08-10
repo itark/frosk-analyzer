@@ -92,7 +92,13 @@ public class NewsBreakoutIntradayStrategy extends AbstractStrategy implements II
 
         setIndicatorValues(close, "close");
         setIndicatorValues(vwap, "sessionVwap");
-        setIndicatorValues(volumeEma, "volumeEma20");
+        // volumeEma20 deliberately NOT persisted: raw share-volume EMAs on liquid
+        // securities exceed strat_indicator_value.value_'s NUMERIC(12,6) precision
+        // and throw a DataIntegrityViolationException that aborts the whole run —
+        // confirmed live on ATCO-B.ST (EMA hit 1,066,552) via the daily variant of
+        // this strategy (NewsBreakoutStrategy), same computation, same bug. This
+        // strategy is excluded from the daily batch but runs under Tier-0 intraday
+        // sync, where per-bar volume is if anything larger, not smaller.
         setIndicatorValues(emaFast, "ema9");
         setIndicatorValues(emaSlow, "ema21");
         setIndicatorValues(gapPct, "gapPct");

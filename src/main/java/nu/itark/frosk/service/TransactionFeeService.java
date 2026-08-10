@@ -39,6 +39,24 @@ public class TransactionFeeService {
     @Value("${exchange.transaction.cryptoTakerFeePerTradePercent:0.006}")
     private double cryptoTakerFeePerTradePercent;
 
+    @Value("${exchange.transaction.futuresFeePerTradePercent:0.0005}")
+    private double futuresFeePerTradePercent;
+
+    /**
+     * Futures strategies. Exchange + clearing + broker on a liquid CME contract is
+     * roughly 0.01-0.02% of notional per side; 0.05% is deliberately conservative and
+     * matches the cost assumption in ~/itark/PREREG_tsmom_futures.md.
+     *
+     * <p>Without this entry these strategies inherit feePerTradePercent — the SWEDISH
+     * EQUITY commission of 0.2%/leg — which overstates the cost of trading futures by
+     * roughly eight times. That is the same defect that made crypto look 20x worse than
+     * reality and the daily equity library 3x worse: one fee constant standing in for
+     * instruments that do not share a cost structure.
+     */
+    private static final Set<String> FUTURES_STRATEGIES = Set.of(
+            "TrendFollowingStrategy"
+    );
+
     /** Unchanged from the original BarSeriesService list — equity fees are not in scope here. */
     private static final Set<String> EQUITY_INTRADAY_STRATEGIES = Set.of(
             "OpeningRangeBreakoutIntradayStrategy",
@@ -66,6 +84,9 @@ public class TransactionFeeService {
     public double resolveFeeFraction(String strategyName) {
         if (cryptoStrategyNames.contains(strategyName)) {
             return cryptoTakerFeePerTradePercent;
+        }
+        if (FUTURES_STRATEGIES.contains(strategyName)) {
+            return futuresFeePerTradePercent;
         }
         if (EQUITY_INTRADAY_STRATEGIES.contains(strategyName)) {
             return intradayFeePerTradePercent;
