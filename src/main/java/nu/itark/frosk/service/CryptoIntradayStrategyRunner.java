@@ -133,17 +133,28 @@ public class CryptoIntradayStrategyRunner {
     @Value("${crypto.emacrosslong.excluded.products:}")
     private String emaCrossLongExcludedProductsRaw;
 
+    /**
+     * Applies to every strategy EXCEPT CryptoLiquiditySweepIntradayStrategy — that
+     * strategy's product universe is locked by the PREREG_liquidity_sweep_15m.md
+     * pre-registration and must not shrink mid-experiment.
+     */
+    @Value("${crypto.excluded.products:}")
+    private String globalExcludedProductsRaw;
+
     private Set<String> vwapExcludedProducts;
     private Set<String> emaCrossLongExcludedProducts;
+    private Set<String> globalExcludedProducts;
 
     @PostConstruct
     private void initExclusions() {
         vwapExcludedProducts = parseExclusions(vwapExcludedProductsRaw);
         emaCrossLongExcludedProducts = parseExclusions(emaCrossLongExcludedProductsRaw);
+        globalExcludedProducts = parseExclusions(globalExcludedProductsRaw);
         log.info("CryptoIntradayStrategyRunner: enabled — Short={}, EMACrossShort={}, EMACrossLong={}, "
-                        + "RangeBreakout={}, LiquiditySweep={}; VWAP exclusions={}, EMACrossLong exclusions={}",
+                        + "RangeBreakout={}, LiquiditySweep={}; VWAP exclusions={}, EMACrossLong exclusions={}, "
+                        + "global exclusions={}",
                 shortEnabled, emaCrossShortEnabled, emaCrossLongEnabled, breakoutEnabled, sweepEnabled,
-                vwapExcludedProducts, emaCrossLongExcludedProducts);
+                vwapExcludedProducts, emaCrossLongExcludedProducts, globalExcludedProducts);
     }
 
     private Set<String> parseExclusions(String raw) {
@@ -155,6 +166,12 @@ public class CryptoIntradayStrategyRunner {
     }
 
     private boolean isExcluded(String strategyName, String ticker) {
+        // Global exclusions apply to every strategy except the liquidity sweep,
+        // whose product universe is locked by its pre-registration.
+        if (!"CryptoLiquiditySweepIntradayStrategy".equals(strategyName)
+                && globalExcludedProducts.contains(ticker)) {
+            return true;
+        }
         if ("CryptoShortIntradayStrategy".equals(strategyName)) {
             return !shortEnabled;
         }

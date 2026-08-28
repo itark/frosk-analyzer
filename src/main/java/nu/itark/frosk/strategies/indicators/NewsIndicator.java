@@ -1,45 +1,54 @@
 package nu.itark.frosk.strategies.indicators;
 
-import nu.itark.frosk.newsdriven.NewsService;
+import nu.itark.frosk.model.NewsArticle;
+import nu.itark.frosk.repo.NewsRepository;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.CachedIndicator;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+
 /**
- * Boolean indicator that is {@code true} when there is qualifying positive news
- * for the given ticker published within the configured time window.
+ * Boolean indicator that is {@code true} when a persisted RSS {@link NewsArticle}
+ * with {@code |sentimentScore| >= minAbsSentimentScore} exists for the given
+ * ticker within {@code lookbackMinutes} of the bar's end time.
  *
- * <p>Uses {@link NewsService} for in-memory cached news with sentiment scoring.
- * The indicator fetches fresh news on every call (respecting the service's own
- * 15-minute re-fetch interval), so it reflects the current market state rather
- * than historical bar data.
+ * <p>Backed by {@link NewsRepository} (rows written by {@code NewsPoller}
+ * polling Nasdaq Nordic RSS), so — unlike an in-memory, real-time-only cache
+ * would be — this evaluates correctly for every bar in a backtest, not just
+ * the latest one: each bar looks back at the news that existed as of that
+ * bar's own timestamp.
+ *
+ * <p>Fails closed (returns {@code false}) when no ticker could be resolved
+ * for the series — a missing ticker must never be treated as "news present".
  */
 public class NewsIndicator extends CachedIndicator<Boolean> {
 
-    private final NewsService newsService;
+    private final NewsRepository newsRepository;
     private final String ticker;
-    private final int minScore;
-    private final int withinMinutes;
+    private final int lookbackMinutes;
+    private final int minAbsSentimentScore;
 
-    public NewsIndicator(BarSeries series, NewsService newsService,
-                         String ticker, int minScore, int withinMinutes) {
+    public NewsIndicator(BarSeries series, NewsRepository newsRepository,
+                          String ticker, int lookbackMinutes, int minAbsSentimentScore) {
         super(series);
-        this.newsService = newsService;
+        this.newsRepository = newsRepository;
         this.ticker = ticker;
-        this.minScore = minScore;
-        this.withinMinutes = withinMinutes;
+        this.lookbackMinutes = lookbackMinutes;
+        this.minAbsSentimentScore = minAbsSentimentScore;
     }
 
     @Override
     protected Boolean calculate(int index) {
-        // News is a real-time signal, not a historical one. Returning true for past
-        // bars would make the backtest replay enter at bar 0 whenever news happens to
-        // be positive *now*, causing ghost SELL signals without matching BUYs.
-        // Only the current (last) bar reflects live market state.
-        if (index != getBarSeries().getEndIndex()) {
+        if (ticker == null || ticker.isBlank()) {
             return false;
         }
-        newsService.fetchAndCacheNews(ticker);
-        return newsService.hasPositiveNews(ticker, minScore, withinMinutes);
+        Instant barTime = getBarSeries().getBar(index).getEndTime().toInstant();
+        Instant cutoff = barTime.minus(Duration.ofMinutes(lookbackMinutes));
+
+        List<NewsArticle> recent = newsRepository.findByTickerAndPublishedAtBetween(ticker, cutoff, barTime);
+        return recent.stream().anyMatch(a -> Math.abs(a.getSentimentScore()) >= minAbsSentimentScore);
     }
 
     @Override

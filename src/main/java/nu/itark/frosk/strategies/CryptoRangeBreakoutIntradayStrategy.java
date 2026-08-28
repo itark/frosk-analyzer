@@ -76,7 +76,7 @@ public class CryptoRangeBreakoutIntradayStrategy extends AbstractStrategy
     private int rangeBars;
 
     /** Minimum range width in percent for the breakout to be worth its fees. */
-    @Value("${crypto.breakout.min.range.width.pct:1.5}")
+    @Value("${crypto.breakout.min.range.width.pct:2.0}")
     private double minRangeWidthPct;
 
     /** Trend filter EMA period in 15m bars (96 = 24 hours). */

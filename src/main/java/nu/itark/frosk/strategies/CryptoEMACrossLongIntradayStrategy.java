@@ -3,6 +3,7 @@ package nu.itark.frosk.strategies;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.service.CryptoRegimeService;
+import nu.itark.frosk.strategies.rules.AtrStopLossRule;
 import nu.itark.frosk.strategies.rules.CryptoRegimeRule;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,7 @@ public class CryptoEMACrossLongIntradayStrategy extends AbstractStrategy
     private static final double RSI_STRONG_THRESHOLD = 60.0;
     /** EMA spread past this fraction of price counts as a decisive, not marginal, cross. */
     private static final double EMA_SPREAD_STRONG_PCT = 0.3;
+    private static final int ATR_PERIOD = 14;
 
     @Autowired
     private CryptoRegimeService cryptoRegimeService;
@@ -65,6 +67,9 @@ public class CryptoEMACrossLongIntradayStrategy extends AbstractStrategy
 
     @Value("${crypto.emacross.max.bars.held:32}")
     private int maxBarsHeld;
+
+    @Value("${crypto.emacross.atr.stop.mult:1.5}")
+    private double atrStopMult;
 
     private ClosePriceIndicator close;
     private EMAIndicator emaF;
@@ -98,8 +103,9 @@ public class CryptoEMACrossLongIntradayStrategy extends AbstractStrategy
         // ── Exit ──────────────────────────────────────────────────────────
         Rule crossDown = new CrossedDownIndicatorRule(emaF, emaS);
         Rule timeExit  = new MaxBarsHeldRule(maxBarsHeld);
+        Rule atrStop   = new AtrStopLossRule(series, ATR_PERIOD, atrStopMult);
 
-        Rule exitRule = crossDown.or(timeExit);
+        Rule exitRule = crossDown.or(timeExit).or(atrStop);
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

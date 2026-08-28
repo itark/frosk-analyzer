@@ -79,8 +79,8 @@ public class PortfolioService {
             "HighLanderStrategy",
             "SwedishLongTermMomentumStrategy",
             "DailyOversoldBounceStrategy",
-            "CANSLIMStrategy",
-            "NewsBreakoutStrategy"
+            "CANSLIMStrategy"
+            // "NewsBreakoutStrategy" — paused: negative SQN, see docs/strategies/newsbreakout watch notes
     );
 
     /**

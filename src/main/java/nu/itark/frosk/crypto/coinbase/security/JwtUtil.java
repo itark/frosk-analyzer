@@ -32,6 +32,24 @@ public class JwtUtil {
     String keySecret;
 
     public String getSignedJWT(String url) throws Exception {
+        // create uri string for current request
+        String uri = "GET " + url;
+        return signJwt(uri);
+    }
+
+    /**
+     * WebSocket variant: Coinbase's Advanced Trade WS auth (the {@code jwt}
+     * field of a subscribe message) uses the same CDP JWT scheme as REST but
+     * with <b>no {@code uri} claim</b> — a WS connection isn't tied to a single
+     * request method+path the way a REST call is. Expires in 120s like the
+     * REST token; callers that hold a connection open longer must regenerate
+     * and re-subscribe (see CoinbaseLevel2WebSocketClient).
+     */
+    public String getSignedJWTForWebsocket() throws Exception {
+        return signJwt(null);
+    }
+
+    private String signJwt(String uriClaim) throws Exception {
         if (Objects.isNull(keyName) || Objects.isNull(keySecret) ) {
             throw new RuntimeException("keyName or  keySecret not set.");
         }
@@ -48,17 +66,15 @@ public class JwtUtil {
         header.put("kid", name);
         header.put("nonce", String.valueOf(Instant.now().getEpochSecond()));
 
-        // create uri string for current request
-        String requestMethod = "GET";
-        String uri = requestMethod + " " + url;
-
         // create data object
         Map<String, Object> data = new HashMap<>();
         data.put("iss", "cdp");
         data.put("nbf", Instant.now().getEpochSecond());
         data.put("exp", Instant.now().getEpochSecond() + 120);
         data.put("sub", name);
-        data.put("uri", uri);
+        if (uriClaim != null) {
+            data.put("uri", uriClaim);
+        }
 
         // Load private key
         PEMParser pemParser = new PEMParser(new StringReader(privateKeyPEM));

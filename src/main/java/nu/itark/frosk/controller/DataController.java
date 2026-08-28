@@ -54,7 +54,8 @@ public class DataController {
      * flagging these rows; this list is not a filter.
      */
     private static final Set<String> PRE_REGISTRATION_PENDING_STRATEGIES = Set.of(
-            "CryptoLiquiditySweepIntradayStrategy"
+            "CryptoLiquiditySweepIntradayStrategy",
+            "OrderFlowImbalanceStrategy"
     );
 
     /** Resolves the per-trade fee by strategy — equity intraday vs Coinbase taker. */

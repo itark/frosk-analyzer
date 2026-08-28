@@ -5,6 +5,7 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.*;
 import nu.itark.frosk.strategies.CANSLIMStrategy;
 import nu.itark.frosk.strategies.NewsBreakoutIntradayStrategy;
+import nu.itark.frosk.strategies.NewsBreakoutRssIntradayStrategy;
 import nu.itark.frosk.strategies.OpeningRangeBreakoutIntradayStrategy;
 import nu.itark.frosk.strategies.VWAPMeanReversionIntradayStrategy;
 import nu.itark.frosk.strategies.GapReversalIntradayStrategy;
@@ -107,6 +108,8 @@ public class StrategiesMap {
 	@Autowired
 	private NewsBreakoutStrategy newsBreakoutStrategy;
 	@Autowired
+	private NewsBreakoutRssIntradayStrategy newsBreakoutRssIntradayStrategy;
+	@Autowired
 	private OpeningRangeBreakoutIntradayStrategy openingRangeBreakoutIntradayStrategy;
 	@Autowired
 	private VWAPMeanReversionIntradayStrategy vwapMeanReversionIntradayStrategy;
@@ -166,6 +169,7 @@ public class StrategiesMap {
 		strategies.add(canslimStrategy.getClass().getSimpleName());
 		strategies.add(newsBreakoutIntradayStrategy.getClass().getSimpleName());
 		strategies.add(newsBreakoutStrategy.getClass().getSimpleName());
+		strategies.add(newsBreakoutRssIntradayStrategy.getClass().getSimpleName());
 		strategies.add(openingRangeBreakoutIntradayStrategy.getClass().getSimpleName());
 		strategies.add(vwapMeanReversionIntradayStrategy.getClass().getSimpleName());
 		strategies.add(gapReversalIntradayStrategy.getClass().getSimpleName());
@@ -221,6 +225,7 @@ public class StrategiesMap {
 		strategies.add(canslimStrategy.buildStrategy(series));
 		strategies.add(newsBreakoutIntradayStrategy.buildStrategy(series));
 		strategies.add(newsBreakoutStrategy.buildStrategy(series));
+		strategies.add(newsBreakoutRssIntradayStrategy.buildStrategy(series));
 		strategies.add(openingRangeBreakoutIntradayStrategy.buildStrategy(series));
 		strategies.add(vwapMeanReversionIntradayStrategy.buildStrategy(series));
 		strategies.add(gapReversalIntradayStrategy.buildStrategy(series));
@@ -320,6 +325,8 @@ public class StrategiesMap {
 			return newsBreakoutIntradayStrategy.buildStrategy(series);
 		} else if (strategy.equals(NewsBreakoutStrategy.class.getSimpleName())) {
 			return newsBreakoutStrategy.buildStrategy(series);
+		} else if (strategy.equals(NewsBreakoutRssIntradayStrategy.class.getSimpleName())) {
+			return newsBreakoutRssIntradayStrategy.buildStrategy(series);
 		} else if (strategy.equals(OpeningRangeBreakoutIntradayStrategy.class.getSimpleName())) {
 			return openingRangeBreakoutIntradayStrategy.buildStrategy(series);
 		} else if (strategy.equals(VWAPMeanReversionIntradayStrategy.class.getSimpleName())) {
@@ -424,6 +431,8 @@ public class StrategiesMap {
 			return newsBreakoutIntradayStrategy.getIndicatorValues();
 		} else if (strategyName.equals(NewsBreakoutStrategy.class.getSimpleName())) {
 			return newsBreakoutStrategy.getIndicatorValues();
+		} else if (strategyName.equals(NewsBreakoutRssIntradayStrategy.class.getSimpleName())) {
+			return newsBreakoutRssIntradayStrategy.getIndicatorValues();
 		} else if (strategyName.equals(OpeningRangeBreakoutIntradayStrategy.class.getSimpleName())) {
 			return openingRangeBreakoutIntradayStrategy.getIndicatorValues();
 		} else if (strategyName.equals(VWAPMeanReversionIntradayStrategy.class.getSimpleName())) {

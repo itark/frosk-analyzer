@@ -45,9 +45,20 @@ public class StrategyFilter {
     @Autowired
     SecurityMetaDataManager securityMetaDataManager;
 
+    /**
+     * Excludes rows with no trades — {@link nu.itark.frosk.analysis.StrategyExecutor}
+     * writes one row per (strategy, security) it evaluates regardless of trade count,
+     * since {@code FeaturedStrategy.lastRunDate} drives its same-day idempotency skip
+     * (see {@code .claude/rules/persistence.md}); a strategy/security pair that never
+     * traded is real backtest signal, not noise worth deleting, it's just not useful
+     * in this list.
+     */
     public List<FeaturedStrategyDTO> getFeaturedStrategies() {
         List<FeaturedStrategyDTO> returnList = new ArrayList<>();
         featuredStrategyRepository.findAll().forEach(fs->{
+            if (fs.getNumberofTrades() == null || fs.getNumberofTrades() == 0) {
+                return;
+            }
             returnList.add(getDTO(fs, false));
         });
         return returnList;
