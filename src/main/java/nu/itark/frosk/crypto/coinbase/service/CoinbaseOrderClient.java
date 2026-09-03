@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.broker.BrokerOrderClient;
 import nu.itark.frosk.crypto.coinbase.advanced.Coinbase;
 import nu.itark.frosk.crypto.livetrading.OrderResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,17 +25,48 @@ import java.util.UUID;
  * <p>Uses the existing {@link Coinbase} (CoinbaseImpl) for JWT-signed requests.
  * All order IDs use the prefix {@code frosk-} so they are identifiable in the
  * Coinbase console.
+ *
+ * <p>Implements {@link BrokerOrderClient}; active when the {@code crypto} profile
+ * is set. Short selling is not supported on Coinbase — {@link #placeShortEntry}
+ * and {@link #placeShortExit} throw {@link UnsupportedOperationException}.
  */
 @Service
 @Profile("crypto")
 @Slf4j
-public class CoinbaseOrderClient {
+public class CoinbaseOrderClient implements BrokerOrderClient {
 
     private static final String ORDERS_ENDPOINT   = "/orders";
     private static final String ACCOUNTS_ENDPOINT = "/accounts";
 
     @Autowired
     private Coinbase coinbase;
+
+    // ── BrokerOrderClient ────────────────────────────────────────────────
+
+    @Override
+    public OrderResponse placeLongEntry(String symbol, BigDecimal eurAmount) {
+        return placeBuyOrder(symbol, eurAmount);
+    }
+
+    @Override
+    public OrderResponse placeLongExit(String symbol, BigDecimal quantity) {
+        return placeSellOrder(symbol, quantity);
+    }
+
+    @Override
+    public OrderResponse placeShortEntry(String symbol, BigDecimal eurAmount) {
+        throw new UnsupportedOperationException("Coinbase does not support short selling");
+    }
+
+    @Override
+    public OrderResponse placeShortExit(String symbol, BigDecimal quantity) {
+        throw new UnsupportedOperationException("Coinbase does not support short selling");
+    }
+
+    @Override
+    public BigDecimal getAvailableBalance() {
+        return getEurBalance();
+    }
 
     // ── public API ───────────────────────────────────────────────────────
 

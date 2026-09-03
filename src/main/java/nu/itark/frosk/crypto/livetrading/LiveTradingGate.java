@@ -1,7 +1,7 @@
 package nu.itark.frosk.crypto.livetrading;
 
 import lombok.extern.slf4j.Slf4j;
-import nu.itark.frosk.crypto.coinbase.service.CoinbaseOrderClient;
+import nu.itark.frosk.broker.BrokerOrderClient;
 import nu.itark.frosk.repo.LiveOrderRepository;
 import nu.itark.frosk.strategies.SignalStrength;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +30,7 @@ import java.time.ZoneOffset;
  * <p>Toggle via {@code POST /api/crypto/live-trading/enable|disable}.
  */
 @Service
-@Profile("crypto")
+@Profile({"crypto", "kraken-futures"})
 @Slf4j
 public class LiveTradingGate {
 
@@ -63,7 +63,7 @@ public class LiveTradingGate {
     private LiveOrderRepository liveOrderRepository;
 
     @Autowired
-    private CoinbaseOrderClient coinbaseOrderClient;
+    private BrokerOrderClient brokerOrderClient;
 
     public boolean isEnabled() {
         return enabled;
@@ -80,7 +80,7 @@ public class LiveTradingGate {
      * realized PnL already flows back into the EUR balance once a position closes).
      */
     public BigDecimal computeEquity() {
-        BigDecimal cash = coinbaseOrderClient.getEurBalance();
+        BigDecimal cash = brokerOrderClient.getAvailableBalance();
         BigDecimal openExposure = liveOrderRepository.sumOpenExposureEur();
         return cash.add(openExposure);
     }
@@ -143,7 +143,7 @@ public class LiveTradingGate {
             setEnabled(false);
             return false;
         }
-        BigDecimal eurBalance = coinbaseOrderClient.getEurBalance();
+        BigDecimal eurBalance = brokerOrderClient.getAvailableBalance();
         if (eurBalance.compareTo(eurAmount) < 0) {
             log.warn("LiveTradingGate: canTrade=false — EUR balance {} < order amount {}", eurBalance, eurAmount);
             return false;

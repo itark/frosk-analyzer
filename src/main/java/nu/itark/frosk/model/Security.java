@@ -67,11 +67,13 @@ public class Security {
 
 	/**
 	 * Enterprise value gating only applies to equities (YAHOO database).
-	 * Crypto (COINBASE) has no enterprise value — keep active as-is.
+	 * Crypto venues (COINBASE spot, KRAKEN perpetual futures) have no enterprise
+	 * value — every tradeable pair/contract is a valid instrument, so keep the
+	 * {@code active} flag as set by the venue initializer.
 	 */
 	@PreUpdate
 	private void syncActiveWithEnterpriseValue() {
-		if (!"COINBASE".equals(this.database)) {
+		if (!"COINBASE".equals(this.database) && !"KRAKEN".equals(this.database)) {
 			// null enterpriseValue → index/FX/futures/unknown → treat as inactive
 			this.active = this.enterpriseValue != null && this.enterpriseValue > 500_000_000;
 		}

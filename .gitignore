@@ -29,3 +29,11 @@ org/ta4j/core/aggregator/
 org/ta4j/core/analysis/
 
 org/ta4j/core/
+
+# Kraken Futures API credentials live at ~/.frosk/ (outside this repo) and are
+# loaded via spring.config.import — see kraken-credentials.template.properties.
+# ~/.frosk/ can never be committed since it's outside the working tree; these
+# two lines are just a safety net in case the real file ever ends up inside the
+# repo by mistake (e.g. someone copies the template next to itself).
+/.frosk/
+/kraken-credentials.properties

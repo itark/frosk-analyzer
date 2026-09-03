@@ -98,4 +98,23 @@ Tier-0 intraday fetching uses `YahooFinanceDirectClient` — a direct call to Ya
 
 **Resilience:** The v8 endpoint is unofficial. All errors are caught and logged per ticker — a single ticker failure does not crash the pipeline. If Yahoo changes the format or adds authentication, the fix lives entirely in `YahooFinanceDirectClient` (e.g. crumb/cookie handling in `fetchQuoteSummaryModule`).
 
+## Kraken Futures API credentials
+
+`kraken.futures.api.key` / `kraken.futures.api.secret` are never stored in `application-kraken-futures.properties` (it's checked into git). They're loaded at startup from a local, untracked file:
+
+```
+~/.frosk/kraken-credentials.properties
+```
+
+via `spring.config.import=optional:file:${user.home}/.frosk/kraken-credentials.properties` in that profile's properties file. `optional:` means the process still starts if the file is missing — the placeholder defaults kick in and only authenticated Kraken calls fail (read-only endpoints and paper trading are unaffected).
+
+**One-time setup per machine:**
+```bash
+cp kraken-credentials.template.properties ~/.frosk/kraken-credentials.properties
+chmod 600 ~/.frosk/kraken-credentials.properties
+# edit it and fill in a real key from https://futures.kraken.com → Settings → API Keys
+```
+
+Environment variables `KRAKEN_FUTURES_API_KEY` / `KRAKEN_FUTURES_API_SECRET` work too (checked before the placeholder default, overridden by the file if both are present) — useful for CI or a container with no home directory to drop a file into.
+
 **Config:** `yahoo.finance.direct.base-url` (default: `https://query1.finance.yahoo.com`) — override for testing.

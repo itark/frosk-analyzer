@@ -3,9 +3,10 @@ package nu.itark.frosk.service;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.StrategyExecutor;
+import nu.itark.frosk.broker.BrokerOrderClient;
 import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
 import nu.itark.frosk.crypto.coinbase.model.ProductBook;
-import nu.itark.frosk.crypto.coinbase.service.CoinbaseOrderClient;
+import nu.itark.frosk.crypto.kraken.KrakenFuturesTickerService;
 import nu.itark.frosk.crypto.livetrading.LiveTradingGate;
 import nu.itark.frosk.crypto.livetrading.OrderResponse;
 import nu.itark.frosk.model.IntradaySignal;
@@ -58,8 +59,14 @@ public class CryptoIntradayStrategyRunner {
     // Force-close threshold: 120 bars = 30h at 15m — exceeds the longest maxBarsHeld (96)
     private static final long MAX_BARS_FORCE_CLOSE = 120;
 
-    @Autowired
-    private CryptoIntradayDataService cryptoIntradayDataService;
+    /**
+     * Optional: {@link IntradayDataService} is only implemented for the {@code crypto}
+     * and {@code kraken-futures} profiles. This runner is an unconditional {@code @Service}
+     * (HighLander autowires it), so under the {@code equity} profile the bean must still
+     * be creatable — {@link #run()} guards on a null source and no-ops.
+     */
+    @Autowired(required = false)
+    private IntradayDataService cryptoIntradayDataService;
 
     @Autowired
     private List<CryptoIntradayStrategy> cryptoIntradayStrategies;
@@ -73,17 +80,31 @@ public class CryptoIntradayStrategyRunner {
     @Autowired(required = false)
     private LiveTradingGate liveTradingGate;
 
+    /** Active broker client (Coinbase or Kraken Futures, depending on profile). */
     @Autowired(required = false)
-    private CoinbaseOrderClient coinbaseOrderClient;
+    private BrokerOrderClient brokerOrderClient;
 
     @Autowired(required = false)
     private LiveOrderRepository liveOrderRepository;
 
+    /** Coinbase paper trading — active under the {@code crypto} profile (long-only). */
     @Autowired(required = false)
     private CryptoPaperTradingService paperTradingService;
 
+    /** Kraken Futures paper trading — active under the {@code kraken-futures} profile (long + short). */
+    @Autowired(required = false)
+    private KrakenFuturesPaperTradingService krakenPaperTradingService;
+
     @Autowired
     private ProductService productService;
+
+    /**
+     * Kraken Futures top-of-book — injected only under the {@code kraken-futures}
+     * profile, where {@link #productService} (Coinbase) cannot resolve {@code PF_*}
+     * symbols. When present it is the spread source; otherwise Coinbase is used.
+     */
+    @Autowired(required = false)
+    private KrakenFuturesTickerService krakenTickerService;
 
     // Global switches, not per-product lists — Coinbase doesn't support short
     // selling, so these stay off regardless of how crypto.intraday.products grows.
@@ -200,6 +221,11 @@ public class CryptoIntradayStrategyRunner {
     }
 
     public void run() {
+        if (cryptoIntradayDataService == null) {
+            log.info("CryptoIntradayStrategyRunner: no IntradayDataService bean for this profile — skipping");
+            return;
+        }
+
         log.info("CryptoIntradayStrategyRunner: starting with {} strategies: {}",
                 cryptoIntradayStrategies.size(), getStrategyNames());
 
@@ -379,11 +405,16 @@ public class CryptoIntradayStrategyRunner {
      * spread is diagnostic data used to measure the true cost of a round trip, and
      * must never fail, delay or block a trading signal. One extra REST call per
      * emitted signal (a handful per 15m cycle), not per evaluated product.
+     *
+     * <p>Source is venue-specific: Kraken Futures tickers under the
+     * {@code kraken-futures} profile, Coinbase {@code /product_book} otherwise.
      */
     private void recordSpread(IntradaySignal signal, String ticker) {
         if (!spreadLoggingEnabled) return;
         try {
-            ProductBook book = productService.getProductBook(ticker);
+            ProductBook book = krakenTickerService != null
+                    ? krakenTickerService.getProductBook(ticker)
+                    : productService.getProductBook(ticker);
             if (book == null) return;
             signal.setSpreadPercent(book.spreadPercent());
             signal.setBestBid(book.bestBid());
@@ -423,50 +454,70 @@ public class CryptoIntradayStrategyRunner {
     }
 
     /**
-     * Simulates a fill against the shared crypto paper account for long-only
-     * strategies, regardless of whether live trading is enabled. SHRT/COVR
-     * signals (short strategies) are skipped — paper trading mirrors what live
-     * trading would actually do, and Coinbase doesn't support shorting.
+     * Simulates a fill against the paper account.
+     *
+     * <ul>
+     *   <li>Coinbase profile ({@code crypto}): only BUY/SELL (long-only, Coinbase doesn't short)</li>
+     *   <li>Kraken Futures profile ({@code kraken-futures}): BUY/SELL → long, SHRT/COVR → short</li>
+     * </ul>
      */
     private void dispatchPaperOrder(String signalType, String strategyName, String ticker,
                                     BigDecimal closePrice, SignalStrength strength) {
-        if (paperTradingService == null) return;
-        if (!"BUY".equals(signalType) && !"SELL".equals(signalType)) return;
+        // ── Coinbase paper (long-only) ──────────────────────────────────
+        if (paperTradingService != null) {
+            if ("BUY".equals(signalType)) {
+                paperTradingService.dispatchBuy(strategyName, ticker, closePrice, strength);
+            } else if ("SELL".equals(signalType)) {
+                paperTradingService.dispatchSell(strategyName, ticker, closePrice);
+            }
+        }
 
-        if ("BUY".equals(signalType)) {
-            paperTradingService.dispatchBuy(strategyName, ticker, closePrice, strength);
-        } else {
-            paperTradingService.dispatchSell(strategyName, ticker, closePrice);
+        // ── Kraken Futures paper (long + short) ─────────────────────────
+        if (krakenPaperTradingService != null) {
+            switch (signalType) {
+                case "BUY"  -> krakenPaperTradingService.dispatchLong(strategyName, ticker, closePrice, strength);
+                case "SELL" -> krakenPaperTradingService.dispatchCloseLong(strategyName, ticker, closePrice);
+                case "SHRT" -> krakenPaperTradingService.dispatchShort(strategyName, ticker, closePrice, strength);
+                case "COVR" -> krakenPaperTradingService.dispatchCloseShort(strategyName, ticker, closePrice);
+                default     -> log.warn("CryptoIntradayStrategyRunner: unknown paper signal type '{}'", signalType);
+            }
         }
     }
 
     /**
-     * Routes BUY/SELL signals to Coinbase for long-only strategies.
-     * SHRT and COVR signals (short strategies) are intentionally skipped.
+     * Routes signals to the active broker (Coinbase or Kraken Futures) for live order placement.
      * Marks {@code signal.live = true} when the order is successfully filled.
      */
     private void dispatchLiveOrder(String signalType, String strategyName, String ticker,
                                    BigDecimal closePrice, IntradaySignal signal, SignalStrength strength) {
-        if (liveTradingGate == null || coinbaseOrderClient == null || liveOrderRepository == null) return;
-        if (!"BUY".equals(signalType) && !"SELL".equals(signalType)) return; // skip SHRT/COVR
+        if (liveTradingGate == null || brokerOrderClient == null || liveOrderRepository == null) return;
 
-        if ("BUY".equals(signalType)) {
-            dispatchBuy(strategyName, ticker, closePrice, signal, strength);
-        } else {
-            dispatchSell(strategyName, ticker, signal);
+        boolean isLong  = "BUY".equals(signalType) || "SELL".equals(signalType);
+        boolean isShort = "SHRT".equals(signalType) || "COVR".equals(signalType);
+
+        // Coinbase does not support short selling — skip SHRT/COVR on non-short brokers
+        if (isShort && !brokerOrderClient.supportsShort()) return;
+
+        if ("BUY".equals(signalType) || "SHRT".equals(signalType)) {
+            dispatchEntry(signalType, strategyName, ticker, closePrice, signal, strength);
+        } else if ("SELL".equals(signalType) || "COVR".equals(signalType)) {
+            dispatchExit(signalType, strategyName, ticker, signal);
         }
     }
 
-    private void dispatchBuy(String strategyName, String ticker, BigDecimal closePrice,
-                             IntradaySignal signal, SignalStrength strength) {
+    private void dispatchEntry(String signalType, String strategyName, String ticker,
+                               BigDecimal closePrice, IntradaySignal signal, SignalStrength strength) {
         BigDecimal positionEur = liveTradingGate.computePositionSizeEur(strength);
         if (!liveTradingGate.canTrade(ticker, positionEur)) return;
 
-        OrderResponse resp = coinbaseOrderClient.placeBuyOrder(ticker, positionEur);
+        boolean isShortEntry = "SHRT".equals(signalType);
+        OrderResponse resp = isShortEntry
+                ? brokerOrderClient.placeShortEntry(ticker, positionEur)
+                : brokerOrderClient.placeLongEntry(ticker, positionEur);
 
         LiveOrder order = new LiveOrder();
         order.setTicker(ticker);
-        order.setSide("BUY");
+        order.setSide(isShortEntry ? "SHRT" : "BUY");
         order.setStrategyName(strategyName);
         order.setEurAmount(positionEur);
         order.setCoinbaseOrderId(resp.getOrderId());
@@ -479,68 +530,83 @@ public class CryptoIntradayStrategyRunner {
             order.setFilledAt(LocalDateTime.now());
             signal.setLive(true);
             signalRepository.save(signal);
-            log.info("LIVE ORDER: BUY {} {} @ {}EUR (orderId={})",
-                    ticker, resp.getFilledSize(), resp.getAverageFilledPrice(), resp.getOrderId());
+            log.info("LIVE ORDER: {} {} {} @ {}EUR (orderId={})",
+                    order.getSide(), ticker, resp.getFilledSize(),
+                    resp.getAverageFilledPrice(), resp.getOrderId());
         } else {
             order.setStatus("FAILED");
             order.setErrorMessage(resp.getErrorMessage());
-            log.warn("LIVE ORDER FAILED: BUY {} — {}", ticker, resp.getErrorMessage());
+            log.warn("LIVE ORDER FAILED: {} {} — {}", order.getSide(), ticker, resp.getErrorMessage());
         }
         liveOrderRepository.save(order);
     }
 
-    private void dispatchSell(String strategyName, String ticker, IntradaySignal signal) {
-        LocalDateTime since = LocalDate.now(ZoneOffset.UTC).minusDays(30).atStartOfDay();
-        Optional<LiveOrder> openBuy = liveOrderRepository
+    private void dispatchExit(String signalType, String strategyName, String ticker, IntradaySignal signal) {
+        String entrySide = "COVR".equals(signalType) ? "SHRT" : "BUY";
+        String exitSide  = "COVR".equals(signalType) ? "COVR" : "SELL";
+        Optional<LiveOrder> openEntry = liveOrderRepository
                 .findTopByTickerAndStrategyNameAndSideAndStatusOrderByCreatedAtDesc(
-                        ticker, strategyName, "BUY", "FILLED");
+                        ticker, strategyName, entrySide, "FILLED");
 
-        if (openBuy.isEmpty()) {
-            log.debug("CryptoIntradayStrategyRunner: SELL signal for {} / {} but no open BUY position — skip",
-                    ticker, strategyName);
+        if (openEntry.isEmpty()) {
+            log.debug("CryptoIntradayStrategyRunner: {} signal for {} / {} but no open {} — skip",
+                    exitSide, ticker, strategyName, entrySide);
             return;
         }
-        LiveOrder buyOrder = openBuy.get();
-        if (buyOrder.getFilledQuantity() == null || buyOrder.getFilledQuantity().compareTo(BigDecimal.ZERO) <= 0) {
-            log.warn("CryptoIntradayStrategyRunner: open BUY for {} has no filled quantity — skip", ticker);
+        LiveOrder entryOrder = openEntry.get();
+        if (entryOrder.getFilledQuantity() == null
+                || entryOrder.getFilledQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("CryptoIntradayStrategyRunner: open {} for {} has no filled quantity — skip",
+                    entrySide, ticker);
             return;
         }
 
-        OrderResponse resp = coinbaseOrderClient.placeSellOrder(ticker, buyOrder.getFilledQuantity());
+        boolean isCover = "COVR".equals(signalType);
+        OrderResponse resp = isCover
+                ? brokerOrderClient.placeShortExit(ticker, entryOrder.getFilledQuantity())
+                : brokerOrderClient.placeLongExit(ticker, entryOrder.getFilledQuantity());
 
-        LiveOrder sellOrder = new LiveOrder();
-        sellOrder.setTicker(ticker);
-        sellOrder.setSide("SELL");
-        sellOrder.setStrategyName(strategyName);
-        sellOrder.setFilledQuantity(buyOrder.getFilledQuantity());
-        sellOrder.setCoinbaseOrderId(resp.getOrderId());
-        sellOrder.setClientOrderId(resp.getClientOrderId());
+        LiveOrder exitOrder = new LiveOrder();
+        exitOrder.setTicker(ticker);
+        exitOrder.setSide(exitSide);
+        exitOrder.setStrategyName(strategyName);
+        exitOrder.setFilledQuantity(entryOrder.getFilledQuantity());
+        exitOrder.setCoinbaseOrderId(resp.getOrderId());
+        exitOrder.setClientOrderId(resp.getClientOrderId());
 
         if ("PENDING".equals(resp.getStatus()) || "FILLED".equals(resp.getStatus())) {
-            sellOrder.setStatus("FILLED");
-            BigDecimal sellPrice = resp.getAverageFilledPrice();
-            sellOrder.setFilledPrice(sellPrice);
-            sellOrder.setFilledAt(LocalDateTime.now());
+            exitOrder.setStatus("FILLED");
+            BigDecimal exitPrice = resp.getAverageFilledPrice();
+            exitOrder.setFilledPrice(exitPrice);
+            exitOrder.setFilledAt(LocalDateTime.now());
 
-            if (sellPrice != null && buyOrder.getFilledPrice() != null) {
-                BigDecimal pnl = sellPrice.subtract(buyOrder.getFilledPrice())
-                        .multiply(buyOrder.getFilledQuantity());
-                sellOrder.setRealizedPnlEur(pnl);
+            if (exitPrice != null && entryOrder.getFilledPrice() != null) {
+                BigDecimal pnl;
+                if (isCover) {
+                    // Short PnL: entry - exit (profit when price falls)
+                    pnl = entryOrder.getFilledPrice().subtract(exitPrice)
+                            .multiply(entryOrder.getFilledQuantity());
+                } else {
+                    // Long PnL: exit - entry
+                    pnl = exitPrice.subtract(entryOrder.getFilledPrice())
+                            .multiply(entryOrder.getFilledQuantity());
+                }
+                exitOrder.setRealizedPnlEur(pnl);
             }
             signal.setLive(true);
             signalRepository.save(signal);
-            log.info("LIVE ORDER: SELL {} {} @ {}EUR (pnl={}EUR, orderId={})",
-                    ticker, buyOrder.getFilledQuantity(), sellPrice,
-                    sellOrder.getRealizedPnlEur(), resp.getOrderId());
+            log.info("LIVE ORDER: {} {} {} @ {}EUR (pnl={}EUR, orderId={})",
+                    exitSide, ticker, entryOrder.getFilledQuantity(), exitPrice,
+                    exitOrder.getRealizedPnlEur(), resp.getOrderId());
 
-            // Mark the matched BUY as consumed so it won't be matched again
-            buyOrder.setStatus("CLOSED");
-            liveOrderRepository.save(buyOrder);
+            // Mark the matched entry as consumed so it won't be matched again
+            entryOrder.setStatus("CLOSED");
+            liveOrderRepository.save(entryOrder);
         } else {
-            sellOrder.setStatus("FAILED");
-            sellOrder.setErrorMessage(resp.getErrorMessage());
-            log.warn("LIVE ORDER FAILED: SELL {} — {}", ticker, resp.getErrorMessage());
+            exitOrder.setStatus("FAILED");
+            exitOrder.setErrorMessage(resp.getErrorMessage());
+            log.warn("LIVE ORDER FAILED: {} {} — {}", exitSide, ticker, resp.getErrorMessage());
         }
-        liveOrderRepository.save(sellOrder);
+        liveOrderRepository.save(exitOrder);
     }
 }

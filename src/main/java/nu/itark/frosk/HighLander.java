@@ -163,10 +163,6 @@ public class HighLander {
 		if (runBot) {
 			strategyAnalysis.runningPositions();
 		}
-		if (buildPortfolio) {
-			portfolioService.build();
-			log.info("Portfolio snapshot built.");
-		}
 		if (runOMXS30Swing) {
 			strategyAnalysis.runOMXS30Swing();
 		}
@@ -180,6 +176,15 @@ public class HighLander {
 		}
 		if (runTrendFollowing) {
 			strategyAnalysis.runTrendFollowingStrategies();
+		}
+		// Build the daily portfolio snapshot LAST, after every strategy path that can
+		// open or close a FeaturedStrategy position has run — especially Månadsportföljen
+		// (SwedishLongTermMomentumStrategy), which runs above. Building earlier captured
+		// a stale FeaturedStrategy state and same-day idempotency then blocked any rebuild
+		// until the next day (Tier 2 on Saturday).
+		if (buildPortfolio) {
+			portfolioService.build();
+			log.info("Portfolio snapshot built.");
 		}
 	}
 

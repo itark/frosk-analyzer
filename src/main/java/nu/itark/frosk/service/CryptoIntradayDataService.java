@@ -11,6 +11,7 @@ import nu.itark.frosk.repo.IntradayBarRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseBarSeriesBuilder;
@@ -38,8 +39,9 @@ import java.util.*;
  * fetched in chunks of {@value #MAX_CANDLES_PER_REQUEST} bars.
  */
 @Service
+@Profile("crypto")
 @Slf4j
-public class CryptoIntradayDataService {
+public class CryptoIntradayDataService implements IntradayDataService {
 
     private static final String INTERVAL_CODE = "15m";
     private static final Duration BAR_DURATION = Duration.ofMinutes(15);

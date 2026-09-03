@@ -40,7 +40,14 @@ public class IntradayStrategyRunner {
     // overnight positions to survive until the next morning's Tier-0 run.
     private static final long MAX_BARS_FORCE_CLOSE = 120;
 
-    @Autowired
+    /**
+     * Optional: no {@link IntradayDataService} bean exists under the {@code equity}
+     * profile (the only implementations are {@code crypto} and {@code kraken-futures}).
+     * Equity intraday is retired — {@code frosk.run.intraday=false} stops the Tier-0
+     * scheduler from calling {@link #run()}, and this guard keeps the bean creatable
+     * (it is a hard dependency of HighLander and DataController) when the source is absent.
+     */
+    @Autowired(required = false)
     private IntradayDataService intradayDataService;
 
     @Autowired
@@ -59,6 +66,11 @@ public class IntradayStrategyRunner {
     }
 
     public void run() {
+        if (intradayDataService == null) {
+            log.info("IntradayStrategyRunner: no IntradayDataService bean (equity intraday retired) — skipping");
+            return;
+        }
+
         log.info("IntradayStrategyRunner: starting with {} strategies: {}",
                 intradayStrategies.size(), getStrategyNames());
 
