@@ -1,6 +1,7 @@
 package nu.itark.frosk.repo;
 
 import nu.itark.frosk.model.Portfolio;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -21,4 +22,8 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     boolean existsByPortfolioTypeAndSnapshotDateBetween(String portfolioType, Date start, Date end);
 
     List<Portfolio> findByPortfolioTypeOrderBySnapshotDateDesc(String portfolioType);
+
+    /** Newest-first, capped to {@code pageable}'s page size — used by the history endpoints
+     *  so the intraday portfolio (a snapshot every 15 min) doesn't return thousands of rows. */
+    List<Portfolio> findByPortfolioTypeOrderBySnapshotDateDesc(String portfolioType, Pageable pageable);
 }

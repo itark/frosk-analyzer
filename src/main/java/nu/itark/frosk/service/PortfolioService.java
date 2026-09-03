@@ -311,24 +311,49 @@ public class PortfolioService {
     }
 
     /**
-     * Returns all historical daily portfolio snapshots ordered newest first.
-     * Positions are NOT loaded (header data only) to keep the list lightweight.
+     * Default cap for the history endpoints. The intraday portfolio writes a snapshot
+     * every 15 minutes, so an uncapped list is thousands of rows — enough to hang the
+     * dashboard chart and snapshot picker. ~2000 covers roughly the last 3 weeks of
+     * intraday snapshots, or 2000 days of the daily portfolio (i.e. all of it).
+     */
+    private static final int DEFAULT_HISTORY_LIMIT = 2000;
+
+    /**
+     * Returns historical daily portfolio snapshots ordered newest first (capped to
+     * {@link #DEFAULT_HISTORY_LIMIT}). Positions are NOT loaded (header data only).
      */
     @Transactional(readOnly = true)
     public List<PortfolioDTO> getHistory() {
-        return getHistoryByType(TYPE_DAILY);
+        return getHistoryByType(TYPE_DAILY, DEFAULT_HISTORY_LIMIT);
+    }
+
+    /** As {@link #getHistory()} with an explicit row cap ({@code <= 0} means uncapped). */
+    @Transactional(readOnly = true)
+    public List<PortfolioDTO> getHistory(int limit) {
+        return getHistoryByType(TYPE_DAILY, limit);
     }
 
     /**
-     * Returns all historical intraday portfolio snapshots ordered newest first.
+     * Returns historical intraday portfolio snapshots ordered newest first (capped to
+     * {@link #DEFAULT_HISTORY_LIMIT}).
      */
     @Transactional(readOnly = true)
     public List<PortfolioDTO> getHistoryIntraday() {
-        return getHistoryByType(TYPE_INTRADAY);
+        return getHistoryByType(TYPE_INTRADAY, DEFAULT_HISTORY_LIMIT);
     }
 
-    private List<PortfolioDTO> getHistoryByType(String type) {
-        return portfolioRepository.findByPortfolioTypeOrderBySnapshotDateDesc(type).stream()
+    /** As {@link #getHistoryIntraday()} with an explicit row cap ({@code <= 0} means uncapped). */
+    @Transactional(readOnly = true)
+    public List<PortfolioDTO> getHistoryIntraday(int limit) {
+        return getHistoryByType(TYPE_INTRADAY, limit);
+    }
+
+    private List<PortfolioDTO> getHistoryByType(String type, int limit) {
+        List<Portfolio> rows = limit > 0
+                ? portfolioRepository.findByPortfolioTypeOrderBySnapshotDateDesc(
+                        type, org.springframework.data.domain.PageRequest.of(0, limit))
+                : portfolioRepository.findByPortfolioTypeOrderBySnapshotDateDesc(type);
+        return rows.stream()
                 .map(p -> {
                     int hedgeScore = hedgeIndexService.getScore(p.getSnapshotDate().toInstant().atZone(STOCKHOLM));
                     return PortfolioDTO.builder()

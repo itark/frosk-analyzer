@@ -479,13 +479,14 @@ public class DataController {
     }
 
     /**
-     * Get all historical portfolio snapshots (header only, no positions).
-     * @Example GET http://localhost:8080/portfolio/history
+     * Get historical portfolio snapshots (header only, no positions), newest first.
+     * Capped server-side by default; pass {@code ?limit=0} for the full history.
+     * @Example GET http://localhost:8080/portfolio/history?limit=500
      */
     @GetMapping(value = "/portfolio/history")
-    public List<PortfolioDTO> getPortfolioHistory() {
-        log.info("GET /portfolio/history");
-        return portfolioService.getHistory();
+    public List<PortfolioDTO> getPortfolioHistory(@RequestParam(value = "limit", required = false) Integer limit) {
+        log.info("GET /portfolio/history (limit={})", limit);
+        return limit != null ? portfolioService.getHistory(limit) : portfolioService.getHistory();
     }
 
     /**
@@ -518,12 +519,26 @@ public class DataController {
     }
 
     /**
-     * @Example GET http://localhost:8080/portfolio/intraday/history
+     * Intraday portfolio snapshots (one per 15m cycle), newest first. Capped
+     * server-side by default; pass {@code ?limit=0} for the full history.
+     * @Example GET http://localhost:8080/portfolio/intraday/history?limit=500
      */
     @GetMapping(value = "/portfolio/intraday/history")
-    public List<PortfolioDTO> getIntradayPortfolioHistory() {
-        log.info("GET /portfolio/intraday/history");
-        return portfolioService.getHistoryIntraday();
+    public List<PortfolioDTO> getIntradayPortfolioHistory(@RequestParam(value = "limit", required = false) Integer limit) {
+        log.info("GET /portfolio/intraday/history (limit={})", limit);
+        return limit != null ? portfolioService.getHistoryIntraday(limit) : portfolioService.getHistoryIntraday();
+    }
+
+    /**
+     * Full positions for one historical intraday snapshot by id. Mirrors
+     * {@code /portfolio/{id}} — {@code getById} is portfolio-type agnostic — so the
+     * dashboard's intraday snapshot picker can load past snapshots.
+     * @Example GET http://localhost:8080/portfolio/intraday/56602
+     */
+    @GetMapping(value = "/portfolio/intraday/{id}")
+    public PortfolioDTO getIntradayPortfolioById(@PathVariable("id") Long id) {
+        log.info("GET /portfolio/intraday/{}", id);
+        return portfolioService.getById(id);
     }
 
     /**
