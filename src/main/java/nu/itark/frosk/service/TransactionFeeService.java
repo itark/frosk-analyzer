@@ -25,6 +25,20 @@ import java.util.stream.Collectors;
  * <p>The crypto set is therefore derived from the {@link CryptoIntradayStrategy}
  * beans themselves rather than written out by hand — a new crypto strategy is
  * picked up automatically and cannot silently fall back to the equity fee.
+ *
+ * <p><b>One strategy set, two exchanges:</b> {@link CryptoIntradayStrategy} beans
+ * (e.g. {@code CryptoVWAPReversionIntradayStrategy}) are shared, unmodified, between
+ * the {@code crypto} profile (Coinbase, taker ~0.1%/leg) and the {@code kraken-futures}
+ * profile (Kraken Futures, taker ~0.05%/leg) — see {@code IntradayDataService}'s two
+ * profile-scoped implementations. Resolving fee purely by strategy name, as
+ * {@code cryptoTakerFeePerTradePercent} always did, silently charged every
+ * kraken-futures backtest/PnL calculation (this service is the only fee source for
+ * {@code BarSeriesService} backtests, {@code PortfolioService}, and
+ * {@code DataController}'s round-trip display — it does NOT touch either paper
+ * trading service's own fill fee, which was already correct per-exchange) the
+ * Coinbase rate — 2x too high. {@code trading.fee.roundtrip.pct}, set per-profile,
+ * overrides {@code cryptoTakerFeePerTradePercent} for crypto-tagged strategies only;
+ * equity and futures ({@code FUTURES_STRATEGIES}) resolution is untouched by it.
  */
 @Service
 @Slf4j
@@ -41,6 +55,16 @@ public class TransactionFeeService {
 
     @Value("${exchange.transaction.futuresFeePerTradePercent:0.0005}")
     private double futuresFeePerTradePercent;
+
+    /**
+     * Profile-scoped override of the crypto round-trip fee, as a fraction (0.001 =
+     * 0.1%). Applies only to {@link CryptoIntradayStrategy}-tagged strategies — see
+     * class javadoc. {@code null} (unset) preserves the original
+     * {@code cryptoTakerFeePerTradePercent}-only behavior, so any profile that does
+     * not set this (equity, or a future profile) is unaffected.
+     */
+    @Value("${trading.fee.roundtrip.pct:#{null}}")
+    private Double tradingFeeRoundTripPct;
 
     /**
      * Futures strategies. Exchange + clearing + broker on a liquid CME contract is
@@ -76,13 +100,19 @@ public class TransactionFeeService {
                     .map(s -> s.getClass().getSimpleName())
                     .collect(Collectors.toSet());
         }
-        log.info("TransactionFeeService: crypto taker fee {}% applies to {}",
-                cryptoTakerFeePerTradePercent * 100, cryptoStrategyNames);
+        double effectiveCryptoFeePct = (tradingFeeRoundTripPct != null ? tradingFeeRoundTripPct / 2.0 : cryptoTakerFeePerTradePercent) * 100;
+        log.info("TransactionFeeService: crypto taker fee {}% ({}) applies to {}",
+                effectiveCryptoFeePct,
+                tradingFeeRoundTripPct != null ? "trading.fee.roundtrip.pct override" : "cryptoTakerFeePerTradePercent default",
+                cryptoStrategyNames);
     }
 
     /** Per-trade fee as a fraction (0.006 = 0.6%), for one leg of a round trip. */
     public double resolveFeeFraction(String strategyName) {
         if (cryptoStrategyNames.contains(strategyName)) {
+            if (tradingFeeRoundTripPct != null) {
+                return tradingFeeRoundTripPct / 2.0;
+            }
             return cryptoTakerFeePerTradePercent;
         }
         if (FUTURES_STRATEGIES.contains(strategyName)) {

@@ -2,6 +2,7 @@ package nu.itark.frosk.strategies;
 
 import nu.itark.frosk.model.AccountType;
 import nu.itark.frosk.model.TradingAccount;
+import nu.itark.frosk.service.LstmSignalFilterService;
 import nu.itark.frosk.service.TradingAccountService;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -42,10 +43,21 @@ public class TestJCryptoEMACrossLongSignalStrength {
         return service;
     }
 
+    /**
+     * buildStrategy() checks isEnabled() before wiring the LSTM gate — a bare
+     * mock's isEnabled() already returns false by default, giving the same
+     * disabled/no-op behavior as every non-crypto profile. Unrelated to
+     * signal strength, same reasoning as leaving cryptoRegimeService null.
+     */
+    private static LstmSignalFilterService stubDisabledLstmSignalFilterService() {
+        return mock(LstmSignalFilterService.class);
+    }
+
     @Test
     void strengthRisesFromElevatedToStrongAsTheTrendExtends() {
         CryptoEMACrossLongIntradayStrategy strategy = new CryptoEMACrossLongIntradayStrategy();
         ReflectionTestUtils.setField(strategy, "tradingAccountService", stubTradingAccountService());
+        ReflectionTestUtils.setField(strategy, "lstmSignalFilterService", stubDisabledLstmSignalFilterService());
         ReflectionTestUtils.setField(strategy, "emaFast", 9);
         ReflectionTestUtils.setField(strategy, "emaSlow", 21);
         ReflectionTestUtils.setField(strategy, "rsiPeriod", 7);
@@ -84,6 +96,7 @@ public class TestJCryptoEMACrossLongSignalStrength {
     void flatSeriesScoresBase() {
         CryptoEMACrossLongIntradayStrategy strategy = new CryptoEMACrossLongIntradayStrategy();
         ReflectionTestUtils.setField(strategy, "tradingAccountService", stubTradingAccountService());
+        ReflectionTestUtils.setField(strategy, "lstmSignalFilterService", stubDisabledLstmSignalFilterService());
         ReflectionTestUtils.setField(strategy, "emaFast", 9);
         ReflectionTestUtils.setField(strategy, "emaSlow", 21);
         ReflectionTestUtils.setField(strategy, "rsiPeriod", 7);

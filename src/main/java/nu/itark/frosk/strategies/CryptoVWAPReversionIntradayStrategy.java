@@ -5,7 +5,6 @@ import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.strategies.indicators.SessionVWAPIndicator;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import nu.itark.frosk.strategies.rules.StopLossRule;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
@@ -39,10 +38,14 @@ import java.util.List;
  *       1.2%, i.e. exactly the stretch, and a perfect winner nets zero — re-check
  *       this setting whenever the fee tier changes</li>
  *   <li>RSI(14) &lt; {@code rsiEntry} — oversold confirmation</li>
- *   <li>{@link CryptoRegimeRule} — never catch falling knives while BTC is
- *       below its daily SMA(20); stretched prices keep stretching in
- *       crypto downtrends</li>
  * </ul>
+ *
+ * <p>No regime gate: the older {@code CryptoRegimeRule} (BTC risk-on/off) was
+ * removed as a directional macro gate (see the exit-rule comment below), and
+ * the GARCH+ADX SIDEWAYS-only gate ({@code GarchRegimeRule}) was removed
+ * 2026-09-17 so this strategy trades in every market structure — the stop-loss
+ * (2.7%) and 12h time exit are the protection against a stretch that turns out
+ * to be a genuine trend instead of a reversion.
  *
  * <h3>Exit rules (first satisfied wins)</h3>
  * <ul>
@@ -106,8 +109,11 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
         // ── Entry ─────────────────────────────────────────────────────────
         Rule stretched = new UnderIndicatorRule(close, vwapStretched);
         Rule oversold = new UnderIndicatorRule(rsi, DoubleNum.valueOf(rsiEntry));
-        // Regime filter removed: stop-loss (2.7%) + 12h time exit provide
-        // sufficient protection without blocking all risk-off entries.
+        // CryptoRegimeRule (BTC risk-on/off) removed: stop-loss (2.7%) + 12h time
+        // exit provide sufficient protection without blocking all risk-off entries.
+        // GARCH+ADX SIDEWAYS-only gate (GarchRegimeRule) removed 2026-09-17: this
+        // strategy now trades in every regime, relying on the same stop-loss/time
+        // exit for protection against a stretch that turns into a real trend.
 
         Rule entryRule = stretched.and(oversold);
 

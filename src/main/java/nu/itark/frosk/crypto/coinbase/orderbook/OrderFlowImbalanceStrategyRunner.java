@@ -1,5 +1,6 @@
 package nu.itark.frosk.crypto.coinbase.orderbook;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.IntradaySignal;
 import nu.itark.frosk.model.OrderBookMinuteSnapshot;
@@ -57,6 +58,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * simulation for everything downstream of "what price did this fill at" —
  * dashboard visibility, paper account, fee accounting all come for free and
  * stay consistent with every other strategy.
+ *
+ * <p><b>RETIRED — 2026-09-09.</b> Gate A/B were both met (22 qualifying days
+ * per product, day-clustered SE 0.0213pp) and the §9 decision rule was run:
+ * t=0.219 (need &gt;2.5), split-halves opposite sign, net mean −0.2008% after
+ * cost — FAIL on 3 of 4 criteria. Per §7b's pre-committed consequence: <i>"OFI
+ * should be retired as a candidate here — not re-parameterized a third
+ * time."</i> Gated off via {@code orderflow.imbalance.enabled=false} in
+ * {@code application-crypto.properties} rather than deleted — the
+ * pre-registration and its data remain intact for the record.
  */
 @Service
 @Profile("crypto")
@@ -64,6 +74,26 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OrderFlowImbalanceStrategyRunner {
 
     public static final String STRATEGY_NAME = "OrderFlowImbalanceStrategy";
+
+    /**
+     * Retired 2026-09-09 — Gate A FAIL, §7b. See class javadoc. Default
+     * {@code true} preserves prior behavior for any other profile/environment
+     * that never set this; {@code application-crypto.properties} is the only
+     * place this is actually overridden.
+     */
+    @Value("${orderflow.imbalance.enabled:true}")
+    private boolean enabled;
+
+    @PostConstruct
+    private void logEnabledState() {
+        if (enabled) {
+            log.info("OrderFlowImbalanceStrategyRunner: enabled — evaluating and trading normally");
+        } else {
+            log.warn("OrderFlowImbalanceStrategyRunner: DISABLED (orderflow.imbalance.enabled=false) — "
+                    + "retired 2026-09-09, Gate A FAIL per PREREG_ofi_1m.md §7b. "
+                    + "No signals will be generated, no trades will be dispatched.");
+        }
+    }
 
     /** §4 — the rolling window the primary (decision-rule) signal is built from. */
     private static final int OFI_WINDOW_MINUTES = 15;
@@ -112,6 +142,9 @@ public class OrderFlowImbalanceStrategyRunner {
     /** Recomputes each product's entry threshold once a day, fixed for that day per §5. */
     @Scheduled(cron = "0 10 0 * * *")
     public void recomputeDailyThresholds() {
+        if (!enabled) {
+            return;
+        }
         for (String product : products()) {
             recomputeThreshold(product);
         }
@@ -181,6 +214,9 @@ public class OrderFlowImbalanceStrategyRunner {
      */
     @Scheduled(cron = "5 * * * * *")
     public void evaluateMinute() {
+        if (!enabled) {
+            return;
+        }
         for (String product : products()) {
             try {
                 evaluateProduct(product);

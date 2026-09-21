@@ -2,8 +2,11 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.service.CryptoMarketRegime;
 import nu.itark.frosk.service.CryptoRegimeService;
-import nu.itark.frosk.strategies.rules.CryptoRegimeRule;
+import nu.itark.frosk.strategies.indicators.BarImbalanceIndicator;
+import nu.itark.frosk.strategies.rules.AtrStopLossShortRule;
+import nu.itark.frosk.strategies.rules.CryptoMarketRegimeRule;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import nu.itark.frosk.strategies.rules.TimeGatingRule;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,14 +34,20 @@ import java.util.List;
  * <ul>
  *   <li>EMA(fast) crosses below EMA(slow)</li>
  *   <li>RSI({@code rsiPeriod}) &lt; 50 — momentum confirms the cross</li>
- *   <li>Inverted {@link CryptoRegimeRule} — BTC below its daily SMA(50); only
- *       short while BTC is in a downtrend</li>
+ *   <li>{@link CryptoMarketRegimeRule} requires {@code TRENDING_DOWN} — BTC
+ *       below its SMA(50) <em>and</em> ADX confirms an actual downtrend, not
+ *       just a brief dip below a lagging average</li>
+ *   <li>{@link nu.itark.frosk.strategies.indicators.BarImbalanceIndicator} on
+ *       the entry bar &lt; 0 — the bar's own (close-open)/(high-low) must be
+ *       seller-dominated too</li>
  * </ul>
  *
  * <h3>Exit (first satisfied wins)</h3>
  * <ul>
  *   <li>EMA(fast) crosses back above EMA(slow)</li>
  *   <li>Max {@code maxBarsHeld} bars (~8h)</li>
+ *   <li>ATR({@value #ATR_PERIOD}) stop {@code atrStopMult}× above entry — mirrors
+ *       the long side's {@link nu.itark.frosk.strategies.rules.AtrStopLossRule}</li>
  * </ul>
  *
  * <p>Emits "SHRT"/"COVR" via the runner's short-aware signal path.
@@ -49,6 +58,8 @@ import java.util.List;
 public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
         implements IIndicatorValue, CryptoIntradayStrategy, ISignalStrength {
     private final List<StrategyIndicatorValue> indicatorValues = new java.util.ArrayList<>();
+
+    private static final int ATR_PERIOD = 14;
 
     @Autowired
     private CryptoRegimeService cryptoRegimeService;
@@ -64,6 +75,9 @@ public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
 
     @Value("${crypto.emacross.max.bars.held:32}")
     private int maxBarsHeld;
+
+    @Value("${crypto.emacross.atr.stop.mult:1.5}")
+    private double atrStopMult;
 
     private ClosePriceIndicator close;
     private EMAIndicator emaF;
@@ -93,18 +107,24 @@ public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
         // ── Entry ─────────────────────────────────────────────────────────
         Rule crossDown = new CrossedDownIndicatorRule(emaF, emaS);
         Rule rsiBelow  = new UnderIndicatorRule(rsi, DoubleNum.valueOf(50));
-        // Inverted regime: BTC below SMA(50) — required for short entries
-        Rule regime    = new CryptoRegimeRule(series, cryptoRegimeService, true);
+        // Three-state regime: BTC below SMA(50) AND ADX confirms an actual downtrend
+        Rule regime    = new CryptoMarketRegimeRule(series, cryptoRegimeService, CryptoMarketRegime.TRENDING_DOWN);
         // Block during 06:00–10:00 UTC: EU equity open causes crypto rallies that crush shorts
-        Rule notEuOpenRally = new TimeGatingRule(LocalTime.of(6, 0), LocalTime.of(10, 0));
+        Rule notEuOpenRally = new TimeGatingRule(series, LocalTime.of(6, 0), LocalTime.of(10, 0));
 
-        Rule entryRule = crossDown.and(rsiBelow).and(regime).and(notEuOpenRally);
+        // Bar-imbalance confirmation: the entry bar's own (close-open)/(high-low)
+        // must be negative too — mirrors the long side's check.
+        BarImbalanceIndicator imbalance = new BarImbalanceIndicator(series);
+        Rule imbalanceOk = new UnderIndicatorRule(imbalance, DoubleNum.valueOf(0));
+
+        Rule entryRule = crossDown.and(rsiBelow).and(regime).and(notEuOpenRally).and(imbalanceOk);
 
         // ── Exit ──────────────────────────────────────────────────────────
         Rule crossUp  = new CrossedUpIndicatorRule(emaF, emaS);
         Rule timeExit = new MaxBarsHeldRule(maxBarsHeld);
+        Rule atrStop  = new AtrStopLossShortRule(series, ATR_PERIOD, atrStopMult);
 
-        Rule exitRule = crossUp.or(timeExit);
+        Rule exitRule = crossUp.or(timeExit).or(atrStop);
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
@@ -120,8 +140,8 @@ public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
      * <p>Unlike {@link CryptoVWAPReversionIntradayStrategy} and
      * {@link CryptoRangeBreakoutIntradayStrategy} (both backtested 2026-08-10 and
      * found <b>inverted</b>), this one has not been backtested at all: the
-     * inverted regime gate ({@link CryptoRegimeRule} requiring BTC below its
-     * SMA(50)) means it only fires during a sustained downtrend, and BTC was
+     * regime gate ({@link CryptoMarketRegimeRule} requiring {@code TRENDING_DOWN})
+     * means it only fires during a confirmed downtrend, and BTC was
      * in an uptrend for the entirety of the available 30-day window
      * ({@code CryptoSignalStrengthBacktestIT} — 0 closed trades). Was a mirror
      * of {@link CryptoEMACrossLongIntradayStrategy}'s (validated, correctly

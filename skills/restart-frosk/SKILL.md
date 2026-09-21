@@ -19,9 +19,21 @@ That `.command` file is a bash script that on macOS opens in Terminal when launc
 
 1. `cd`s to the project,
 2. kills any running `java … frosk-analyzer` process and frees port 8080,
-3. sources SDKMAN and runs `sdk env` (which reads `.sdkmanrc` → Java `21.0.6-librca`),
-4. prints the active `java --version`,
-5. `exec`s `mvn spring-boot:run` so Ctrl+C in that Terminal stops the app.
+3. checks `http://localhost:8000/health` and, if `frosk-garch-service` (the GARCH
+   volatility-regime microservice equity's `ShortTermMomentumLongTermStrengthStrategy`
+   and `CryptoVWAPReversionIntradayStrategy` gates depend on when
+   `regime.garch.enabled=true`) isn't already up, starts it via the same
+   nohup + venv pattern documented in that service's own README, then waits
+   up to 15s for its health check — this happens *before* equity starts, so
+   the regime gate has something to call from the first strategy run onward,
+4. sources SDKMAN and runs `sdk env` (which reads `.sdkmanrc` → Java `21.0.6-librca`),
+5. prints the active `java --version`,
+6. `exec`s `mvn spring-boot:run` so Ctrl+C in that Terminal stops the app.
+
+If `frosk-garch-service` still isn't reachable after the 15s wait, the script
+prints a warning and continues anyway — equity's `RegimeForecastService` fails
+closed (`Regime.UNKNOWN`, blocks GARCH-gated entries) rather than crashing, so
+a stuck Python service is degraded, not fatal.
 
 So your job is small: get macOS to launch that file. Don't reinvent the workflow inside the skill — the script is the source of truth.
 
@@ -67,6 +79,7 @@ If you see compilation errors or `BUILD FAILURE`, surface that to the user verba
 - **SDKMAN not installed.** The script will print a message pointing at https://sdkman.io and exit. Surface that to the user.
 - **Port 8080 still occupied.** The script tries `lsof -ti tcp:8080 | xargs kill -9` as a backstop. If `mvn spring-boot:run` still complains about the port, something outside the frosk java process is holding it (Docker, another service). Tell the user — don't start hunting it down inside this skill.
 - **Multiple Terminal windows already open.** That's fine. The `.command` file always opens a fresh Terminal window of its own; you don't have to find or reuse an existing session.
+- **`frosk-garch-service`'s venv is missing or was never created.** The script's `source .venv/bin/activate` will fail silently in that subshell and the health check will keep failing; you'll see the "VARNING" line after the 15s wait. See that service's own README (`/Users/fredrikmoller/itark/git/frosk-garch-service/README.md`) for `python3.12 -m venv .venv && pip install -r requirements.txt`. This does not block equity from starting — it just means GARCH-gated entries stay blocked (fail closed) until the service is fixed.
 
 ## Why a skill and not just a shell command
 

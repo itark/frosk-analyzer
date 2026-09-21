@@ -105,6 +105,9 @@ public class StrategyFilter {
 
     public OpenFeaturedStrategyDTO getDTO(FeaturedStrategy fs) {
         BigDecimal openPrice = securityMetaDataManager.getPrice(fs);
+        // Null when neither security_price nor intraday_bar has a price for this
+        // security (e.g. a Kraken Futures PF_* symbol between syncs) — never call
+        // FroskUtil.getPercentage with a null operand, it isn't null-safe.
         BigDecimal closePrice =  securityMetaDataManager.getLatestClose(fs.getSecurityName());
         StrategyTrade lastBuyTrade = securityMetaDataManager.getLastBuyTrade(fs,1);
         return OpenFeaturedStrategyDTO.builder()
@@ -113,7 +116,7 @@ public class StrategyFilter {
                 .securityDesc(fs.getSecurityDesc())
                 .openPrice(openPrice)
                 .openTradeDate(DateFormatUtils.format(lastBuyTrade.getDate(), "yyyy-MM-dd"))
-                .totalProfit(FroskUtil.getPercentage(openPrice, closePrice))
+                .totalProfit(closePrice != null ? FroskUtil.getPercentage(openPrice, closePrice) : null)
                 .closePrice(closePrice)
                 .sqn(fs.getSqn())
                 .expectency(fs.getExpectency())

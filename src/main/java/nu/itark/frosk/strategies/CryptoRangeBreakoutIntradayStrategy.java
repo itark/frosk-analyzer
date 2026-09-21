@@ -2,10 +2,13 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.service.CryptoMarketRegime;
 import nu.itark.frosk.service.CryptoRegimeService;
+import nu.itark.frosk.service.LstmSignalFilterService;
 import nu.itark.frosk.strategies.rules.AtrStopLossRule;
 import nu.itark.frosk.strategies.rules.AtrTrailingStopRule;
-import nu.itark.frosk.strategies.rules.CryptoRegimeRule;
+import nu.itark.frosk.strategies.rules.CryptoMarketRegimeRule;
+import nu.itark.frosk.strategies.rules.LstmSignalRule;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import nu.itark.frosk.strategies.rules.ProfitLockTrailingRule;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +28,7 @@ import org.ta4j.core.indicators.helpers.LowestValueIndicator;
 import org.ta4j.core.indicators.helpers.PreviousValueIndicator;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.AbstractRule;
+import org.ta4j.core.rules.BooleanRule;
 import org.ta4j.core.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.rules.OverIndicatorRule;
 
@@ -45,8 +49,14 @@ import java.util.List;
  *       move must clear the 1.2% taker round-trip with room to spare; tight
  *       ranges cannot pay for their own fees</li>
  *   <li>Close above EMA({@code trendPeriod}) — 24h trend agrees</li>
- *   <li>{@link CryptoRegimeRule} — no long breakouts while BTC is below its
- *       daily SMA(20); altcoin breakouts fail in BTC downtrends</li>
+ *   <li>{@link CryptoMarketRegimeRule} requires {@code TRENDING_UP} — BTC above
+ *       its SMA <em>and</em> ADX confirms an actual trend, not just price sitting
+ *       above a lagging average. Breakouts are exactly the setup that fails hardest
+ *       once a trend has gone sideways: confirmed 2026-07-22 to 2026-07-30, this
+ *       strategy lost -232% at a 21.8% win rate while BTC stayed technically
+ *       above its SMA the whole week but ADX had collapsed to RANGING</li>
+ *   <li>{@link LstmSignalRule} — no-op unless {@code forecast.lstm.enabled=true}
+ *       (crypto profile only for now, see {@link LstmSignalFilterService})</li>
  * </ul>
  *
  * <h3>Exit rules (first satisfied wins)</h3>
@@ -70,6 +80,9 @@ public class CryptoRangeBreakoutIntradayStrategy extends AbstractStrategy
 
     @Autowired
     private CryptoRegimeService cryptoRegimeService;
+
+    @Autowired
+    private LstmSignalFilterService lstmSignalFilterService;
 
     /** Rolling range lookback, in 15m bars (24 = 6 hours). */
     @Value("${crypto.breakout.range.bars:24}")
@@ -125,9 +138,16 @@ public class CryptoRangeBreakoutIntradayStrategy extends AbstractStrategy
         Rule breakout = new CrossedUpIndicatorRule(close, prevHigh);
         Rule rangeWideEnough = new RangeWidthRule(prevHigh, prevLow, minRangeWidthPct);
         Rule trendUp = new OverIndicatorRule(close, trendEma);
-        Rule regimeOk = new CryptoRegimeRule(series, cryptoRegimeService);
+        Rule regimeOk = new CryptoMarketRegimeRule(series, cryptoRegimeService, CryptoMarketRegime.TRENDING_UP);
 
-        Rule entryRule = breakout.and(rangeWideEnough).and(trendUp).and(regimeOk);
+        // LSTM signal filter — disabled by default everywhere except the crypto
+        // profile; when disabled this is a permanent no-op and LstmSignalFilterService
+        // never makes an HTTP call.
+        Rule lstmOk = lstmSignalFilterService.isEnabled()
+                ? new LstmSignalRule(series, lstmSignalFilterService)
+                : new BooleanRule(true);
+
+        Rule entryRule = breakout.and(rangeWideEnough).and(trendUp).and(regimeOk).and(lstmOk);
 
         // ── Exit ──────────────────────────────────────────────────────────
         Rule trailingStop = new AtrTrailingStopRule(series, ATR_PERIOD, atrTrailMult);

@@ -2,14 +2,18 @@ package nu.itark.frosk.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.analysis.BtcTrendChartPoint;
+import nu.itark.frosk.analysis.BtcTrendSignal;
 import nu.itark.frosk.analysis.CryptoPaperAccountDTO;
 import nu.itark.frosk.analysis.CryptoPortfolioItemDTO;
+import nu.itark.frosk.service.CryptoBtcTrendSignalService;
 import nu.itark.frosk.service.CryptoPaperTradingService;
 import nu.itark.frosk.service.CryptoPortfolioService;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -22,6 +26,7 @@ public class CryptoDashboardController {
 
     private final CryptoPortfolioService cryptoPortfolioService;
     private final CryptoPaperTradingService cryptoPaperTradingService;
+    private final CryptoBtcTrendSignalService cryptoBtcTrendSignalService;
 
     /**
      * @Example GET http://localhost:8081/crypto/portfolio
@@ -39,6 +44,35 @@ public class CryptoDashboardController {
     public CryptoPaperAccountDTO getPaperAccount() {
         log.info("GET /crypto/paper-account");
         return cryptoPaperTradingService.getAccountSummary();
+    }
+
+    /**
+     * Daily BTC-EUR trend signal (LONG / SHORT / NEUTRAL) for the dashboard
+     * card. Recomputed fresh on every call from the persisted daily BTC-EUR
+     * price series — never a 4xx/5xx; {@code dataAvailable=false} is the
+     * caller-visible signal when there is not enough history.
+     *
+     * @Example GET http://localhost:8081/crypto/btc-trend-signal
+     */
+    @GetMapping(value = "/crypto/btc-trend-signal")
+    public BtcTrendSignal getBtcTrendSignal() {
+        log.info("GET /crypto/btc-trend-signal");
+        return cryptoBtcTrendSignalService.computeSignal();
+    }
+
+    /**
+     * Daily close / EMA10 / EMA20 / ADX(14) series for the BTC Trend Follower
+     * chart, oldest first. {@code days} defaults to 90 and is clamped to
+     * [7, 365] server-side. Empty array when there is not enough BTC-EUR
+     * history yet — never a 4xx/5xx.
+     *
+     * @Example GET http://localhost:8081/crypto/btc-trend-chart?days=90
+     */
+    @GetMapping(value = "/crypto/btc-trend-chart")
+    public List<BtcTrendChartPoint> getBtcTrendChart(
+            @RequestParam(name = "days", defaultValue = "90") int days) {
+        log.info("GET /crypto/btc-trend-chart?days={}", days);
+        return cryptoBtcTrendSignalService.computeChart(days);
     }
 
     @GetMapping(value = "/crypto", produces = MediaType.TEXT_HTML_VALUE)

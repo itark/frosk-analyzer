@@ -127,6 +127,8 @@ public class StrategiesMap {
 	private CryptoEMACrossLongIntradayStrategy cryptoEMACrossLongIntradayStrategy;
 	@Autowired
 	private CryptoEMACrossShortIntradayStrategy cryptoEMACrossShortIntradayStrategy;
+	@Autowired
+	private CryptoBTCTrendStrategy cryptoBTCTrendStrategy;
 
 	private List<Strategy> strategies = null;
 
@@ -178,6 +180,7 @@ public class StrategiesMap {
 		strategies.add(cryptoShortIntradayStrategy.getClass().getSimpleName());
 		strategies.add(cryptoEMACrossLongIntradayStrategy.getClass().getSimpleName());
 		strategies.add(cryptoEMACrossShortIntradayStrategy.getClass().getSimpleName());
+		strategies.add(cryptoBTCTrendStrategy.getClass().getSimpleName());
 
 		strategies.removeAll(List.of(excludesStrategies));
 
@@ -234,6 +237,7 @@ public class StrategiesMap {
 		strategies.add(cryptoShortIntradayStrategy.buildStrategy(series));
 		strategies.add(cryptoEMACrossLongIntradayStrategy.buildStrategy(series));
 		strategies.add(cryptoEMACrossShortIntradayStrategy.buildStrategy(series));
+		strategies.add(cryptoBTCTrendStrategy.buildStrategy(series));
 
 		this.strategies = strategies;
 		return strategies;
@@ -345,6 +349,9 @@ public class StrategiesMap {
 			return cryptoEMACrossLongIntradayStrategy.buildStrategy(series);
 		} else if (strategy.equals(CryptoEMACrossShortIntradayStrategy.class.getSimpleName())) {
 			return cryptoEMACrossShortIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoBTCTrendStrategy.class.getSimpleName())
+				|| strategy.equals("BTCTrendFollower")) {
+			return cryptoBTCTrendStrategy.buildStrategy(series);
 		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
@@ -451,6 +458,9 @@ public class StrategiesMap {
 			return cryptoEMACrossLongIntradayStrategy.getIndicatorValues();
 		} else if (strategyName.equals(CryptoEMACrossShortIntradayStrategy.class.getSimpleName())) {
 			return cryptoEMACrossShortIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoBTCTrendStrategy.class.getSimpleName())
+				|| strategyName.equals("BTCTrendFollower")) {
+			return cryptoBTCTrendStrategy.getIndicatorValues();
 		} else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);
 		}

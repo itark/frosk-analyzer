@@ -2,8 +2,11 @@ package nu.itark.frosk.strategies;
 
 
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.regime.Regime;
 import nu.itark.frosk.service.HedgeIndexService;
+import nu.itark.frosk.service.RegimeForecastService;
 import nu.itark.frosk.strategies.rules.AtrTrailingStopRule;
+import nu.itark.frosk.strategies.rules.GarchRegimeRule;
 import nu.itark.frosk.strategies.rules.HedgeIndexMaxScoreRule;
 import nu.itark.frosk.strategies.rules.StopLossRule;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,7 @@ import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.rules.AndRule;
+import org.ta4j.core.rules.BooleanRule;
 import org.ta4j.core.rules.CrossedDownIndicatorRule;
 import org.ta4j.core.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.rules.OverIndicatorRule;
@@ -33,6 +37,8 @@ import java.util.List;
  * - Price is above both 50D and 100D SMA (long-term strength)
  * - ADX(14) above threshold (trend strength filter — skips sideways chop)
  * - HedgeIndex score at most 7 (no new entries in defensive/risk-off regimes)
+ * - GARCH+ADX regime is TRENDING (equity pilot for {@link RegimeForecastService};
+ *   no-op unless {@code regime.garch.enabled=true} — equity only for now)
  *
  * Exit Conditions (first satisfied wins):
  * - ATR trailing stop (chandelier): close falls atrMultiplier×ATR(14) below
@@ -52,6 +58,9 @@ public class ShortTermMomentumLongTermStrengthStrategy extends AbstractStrategy 
 
     @Autowired
     private HedgeIndexService hedgeIndexService;
+
+    @Autowired
+    private RegimeForecastService regimeForecastService;
 
     @Value("${frosk.slms.stoploss.percent:10.0}")
     private double stopLossPercent;
@@ -94,10 +103,22 @@ public class ShortTermMomentumLongTermStrengthStrategy extends AbstractStrategy 
         Rule trending = new OverIndicatorRule(adx, adxThreshold);
         Rule riskOn = new HedgeIndexMaxScoreRule(series, hedgeIndexService, hedgeMaxScore);
 
+        // GARCH+ADX regime gate — equity pilot for RegimeForecastService (steg 1).
+        // Disabled by default everywhere except the equity profile; when disabled
+        // this is a permanent no-op and RegimeForecastService never makes an HTTP
+        // call. TRENDING here overlaps with the `trending` ADX check above (same
+        // ADX period, similar default threshold) — the marginal value this adds
+        // is specifically the VOLATILE circuit-breaker from GARCH, which the
+        // strategy's own ADX gate cannot express on its own.
+        Rule garchRegimeOk = regimeForecastService.isEnabled()
+                ? new GarchRegimeRule(series, regimeForecastService, Regime.TRENDING)
+                : new BooleanRule(true);
+
         Rule entryRule = freshCross
                 .and(new AndRule(priceAbove50D, priceAbove100D))
                 .and(trending)
-                .and(riskOn);
+                .and(riskOn)
+                .and(garchRegimeOk);
 
         // Exit Rules
         Rule trailingStop = new AtrTrailingStopRule(series, ATR_PERIOD, atrMultiplier);

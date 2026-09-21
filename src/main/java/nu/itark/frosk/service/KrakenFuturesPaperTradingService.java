@@ -5,11 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.CryptoPaperAccountDTO;
 import nu.itark.frosk.analysis.CryptoPaperPositionDTO;
 import nu.itark.frosk.model.FeaturedStrategy;
+import nu.itark.frosk.model.IntradayBar;
 import nu.itark.frosk.model.KrakenFuturesPaperAccount;
 import nu.itark.frosk.model.KrakenFuturesPaperOrder;
+import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.IntradayBarRepository;
 import nu.itark.frosk.repo.KrakenFuturesPaperAccountRepository;
 import nu.itark.frosk.repo.KrakenFuturesPaperOrderRepository;
+import nu.itark.frosk.repo.SecurityPriceRepository;
+import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.strategies.SignalStrength;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +52,12 @@ import java.util.Optional;
  * <p>Longs pay funding when the perpetual trades at a premium (positive rate).
  * Shorts receive it. The configured rate is signed from the long's perspective:
  * positive = longs pay, negative = longs receive.
+ *
+ * <h3>Risk management</h3>
+ * Every entry ({@link #openPosition}) is additionally gated by {@link
+ * RiskManagementService#checkEntry} — daily-loss circuit breaker, per-position
+ * size cap, and max open positions — layered on top of (not replacing) the
+ * {@code maxTotalExposurePct} check below. See that class's javadoc.
  */
 @Service
 @Profile("kraken-futures")
@@ -98,6 +110,19 @@ public class KrakenFuturesPaperTradingService {
 
     @Autowired
     private FeaturedStrategyRepository featuredStrategyRepository;
+
+    @Autowired
+    private RiskManagementService riskManagementService;
+
+    @Autowired
+    private SecurityRepository securityRepository;
+
+    @Autowired
+    private SecurityPriceRepository securityPriceRepository;
+
+    /** Fallback price source — see {@link #latestPrice}. */
+    @Autowired
+    private IntradayBarRepository intradayBarRepository;
 
     // ── lifecycle ────────────────────────────────────────────────────────
 
@@ -215,12 +240,21 @@ public class KrakenFuturesPaperTradingService {
                         .divide(account.getInitCollateralUsd(), 4, RoundingMode.HALF_UP)
                         .multiply(BigDecimal.valueOf(100));
 
+        BigDecimal unrealizedPnlUsd = computeUnrealizedPnlUsd(openOrders);
+        BigDecimal unrealizedPnlPct = pctOfInitCollateral(unrealizedPnlUsd, account.getInitCollateralUsd());
+        BigDecimal totalPnlUsd = account.getRealizedPnlUsd().add(unrealizedPnlUsd);
+        BigDecimal totalPnlPct = pctOfInitCollateral(totalPnlUsd, account.getInitCollateralUsd());
+
         return CryptoPaperAccountDTO.builder()
                 .initCapitalEur(account.getInitCollateralUsd())
                 .cashEur(account.getCollateralUsd())
                 .equityEur(equity)
                 .realizedPnlEur(account.getRealizedPnlUsd())
                 .realizedPnlPercent(pnlPercent)
+                .unrealizedPnlEur(unrealizedPnlUsd)
+                .unrealizedPnlPct(unrealizedPnlPct)
+                .totalPnlEur(totalPnlUsd)
+                .totalPnlPct(totalPnlPct)
                 .openPositionsCount(openOrders.size())
                 .updatedAt(account.getUpdatedAt() != null ? account.getUpdatedAt().toString() : null)
                 .openPositions(openOrders.stream()
@@ -252,6 +286,13 @@ public class KrakenFuturesPaperTradingService {
         BigDecimal openExposure = orderRepository.sumOpenExposureUsd();
         BigDecimal collateral = account.getCollateralUsd().add(openExposure);
         BigDecimal positionUsd = sizePosition(collateral, strength);
+
+        RiskCheckResult riskCheck = riskManagementService.checkEntry(positionUsd, collateral);
+        if (!riskCheck.allowed()) {
+            log.warn("KrakenFuturesPaperTradingService: skip {} {} — blocked by risk management: {}",
+                    direction, symbol, riskCheck.reason());
+            return;
+        }
 
         BigDecimal maxTotalExposure = collateral.multiply(maxTotalExposurePct);
         if (openExposure.add(positionUsd).compareTo(maxTotalExposure) > 0) {
@@ -361,5 +402,57 @@ public class KrakenFuturesPaperTradingService {
 
     private KrakenFuturesPaperAccount getAccount() {
         return accountRepository.findAll().get(0);
+    }
+
+    // ── unrealized PnL ───────────────────────────────────────────────────
+
+    /**
+     * Sum of mark-to-market PnL across every open position — (currentPrice -
+     * entryPrice) × contracts for LONG, inverted for SHORT, mirroring {@link
+     * #closePosition}'s {@code rawPnl} (before fees/funding, which only apply
+     * on realization). Skips a position silently (contributes 0) when no
+     * current price can be found, rather than failing the whole summary.
+     */
+    private BigDecimal computeUnrealizedPnlUsd(List<KrakenFuturesPaperOrder> openOrders) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (KrakenFuturesPaperOrder o : openOrders) {
+            BigDecimal currentPrice = latestPrice(o.getSymbol());
+            if (currentPrice == null || o.getContracts() == null || o.getEntryPrice() == null) {
+                continue;
+            }
+            BigDecimal diff = "LONG".equals(o.getDirection())
+                    ? currentPrice.subtract(o.getEntryPrice())
+                    : o.getEntryPrice().subtract(currentPrice);
+            total = total.add(o.getContracts().multiply(diff));
+        }
+        return total.setScale(4, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Latest close for {@code symbol}: {@code security_price} (daily) first,
+     * falling back to the latest 15m {@code intraday_bar} close. On Kraken
+     * Futures only the regime product ({@code PF_XBTUSD}) gets a daily sync
+     * ({@link KrakenFuturesIntradayDataService#syncDailyCloses}) — every other
+     * PF_* symbol has 15m bars only, so this almost always falls through to
+     * the intraday_bar branch here. Null when neither source has data.
+     */
+    private BigDecimal latestPrice(String symbol) {
+        Security security = securityRepository.findByName(symbol);
+        if (security == null) {
+            return null;
+        }
+        SecurityPrice daily = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
+        if (daily != null && daily.getClose() != null) {
+            return daily.getClose();
+        }
+        IntradayBar bar = intradayBarRepository.findTopBySecurityIdOrderByBarTimestampDesc(security.getId());
+        return bar != null ? bar.getClose() : null;
+    }
+
+    private static BigDecimal pctOfInitCollateral(BigDecimal amountUsd, BigDecimal initCollateralUsd) {
+        if (initCollateralUsd == null || initCollateralUsd.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        return amountUsd.divide(initCollateralUsd, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
     }
 }

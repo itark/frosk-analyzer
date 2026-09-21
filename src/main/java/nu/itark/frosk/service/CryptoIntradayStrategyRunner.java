@@ -25,6 +25,7 @@ import org.ta4j.core.backtest.BarSeriesManager;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -235,6 +236,8 @@ public class CryptoIntradayStrategyRunner {
             return;
         }
 
+        reconcileOrphanedPositions(allSeries);
+
         int totalSignals = 0;
         List<BarSeries> eligibleSeries = new ArrayList<>();
 
@@ -389,6 +392,60 @@ public class CryptoIntradayStrategyRunner {
      * Called before the {@code continue} so excluded pairs don't stay open forever
      * when the exclusion was added after the position was entered.
      */
+    /**
+     * Force-closes any open real-world position whose ticker has fallen out of
+     * the currently synced universe entirely — removed from
+     * {@code crypto.intraday.products} (or, for Kraken Futures, the
+     * enumerated instrument list), not merely per-strategy excluded.
+     *
+     * <p>{@link #reconcileExcludedIfStaleOpen} only ever runs for securities
+     * still present in {@code allSeries} — the per-security loop in
+     * {@link #run()} simply never visits a ticker that {@code allSeries}
+     * doesn't contain, so a delisted ticker's stale BUY/SHRT signal had no
+     * path to ever being reconciled: it sat open indefinitely, and
+     * {@code CryptoPortfolioService} kept reporting its PnL against whatever
+     * price was last recorded before it dropped out of the whitelist.
+     * Confirmed in production data 2026-09-18: four positions opened
+     * 2026-08-02/03 in tickers later removed from {@code crypto.intraday.products}
+     * (UNI-EUR, GRT-EUR, CHZ-EUR, 1INCH-EUR) sat open for 46 days, one showing
+     * +118% "unrealized" PnL.
+     *
+     * <p>Closes flat — exit price equals the original entry price — rather than
+     * fetching a current price for an instrument this process has deliberately
+     * stopped tracking. The goal is to stop the phantom PnL, not to fabricate a
+     * mark for a ticker with no live data source here any more.
+     */
+    private void reconcileOrphanedPositions(Map<Security, BarSeries> allSeries) {
+        Set<String> activeTickers = allSeries.keySet().stream()
+                .map(Security::getName)
+                .collect(Collectors.toSet());
+
+        for (String ticker : signalRepository.findDistinctTickers()) {
+            if (activeTickers.contains(ticker)) {
+                continue;
+            }
+            for (CryptoIntradayStrategy cryptoStrategy : cryptoIntradayStrategies) {
+                String strategyName = cryptoStrategy.getClass().getSimpleName();
+                boolean isShort = cryptoStrategy.isShort();
+                if (!hasRealWorldOpenPosition(strategyName, ticker, isShort)) {
+                    continue;
+                }
+                IntradaySignal entry = latestRealWorldEntry(strategyName, ticker, isShort).orElse(null);
+                if (entry == null || entry.getClosePrice() == null) {
+                    continue;
+                }
+                String exitType = isShort ? "COVR" : "SELL";
+                log.warn("CryptoIntradayStrategyRunner: orphaned position — {} is no longer in the synced "
+                                + "universe but {}/{} has been open since {}; force-closing flat at entry price {}",
+                        ticker, strategyName, ticker, entry.getSignalInstant(), entry.getClosePrice());
+                IntradaySignal exit = new IntradaySignal(
+                        strategyName, ticker, Instant.now().getEpochSecond(), exitType, entry.getClosePrice());
+                signalRepository.save(exit);
+                dispatchPaperOrder(exitType, strategyName, ticker, entry.getClosePrice(), null);
+            }
+        }
+    }
+
     private void reconcileExcludedIfStaleOpen(String strategyName, boolean isShort,
                                                Security security, BarSeries series) {
         if (!hasRealWorldOpenPosition(strategyName, security.getName(), isShort)) return;

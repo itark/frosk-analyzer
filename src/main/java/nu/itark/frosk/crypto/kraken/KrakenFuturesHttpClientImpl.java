@@ -49,7 +49,7 @@ public class KrakenFuturesHttpClientImpl implements KrakenFuturesHttpClient {
     @Override
     public <T> T get(String endpointPath, Class<T> responseType) {
         String nonce = signature.generateNonce();
-        String authent = signature.computeAuthent("", nonce, endpointPath);
+        String authent = signature.computeAuthent("", nonce, signingPath(endpointPath));
 
         HttpHeaders headers = buildAuthHeaders(nonce, authent);
         HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -88,7 +88,7 @@ public class KrakenFuturesHttpClientImpl implements KrakenFuturesHttpClient {
                         .map(v -> encode(e.getKey()) + "=" + encode(v)))
                 .collect(Collectors.joining("&"));
 
-        String authent = signature.computeAuthent(postData, nonce, endpointPath);
+        String authent = signature.computeAuthent(postData, nonce, signingPath(endpointPath));
 
         HttpHeaders headers = buildAuthHeaders(nonce, authent);
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -114,6 +114,33 @@ public class KrakenFuturesHttpClientImpl implements KrakenFuturesHttpClient {
     }
 
     // ── helpers ──────────────────────────────────────────────────────────
+
+    /**
+     * The path Kraken expects inside the {@code Authent} HMAC: the request path
+     * with the {@code /derivatives} prefix removed, e.g. {@code /api/v3/accounts}
+     * for {@code https://futures.kraken.com/derivatives/api/v3/accounts}.
+     *
+     * <p>Signing the bare endpoint ({@code /accounts}) instead produces an
+     * {@code Authent} Kraken rejects with 401 on every private endpoint. Derived
+     * from {@link #baseUrl} rather than hard-coded so a {@code baseUrl} override
+     * without the {@code /derivatives} segment still signs correctly.
+     */
+    private String signingPath(String endpointPath) {
+        String basePath;
+        try {
+            basePath = java.net.URI.create(baseUrl).getPath();
+        } catch (IllegalArgumentException ex) {
+            basePath = "";
+        }
+        if (basePath == null) basePath = "";
+        if (basePath.startsWith("/derivatives")) {
+            basePath = basePath.substring("/derivatives".length());
+        }
+        if (basePath.endsWith("/")) {
+            basePath = basePath.substring(0, basePath.length() - 1);
+        }
+        return basePath + endpointPath;
+    }
 
     private HttpHeaders buildAuthHeaders(String nonce, String authent) {
         HttpHeaders headers = new HttpHeaders();

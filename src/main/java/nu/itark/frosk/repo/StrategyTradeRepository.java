@@ -28,4 +28,20 @@ public interface StrategyTradeRepository extends JpaRepository<StrategyTrade, Lo
 	List<StrategyTrade> findByFeaturedStrategyIdAndDateAfter(Long featuredStrategyId, Date date);
 
 	List<StrategyTrade> findByFeaturedStrategyIdAndDateGreaterThan(long featuredStrategyId, Date latestDate);
+
+	/**
+	 * Daily realized PnL for a strategy, across every security it trades — the
+	 * series {@link nu.itark.frosk.service.DailyPnlForecastService} sends to
+	 * frosk-prophet-service. Entry rows (BUY/SHRT) carry {@code pnl=null} and
+	 * are excluded; only closing rows (SELL/COVR) have a realized value.
+	 * {@code featured_strategy} is keyed by (strategy, security), so this
+	 * joins across all securities the named strategy has ever traded.
+	 */
+	@Query(value = "SELECT CAST(st.date AS DATE) AS trade_date, SUM(st.pnl) AS daily_pnl " +
+			"FROM strategy_trade st " +
+			"JOIN featured_strategy fs ON fs.id = st.featured_strategy_id " +
+			"WHERE fs.name = ?1 AND st.pnl IS NOT NULL " +
+			"GROUP BY CAST(st.date AS DATE) " +
+			"ORDER BY trade_date", nativeQuery = true)
+	List<DailyPnlRow> findDailyPnlByStrategyName(String strategyName);
 }

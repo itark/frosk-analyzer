@@ -2,9 +2,13 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.service.CryptoMarketRegime;
 import nu.itark.frosk.service.CryptoRegimeService;
+import nu.itark.frosk.service.LstmSignalFilterService;
+import nu.itark.frosk.strategies.indicators.BarImbalanceIndicator;
 import nu.itark.frosk.strategies.rules.AtrStopLossRule;
-import nu.itark.frosk.strategies.rules.CryptoRegimeRule;
+import nu.itark.frosk.strategies.rules.CryptoMarketRegimeRule;
+import nu.itark.frosk.strategies.rules.LstmSignalRule;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +21,7 @@ import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.rules.BooleanRule;
 import org.ta4j.core.rules.CrossedDownIndicatorRule;
 import org.ta4j.core.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.rules.OverIndicatorRule;
@@ -30,7 +35,16 @@ import java.util.List;
  * <ul>
  *   <li>EMA(fast) crosses above EMA(slow)</li>
  *   <li>RSI({@code rsiPeriod}) &gt; 50 — momentum confirms the cross</li>
- *   <li>{@link CryptoRegimeRule} — BTC above its daily SMA(50)</li>
+ *   <li>{@link CryptoMarketRegimeRule} requires {@code TRENDING_UP} — BTC above
+ *       its SMA <em>and</em> ADX confirms an actual trend. Stricter than the old
+ *       binary "BTC above SMA(50)" gate: confirmed 2026-07-22 to 2026-07-30, BTC
+ *       stayed above its SMA the whole week (binary gate would have allowed
+ *       every entry) while ADX collapsed from ~26 to ~18 (RANGING) — this
+ *       strategy lost -603% at a 16.4% win rate that week</li>
+ *   <li>{@link BarImbalanceIndicator} on the entry bar &gt; 0 — the bar's own
+ *       (close-open)/(high-low) must be buyer-dominated too</li>
+ *   <li>{@link LstmSignalRule} — no-op unless {@code forecast.lstm.enabled=true}
+ *       (crypto profile only for now, see {@link LstmSignalFilterService})</li>
  * </ul>
  *
  * <h3>Exit (first satisfied wins)</h3>
@@ -55,6 +69,9 @@ public class CryptoEMACrossLongIntradayStrategy extends AbstractStrategy
 
     @Autowired
     private CryptoRegimeService cryptoRegimeService;
+
+    @Autowired
+    private LstmSignalFilterService lstmSignalFilterService;
 
     @Value("${crypto.emacross.ema.fast:9}")
     private int emaFast;
@@ -96,9 +113,22 @@ public class CryptoEMACrossLongIntradayStrategy extends AbstractStrategy
         // ── Entry ─────────────────────────────────────────────────────────
         Rule crossUp  = new CrossedUpIndicatorRule(emaF, emaS);
         Rule rsiAbove = new OverIndicatorRule(rsi, DoubleNum.valueOf(50));
-        Rule regime   = new CryptoRegimeRule(series, cryptoRegimeService);
+        Rule regime   = new CryptoMarketRegimeRule(series, cryptoRegimeService, CryptoMarketRegime.TRENDING_UP);
 
-        Rule entryRule = crossUp.and(rsiAbove).and(regime);
+        // Bar-imbalance confirmation: the entry bar's own (close-open)/(high-low)
+        // must be positive too — the EMA cross and RSI can agree while the bar
+        // that triggers them was actually seller-dominated (e.g. a wick-driven cross).
+        BarImbalanceIndicator imbalance = new BarImbalanceIndicator(series);
+        Rule imbalanceOk = new OverIndicatorRule(imbalance, DoubleNum.valueOf(0));
+
+        // LSTM signal filter — disabled by default everywhere except the crypto
+        // profile; when disabled this is a permanent no-op and LstmSignalFilterService
+        // never makes an HTTP call.
+        Rule lstmOk = lstmSignalFilterService.isEnabled()
+                ? new LstmSignalRule(series, lstmSignalFilterService)
+                : new BooleanRule(true);
+
+        Rule entryRule = crossUp.and(rsiAbove).and(regime).and(imbalanceOk).and(lstmOk);
 
         // ── Exit ──────────────────────────────────────────────────────────
         Rule crossDown = new CrossedDownIndicatorRule(emaF, emaS);

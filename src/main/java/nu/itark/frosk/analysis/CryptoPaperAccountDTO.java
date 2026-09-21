@@ -15,6 +15,12 @@ public class CryptoPaperAccountDTO {
     private BigDecimal equityEur;
     private BigDecimal realizedPnlEur;
     private BigDecimal realizedPnlPercent;
+    /** Mark-to-market PnL of currently open positions — (currentPrice - entryPrice) × quantity, signed for shorts. */
+    private BigDecimal unrealizedPnlEur;
+    private BigDecimal unrealizedPnlPct;
+    /** realizedPnlEur + unrealizedPnlEur. */
+    private BigDecimal totalPnlEur;
+    private BigDecimal totalPnlPct;
     private int openPositionsCount;
     private String updatedAt;
     private List<CryptoPaperPositionDTO> openPositions;

@@ -2,10 +2,11 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.service.CryptoMarketRegime;
 import nu.itark.frosk.service.CryptoRegimeService;
 import nu.itark.frosk.strategies.rules.AtrStopLossShortRule;
 import nu.itark.frosk.strategies.rules.AtrTrailingStopShortRule;
-import nu.itark.frosk.strategies.rules.CryptoRegimeRule;
+import nu.itark.frosk.strategies.rules.CryptoMarketRegimeRule;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import nu.itark.frosk.strategies.rules.TimeGatingRule;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +40,12 @@ import java.util.List;
  *   <li>Close crosses below the previous {@code rangeBars}-bar low — fresh breakdown event</li>
  *   <li>Range width at least {@code minRangeWidthPct} — the expected move must clear fees</li>
  *   <li>Close below EMA({@code trendPeriod}) — 24h trend agrees (downtrend)</li>
- *   <li>Inverted {@link CryptoRegimeRule} — BTC below its daily SMA; only short in downtrend</li>
+ *   <li>{@link CryptoMarketRegimeRule} requires {@code TRENDING_DOWN} — BTC
+ *       below its SMA <em>and</em> ADX confirms an actual downtrend, not just a
+ *       brief dip below a lagging average. Mirrors the fix applied to
+ *       {@link CryptoRangeBreakoutIntradayStrategy} 2026-09-18 after that
+ *       strategy's long side lost -232% during a week where BTC sat below/above
+ *       its SMA without ADX ever confirming a real trend</li>
  * </ul>
  *
  * <h3>Exit rules (first satisfied wins)</h3>
@@ -116,10 +122,10 @@ public class CryptoShortIntradayStrategy extends AbstractStrategy
         Rule breakdown   = new CrossedDownIndicatorRule(close, prevLow);
         Rule rangeWide   = new RangeWidthRule(prevHigh, prevLow, minRangeWidthPct);
         Rule trendDown   = new UnderIndicatorRule(close, trendEma);
-        // Inverted regime: BTC below its SMA — risk-off is required for shorts
-        Rule regimeOk    = new CryptoRegimeRule(series, cryptoRegimeService, true);
+        // Three-state regime: BTC below its SMA AND ADX confirms an actual downtrend
+        Rule regimeOk    = new CryptoMarketRegimeRule(series, cryptoRegimeService, CryptoMarketRegime.TRENDING_DOWN);
         // Block during 17:30–19:00 UTC: US session evening volatility spikes crush shorts
-        Rule notUsEvening = new TimeGatingRule(LocalTime.of(17, 30), LocalTime.of(19, 0));
+        Rule notUsEvening = new TimeGatingRule(series, LocalTime.of(17, 30), LocalTime.of(19, 0));
 
         Rule entryRule = breakdown.and(rangeWide).and(trendDown).and(regimeOk).and(notUsEvening);
 

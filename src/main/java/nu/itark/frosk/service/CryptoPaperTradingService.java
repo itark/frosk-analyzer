@@ -7,9 +7,15 @@ import nu.itark.frosk.analysis.CryptoPaperPositionDTO;
 import nu.itark.frosk.model.CryptoPaperAccount;
 import nu.itark.frosk.model.CryptoPaperOrder;
 import nu.itark.frosk.model.FeaturedStrategy;
+import nu.itark.frosk.model.IntradayBar;
+import nu.itark.frosk.model.Security;
+import nu.itark.frosk.model.SecurityPrice;
 import nu.itark.frosk.repo.CryptoPaperAccountRepository;
 import nu.itark.frosk.repo.CryptoPaperOrderRepository;
 import nu.itark.frosk.repo.FeaturedStrategyRepository;
+import nu.itark.frosk.repo.IntradayBarRepository;
+import nu.itark.frosk.repo.SecurityPriceRepository;
+import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.strategies.SignalStrength;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -81,6 +87,16 @@ public class CryptoPaperTradingService {
 
     @Autowired
     private FeaturedStrategyRepository featuredStrategyRepository;
+
+    @Autowired
+    private SecurityRepository securityRepository;
+
+    @Autowired
+    private SecurityPriceRepository securityPriceRepository;
+
+    /** Fallback price source — see {@link #latestPrice}. */
+    @Autowired
+    private IntradayBarRepository intradayBarRepository;
 
     @PostConstruct
     private void initAccount() {
@@ -220,12 +236,21 @@ public class CryptoPaperTradingService {
                         .divide(account.getInitCapitalEur(), 4, RoundingMode.HALF_UP)
                         .multiply(BigDecimal.valueOf(100));
 
+        BigDecimal unrealizedPnlEur = computeUnrealizedPnlEur(openOrders);
+        BigDecimal unrealizedPnlPct = pctOfInitCapital(unrealizedPnlEur, account.getInitCapitalEur());
+        BigDecimal totalPnlEur = account.getRealizedPnlEur().add(unrealizedPnlEur);
+        BigDecimal totalPnlPct = pctOfInitCapital(totalPnlEur, account.getInitCapitalEur());
+
         return CryptoPaperAccountDTO.builder()
                 .initCapitalEur(account.getInitCapitalEur())
                 .cashEur(account.getCashEur())
                 .equityEur(equity)
                 .realizedPnlEur(account.getRealizedPnlEur())
                 .realizedPnlPercent(pnlPercent)
+                .unrealizedPnlEur(unrealizedPnlEur)
+                .unrealizedPnlPct(unrealizedPnlPct)
+                .totalPnlEur(totalPnlEur)
+                .totalPnlPct(totalPnlPct)
                 .openPositionsCount(openOrders.size())
                 .updatedAt(account.getUpdatedAt() != null ? account.getUpdatedAt().toString() : null)
                 .openPositions(openOrders.stream()
@@ -247,5 +272,54 @@ public class CryptoPaperTradingService {
                         })
                         .toList())
                 .build();
+    }
+
+    // ── unrealized PnL ───────────────────────────────────────────────────
+
+    /**
+     * Sum of (currentPrice - entryPrice) × filledQuantity across every open
+     * (BUY, FILLED) paper order — mark-to-market, unlike {@link #computeEquity}
+     * which values open positions at cost basis. Skips a position silently
+     * (contributes 0) when no current price can be found, rather than failing
+     * the whole summary.
+     */
+    private BigDecimal computeUnrealizedPnlEur(List<CryptoPaperOrder> openOrders) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (CryptoPaperOrder o : openOrders) {
+            BigDecimal currentPrice = latestPrice(o.getTicker());
+            if (currentPrice == null) {
+                continue;
+            }
+            total = total.add(currentPrice.subtract(o.getFilledPrice()).multiply(o.getFilledQuantity()));
+        }
+        return total.setScale(4, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Latest close for {@code ticker}: {@code security_price} (daily) first, since
+     * that is what every ticker in {@code crypto.intraday.products} gets synced
+     * nightly. Falls back to the latest 15m {@code intraday_bar} close for a
+     * ticker with no daily row yet (e.g. added intraday, before the next 00:30
+     * sync) — same fallback order {@link CryptoPortfolioService#getCurrentPrice}
+     * already uses. Null when neither source has data.
+     */
+    private BigDecimal latestPrice(String ticker) {
+        Security security = securityRepository.findByName(ticker);
+        if (security == null) {
+            return null;
+        }
+        SecurityPrice daily = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
+        if (daily != null && daily.getClose() != null) {
+            return daily.getClose();
+        }
+        IntradayBar bar = intradayBarRepository.findTopBySecurityIdOrderByBarTimestampDesc(security.getId());
+        return bar != null ? bar.getClose() : null;
+    }
+
+    private static BigDecimal pctOfInitCapital(BigDecimal amountEur, BigDecimal initCapitalEur) {
+        if (initCapitalEur == null || initCapitalEur.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        return amountEur.divide(initCapitalEur, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
     }
 }

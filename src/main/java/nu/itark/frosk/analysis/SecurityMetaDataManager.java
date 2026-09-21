@@ -2,6 +2,7 @@ package nu.itark.frosk.analysis;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.*;
+import nu.itark.frosk.repo.IntradayBarRepository;
 import nu.itark.frosk.repo.SecurityPriceRepository;
 import nu.itark.frosk.repo.SecurityRepository;
 import nu.itark.frosk.service.BarSeriesService;
@@ -34,6 +35,10 @@ public class SecurityMetaDataManager {
 
     @Autowired
     SecurityPriceRepository securityPriceRepository;
+
+    /** Fallback price source — see {@link #getLatestClose}. */
+    @Autowired
+    IntradayBarRepository intradayBarRepository;
 
     @Autowired
     StrategiesMap strategiesMap;
@@ -138,10 +143,33 @@ public class SecurityMetaDataManager {
         return securityPrice.getOpen();
     }
 
+    /**
+     * Latest close for {@code securityName}: {@code security_price} (daily) first,
+     * falling back to the latest 15m {@code intraday_bar} close — same fallback
+     * order as {@code KrakenFuturesPaperTradingService#latestPrice}. Needed
+     * because Kraken Futures only syncs a daily row for its regime product
+     * ({@code PF_XBTUSD}); every other PF_* symbol has 15m bars only, so callers
+     * on that profile hit {@code security_price} empty-handed for 22 of 23
+     * products. Returns null (never throws) when neither source has data — the
+     * caller must handle a null result gracefully.
+     */
     public BigDecimal getLatestClose(String securityName) {
         final Security security = securityRepository.findByName(securityName);
+        if (security == null) {
+            log.warn("SecurityMetaDataManager: getLatestClose — no security named '{}'", securityName);
+            return null;
+        }
         final SecurityPrice securityPrice = securityPriceRepository.findTopBySecurityIdOrderByTimestampDesc(security.getId());
-        return securityPrice.getClose();
+        if (securityPrice != null && securityPrice.getClose() != null) {
+            return securityPrice.getClose();
+        }
+        final IntradayBar bar = intradayBarRepository.findTopBySecurityIdOrderByBarTimestampDesc(security.getId());
+        if (bar != null && bar.getClose() != null) {
+            return bar.getClose();
+        }
+        log.warn("SecurityMetaDataManager: getLatestClose — no price for '{}' in security_price or intraday_bar",
+                securityName);
+        return null;
     }
 
     public FeaturedStrategyDTO getDTO(FeaturedStrategy fs, boolean includeIndicatorValues) {
