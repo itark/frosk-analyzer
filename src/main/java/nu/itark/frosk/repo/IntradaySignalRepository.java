@@ -26,6 +26,9 @@ public interface IntradaySignalRepository extends JpaRepository<IntradaySignal, 
     @Query("SELECT DISTINCT s.strategyName FROM IntradaySignal s WHERE s.strategyName IS NOT NULL")
     List<String> findDistinctStrategyNames();
 
+    /** A strategy's first signal on this process — when it started running here. */
+    Optional<IntradaySignal> findTopByStrategyNameOrderBySignalTimestampAsc(String strategyName);
+
     boolean existsByStrategyNameAndTickerAndSignalTimestampAndSignalType(
             String strategyName, String ticker, long signalTimestamp, String signalType);
 

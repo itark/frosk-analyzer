@@ -51,9 +51,10 @@ public class DataController {
      * {@code preRegistrationPending=true} rather than hidden — an explicit,
      * owner-acknowledged choice to accept the peeking risk the pre-registration
      * warns against, in exchange for visibility. The frontend is responsible for
-     * flagging these rows; this list is not a filter.
+     * flagging these rows; this list is not a filter. Public so the Kraken
+     * strategy lifecycle can refuse to promote these to real money.
      */
-    private static final Set<String> PRE_REGISTRATION_PENDING_STRATEGIES = Set.of(
+    public static final Set<String> PRE_REGISTRATION_PENDING_STRATEGIES = Set.of(
             "CryptoLiquiditySweepIntradayStrategy",
             "OrderFlowImbalanceStrategy"
     );

@@ -52,6 +52,26 @@ public class LiveTradingGate {
     @Value("${crypto.live.trading.max.total.exposure.pct:0.5}")
     private BigDecimal maxTotalExposurePct;
 
+    /**
+     * Live-side mirror of {@code RiskManagementService.enabled} for paper — gates
+     * only the max-open-positions check below, added 2026-09-28 to close a
+     * config-parity gap where that circuit breaker existed for paper but not live.
+     * Shares the exact property key so the two can never drift apart. Does not
+     * affect any of this class's pre-existing checks (exposure cap, position-size
+     * cap, daily-loss kill switch, balance check), which have always been
+     * unconditional.
+     */
+    @Value("${risk.enabled:true}")
+    private boolean riskEnabled;
+
+    /**
+     * Max simultaneous open positions across all strategies/symbols. Shares the
+     * exact key RiskManagementService reads for paper (risk.max.open.positions)
+     * so the two limits cannot silently diverge.
+     */
+    @Value("${risk.max.open.positions:5}")
+    private int maxOpenPositions;
+
     /** Mirrors {@code CryptoPaperTradingService}'s multipliers — kept in sync deliberately. */
     @Value("${crypto.signal.strength.elevated.multiplier:1.5}")
     private BigDecimal elevatedMultiplier;
@@ -139,6 +159,9 @@ public class LiveTradingGate {
             log.warn("LiveTradingGate: canTrade=false — eurAmount {} exceeds max {}", eurAmount, maxPositionEur);
             return false;
         }
+        if (riskEnabled && maxOpenPositionsReached()) {
+            return false;
+        }
         if (dailyLossExceeded()) {
             setEnabled(false);
             return false;
@@ -149,6 +172,21 @@ public class LiveTradingGate {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Live mirror of RiskManagementService's paper-only max-open-positions check
+     * (added 2026-09-28). Counts entries that are, or may be, open — same
+     * definition {@link #computeEquity()} and the exposure cap above already use.
+     */
+    boolean maxOpenPositionsReached() {
+        long openCount = liveOrderRepository.countOpenPositions();
+        if (openCount >= maxOpenPositions) {
+            log.warn("LiveTradingGate: canTrade=false — max open positions reached ({}/{})",
+                    openCount, maxOpenPositions);
+            return true;
+        }
+        return false;
     }
 
     boolean dailyLossExceeded() {

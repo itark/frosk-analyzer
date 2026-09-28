@@ -97,11 +97,8 @@ public class KrakenFuturesSignature {
                     apiKey.substring(0, Math.min(6, apiKey.length())),
                     apiKey.substring(Math.max(0, apiKey.length() - 4)),
                     apiKey.length(), decoded.length);
-            if (decoded.length != 64) {
-                log.warn("KrakenFuturesSignature: secret decodes to {} bytes; a Kraken Futures secret is normally 64. "
-                        + "Check that the value was copied whole, and that it is a FUTURES key from futures.kraken.com "
-                        + "(a Spot key from kraken.com does not authenticate against the derivatives API).", decoded.length);
-            }
+            // No expected-length check: valid Futures secrets have been seen decoding
+            // to both 64 and 66 bytes, so a length heuristic only produces false alarms.
         } catch (IllegalArgumentException e) {
             log.error("KrakenFuturesSignature: API secret is not valid base64 — every Authent will be computed with a "
                     + "garbage HMAC key and Kraken will answer authenticationError.");

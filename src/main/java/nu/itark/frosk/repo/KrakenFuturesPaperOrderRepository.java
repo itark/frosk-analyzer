@@ -17,6 +17,12 @@ public interface KrakenFuturesPaperOrderRepository extends JpaRepository<KrakenF
     Optional<KrakenFuturesPaperOrder> findTopBySymbolAndStrategyNameAndDirectionAndStatusOrderByCreatedAtDesc(
             String symbol, String strategyName, String direction, String status);
 
+    /** A strategy's closed positions in close order — the trade list behind the promotion metrics. */
+    List<KrakenFuturesPaperOrder> findByStrategyNameAndStatusOrderByClosedAtAsc(String strategyName, String status);
+
+    /** A strategy's first-ever paper position — fallback start date when it has no signals recorded. */
+    Optional<KrakenFuturesPaperOrder> findTopByStrategyNameOrderByCreatedAtAsc(String strategyName);
+
     /** All currently open positions (any direction). */
     List<KrakenFuturesPaperOrder> findByStatusOrderByCreatedAtDesc(String status);
 

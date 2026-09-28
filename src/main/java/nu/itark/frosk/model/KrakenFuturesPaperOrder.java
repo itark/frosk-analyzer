@@ -50,8 +50,13 @@ public class KrakenFuturesPaperOrder {
     @Column(name = "usd_amount", precision = 14, scale = 4)
     private BigDecimal usdAmount;
 
-    /** Number of contracts (integer, stored as BigDecimal for compatibility). */
-    @Column(name = "contracts", precision = 14, scale = 0)
+    /**
+     * Position size in contracts — on PF_* perpetuals one contract is one unit of
+     * the BASE asset (1 BTC on PF_XBTUSD), so this is fractional: scale 8 covers
+     * every instrument's precision (the finest in use is 4 decimals, BTC).
+     * It was scale 0, which truncated BTC/ETH positions to zero.
+     */
+    @Column(name = "contracts", precision = 20, scale = 8)
     private BigDecimal contracts;
 
     /** Entry price (mark price at time of simulated fill), USD. */
@@ -95,4 +100,32 @@ public class KrakenFuturesPaperOrder {
      */
     @Column(name = "signal_strength", length = 10)
     private String signalStrength;
+
+    /**
+     * Strategy mode the position was opened under: {@code PAPER}, or
+     * {@code SHADOW} when a real Kraken order was sent for the same signal —
+     * the key for live-vs-paper comparison analysis (match on strategy_name,
+     * symbol and created_at against live_order rows with the same tag).
+     * Null on rows written before strategy modes existed; treat as PAPER.
+     */
+    @Column(name = "execution_mode", length = 10)
+    private String executionMode;
+
+    /**
+     * Daily BTC market regime when the position was opened — the same value the
+     * triggering signal carries. Recorded here too so realized PnL can be split
+     * by regime without joining back to intraday_signal. Instrumentation only.
+     */
+    @Column(name = "market_regime", length = 15)
+    private String marketRegime;
+
+    /**
+     * Why the position was closed — {@code SIGNAL} (the strategy's own SELL/COVR)
+     * or {@code PROTECTIVE_STOP} ({@link nu.itark.frosk.service.KrakenFuturesPaperTradingService}'s
+     * poll-based simulation of the live exchange-side stop, see {@code checkProtectiveStops()}).
+     * Null on OPEN rows and on rows written before this field existed.
+     * Mirrors {@link LiveOrder#getCloseReason()} so paper and live can be compared directly.
+     */
+    @Column(name = "close_reason", length = 20)
+    private String closeReason;
 }

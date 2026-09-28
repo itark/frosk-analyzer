@@ -74,6 +74,20 @@ public class IntradaySignal {
      * {@link nu.itark.frosk.strategies.ISignalStrength}. Null for exit signals,
      * strategies that don't implement the interface, and non-crypto signals.
      */
+    /**
+     * Daily BTC market regime at signal time (RANGING / TRENDING_UP /
+     * TRENDING_DOWN), from {@link nu.itark.frosk.service.CryptoRegimeService}.
+     *
+     * <p>Pure instrumentation: nothing gates on it. It exists so the question
+     * "does this strategy behave differently per regime?" can be answered from
+     * recorded data instead of intuition — as of 2026-09-24 every trading day on
+     * the Kraken instance had been TRENDING_UP, so there was no basis to judge a
+     * regime filter. Null on signals emitted before this field existed, and
+     * whenever the regime cannot be computed (no BTC history).
+     */
+    @Column(name = "market_regime", length = 15)
+    private String marketRegime;
+
     @Column(name = "signal_strength", length = 10)
     private String signalStrength;
 

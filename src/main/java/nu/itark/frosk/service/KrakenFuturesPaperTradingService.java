@@ -4,6 +4,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.CryptoPaperAccountDTO;
 import nu.itark.frosk.analysis.CryptoPaperPositionDTO;
+import nu.itark.frosk.crypto.kraken.KrakenFuturesInstrumentService;
+import nu.itark.frosk.crypto.kraken.KrakenFuturesOrderClient;
 import nu.itark.frosk.model.FeaturedStrategy;
 import nu.itark.frosk.model.IntradayBar;
 import nu.itark.frosk.model.KrakenFuturesPaperAccount;
@@ -26,6 +28,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,6 +62,20 @@ import java.util.Optional;
  * RiskManagementService#checkEntry} — daily-loss circuit breaker, per-position
  * size cap, and max open positions — layered on top of (not replacing) the
  * {@code maxTotalExposurePct} check below. See that class's javadoc.
+ *
+ * <h3>Protective stop</h3>
+ * Mirrors the live exchange-side stop in {@code LiveOrderExecutor}/{@code
+ * KrakenFuturesOrderClient}: same property ({@code kraken.futures.protective.stop.pct},
+ * default 2.7%) and same price reference (mark price). The mechanism necessarily
+ * differs — live rests a real reduce-only order on Kraken that fires the instant
+ * price crosses it; paper has no order book to rest on, so {@link
+ * #checkProtectiveStops()} polls the public mark-price ticker on a fixed interval
+ * ({@code kraken.futures.paper.protective.stop.poll.ms}, default 60s) and closes
+ * the position itself once the loss threshold is breached. That poll gap is the
+ * one honest difference from live: a move that reverses within the same interval
+ * is caught here but would already have filled the resting order live, and a move
+ * so fast it blows through the level between two polls is exited late here, same
+ * as it would be by the strategy's own bar-close stop.
  */
 @Service
 @Profile("kraken-futures")
@@ -96,6 +114,22 @@ public class KrakenFuturesPaperTradingService {
     @Value("${kraken.futures.paper.funding.rate.per.8h:0.0001}")
     private BigDecimal fundingRatePer8h;
 
+    /**
+     * Distance of the simulated protective stop from entry, percent. Same key and
+     * same default as {@code LiveOrderExecutor.protectiveStopPct} — paper and live
+     * must always read the same configured level. 0 disables it.
+     */
+    @Value("${kraken.futures.protective.stop.pct:2.7}")
+    private BigDecimal protectiveStopPct = new BigDecimal("2.7");
+
+    /**
+     * How often {@link #checkProtectiveStops()} polls the mark price for open
+     * positions. Live reacts intrabar via a resting exchange order; paper has no
+     * order book, so this interval is the closest practical approximation.
+     */
+    @Value("${kraken.futures.paper.protective.stop.poll.ms:60000}")
+    private long protectiveStopPollMs;
+
     @Value("${crypto.signal.strength.elevated.multiplier:1.5}")
     private BigDecimal elevatedMultiplier;
 
@@ -113,6 +147,23 @@ public class KrakenFuturesPaperTradingService {
 
     @Autowired
     private RiskManagementService riskManagementService;
+
+    /** Order-size precision per instrument — shared with the live order client. */
+    @Autowired
+    private KrakenFuturesInstrumentService instrumentService;
+
+    /**
+     * Same client the live path uses to fetch the mark price ({@code
+     * getMarkPrice}, a public/unauthenticated ticker call) — reused here so the
+     * paper stop checks the identical price reference as the live one
+     * ({@code kraken.futures.protective.stop.trigger=mark}).
+     */
+    @Autowired(required = false)
+    private KrakenFuturesOrderClient orderClient;
+
+    /** Daily BTC regime, recorded on each opened position for later analysis. */
+    @Autowired(required = false)
+    private CryptoRegimeService cryptoRegimeService;
 
     @Autowired
     private SecurityRepository securityRepository;
@@ -148,12 +199,21 @@ public class KrakenFuturesPaperTradingService {
     /** Open a long position (BUY signal) with signal strength scaling. */
     public void dispatchLong(String strategyName, String symbol, BigDecimal markPrice,
                              SignalStrength strength) {
-        openPosition("LONG", strategyName, symbol, markPrice, strength);
+        dispatchLong(strategyName, symbol, markPrice, strength, "PAPER");
+    }
+
+    /**
+     * Open a long position, tagged with the strategy mode it was opened under
+     * ({@code PAPER}, or {@code SHADOW} when a real order was sent alongside).
+     */
+    public void dispatchLong(String strategyName, String symbol, BigDecimal markPrice,
+                             SignalStrength strength, String executionMode) {
+        openPosition("LONG", strategyName, symbol, markPrice, strength, executionMode);
     }
 
     /** Close a long position (SELL signal). */
     public void dispatchCloseLong(String strategyName, String symbol, BigDecimal markPrice) {
-        closePosition("LONG", strategyName, symbol, markPrice);
+        closePosition("LONG", strategyName, symbol, markPrice, "SIGNAL");
     }
 
     /** Open a short position (SHRT signal). */
@@ -164,12 +224,62 @@ public class KrakenFuturesPaperTradingService {
     /** Open a short position (SHRT signal) with signal strength scaling. */
     public void dispatchShort(String strategyName, String symbol, BigDecimal markPrice,
                               SignalStrength strength) {
-        openPosition("SHORT", strategyName, symbol, markPrice, strength);
+        dispatchShort(strategyName, symbol, markPrice, strength, "PAPER");
+    }
+
+    /** Open a short position, tagged with its strategy mode — see {@link #dispatchLong(String, String, BigDecimal, SignalStrength, String)}. */
+    public void dispatchShort(String strategyName, String symbol, BigDecimal markPrice,
+                              SignalStrength strength, String executionMode) {
+        openPosition("SHORT", strategyName, symbol, markPrice, strength, executionMode);
     }
 
     /** Close a short position (COVR signal). */
     public void dispatchCloseShort(String strategyName, String symbol, BigDecimal markPrice) {
-        closePosition("SHORT", strategyName, symbol, markPrice);
+        closePosition("SHORT", strategyName, symbol, markPrice, "SIGNAL");
+    }
+
+    // ── protective stop (mirrors LiveOrderExecutor/KrakenFuturesOrderClient) ─
+
+    /**
+     * Polls the current mark price for every OPEN paper position and closes any
+     * whose adverse move has reached {@code protectiveStopPct} — the paper
+     * equivalent of the resting exchange stop {@code LiveOrderExecutor} attaches
+     * to every live entry. Same threshold, same price reference (mark); see the
+     * class javadoc for the one mechanical difference (poll vs. resting order).
+     *
+     * <p>Best-effort like its live counterpart: a symbol whose mark price can't be
+     * fetched this cycle is skipped and picked up on the next poll, never treated
+     * as a reason to fail the whole run.
+     */
+    @Scheduled(fixedRateString = "${kraken.futures.paper.protective.stop.poll.ms:60000}")
+    public void checkProtectiveStops() {
+        if (protectiveStopPct == null || protectiveStopPct.signum() <= 0) return;
+        if (orderClient == null) return; // not wired — e.g. a unit test constructing this service directly
+
+        List<KrakenFuturesPaperOrder> openPositions = orderRepository.findByStatusOrderByCreatedAtDesc("OPEN");
+        for (KrakenFuturesPaperOrder pos : openPositions) {
+            BigDecimal markPrice = orderClient.getMarkPrice(pos.getSymbol());
+            if (markPrice == null || markPrice.signum() <= 0 || pos.getEntryPrice() == null) {
+                continue;
+            }
+
+            // Adverse move percent — positive means the position is underwater.
+            // Long loses when price falls; short loses when price rises.
+            BigDecimal adverseMovePct = "LONG".equals(pos.getDirection())
+                    ? pos.getEntryPrice().subtract(markPrice)
+                            .divide(pos.getEntryPrice(), 8, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100))
+                    : markPrice.subtract(pos.getEntryPrice())
+                            .divide(pos.getEntryPrice(), 8, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100));
+
+            if (adverseMovePct.compareTo(protectiveStopPct) >= 0) {
+                log.warn("PAPER FUTURES PROTECTIVE STOP FIRED: {} {} (strategy={}, entry={}, mark={}, move={}% >= {}%)",
+                        pos.getDirection(), pos.getSymbol(), pos.getStrategyName(),
+                        pos.getEntryPrice(), markPrice, adverseMovePct, protectiveStopPct);
+                closePosition(pos.getDirection(), pos.getStrategyName(), pos.getSymbol(), markPrice, "PROTECTIVE_STOP");
+            }
+        }
     }
 
     // ── funding scheduler ────────────────────────────────────────────────
@@ -281,7 +391,7 @@ public class KrakenFuturesPaperTradingService {
     // ── private ──────────────────────────────────────────────────────────
 
     private void openPosition(String direction, String strategyName, String symbol,
-                              BigDecimal markPrice, SignalStrength strength) {
+                              BigDecimal markPrice, SignalStrength strength, String executionMode) {
         KrakenFuturesPaperAccount account = getAccount();
         BigDecimal openExposure = orderRepository.sumOpenExposureUsd();
         BigDecimal collateral = account.getCollateralUsd().add(openExposure);
@@ -309,8 +419,23 @@ public class KrakenFuturesPaperTradingService {
             return;
         }
 
-        // Contracts = USD amount / mark price (Kraken PF_* contract = 1 USD notional)
-        BigDecimal contracts = positionUsd.divide(markPrice, 0, RoundingMode.HALF_UP);
+        // Size = USD amount / mark price, rounded DOWN to the instrument's precision —
+        // the same rule the live client uses, so a SHADOW paper position and its real
+        // counterpart are the same size. A PF_* contract is one unit of the BASE asset
+        // (1 BTC on PF_XBTUSD), not 1 USD: the old whole-unit rounding opened BTC and
+        // ETH positions at 0 contracts (fees only) and mis-sized everything above ~1 USD
+        // per unit by up to a whole unit.
+        KrakenFuturesInstrumentService.Sizing sizing = instrumentService.sizeEntry(symbol, positionUsd, markPrice);
+        if (!sizing.isOk()) {
+            log.warn("KrakenFuturesPaperTradingService: skip {} {} — {}", direction, symbol, sizing.refusal());
+            return;
+        }
+        BigDecimal contracts = sizing.size();
+        // Notional actually taken on, which differs from the requested budget by the
+        // rounding. Everything downstream (fees, PnL, exposure) must use this, or paper
+        // PnL would be computed against a position size that was never opened.
+        positionUsd = contracts.multiply(markPrice).setScale(4, RoundingMode.HALF_UP);
+        entryFee = positionUsd.multiply(takerFeeFraction).setScale(8, RoundingMode.HALF_UP);
 
         KrakenFuturesPaperOrder order = new KrakenFuturesPaperOrder();
         order.setSymbol(symbol);
@@ -323,19 +448,25 @@ public class KrakenFuturesPaperTradingService {
         if (strength != null) {
             order.setSignalStrength(strength.name());
         }
+        order.setExecutionMode(executionMode);
+        order.setMarketRegime(currentRegime());
         orderRepository.save(order);
 
-        account.setCollateralUsd(account.getCollateralUsd().subtract(collateralNeeded));
+        // Recomputed from the rounded size: collateralNeeded above was checked against
+        // the pre-rounding budget (a conservative check, since rounding only shrinks
+        // the position), but deducting that amount would take collateral for a position
+        // larger than the one actually opened.
+        account.setCollateralUsd(account.getCollateralUsd().subtract(positionUsd.add(entryFee)));
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
 
-        log.info("PAPER FUTURES: {} {} — {}USD @ {} ({} contracts, fee={}, strategy={}, strength={})",
-                direction, symbol, positionUsd, markPrice, contracts, entryFee,
+        log.info("PAPER FUTURES [{}]: {} {} — {}USD @ {} ({} contracts, fee={}, strategy={}, strength={})",
+                executionMode, direction, symbol, positionUsd, markPrice, contracts, entryFee,
                 strategyName, strength != null ? strength : "n/a");
     }
 
     private void closePosition(String direction, String strategyName, String symbol,
-                               BigDecimal markPrice) {
+                               BigDecimal markPrice, String closeReason) {
         Optional<KrakenFuturesPaperOrder> openOpt = orderRepository
                 .findTopBySymbolAndStrategyNameAndDirectionAndStatusOrderByCreatedAtDesc(
                         symbol, strategyName, direction, "OPEN");
@@ -368,6 +499,7 @@ public class KrakenFuturesPaperTradingService {
         pos.setRealizedPnlUsd(netPnl);
         pos.setStatus("CLOSED");
         pos.setClosedAt(LocalDateTime.now());
+        pos.setCloseReason(closeReason);
         orderRepository.save(pos);
 
         KrakenFuturesPaperAccount account = getAccount();
@@ -381,8 +513,8 @@ public class KrakenFuturesPaperTradingService {
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
 
-        log.info("PAPER FUTURES CLOSE: {} {} @ {} — PnL={}USD (rawPnl={}, fees={}, funding={}, strategy={})",
-                direction, symbol, markPrice, netPnl, rawPnl,
+        log.info("PAPER FUTURES CLOSE [{}]: {} {} @ {} — PnL={}USD (rawPnl={}, fees={}, funding={}, strategy={})",
+                closeReason, direction, symbol, markPrice, netPnl, rawPnl,
                 entryFee.add(exitFee), pos.getTotalFundingPaidUsd(), strategyName);
     }
 
@@ -398,6 +530,17 @@ public class KrakenFuturesPaperTradingService {
             case ELEVATED -> elevatedMultiplier;
             case BASE     -> BigDecimal.ONE;
         };
+    }
+
+    /** Today's regime, or null when it cannot be computed. Instrumentation only — never blocks a fill. */
+    private String currentRegime() {
+        if (cryptoRegimeService == null) return null;
+        try {
+            return cryptoRegimeService.getRegime(ZonedDateTime.now(ZoneOffset.UTC)).name();
+        } catch (Exception e) {
+            log.warn("KrakenFuturesPaperTradingService: could not determine market regime — {}", e.toString());
+            return null;
+        }
     }
 
     private KrakenFuturesPaperAccount getAccount() {
