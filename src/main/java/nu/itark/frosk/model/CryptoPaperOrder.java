@@ -65,4 +65,26 @@ public class CryptoPaperOrder {
      */
     @Column(name = "signal_strength", length = 10)
     private String signalStrength;
+
+    /**
+     * Strategy mode the position was opened under: {@code PAPER}, or
+     * {@code SHADOW} when a real Coinbase order was sent for the same signal —
+     * the key for live-vs-paper comparison analysis (match on strategy_name,
+     * ticker and created_at against live_order rows with the same tag).
+     * Set on BUY rows and carried over to the matching SELL row. Null on rows
+     * written before strategy modes existed; treat as PAPER.
+     */
+    @Column(name = "execution_mode", length = 10)
+    private String executionMode;
+
+    /**
+     * On SELL rows: the matching BUY row's {@code eurAmount} (entry notional),
+     * copied over when the position closes. Needed because {@link #eurAmount}
+     * on a SELL row holds exit proceeds, not the entry notional — and the
+     * strategy-lifecycle promotion metrics (per-trade return = net PnL / entry
+     * notional) need the latter. Null on BUY rows and on SELL rows written
+     * before this field existed.
+     */
+    @Column(name = "entry_eur_amount", precision = 14, scale = 4)
+    private BigDecimal entryEurAmount;
 }

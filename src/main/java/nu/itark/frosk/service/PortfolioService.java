@@ -129,18 +129,27 @@ public class PortfolioService {
                 .filter(fs -> "SwedishLongTermMomentumStrategy".equals(fs.getName()))
                 .collect(Collectors.toList());
 
+        // Tiered HedgeIndex sizing, applied to BOTH sleeves (2026-10-05 review,
+        // proposal #4): previously only the SLMS sleeve shrank its position COUNT
+        // as the regime got more cautious — CANSLIM/ShortTermMomentum ("other")
+        // positions are gated on HedgeIndex at entry/exit inside their own
+        // strategy rules, but the portfolio-level cap stayed flat at otherTopN
+        // regardless of score. Same bands as before: 0-3 full, 4-7 half, 8+ zero.
+        int hedgeScore = hedgeIndexService.getScoreForDay(ZonedDateTime.now());
+        int effectiveOtherTopN = tierTopN(otherTopN, hedgeScore);
+
         // Cap HighLander + ShortTermMomentum positions by SQN (top-N only)
         List<FeaturedStrategy> otherPositions = allOpen.stream()
                 .filter(fs -> !"SwedishLongTermMomentumStrategy".equals(fs.getName()))
                 .sorted(Comparator.comparing(
                         (FeaturedStrategy fs) -> fs.getSqn() != null ? fs.getSqn() : BigDecimal.ZERO,
                         Comparator.reverseOrder()))
-                .limit(otherTopN)
+                .limit(effectiveOtherTopN)
                 .collect(Collectors.toList());
         List<FeaturedStrategy> cappedSlms = applySectorCap(slmsPositions, SLMS_MAX_SECTOR_RATIO);
 
         // Tiered HedgeIndex sizing for SLMS: score 0-3 → topN, score 4-7 → topN/2, score 8+ → 0
-        int effectiveTopN = computeTieredTopN();
+        int effectiveTopN = tierTopN(slmsTopN, hedgeScore);
 
         // Limit SwedishLongTermMomentumStrategy positions to effectiveTopN, ranked by SQN descending
         List<FeaturedStrategy> topNSlms = cappedSlms.stream()
@@ -152,10 +161,10 @@ public class PortfolioService {
 
         List<FeaturedStrategy> openStrategies = Stream.concat(otherPositions.stream(), topNSlms.stream())
                 .collect(Collectors.toList());
-        log.info("Portfolio: {} positions total (quality gate: sqn>={}, winRate>={}; other cap: top{}; " +
-                        "SLMS after sector cap: {}, after tieredTopN={} [base={}])",
-                openStrategies.size(), portfolioMinSqn, portfolioMinWinRate, otherTopN,
-                cappedSlms.size(), topNSlms.size(), effectiveTopN, slmsTopN);
+        log.info("Portfolio: {} positions total (quality gate: sqn>={}, winRate>={}; other cap: {} [base={}]; " +
+                        "SLMS after sector cap: {}, after tieredTopN={} [base={}]; hedgeScore={})",
+                openStrategies.size(), portfolioMinSqn, portfolioMinWinRate, effectiveOtherTopN, otherTopN,
+                cappedSlms.size(), topNSlms.size(), effectiveTopN, slmsTopN, hedgeScore);
 
         Portfolio portfolio = new Portfolio();
         portfolio.setSnapshotDate(new Date());
@@ -393,17 +402,17 @@ public class PortfolioService {
     }
 
     /**
-     * Tiered HedgeIndex sizing for Månadsportföljen:
-     * Score 0-3 (Strong Risk-On) → full topN
-     * Score 4-7 (Cautious)       → topN / 2
-     * Score 8+  (Defensive)      → 0 (no SLMS positions)
+     * Tiered HedgeIndex sizing, shared by the SLMS and "other" (CANSLIM +
+     * ShortTermMomentum) sleeves:
+     * Score 0-3 (Strong Risk-On) → full baseTopN
+     * Score 4-7 (Cautious)       → baseTopN / 2
+     * Score 8+  (Defensive)      → 0 (no positions in that sleeve)
      */
-    private int computeTieredTopN() {
-        int score = hedgeIndexService.getScoreForDay(ZonedDateTime.now());
+    private int tierTopN(int baseTopN, int score) {
         if (score <= 3) {
-            return slmsTopN;
+            return baseTopN;
         } else if (score <= 7) {
-            return Math.max(1, slmsTopN / 2);
+            return Math.max(1, baseTopN / 2);
         } else {
             return 0;
         }

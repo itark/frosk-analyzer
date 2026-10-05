@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.StrategyExecutor;
 import nu.itark.frosk.crypto.coinbase.api.products.ProductService;
 import nu.itark.frosk.crypto.coinbase.model.ProductBook;
+import nu.itark.frosk.crypto.coinbase.lifecycle.CoinbaseOrderRouter;
+import nu.itark.frosk.crypto.coinbase.lifecycle.CoinbaseStrategyModeService;
 import nu.itark.frosk.crypto.kraken.KrakenFuturesTickerService;
 import nu.itark.frosk.crypto.kraken.lifecycle.KrakenOrderRouter;
 import nu.itark.frosk.crypto.kraken.lifecycle.KrakenStrategyModeService;
@@ -96,6 +98,18 @@ public class CryptoIntradayStrategyRunner {
 
     @Autowired(required = false)
     private KrakenStrategyModeService krakenModeService;
+
+    /**
+     * Coinbase only: routes each signal to paper and/or Coinbase according to
+     * the strategy's {@link StrategyMode}, the same way {@link #krakenOrderRouter}
+     * does for Kraken Futures. When present it replaces the unconditional
+     * paper+live dispatch in {@link #emitSignal} entirely.
+     */
+    @Autowired(required = false)
+    private CoinbaseOrderRouter coinbaseOrderRouter;
+
+    @Autowired(required = false)
+    private CoinbaseStrategyModeService coinbaseModeService;
 
     /**
      * Daily BTC regime, recorded on each signal for later analysis. Nothing gates
@@ -196,9 +210,13 @@ public class CryptoIntradayStrategyRunner {
     }
 
     private boolean isExcluded(String strategyName, String ticker) {
-        // A DISABLED Kraken strategy is treated exactly like an excluded pair: no new
-        // signals, and a stale open position is force-closed after excludedForceCloseBars.
+        // A DISABLED strategy (Kraken or Coinbase mode) is treated exactly like an
+        // excluded pair: no new signals, and a stale open position is force-closed
+        // after excludedForceCloseBars.
         if (krakenModeService != null && krakenModeService.getMode(strategyName) == StrategyMode.DISABLED) {
+            return true;
+        }
+        if (coinbaseModeService != null && coinbaseModeService.getMode(strategyName) == StrategyMode.DISABLED) {
             return true;
         }
         // Global exclusions apply to every strategy except the liquidity sweep,
@@ -475,6 +493,9 @@ public class CryptoIntradayStrategyRunner {
                     // Exits route to every venue, so a real position is closed too.
                     krakenOrderRouter.route(new OrderRequest(
                             exitType, strategyName, ticker, entry.getClosePrice(), exit, null));
+                } else if (coinbaseOrderRouter != null) {
+                    coinbaseOrderRouter.route(new OrderRequest(
+                            exitType, strategyName, ticker, entry.getClosePrice(), exit, null));
                 } else {
                     dispatchPaperOrder(exitType, strategyName, ticker, entry.getClosePrice(), null);
                 }
@@ -561,6 +582,11 @@ public class CryptoIntradayStrategyRunner {
 
         if (krakenOrderRouter != null) {
             krakenOrderRouter.route(new OrderRequest(
+                    signalType, strategyName, ticker, signal.getClosePrice(), signal, strength));
+            return;
+        }
+        if (coinbaseOrderRouter != null) {
+            coinbaseOrderRouter.route(new OrderRequest(
                     signalType, strategyName, ticker, signal.getClosePrice(), signal, strength));
             return;
         }

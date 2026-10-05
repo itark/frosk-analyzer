@@ -141,6 +141,17 @@ public class CryptoPaperTradingService {
     }
 
     public void dispatchBuy(String strategyName, String ticker, BigDecimal closePrice, SignalStrength strength) {
+        dispatchBuy(strategyName, ticker, closePrice, strength, null);
+    }
+
+    /**
+     * As {@link #dispatchBuy(String, String, BigDecimal, SignalStrength)}, tagging
+     * the new position with {@code executionMode} ({@code PAPER} or {@code SHADOW}
+     * — see {@link nu.itark.frosk.crypto.coinbase.lifecycle.PaperCoinbaseOrderDispatcher}).
+     * Null is treated as PAPER for display purposes but stored as-is.
+     */
+    public void dispatchBuy(String strategyName, String ticker, BigDecimal closePrice, SignalStrength strength,
+                            String executionMode) {
         CryptoPaperAccount account = getAccount();
         BigDecimal openExposure = orderRepository.sumOpenExposureEur();
         BigDecimal equity = account.getCashEur().add(openExposure);
@@ -173,6 +184,7 @@ public class CryptoPaperTradingService {
         if (strength != null) {
             order.setSignalStrength(strength.name());
         }
+        order.setExecutionMode(executionMode);
         orderRepository.save(order);
 
         account.setCashEur(account.getCashEur().subtract(cashNeeded));
@@ -208,6 +220,10 @@ public class CryptoPaperTradingService {
         sellOrder.setFilledPrice(closePrice);
         sellOrder.setFilledQuantity(buyOrder.getFilledQuantity());
         sellOrder.setRealizedPnlEur(pnl);
+        // Entry notional and mode carried over from the BUY row — see
+        // CryptoPaperOrder#getEntryEurAmount for why this lives on the SELL row.
+        sellOrder.setEntryEurAmount(buyOrder.getEurAmount());
+        sellOrder.setExecutionMode(buyOrder.getExecutionMode());
         orderRepository.save(sellOrder);
 
         buyOrder.setStatus("CLOSED");

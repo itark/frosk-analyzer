@@ -17,6 +17,14 @@ public interface CryptoPaperOrderRepository extends JpaRepository<CryptoPaperOrd
 
     List<CryptoPaperOrder> findBySideAndStatusOrderByCreatedAtDesc(String side, String status);
 
+    /** A strategy's closed trades in close order — SELL rows, since that is where
+     *  {@code realizedPnlEur} and {@code createdAt} (= close time) live; the trade
+     *  list behind the strategy-lifecycle promotion metrics. */
+    List<CryptoPaperOrder> findByStrategyNameAndSideOrderByCreatedAtAsc(String strategyName, String side);
+
+    /** A strategy's first-ever paper order (BUY or SELL) — fallback start date when it has no signals recorded. */
+    Optional<CryptoPaperOrder> findTopByStrategyNameOrderByCreatedAtAsc(String strategyName);
+
     /** EUR cost basis of all currently open paper positions (filled BUYs not yet matched by a SELL). */
     @Query(value = "SELECT COALESCE(SUM(eur_amount), 0) FROM crypto_paper_order " +
                    "WHERE side = 'BUY' AND status = 'FILLED'",

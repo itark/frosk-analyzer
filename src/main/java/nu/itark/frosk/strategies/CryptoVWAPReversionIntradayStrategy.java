@@ -2,9 +2,12 @@ package nu.itark.frosk.strategies;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
+import nu.itark.frosk.service.LstmSignalFilterService;
 import nu.itark.frosk.strategies.indicators.SessionVWAPIndicator;
+import nu.itark.frosk.strategies.rules.LstmSignalRule;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import nu.itark.frosk.strategies.rules.StopLossRule;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
@@ -15,6 +18,7 @@ import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.TransformIndicator;
 import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.rules.BooleanRule;
 import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
@@ -46,6 +50,18 @@ import java.util.List;
  * 2026-09-17 so this strategy trades in every market structure — the stop-loss
  * (2.7%) and 12h time exit are the protection against a stretch that turns out
  * to be a genuine trend instead of a reversion.
+ *
+ * <p>Optional LSTM confirmation (2026-10-05, OFF by default): {@link
+ * LstmSignalRule} gates entry only when BOTH {@code forecast.lstm.enabled=true}
+ * (crypto-wide microservice switch, already true) AND {@code
+ * crypto.vwap.lstm.filter.enabled=true} (this strategy's own switch, default
+ * false) are set. It is this strategy's own switch, not the shared one,
+ * because {@code forecast.lstm.enabled} is already true for the crypto profile
+ * to gate two already-disabled strategies (EMACrossLong, RangeBreakout) — this
+ * is this project's only proven live edge, so the filter must not go live here
+ * on an existing flag flip. Measure with {@code
+ * StrategyComparisonReportIT#cryptoIntradayReport} (filter on vs off) before
+ * enabling in application-crypto.properties.
  *
  * <h3>Exit rules (first satisfied wins)</h3>
  * <ul>
@@ -84,6 +100,13 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
     @Value("${crypto.vwap.max.bars.held:48}")
     private int maxBarsHeld;
 
+    /** This strategy's own switch for the optional LSTM gate — see class javadoc. Default OFF. */
+    @Value("${crypto.vwap.lstm.filter.enabled:false}")
+    private boolean lstmFilterEnabled;
+
+    @Autowired
+    private LstmSignalFilterService lstmSignalFilterService;
+
     private ClosePriceIndicator close;
     private SessionVWAPIndicator vwap;
     private RSIIndicator rsi;
@@ -115,7 +138,14 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
         // strategy now trades in every regime, relying on the same stop-loss/time
         // exit for protection against a stretch that turns into a real trend.
 
-        Rule entryRule = stretched.and(oversold);
+        // Optional LSTM confirmation gate — see class javadoc. No-op (BooleanRule.TRUE)
+        // unless this strategy's OWN flag is set, even though the shared
+        // forecast.lstm.enabled flag is already true for the crypto profile.
+        Rule lstmGate = (lstmFilterEnabled && lstmSignalFilterService.isEnabled())
+                ? new LstmSignalRule(series, lstmSignalFilterService)
+                : BooleanRule.TRUE;
+
+        Rule entryRule = stretched.and(oversold).and(lstmGate);
 
         // ── Exit ──────────────────────────────────────────────────────────
         Rule profitTarget = new OverIndicatorRule(close, vwap);
