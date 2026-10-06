@@ -79,7 +79,10 @@ public class CryptoLiquiditySweepIntradayStrategy extends AbstractStrategy
         setIndicatorValues(pdl, "pdl");
 
         Rule entryRule = new LiquiditySweepEntryRule(series, pdh, pdl, UTC, confirmBars, minRangePct);
-        Rule exitRule = new LiquiditySweepExitRule(series, pdh, pdl, confirmBars, maxBarsHeld);
+        // Both run paths fill on the next open: CryptoIntradayStrategyRunner uses the
+        // default BarSeriesManager (TradeOnNextOpenModel), and BarSeriesService does too
+        // since this strategy is not in its CURRENT_CLOSE_STRATEGIES. Keep in sync.
+        Rule exitRule = new LiquiditySweepExitRule(series, pdh, pdl, confirmBars, maxBarsHeld, true);
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
