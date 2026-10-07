@@ -98,6 +98,16 @@ public class KrakenFuturesPaperTradingService {
     private BigDecimal maxTotalExposurePct;
 
     /**
+     * Cap on open exposure in ONE symbol, summed across all strategies and both
+     * directions, as a fraction of collateral. A new position is scaled down to the
+     * room left and skipped below {@code minPositionUsd} — the same rule as
+     * {@code CryptoPaperTradingService} (Coinbase paper) and {@code LiveTradingGate}
+     * (live). Null or {@code <= 0} disables it.
+     */
+    @Value("${kraken.futures.paper.max.ticker.exposure.pct:0}")
+    private BigDecimal maxTickerExposurePct;
+
+    /**
      * Taker fee fraction per leg (entry + exit). Kraken Futures default taker
      * rate for retail is ~0.05%; override for your fee tier.
      */
@@ -396,6 +406,22 @@ public class KrakenFuturesPaperTradingService {
         BigDecimal openExposure = orderRepository.sumOpenExposureUsd();
         BigDecimal collateral = account.getCollateralUsd().add(openExposure);
         BigDecimal positionUsd = sizePosition(collateral, strength);
+
+        if (maxTickerExposurePct != null && maxTickerExposurePct.signum() > 0) {
+            BigDecimal symbolExposure = orderRepository.sumOpenExposureUsdBySymbol(symbol);
+            BigDecimal symbolRoom = collateral.multiply(maxTickerExposurePct).subtract(symbolExposure);
+            if (symbolRoom.compareTo(positionUsd) < 0) {
+                if (symbolRoom.compareTo(minPositionUsd) < 0) {
+                    log.debug("KrakenFuturesPaperTradingService: skip {} {} — symbol exposure {} leaves {} under the "
+                            + "{} cap (< min {})", direction, symbol, symbolExposure, symbolRoom,
+                            maxTickerExposurePct, minPositionUsd);
+                    return;
+                }
+                log.debug("KrakenFuturesPaperTradingService: {} {} scaled {} -> {} by the per-symbol cap ({} already open)",
+                        direction, symbol, positionUsd, symbolRoom, symbolExposure);
+                positionUsd = symbolRoom;
+            }
+        }
 
         RiskCheckResult riskCheck = riskManagementService.checkEntry(positionUsd, collateral);
         if (!riskCheck.allowed()) {
