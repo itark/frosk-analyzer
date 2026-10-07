@@ -3,6 +3,7 @@ package nu.itark.frosk.repo;
 import nu.itark.frosk.model.CryptoPaperOrder;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -30,4 +31,10 @@ public interface CryptoPaperOrderRepository extends JpaRepository<CryptoPaperOrd
                    "WHERE side = 'BUY' AND status = 'FILLED'",
            nativeQuery = true)
     BigDecimal sumOpenExposureEur();
+
+    /** As {@link #sumOpenExposureEur()}, for one ticker across all strategies. */
+    @Query(value = "SELECT COALESCE(SUM(eur_amount), 0) FROM crypto_paper_order " +
+                   "WHERE side = 'BUY' AND status = 'FILLED' AND ticker = :ticker",
+           nativeQuery = true)
+    BigDecimal sumOpenExposureEurByTicker(@Param("ticker") String ticker);
 }

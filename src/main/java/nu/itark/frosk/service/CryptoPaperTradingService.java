@@ -58,6 +58,21 @@ public class CryptoPaperTradingService {
     private BigDecimal maxTotalExposurePct;
 
     /**
+     * Cap on open exposure in ONE ticker, summed across all strategies, as a fraction
+     * of equity. A new BUY is scaled down to the room left under the cap and skipped
+     * if that falls below {@code minPositionEur}. Sizing only — signals are untouched,
+     * so the liquidity sweep's pre-registered signal record is unaffected. Null or
+     * {@code <= 0} disables the cap.
+     *
+     * <p>2026-10-06: TRAC-USD was open in both LiquiditySweep and VWAPReversion at
+     * once, ~290 EUR = 14% of the account in a thinly traded product. Blocking the
+     * second entry instead was rejected on the data: VWAP entries while a sweep was
+     * open made +22 EUR over 80 trades — the issue is concentration, not edge.
+     */
+    @Value("${crypto.paper.trading.max.ticker.exposure.pct:0}")
+    private BigDecimal maxTickerExposurePct;
+
+    /**
      * Multiplier applied to the base position size for {@link SignalStrength#ELEVATED}
      * and {@link SignalStrength#STRONG} entries. {@code BASE} always multiplies by 1.
      * Result is still clamped to {@code [minPositionEur, maxPositionEur]} — a strong
@@ -156,6 +171,21 @@ public class CryptoPaperTradingService {
         BigDecimal openExposure = orderRepository.sumOpenExposureEur();
         BigDecimal equity = account.getCashEur().add(openExposure);
         BigDecimal eurAmount = sizePosition(equity, strength);
+
+        if (maxTickerExposurePct != null && maxTickerExposurePct.signum() > 0) {
+            BigDecimal tickerExposure = orderRepository.sumOpenExposureEurByTicker(ticker);
+            BigDecimal tickerRoom = equity.multiply(maxTickerExposurePct).subtract(tickerExposure);
+            if (tickerRoom.compareTo(eurAmount) < 0) {
+                if (tickerRoom.compareTo(minPositionEur) < 0) {
+                    log.debug("CryptoPaperTradingService: skip BUY {} — ticker exposure {} leaves {} under the {} cap "
+                            + "(< min {})", ticker, tickerExposure, tickerRoom, maxTickerExposurePct, minPositionEur);
+                    return;
+                }
+                log.debug("CryptoPaperTradingService: BUY {} scaled {} -> {} by the per-ticker cap ({} already open)",
+                        ticker, eurAmount, tickerRoom, tickerExposure);
+                eurAmount = tickerRoom;
+            }
+        }
 
         BigDecimal maxTotalExposure = equity.multiply(maxTotalExposurePct);
         if (openExposure.add(eurAmount).compareTo(maxTotalExposure) > 0) {
