@@ -48,6 +48,7 @@ public class TestJLiveOrderExecutor {
         executor = new LiveOrderExecutor(gate, broker, repo, mock(IntradaySignalRepository.class));
         when(broker.supportsShort()).thenReturn(true);
         when(gate.computePositionSizeEur(any())).thenReturn(new BigDecimal("250"));
+        when(gate.capToTickerExposure(anyString(), any())).thenAnswer(inv -> inv.getArgument(1));
         when(gate.canTrade(anyString(), any())).thenReturn(true);
         when(repo.findByTickerAndSideInAndStatusIn(anyString(), anyCollection(), anyCollection())).thenReturn(List.of());
     }
@@ -99,6 +100,27 @@ public class TestJLiveOrderExecutor {
         longHeld.setStrategyName("CryptoVWAPReversionIntradayStrategy");
         when(repo.findByTickerAndSideInAndStatusIn(eq(TICKER), eq(List.of("BUY")), anyCollection()))
                 .thenReturn(List.of(longHeld));
+
+        executor.dispatch("SHRT", STRATEGY, TICKER, new BigDecimal("85000"), null, null, "LIVE");
+
+        verify(broker, never()).placeShortEntry(anyString(), any());
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    void entryScaledDownByTheTickerCap_isPlacedAtTheCappedSize() {
+        when(gate.capToTickerExposure(TICKER, new BigDecimal("250"))).thenReturn(new BigDecimal("55"));
+        when(broker.placeShortEntry(TICKER, new BigDecimal("55"))).thenReturn(resp("FILLED", "0.0006", "85000"));
+
+        executor.dispatch("SHRT", STRATEGY, TICKER, new BigDecimal("85000"), null, null, "LIVE");
+
+        verify(gate).canTrade(TICKER, new BigDecimal("55"));
+        assertEquals(0, new BigDecimal("55").compareTo(saved().get(0).getEurAmount()));
+    }
+
+    @Test
+    void entryWithNoRoomUnderTheTickerCap_isSkipped() {
+        when(gate.capToTickerExposure(TICKER, new BigDecimal("250"))).thenReturn(null);
 
         executor.dispatch("SHRT", STRATEGY, TICKER, new BigDecimal("85000"), null, null, "LIVE");
 

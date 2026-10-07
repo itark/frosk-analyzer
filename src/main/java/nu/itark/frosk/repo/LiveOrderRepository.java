@@ -49,6 +49,17 @@ public interface LiveOrderRepository extends JpaRepository<LiveOrder, Long> {
            nativeQuery = true)
     BigDecimal sumOpenExposureEur();
 
+    /**
+     * As {@link #sumOpenExposureEur()}, for one ticker across all strategies — backs
+     * {@code LiveTradingGate}'s per-ticker cap, the live mirror of
+     * {@code CryptoPaperOrderRepository#sumOpenExposureEurByTicker}.
+     */
+    @Query(value = "SELECT COALESCE(SUM(eur_amount), 0) FROM live_order " +
+                   "WHERE side IN ('BUY', 'SHRT') AND status IN ('FILLED', 'PENDING', 'CLOSING', 'UNRESOLVED') " +
+                   "AND ticker = :ticker",
+           nativeQuery = true)
+    BigDecimal sumOpenExposureEurByTicker(@Param("ticker") String ticker);
+
     long countByStatus(String status);
 
     /**

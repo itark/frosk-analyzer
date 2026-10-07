@@ -53,6 +53,7 @@ public class TestJProtectiveStopLifecycle {
         repo = mock(LiveOrderRepository.class);
         LiveTradingGate gate = mock(LiveTradingGate.class);
         when(gate.computePositionSizeEur(any())).thenReturn(new BigDecimal("250"));
+        when(gate.capToTickerExposure(anyString(), any())).thenAnswer(inv -> inv.getArgument(1));
         when(gate.canTrade(anyString(), any())).thenReturn(true);
         when(broker.supportsShort()).thenReturn(true);
         when(repo.findByTickerAndSideInAndStatusIn(anyString(), anyCollection(), anyCollection())).thenReturn(List.of());

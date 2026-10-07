@@ -62,7 +62,8 @@ public class CryptoPaperTradingService {
      * of equity. A new BUY is scaled down to the room left under the cap and skipped
      * if that falls below {@code minPositionEur}. Sizing only — signals are untouched,
      * so the liquidity sweep's pre-registered signal record is unaffected. Null or
-     * {@code <= 0} disables the cap.
+     * {@code <= 0} disables the cap. {@code LiveTradingGate} reads the same key and
+     * applies the same scale-down/skip rule to live orders — keep the two in sync.
      *
      * <p>2026-10-06: TRAC-USD was open in both LiquiditySweep and VWAPReversion at
      * once, ~290 EUR = 14% of the account in a thinly traded product. Blocking the
