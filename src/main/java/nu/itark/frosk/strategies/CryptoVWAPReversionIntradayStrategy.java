@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.service.LstmSignalFilterService;
 import nu.itark.frosk.strategies.indicators.SessionVWAPIndicator;
+import nu.itark.frosk.strategies.rules.CooldownAfterLossRule;
 import nu.itark.frosk.strategies.rules.LstmSignalRule;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import nu.itark.frosk.strategies.rules.StopLossRule;
@@ -100,6 +101,10 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
     @Value("${crypto.vwap.max.bars.held:48}")
     private int maxBarsHeld;
 
+    /** Bars to wait after a losing exit before re-entering — see {@link CooldownAfterLossRule}. 0 disables. */
+    @Value("${crypto.vwap.cooldown.bars.after.loss:0}")
+    private int cooldownBarsAfterLoss;
+
     /** This strategy's own switch for the optional LSTM gate — see class javadoc. Default OFF. */
     @Value("${crypto.vwap.lstm.filter.enabled:false}")
     private boolean lstmFilterEnabled;
@@ -145,7 +150,9 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
                 ? new LstmSignalRule(series, lstmSignalFilterService)
                 : BooleanRule.TRUE;
 
-        Rule entryRule = stretched.and(oversold).and(lstmGate);
+        Rule cooldown = new CooldownAfterLossRule(cooldownBarsAfterLoss);
+
+        Rule entryRule = stretched.and(oversold).and(lstmGate).and(cooldown);
 
         // ── Exit ──────────────────────────────────────────────────────────
         Rule profitTarget = new OverIndicatorRule(close, vwap);
