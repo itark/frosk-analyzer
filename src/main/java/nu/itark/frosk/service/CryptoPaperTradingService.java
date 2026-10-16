@@ -36,7 +36,8 @@ import java.util.Optional;
  * independent of whether live trading is enabled — a continuously running paper track record.
  *
  * <p>Sizes positions the same way {@link nu.itark.frosk.crypto.livetrading.LiveTradingGate}
- * sizes real orders (equity * pct.of.equity * signal-strength multiplier, clamped to [min, max],
+ * sizes real orders (equity * pct.of.equity — or the strategy's fractional-Kelly fraction when
+ * {@code crypto.kelly.sizing.enabled} — * signal-strength multiplier, clamped to [min, max],
  * capped by a total-exposure fraction of equity), but against this account's own simulated
  * equity so the simulation stays a faithful preview of how live trading would behave.
  */
@@ -113,6 +114,14 @@ public class CryptoPaperTradingService {
     @Autowired
     private SecurityPriceRepository securityPriceRepository;
 
+    /**
+     * Replaces {@code positionPctOfEquity} with a per-strategy fractional-Kelly
+     * fraction when {@code crypto.kelly.sizing.enabled=true}. {@code LiveTradingGate}
+     * reads the same service and key, so paper and live size identically.
+     */
+    @Autowired
+    private KellyPositionSizingService kellyPositionSizingService;
+
     /** Fallback price source — see {@link #latestPrice}. */
     @Autowired
     private IntradayBarRepository intradayBarRepository;
@@ -137,13 +146,23 @@ public class CryptoPaperTradingService {
     }
 
     public BigDecimal computePositionSizeEur() {
-        return sizePosition(computeEquity(), null);
+        return sizePosition(computeEquity(), null, null);
     }
 
-    /** @param strength null is treated the same as {@link SignalStrength#BASE} (multiplier 1). */
-    private BigDecimal sizePosition(BigDecimal equity, SignalStrength strength) {
-        BigDecimal base = equity.multiply(positionPctOfEquity).multiply(multiplierFor(strength));
+    /**
+     * @param strength     null is treated the same as {@link SignalStrength#BASE} (multiplier 1).
+     * @param strategyName selects the Kelly fraction when Kelly sizing is on; null uses the fixed fraction.
+     */
+    private BigDecimal sizePosition(BigDecimal equity, SignalStrength strength, String strategyName) {
+        BigDecimal base = equity.multiply(positionFraction(strategyName)).multiply(multiplierFor(strength));
         return base.max(minPositionEur).min(maxPositionEur);
+    }
+
+    private BigDecimal positionFraction(String strategyName) {
+        if (strategyName != null && kellyPositionSizingService != null && kellyPositionSizingService.isEnabled()) {
+            return kellyPositionSizingService.kellyFraction(strategyName);
+        }
+        return positionPctOfEquity;
     }
 
     private BigDecimal multiplierFor(SignalStrength strength) {
@@ -174,7 +193,7 @@ public class CryptoPaperTradingService {
         CryptoPaperAccount account = getAccount();
         BigDecimal openExposure = orderRepository.sumOpenExposureEur();
         BigDecimal equity = account.getCashEur().add(openExposure);
-        BigDecimal eurAmount = sizePosition(equity, strength);
+        BigDecimal eurAmount = sizePosition(equity, strength, strategyName);
 
         if (maxTickerExposurePct != null && maxTickerExposurePct.signum() > 0) {
             BigDecimal tickerExposure = orderRepository.sumOpenExposureEurByTicker(ticker);

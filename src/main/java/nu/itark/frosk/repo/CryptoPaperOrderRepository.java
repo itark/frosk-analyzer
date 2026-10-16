@@ -24,6 +24,9 @@ public interface CryptoPaperOrderRepository extends JpaRepository<CryptoPaperOrd
      *  list behind the strategy-lifecycle promotion metrics. */
     List<CryptoPaperOrder> findByStrategyNameAndSideOrderByCreatedAtAsc(String strategyName, String side);
 
+    /** A strategy's 100 most recent closed trades (SELL rows), newest first — the rolling window behind Kelly sizing. */
+    List<CryptoPaperOrder> findTop100ByStrategyNameAndSideOrderByCreatedAtDesc(String strategyName, String side);
+
     /** Paper orders of one side created at or after {@code from}, oldest first — the window behind the daily P&L view. */
     List<CryptoPaperOrder> findBySideAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(String side, LocalDateTime from);
 

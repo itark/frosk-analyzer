@@ -47,7 +47,7 @@ public class TestJLiveOrderExecutor {
         repo = mock(LiveOrderRepository.class);
         executor = new LiveOrderExecutor(gate, broker, repo, mock(IntradaySignalRepository.class));
         when(broker.supportsShort()).thenReturn(true);
-        when(gate.computePositionSizeEur(any())).thenReturn(new BigDecimal("250"));
+        when(gate.computePositionSizeEur(any(), any())).thenReturn(new BigDecimal("250"));
         when(gate.capToTickerExposure(anyString(), any())).thenAnswer(inv -> inv.getArgument(1));
         when(gate.canTrade(anyString(), any())).thenReturn(true);
         when(repo.findByTickerAndSideInAndStatusIn(anyString(), anyCollection(), anyCollection())).thenReturn(List.of());

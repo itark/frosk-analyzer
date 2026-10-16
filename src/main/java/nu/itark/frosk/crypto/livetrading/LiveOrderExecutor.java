@@ -103,7 +103,7 @@ public class LiveOrderExecutor {
         }
 
         BigDecimal positionSize = liveTradingGate.capToTickerExposure(
-                ticker, liveTradingGate.computePositionSizeEur(strength));
+                ticker, liveTradingGate.computePositionSizeEur(strategyName, strength));
         if (positionSize == null) {
             return;                 // per-ticker cap leaves less than a minimum order; the gate logged why
         }

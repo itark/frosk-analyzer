@@ -8,6 +8,7 @@ import nu.itark.frosk.strategies.rules.CooldownAfterLossRule;
 import nu.itark.frosk.strategies.rules.LstmSignalRule;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import nu.itark.frosk.strategies.rules.StopLossRule;
+import nu.itark.frosk.strategies.rules.TimeWindowRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -64,6 +65,16 @@ import java.util.List;
  * -54 EUR while BTC's SMA was rising). In-sample over 27 days and not monotone
  * across slope buckets: validate with {@code StrategyComparisonReportIT} before
  * trusting the number.
+ *
+ * <p>UTC entry window (2026-10-16, {@code crypto.vwap.time.window.enabled}, default
+ * OFF): entry only while the signal bar's end time is in [{@code start.hour.utc},
+ * {@code end.hour.utc}), via {@link TimeWindowRule}. Motivated by external BTC
+ * seasonality research (21:00–23:00 UTC). In-house evidence is weak: H1 in
+ * {@code ~/itark/PREREG_vwap_signal_filters.md} (VWAP entries at 21–22 UTC, 400 days)
+ * was not recommended (+0.07 pp, CI spanning zero, halves of opposite sign), and
+ * with the window on, the paper track record no longer contains out-of-window
+ * entries — which {@code ~/itark/PREREG_vwap_seasonality_window.md} needs for its
+ * comparison.
  *
  * <p>Optional LSTM confirmation (2026-10-05, OFF by default): {@link
  * LstmSignalRule} gates entry only when BOTH {@code forecast.lstm.enabled=true}
@@ -128,6 +139,18 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
     @Value("${crypto.vwap.trend.slope.bars:24}")
     private int trendSlopeBars;
 
+    /** UTC entry-window gate — see class javadoc. Default OFF. */
+    @Value("${crypto.vwap.time.window.enabled:false}")
+    private boolean timeWindowEnabled;
+
+    /** First UTC hour (inclusive) of the entry window, judged on the signal bar's end time. */
+    @Value("${crypto.vwap.time.window.start.hour.utc:21}")
+    private int timeWindowStartHourUtc;
+
+    /** UTC hour (exclusive) that closes the entry window. */
+    @Value("${crypto.vwap.time.window.end.hour.utc:23}")
+    private int timeWindowEndHourUtc;
+
     /** This strategy's own switch for the optional LSTM gate — see class javadoc. Default OFF. */
     @Value("${crypto.vwap.lstm.filter.enabled:false}")
     private boolean lstmFilterEnabled;
@@ -180,7 +203,11 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
 
         Rule cooldown = new CooldownAfterLossRule(cooldownBarsAfterLoss);
 
-        Rule entryRule = stretched.and(oversold).and(trendOk).and(lstmGate).and(cooldown);
+        Rule inTimeWindow = timeWindowEnabled
+                ? new TimeWindowRule(series, timeWindowStartHourUtc, timeWindowEndHourUtc)
+                : BooleanRule.TRUE;
+
+        Rule entryRule = stretched.and(oversold).and(trendOk).and(lstmGate).and(cooldown).and(inTimeWindow);
 
         // ── Exit ──────────────────────────────────────────────────────────
         Rule profitTarget = new OverIndicatorRule(close, vwap);

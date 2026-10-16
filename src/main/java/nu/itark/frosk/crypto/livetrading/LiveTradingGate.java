@@ -3,6 +3,7 @@ package nu.itark.frosk.crypto.livetrading;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.broker.BrokerOrderClient;
 import nu.itark.frosk.repo.LiveOrderRepository;
+import nu.itark.frosk.service.KellyPositionSizingService;
 import nu.itark.frosk.strategies.SignalStrength;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -97,6 +98,9 @@ public class LiveTradingGate {
     @Autowired
     private BrokerOrderClient brokerOrderClient;
 
+    @Autowired
+    private KellyPositionSizingService kellyPositionSizingService;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -134,8 +138,21 @@ public class LiveTradingGate {
      * can reach the cap sooner but never exceed {@code maxPositionEur}.
      */
     public BigDecimal computePositionSizeEur(SignalStrength strength) {
+        return computePositionSizeEur(null, strength);
+    }
+
+    /**
+     * As above, with {@code positionPctOfEquity} replaced by the strategy's
+     * fractional-Kelly fraction when {@code crypto.kelly.sizing.enabled=true} —
+     * the same service and key {@code CryptoPaperTradingService} sizes paper with.
+     * A null {@code strategyName} keeps the fixed fraction.
+     */
+    public BigDecimal computePositionSizeEur(String strategyName, SignalStrength strength) {
         BigDecimal equity = computeEquity();
-        BigDecimal raw = equity.multiply(positionPctOfEquity).multiply(multiplierFor(strength));
+        BigDecimal fraction = strategyName != null && kellyPositionSizingService.isEnabled()
+                ? kellyPositionSizingService.kellyFraction(strategyName)
+                : positionPctOfEquity;
+        BigDecimal raw = equity.multiply(fraction).multiply(multiplierFor(strength));
         return raw.max(minPositionEur).min(maxPositionEur);
     }
 
