@@ -67,13 +67,11 @@ import java.util.List;
  *
  * <p>Optional LSTM confirmation (2026-10-05, OFF by default): {@link
  * LstmSignalRule} gates entry only when BOTH {@code forecast.lstm.enabled=true}
- * (crypto-wide microservice switch, already true) AND {@code
+ * (crypto-wide microservice switch, currently false — its former consumers
+ * EMACrossLong and RangeBreakout were removed 2026-10-05) AND {@code
  * crypto.vwap.lstm.filter.enabled=true} (this strategy's own switch, default
- * false) are set. It is this strategy's own switch, not the shared one,
- * because {@code forecast.lstm.enabled} is already true for the crypto profile
- * to gate two already-disabled strategies (EMACrossLong, RangeBreakout) — this
- * is this project's only proven live edge, so the filter must not go live here
- * on an existing flag flip. Measure with {@code
+ * false) are set. This is this project's only proven live edge, so the filter
+ * must not go live here on a single shared-flag flip. Measure with {@code
  * StrategyComparisonReportIT#cryptoIntradayReport} (filter on vs off) before
  * enabling in application-crypto.properties.
  *

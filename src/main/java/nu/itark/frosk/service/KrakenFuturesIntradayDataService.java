@@ -295,7 +295,7 @@ public class KrakenFuturesIntradayDataService implements IntradayDataService {
                     ib.getHigh().doubleValue(),
                     ib.getLow().doubleValue(),
                     ib.getClose().doubleValue(),
-                    ib.getVolume() != null ? (double) ib.getVolume() : 0.0
+                    ib.getVolume() != null ? ib.getVolume().doubleValue() : 0.0
             );
         }
         return series;

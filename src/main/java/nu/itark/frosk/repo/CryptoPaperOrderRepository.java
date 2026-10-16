@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +23,9 @@ public interface CryptoPaperOrderRepository extends JpaRepository<CryptoPaperOrd
      *  {@code realizedPnlEur} and {@code createdAt} (= close time) live; the trade
      *  list behind the strategy-lifecycle promotion metrics. */
     List<CryptoPaperOrder> findByStrategyNameAndSideOrderByCreatedAtAsc(String strategyName, String side);
+
+    /** Paper orders of one side created at or after {@code from}, oldest first — the window behind the daily P&L view. */
+    List<CryptoPaperOrder> findBySideAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(String side, LocalDateTime from);
 
     /** A strategy's first-ever paper order (BUY or SELL) — fallback start date when it has no signals recorded. */
     Optional<CryptoPaperOrder> findTopByStrategyNameOrderByCreatedAtAsc(String strategyName);

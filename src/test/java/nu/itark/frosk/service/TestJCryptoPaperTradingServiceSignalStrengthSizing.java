@@ -92,7 +92,7 @@ public class TestJCryptoPaperTradingServiceSignalStrengthSizing {
 
     private BigDecimal buyAndCaptureAmount(SignalStrength strength) {
         ArgumentCaptor<CryptoPaperOrder> captor = ArgumentCaptor.forClass(CryptoPaperOrder.class);
-        service.dispatchBuy("CryptoEMACrossLongIntradayStrategy", "BTC-EUR", new BigDecimal("50000"), strength);
+        service.dispatchBuy("CryptoVWAPReversionIntradayStrategy", "BTC-EUR", new BigDecimal("50000"), strength);
         verify(orderRepository, atLeastOnce()).save(captor.capture());
         return captor.getValue().getEurAmount();
     }

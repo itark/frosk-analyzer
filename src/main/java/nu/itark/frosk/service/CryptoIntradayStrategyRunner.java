@@ -137,15 +137,6 @@ public class CryptoIntradayStrategyRunner {
     @Value("${crypto.emacrossshort.enabled:false}")
     private boolean emaCrossShortEnabled;
 
-    // Kill switches for the two long strategies whose gross edge is negative
-    // BEFORE any fee — no fee tier or venue makes them profitable. Default true
-    // so the code stays neutral; the crypto profile turns them off.
-    @Value("${crypto.emacrosslong.enabled:true}")
-    private boolean emaCrossLongEnabled;
-
-    @Value("${crypto.breakout.enabled:true}")
-    private boolean breakoutEnabled;
-
     /**
      * PDH/PDL liquidity sweep. Runs to ACCUMULATE FORWARD DATA for the pre-registered
      * test in ~/itark/PREREG_liquidity_sweep_15m.md — it is not a validated strategy.
@@ -174,9 +165,6 @@ public class CryptoIntradayStrategyRunner {
     @Value("${crypto.vwap.excluded.products:}")
     private String vwapExcludedProductsRaw;
 
-    @Value("${crypto.emacrosslong.excluded.products:}")
-    private String emaCrossLongExcludedProductsRaw;
-
     /**
      * Applies to every strategy EXCEPT CryptoLiquiditySweepIntradayStrategy — that
      * strategy's product universe is locked by the PREREG_liquidity_sweep_15m.md
@@ -186,19 +174,17 @@ public class CryptoIntradayStrategyRunner {
     private String globalExcludedProductsRaw;
 
     private Set<String> vwapExcludedProducts;
-    private Set<String> emaCrossLongExcludedProducts;
     private Set<String> globalExcludedProducts;
 
     @PostConstruct
     private void initExclusions() {
         vwapExcludedProducts = parseExclusions(vwapExcludedProductsRaw);
-        emaCrossLongExcludedProducts = parseExclusions(emaCrossLongExcludedProductsRaw);
         globalExcludedProducts = parseExclusions(globalExcludedProductsRaw);
-        log.info("CryptoIntradayStrategyRunner: enabled — Short={}, EMACrossShort={}, EMACrossLong={}, "
-                        + "RangeBreakout={}, LiquiditySweep={}; VWAP exclusions={}, EMACrossLong exclusions={}, "
+        log.info("CryptoIntradayStrategyRunner: enabled — Short={}, EMACrossShort={}, "
+                        + "LiquiditySweep={}; VWAP exclusions={}, "
                         + "global exclusions={}",
-                shortEnabled, emaCrossShortEnabled, emaCrossLongEnabled, breakoutEnabled, sweepEnabled,
-                vwapExcludedProducts, emaCrossLongExcludedProducts, globalExcludedProducts);
+                shortEnabled, emaCrossShortEnabled, sweepEnabled,
+                vwapExcludedProducts, globalExcludedProducts);
     }
 
     private Set<String> parseExclusions(String raw) {
@@ -231,17 +217,11 @@ public class CryptoIntradayStrategyRunner {
         if ("CryptoEMACrossShortIntradayStrategy".equals(strategyName)) {
             return !emaCrossShortEnabled;
         }
-        if ("CryptoRangeBreakoutIntradayStrategy".equals(strategyName)) {
-            return !breakoutEnabled;
-        }
         if ("CryptoLiquiditySweepIntradayStrategy".equals(strategyName)) {
             return !sweepEnabled;
         }
         if ("CryptoVWAPReversionIntradayStrategy".equals(strategyName)) {
             return vwapExcludedProducts.contains(ticker);
-        }
-        if ("CryptoEMACrossLongIntradayStrategy".equals(strategyName)) {
-            return !emaCrossLongEnabled || emaCrossLongExcludedProducts.contains(ticker);
         }
         return false;
     }
@@ -256,9 +236,7 @@ public class CryptoIntradayStrategyRunner {
         return switch (strategyName) {
             case "CryptoShortIntradayStrategy"          -> shortEnabled;
             case "CryptoEMACrossShortIntradayStrategy"  -> emaCrossShortEnabled;
-            case "CryptoRangeBreakoutIntradayStrategy"  -> breakoutEnabled;
             case "CryptoLiquiditySweepIntradayStrategy" -> sweepEnabled;
-            case "CryptoEMACrossLongIntradayStrategy"   -> emaCrossLongEnabled;
             default -> true;
         };
     }

@@ -17,8 +17,8 @@ import org.ta4j.core.rules.AbstractRule;
  * while ADX has collapsed (RANGING), which the binary gate alone cannot see.
  * Confirmed in production data: 2026-07-22 to 2026-07-30, BTC stayed above its
  * 50-day SMA the whole week (binary gate would have allowed every entry) while
- * ADX fell from ~26 to ~18 (RANGING) — {@code CryptoEMACrossLongIntradayStrategy}
- * and {@code CryptoRangeBreakoutIntradayStrategy} lost -603% and -232% over
+ * ADX fell from ~26 to ~18 (RANGING) — the since-removed EMACrossLong
+ * and the since-removed RangeBreakout lost -603% and -232% over
  * that week on 16-22% win rates, while the regime-agnostic
  * {@code CryptoVWAPReversionIntradayStrategy} made +30% in the same market.
  */

@@ -58,7 +58,6 @@ public class StrategyComparisonReportIT extends BaseIntegrationTest {
     );
 
     private static final List<String> CRYPTO_INTRADAY_STRATEGIES = List.of(
-            "CryptoRangeBreakoutIntradayStrategy",
             "CryptoVWAPReversionIntradayStrategy"
     );
 

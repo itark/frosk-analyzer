@@ -16,7 +16,7 @@ import org.ta4j.core.rules.AbstractRule;
  * <p>Callers must check {@link LstmSignalFilterService#isEnabled()} before
  * constructing this rule and substitute a no-op rule when disabled — this
  * rule does not check the flag itself. See
- * {@link nu.itark.frosk.strategies.CryptoEMACrossLongIntradayStrategy} for
+ * {@link nu.itark.frosk.strategies.CryptoVWAPReversionIntradayStrategy} for
  * the call-site pattern.
  */
 public class LstmSignalRule extends AbstractRule {

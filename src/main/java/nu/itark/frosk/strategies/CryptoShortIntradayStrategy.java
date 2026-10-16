@@ -33,7 +33,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 /**
- * Crypto Rolling-Range Breakdown — short mirror of {@link CryptoRangeBreakoutIntradayStrategy}.
+ * Crypto Rolling-Range Breakdown — short mirror of the removed CryptoRangeBreakoutIntradayStrategy (long side, removed 2026-10-05).
  *
  * <h3>Entry rules (all must be true)</h3>
  * <ul>
@@ -43,7 +43,7 @@ import java.util.List;
  *   <li>{@link CryptoMarketRegimeRule} requires {@code TRENDING_DOWN} — BTC
  *       below its SMA <em>and</em> ADX confirms an actual downtrend, not just a
  *       brief dip below a lagging average. Mirrors the fix applied to
- *       {@link CryptoRangeBreakoutIntradayStrategy} 2026-09-18 after that
+ *       the (since removed) CryptoRangeBreakoutIntradayStrategy 2026-09-18 after that
  *       strategy's long side lost -232% during a week where BTC sat below/above
  *       its SMA without ADX ever confirming a real trend</li>
  * </ul>

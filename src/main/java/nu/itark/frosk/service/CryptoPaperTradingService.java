@@ -3,6 +3,8 @@ package nu.itark.frosk.service;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.CryptoPaperAccountDTO;
+import nu.itark.frosk.analysis.CryptoPaperDailyPnl;
+import nu.itark.frosk.analysis.CryptoPaperDailyPnlDTO;
 import nu.itark.frosk.analysis.CryptoPaperPositionDTO;
 import nu.itark.frosk.model.CryptoPaperAccount;
 import nu.itark.frosk.model.CryptoPaperOrder;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -268,6 +271,22 @@ public class CryptoPaperTradingService {
 
         log.info("PAPER ORDER: SELL {} {} @ {}EUR (pnl={}EUR net of {} fees, strategy={})",
                 ticker, buyOrder.getFilledQuantity(), closePrice, pnl, entryFee.add(exitFee), strategyName);
+    }
+
+    /**
+     * Realized paper P&L per calendar day over the last {@code days} days (clamped to 1..365),
+     * in EUR net of fees, plus the open positions' mark-to-market P&L and today's closed trades.
+     * Reflects what the paper account actually traded — position sizing, exposure caps and
+     * skipped signals included — unlike the signal-stream view in {@code /intraday/pnl}.
+     */
+    public CryptoPaperDailyPnlDTO getDailyPnl(int days) {
+        int window = Math.max(1, Math.min(days, 365));
+        LocalDate today = LocalDate.now();
+        List<CryptoPaperOrder> sells = orderRepository.findBySideAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(
+                "SELL", today.minusDays(window - 1L).atStartOfDay());
+        List<CryptoPaperOrder> openOrders = orderRepository.findBySideAndStatusOrderByCreatedAtDesc("BUY", "FILLED");
+        return CryptoPaperDailyPnl.build(sells, getAccount().getInitCapitalEur(),
+                computeUnrealizedPnlEur(openOrders), openOrders.size(), today);
     }
 
     public CryptoPaperAccountDTO getAccountSummary() {

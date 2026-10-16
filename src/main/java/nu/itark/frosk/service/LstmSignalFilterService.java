@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>Same shape as {@link RegimeForecastService}: an {@code enabled} flag
  * gates whether any HTTP call is made at all (callers must check {@link
  * #isEnabled()} before wiring a gate — see
- * {@link nu.itark.frosk.strategies.CryptoEMACrossLongIntradayStrategy} for
+ * {@link nu.itark.frosk.strategies.CryptoVWAPReversionIntradayStrategy} for
  * the call-site pattern), a per-(ticker, bar-index) cache avoids redundant
  * calls when multiple rules ask about the same bar, and the client never
  * throws — a failed/unreachable service, too little history, or a {@code

@@ -148,7 +148,7 @@ public class CryptoIntradayDataService implements IntradayDataService {
                             candle.getHigh(),
                             candle.getLow(),
                             candle.getClose(),
-                            candle.getVolume() != null ? candle.getVolume().longValue() : 0L
+                            candle.getVolume() != null ? candle.getVolume() : java.math.BigDecimal.ZERO
                     ));
                     inserted++;
                 }
@@ -214,7 +214,7 @@ public class CryptoIntradayDataService implements IntradayDataService {
                     ib.getHigh().doubleValue(),
                     ib.getLow().doubleValue(),
                     ib.getClose().doubleValue(),
-                    ib.getVolume() != null ? (double) ib.getVolume() : 0.0
+                    ib.getVolume() != null ? ib.getVolume().doubleValue() : 0.0
             );
         }
         return series;
