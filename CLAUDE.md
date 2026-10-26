@@ -70,6 +70,12 @@ The strategy class must:
 
 **Adding an intraday strategy:** In addition to the five `StrategiesMap` registrations, implement `IntradayStrategy` on the class. The `IntradayStrategyRunner` auto-discovers all `IntradayStrategy` beans via Spring DI. Add the class name to `frosk.strategies.exclude` (intraday strategies run via Tier-0, not the batch run). See `docs/intraday-pipeline.md`.
 
+**Adding a crypto intraday strategy:** Implement `CryptoIntradayStrategy` (NOT `IntradayStrategy` — the two runners are deliberately separate so crypto strategies never run on OMX series and vice versa). `CryptoIntradayStrategyRunner` auto-discovers all `CryptoIntradayStrategy` beans. Conventions specific to crypto intraday:
+- Register in only **three** of the five `StrategiesMap` places — `@Autowired` field, `getStrategyToRun()`, `getIndicatorValues()` — and NOT in `buildStrategiesMap()`/`getStrategies()`, so the strategy stays out of the equity batch map entirely (same pattern as `CryptoLiquiditySweepIntradayStrategy` and all the research/brainstorm strategies). `StrategyExecutor` resolves it via `getStrategyToRun()`, so that branch is mandatory.
+- Add a per-strategy `crypto.<name>.enabled` flag and wire it into `CryptoIntradayStrategyRunner.isExcluded()` and `isEnabledByConfig()`. New strategies default to PAPER mode (`CoinbaseStrategyModeService`), so they emit paper signals but place no real orders unless live trading is enabled.
+- Fees come from `TransactionFeeService` (Coinbase taker tier), never the equity intraday 0.03%.
+- A cross-series strategy (needs another product's bars, e.g. BTC/ETH stat-arb or the momentum-spillover master signal) loads them itself via `IntradayDataService.buildAllSeriesFromDb()` and floor-aligns by bar end time; it guards to its primary product and returns a never-trading strategy for others. See `CryptoBtcEthStatArbIntradayStrategy`.
+
 ## Conventions Claude Can't See From the Code
 
 - **Two-process architecture**: equity (port 8080) and crypto (port 8081) run as separate Spring Boot processes from the same JAR, using `application-equity.properties` and `application-crypto.properties` respectively. Each process has its own H2 database file. The frosk-dashboard toggle switch changes which backend base URL is used (`config.baseApi` vs `config.cryptoBaseApi` in `config.js`).
@@ -81,6 +87,8 @@ The strategy class must:
 - **New REST endpoints**: only add when there's a concrete consumer (frontend or external integration). Results are queryable directly via `/h2-console`.
 - **Adding a HedgeIndex indicator** is a two-step operation: (1) add the ticker to `YAHOO-INDEX-World indexes.csv`, (2) add the scoring rule to `HedgeIndexService`. See `docs/strategies/hedgeindex.md`.
 - **All external market data** flows through `YahooFinanceDirectClient` (direct calls to Yahoo's public v8/v10 endpoints — no API key, no cost, no quota). Any new Yahoo data source must be added there. See `docs/operations.md`.
+- **Crypto intraday research strategies** (`CryptoTimeOfDay`, `CryptoEmaAdxTrend`, `CryptoBollingerSqueeze`, `CryptoBtcEthStatArb`, `CryptoVolRegimeMomentum`, `CryptoNightReversion`, `CryptoMomentumSpillover`, `CryptoEnsemble`) are from `docs/research/crypto-15m-intraday-strategies.md`. They run ON by default but in PAPER mode to accumulate forward data — **none is validated; do not read their paper P&L as an edge** before a walk-forward / pre-registered test. The Kraken-dependent brainstorm items (funding regime, basis arbitrage, selling volatility) are parked — the `kraken-futures` profile is on hold indefinitely.
+- **Ensemble feasibility** is measured by `CryptoSignalCorrelationIT` (pairwise signal-correlation gate < 0.4) before building a voting meta-strategy; run it with `-Dspring.profiles.include=crypto`. Crypto ITs need that include because the Coinbase data service is `@Profile("crypto")` and absent under the plain `test` profile.
 
 ## Where Things Live
 
@@ -113,6 +121,7 @@ When working on a specific area, read the relevant doc first.
 | Dagstrategin (daily breakout + oversold bounce) | `docs/strategies/dagstrategin.md` |
 | OMX30 Intraday Momentum | `docs/strategies/omx30-intraday.md` |
 | Exit rules audit (stop-loss, HedgeIndex, time exits) | `docs/strategies/exit-rules.md` |
+| Crypto 15m intraday research + brainstorm (strategies 1–5, brainstorm #1–#7) | `docs/research/crypto-15m-intraday-strategies.md` |
 
 Project history and completed implementation steps: `CHANGELOG.md`.
 
