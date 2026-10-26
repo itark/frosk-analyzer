@@ -247,7 +247,7 @@ public class DataController {
                     dto.setHigh(ib.getHigh().doubleValue());
                     dto.setLow(ib.getLow().doubleValue());
                     dto.setClose(ib.getClose().doubleValue());
-                    dto.setValue(ib.getVolume() != null ? ib.getVolume() : 0L);
+                    dto.setValue(ib.getVolume() != null ? ib.getVolume().longValue() : 0L);
                     return dto;
                 })
                 .collect(Collectors.toList());

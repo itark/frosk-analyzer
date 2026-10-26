@@ -53,7 +53,7 @@ public class CoinbaseStrategyLifecycleController {
     }
 
     /**
-     * @Example GET http://localhost:8081/coinbase/strategy/CryptoEMACrossLongIntradayStrategy/readiness
+     * @Example GET http://localhost:8081/coinbase/strategy/CryptoVWAPReversionIntradayStrategy/readiness
      */
     @GetMapping("/coinbase/strategy/{strategyName}/readiness")
     public CoinbaseStrategyReadinessDTO readiness(@PathVariable String strategyName) {
@@ -61,7 +61,7 @@ public class CoinbaseStrategyLifecycleController {
     }
 
     /**
-     * @Example POST http://localhost:8081/coinbase/strategy/CryptoEMACrossLongIntradayStrategy/promote {"targetMode":"SHADOW"}
+     * @Example POST http://localhost:8081/coinbase/strategy/CryptoVWAPReversionIntradayStrategy/promote {"targetMode":"SHADOW"}
      */
     @PostMapping("/coinbase/strategy/{strategyName}/promote")
     public CoinbaseStrategyReadinessDTO promote(@PathVariable String strategyName, @RequestBody ModeChangeRequest body) {
@@ -72,7 +72,7 @@ public class CoinbaseStrategyLifecycleController {
     /**
      * Rollback — PAPER or DISABLED, never gated.
      *
-     * @Example POST http://localhost:8081/coinbase/strategy/CryptoEMACrossLongIntradayStrategy/demote {"targetMode":"PAPER"}
+     * @Example POST http://localhost:8081/coinbase/strategy/CryptoVWAPReversionIntradayStrategy/demote {"targetMode":"PAPER"}
      */
     @PostMapping("/coinbase/strategy/{strategyName}/demote")
     public CoinbaseStrategyReadinessDTO demote(@PathVariable String strategyName, @RequestBody ModeChangeRequest body) {

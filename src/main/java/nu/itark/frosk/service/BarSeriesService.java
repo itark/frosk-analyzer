@@ -193,7 +193,7 @@ public class BarSeriesService  {
 	private static final java.util.Set<String> CURRENT_CLOSE_STRATEGIES = java.util.Set.of(
 			"EngulfingStrategy", "GoldStrategy",
 			"OpeningRangeBreakoutIntradayStrategy", "VWAPMeanReversionIntradayStrategy", "GapReversalIntradayStrategy",
-			"CryptoRangeBreakoutIntradayStrategy", "CryptoVWAPReversionIntradayStrategy"
+			"CryptoVWAPReversionIntradayStrategy"
 	);
 
 	public TradingRecord runConfiguredStrategy(BarSeries barSeries, Strategy strategyToRun) {

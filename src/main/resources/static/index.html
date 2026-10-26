@@ -7,7 +7,8 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script crossorigin src="https://unpkg.com/recharts@2/umd/Recharts.js"></script>
+  <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1923; color: #e0e6ed; }
@@ -59,7 +60,7 @@
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect, useCallback } = React;
-    const { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart } = Recharts;
+    const { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart, BarChart, Bar, Cell } = Recharts;
 
     function regimeClass(regime) {
       if (!regime) return '';
@@ -275,6 +276,91 @@
       );
     }
 
+    // Crypto: realized paper P&L from the orders the paper account actually traded
+    // (EUR, net of fees). Replaces the signal-stream sum of percentages, which counts
+    // every signal at equal weight and ignores sizing, exposure caps and skipped signals.
+    function PaperDailyPnlPanel({ data }) {
+      const eur = v => (v == null ? '-' : (v >= 0 ? '+' : '') + Number(v).toFixed(2) + ' €');
+      const pct = (v, d = 2) => (v == null ? '-' : (v >= 0 ? '+' : '') + Number(v).toFixed(d) + '%');
+      const cls = v => (v >= 0 ? 'pnl-pos' : 'pnl-neg');
+      const days = data.days || [];
+      const today = new Date().toLocaleDateString('sv-SE');
+      const todayRow = days.find(d => d.date === today);
+      const todayEur = todayRow ? todayRow.pnlEur : 0;
+      const posDays = days.filter(d => d.pnlEur > 0).length;
+      const winRate = data.windowTrades > 0 ? (100 * data.windowWins / data.windowTrades) : null;
+      const kpi = (label, value, sub, c) => (
+        <div style={{ flex: '1 1 130px', background: '#16212c', borderRadius: 8, padding: '8px 12px' }}>
+          <div style={{ fontSize: 11, color: '#546e7a' }}>{label}</div>
+          <div className={c} style={{ fontSize: 18, fontWeight: 600 }}>{value}</div>
+          <div style={{ fontSize: 11, color: '#546e7a' }}>{sub}</div>
+        </div>
+      );
+      const trades = [...(data.todayTrades || [])].reverse();
+      return (
+        <div className="panel" style={{ gridColumn: '1 / -1' }}>
+          <div className="panel-header">
+            <h2>Daily P&amp;L — Paper (netto efter avgifter)</h2>
+            <span style={{ fontSize: 11, color: '#546e7a' }}>
+              realiserad, EUR · startkapital {Number(data.initCapitalEur).toFixed(0)} €
+            </span>
+          </div>
+          <div className="panel-body">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+              {kpi('Idag (realiserat)', eur(todayEur), pct(todayRow ? todayRow.pnlPctOfCapital : 0) + ' av kapital', cls(todayEur))}
+              {kpi('Orealiserat (öppna)', eur(data.unrealizedPnlEur), data.openPositionsCount + ' öppna positioner', cls(data.unrealizedPnlEur))}
+              {kpi(days.length + ' dagar, realiserat', eur(data.windowPnlEur), pct(data.windowPnlPctOfCapital) + ' av kapital', cls(data.windowPnlEur))}
+              {kpi('Vinstdagar', days.length ? posDays + ' / ' + days.length : '-', winRate != null ? 'vinstandel trades ' + winRate.toFixed(0) + '% (' + data.windowTrades + ' st)' : '', '')}
+            </div>
+            {days.length > 0 ? (
+              <div className="chart-container" style={{ marginBottom: 16 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={days} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#546e7a' }} tickFormatter={d => d.slice(5)} />
+                    <YAxis tick={{ fontSize: 10, fill: '#546e7a' }} tickFormatter={v => v + ' €'} />
+                    <Tooltip
+                      contentStyle={{ background: '#1a2733', border: '1px solid #2a3a4a', fontSize: 12 }}
+                      formatter={(v, n, p) => [eur(v) + ' (' + p.payload.trades + ' trades, snitt ' + pct(p.payload.avgTradePct) + '/trade)', 'Dag']}
+                      labelFormatter={l => l}
+                    />
+                    <ReferenceLine y={0} stroke="#2a3a4a" strokeWidth={1} />
+                    <Bar dataKey="pnlEur">
+                      {days.map((d, i) => <Cell key={i} fill={d.pnlEur >= 0 ? '#4caf50' : '#f44336'} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="empty-state" style={{ marginBottom: 12 }}>Inga stängda paper-trades i perioden</div>
+            )}
+            {trades.length > 0 && (
+              <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+                <table>
+                  <thead>
+                    <tr><th>Ticker</th><th>Strategi</th><th>Entry-pris</th><th>Exit-pris</th><th>Belopp</th><th>PnL €</th><th>PnL%</th><th>Exit-tid</th></tr>
+                  </thead>
+                  <tbody>
+                    {trades.map((t, i) => (
+                      <tr key={i}>
+                        <td style={{ color: '#ffb74d' }}>{t.ticker}</td>
+                        <td style={{ maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={t.strategyName}>{(t.strategyName || '').replace('Strategy', '')}</td>
+                        <td>{t.entryPrice != null ? Number(t.entryPrice).toPrecision(5) : '-'}</td>
+                        <td>{t.exitPrice != null ? Number(t.exitPrice).toPrecision(5) : '-'}</td>
+                        <td>{t.entryEur != null ? Number(t.entryEur).toFixed(0) + ' €' : '-'}</td>
+                        <td className={cls(t.pnlEur)}>{eur(t.pnlEur)}</td>
+                        <td className={cls(t.pnlPct)}>{pct(t.pnlPct)}</td>
+                        <td>{t.exitTime}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     function DailyPnlPanel({ pnlData, source }) {
       const isCrypto = source === 'crypto';
       const today = new Date().toLocaleDateString('sv-SE');
@@ -309,7 +395,7 @@
       return (
         <div className="panel" style={{ gridColumn: '1 / -1' }}>
           <div className="panel-header">
-            <h2>Daily P&amp;L — Round-trips</h2>
+            <h2>{isCrypto ? 'Daily P&L — Signaler (ej verklig P&L)' : 'Daily P&L — Round-trips'}</h2>
             <span style={{fontSize:11,color:'#546e7a'}}>{allToday.length} stängda idag</span>
           </div>
           <div className="panel-body">
@@ -377,6 +463,7 @@
       const [securities, setSecurities] = useState([]);
       const [featuredStrategies, setFeaturedStrategies] = useState([]);
       const [pnlData, setPnlData] = useState([]);
+      const [paperPnl, setPaperPnl] = useState(null);
       const [lastRefresh, setLastRefresh] = useState('');
 
       const isCrypto = source === 'crypto';
@@ -391,6 +478,12 @@
         fetch(apiUrl('/intraday/pnl', source)).then(r => r.json()).then(setPnlData).catch(() => setPnlData([]));
         fetch(apiUrl('/metadata', source)).then(r => r.json()).then(setSecurities).catch(() => setSecurities([]));
         fetch(apiUrl('/featuredStrategies', source)).then(r => r.json()).then(setFeaturedStrategies).catch(() => setFeaturedStrategies([]));
+
+        if (isCrypto) {
+          fetch('/crypto/paper-daily-pnl?days=30').then(r => r.ok ? r.json() : Promise.reject()).then(setPaperPnl).catch(() => setPaperPnl(null));
+        } else {
+          setPaperPnl(null);
+        }
 
         if (isCrypto) {
           // Crypto doesn't have dagstrategin watchlist
@@ -447,7 +540,9 @@
             }
             <PortfolioPanel portfolio={portfolio} source={source} />
             <FeaturedStrategiesPanel strategies={featuredStrategies} source={source} />
-            <DailyPnlPanel pnlData={pnlData} source={source} />
+            {isCrypto && paperPnl
+              ? <PaperDailyPnlPanel data={paperPnl} />
+              : <DailyPnlPanel pnlData={pnlData} source={source} />}
           </div>
         </div>
       );

@@ -7,10 +7,8 @@ import nu.itark.frosk.service.BarSeriesService;
 import nu.itark.frosk.service.CryptoIntradayDataService;
 import nu.itark.frosk.service.CryptoRegimeService;
 import nu.itark.frosk.service.TransactionFeeService;
-import nu.itark.frosk.strategies.CryptoEMACrossLongIntradayStrategy;
 import nu.itark.frosk.strategies.CryptoEMACrossShortIntradayStrategy;
 import nu.itark.frosk.strategies.CryptoIntradayStrategy;
-import nu.itark.frosk.strategies.CryptoRangeBreakoutIntradayStrategy;
 import nu.itark.frosk.strategies.CryptoVWAPReversionIntradayStrategy;
 import nu.itark.frosk.strategies.ISignalStrength;
 import nu.itark.frosk.strategies.SignalStrength;
@@ -37,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Diagnostic-only, not a permanent fixture: does the rule-based signal
- * strength score (ISignalStrength — see CryptoEMACrossLongIntradayStrategy
+ * strength score (ISignalStrength — see the strategies'
  * javadoc for the design rationale) actually correlate with better trade
  * outcomes on real data, before trusting it to scale real position size?
  *
@@ -77,12 +75,6 @@ public class CryptoSignalStrengthBacktestIT extends BaseIntegrationTest {
     CryptoVWAPReversionIntradayStrategy vwapReversionStrategy;
 
     @Autowired
-    CryptoRangeBreakoutIntradayStrategy rangeBreakoutStrategy;
-
-    @Autowired
-    CryptoEMACrossLongIntradayStrategy emaCrossLongStrategy;
-
-    @Autowired
     CryptoEMACrossShortIntradayStrategy emaCrossShortStrategy;
 
     @Autowired
@@ -111,7 +103,7 @@ public class CryptoSignalStrengthBacktestIT extends BaseIntegrationTest {
     @Test
     public void breakDownByStrengthTier() {
         seedCryptoSecuritiesIfMissing();
-        // RangeBreakout/EMACrossLong/EMACrossShort all gate entries on CryptoRegimeRule,
+        // EMACrossShort gates entries on CryptoRegimeRule,
         // which reads daily BTC-EUR closes from security_price. The test DB's snapshot of
         // that table is frozen at 2026-06-12 — two months stale relative to the 15m bar
         // window under test — so every bar floors to the same one stale regime value,
@@ -130,8 +122,6 @@ public class CryptoSignalStrengthBacktestIT extends BaseIntegrationTest {
                 + " products, 15m bars, taker fee 0.6%/trade) ===");
 
         report("CryptoVWAPReversionIntradayStrategy", vwapReversionStrategy, seriesList);
-        report("CryptoRangeBreakoutIntradayStrategy", rangeBreakoutStrategy, seriesList);
-        report("CryptoEMACrossLongIntradayStrategy", emaCrossLongStrategy, seriesList);
         report("CryptoEMACrossShortIntradayStrategy", emaCrossShortStrategy, seriesList);
     }
 
@@ -186,8 +176,6 @@ public class CryptoSignalStrengthBacktestIT extends BaseIntegrationTest {
 
     private Strategy buildStrategy(Object strategyInstance, BarSeries series) {
         if (strategyInstance instanceof CryptoVWAPReversionIntradayStrategy s) return s.buildStrategy(series);
-        if (strategyInstance instanceof CryptoRangeBreakoutIntradayStrategy s) return s.buildStrategy(series);
-        if (strategyInstance instanceof CryptoEMACrossLongIntradayStrategy s) return s.buildStrategy(series);
         if (strategyInstance instanceof CryptoEMACrossShortIntradayStrategy s) return s.buildStrategy(series);
         throw new IllegalArgumentException("Unhandled strategy type: " + strategyInstance.getClass());
     }

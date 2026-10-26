@@ -3,9 +3,11 @@ package nu.itark.frosk.repo;
 import nu.itark.frosk.model.CryptoPaperOrder;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +24,12 @@ public interface CryptoPaperOrderRepository extends JpaRepository<CryptoPaperOrd
      *  list behind the strategy-lifecycle promotion metrics. */
     List<CryptoPaperOrder> findByStrategyNameAndSideOrderByCreatedAtAsc(String strategyName, String side);
 
+    /** A strategy's 100 most recent closed trades (SELL rows), newest first — the rolling window behind Kelly sizing. */
+    List<CryptoPaperOrder> findTop100ByStrategyNameAndSideOrderByCreatedAtDesc(String strategyName, String side);
+
+    /** Paper orders of one side created at or after {@code from}, oldest first — the window behind the daily P&L view. */
+    List<CryptoPaperOrder> findBySideAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(String side, LocalDateTime from);
+
     /** A strategy's first-ever paper order (BUY or SELL) — fallback start date when it has no signals recorded. */
     Optional<CryptoPaperOrder> findTopByStrategyNameOrderByCreatedAtAsc(String strategyName);
 
@@ -30,4 +38,10 @@ public interface CryptoPaperOrderRepository extends JpaRepository<CryptoPaperOrd
                    "WHERE side = 'BUY' AND status = 'FILLED'",
            nativeQuery = true)
     BigDecimal sumOpenExposureEur();
+
+    /** As {@link #sumOpenExposureEur()}, for one ticker across all strategies. */
+    @Query(value = "SELECT COALESCE(SUM(eur_amount), 0) FROM crypto_paper_order " +
+                   "WHERE side = 'BUY' AND status = 'FILLED' AND ticker = :ticker",
+           nativeQuery = true)
+    BigDecimal sumOpenExposureEurByTicker(@Param("ticker") String ticker);
 }

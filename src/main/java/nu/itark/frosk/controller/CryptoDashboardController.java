@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.BtcTrendChartPoint;
 import nu.itark.frosk.analysis.BtcTrendSignal;
 import nu.itark.frosk.analysis.CryptoPaperAccountDTO;
+import nu.itark.frosk.analysis.CryptoPaperDailyPnlDTO;
 import nu.itark.frosk.analysis.CryptoPortfolioItemDTO;
 import nu.itark.frosk.service.CryptoBtcTrendSignalService;
 import nu.itark.frosk.service.CryptoPaperTradingService;
@@ -44,6 +45,18 @@ public class CryptoDashboardController {
     public CryptoPaperAccountDTO getPaperAccount() {
         log.info("GET /crypto/paper-account");
         return cryptoPaperTradingService.getAccountSummary();
+    }
+
+    /**
+     * Realized paper P&L per day in EUR (net of fees), from the orders the paper account
+     * actually traded. {@code days} defaults to 30.
+     *
+     * @Example GET http://localhost:8081/crypto/paper-daily-pnl?days=30
+     */
+    @GetMapping(value = "/crypto/paper-daily-pnl")
+    public CryptoPaperDailyPnlDTO getPaperDailyPnl(@RequestParam(name = "days", defaultValue = "30") int days) {
+        log.info("GET /crypto/paper-daily-pnl?days={}", days);
+        return cryptoPaperTradingService.getDailyPnl(days);
     }
 
     /**

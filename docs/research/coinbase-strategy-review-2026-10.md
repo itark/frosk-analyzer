@@ -15,8 +15,8 @@
 
 | Strategi | Status | Utfall | Bedömning |
 |---|---|---|---|
-| EMACross-Long | Avstängd 2026-07-31 | n=1 112 (15–31 juli): brutto −0,447 %, vinst 20,6 %, t=−7,4. Endast TRENDING_UP-dagar (n=297): −0,28 % (t=−2,7). Omspelning senaste 30 dagarna (alla TRENDING_UP, dagens regim-grind): brutto +0,014 %, netto −0,19 %, t=+0,2 | Förblir av |
-| RangeBreakout | Avstängd 2026-07-31 | n=463: brutto −0,429 %. TRENDING_UP-dagar (n=155): −0,29 %. Omspelning: brutto −0,126 %, t=−1,8 (−2,6 dagsklustrat) | Förblir av |
+| EMACross-Long | Avstängd 2026-07-31, borttagen 2026-10-05 | n=1 112 (15–31 juli): brutto −0,447 %, vinst 20,6 %, t=−7,4. Endast TRENDING_UP-dagar (n=297): −0,28 % (t=−2,7). Omspelning senaste 30 dagarna (alla TRENDING_UP, dagens regim-grind): brutto +0,014 %, netto −0,19 %, t=+0,2 | Borttagen |
+| RangeBreakout | Avstängd 2026-07-31, borttagen 2026-10-05 | n=463: brutto −0,429 %. TRENDING_UP-dagar (n=155): −0,29 %. Omspelning: brutto −0,126 %, t=−1,8 (−2,6 dagsklustrat) | Borttagen |
 | CryptoShort | Påslagen, ej körbar på spot | n=59 på 10 dagar, brutto +0,87 %, vinst 52,5 %, t=2,8. Allt i TRENDING_DOWN | Hör hemma på Kraken Futures |
 | EMACross-Short | Påslagen, ej körbar på spot | n=137, brutto +0,16 %, netto −0,04 % | Hör hemma på Kraken Futures |
 | VWAP-reversion | Paper | 926 trades, +108,81 EUR på 2 000 EUR, netto +0,09 %/trade, t=1,33, vinst 58,6 %, profit factor 1,11, max realiserad drawdown 6,7 %. Positiv augusti, september, oktober | Enda kandidaten, se nedan |
@@ -35,9 +35,21 @@ Begränsningar: en månad i en enda regim, ett test per strategi utan parametert
 - Exit som maker-limit på VWAP (0,02 % avgift) testades som en enda variant: +0,025 % mot +0,051 % för taker-exit. Sämre, eftersom stängningsexit fångar överskjutet. Idén avfärdad.
 - Beskrivande och i efterhand (ej pre-registrerat): netto efter avgift per regim på signalnivå var +0,29 % RANGING, +0,10 % TRENDING_UP, +0,03 % TRENDING_DOWN. Senaste månaden var TRENDING_UP genomgående.
 
+## Uppföljning 2026-10-05: EMACross-Long och RangeBreakout borttagna
+
+Båda strategierna togs bort ur koden (klass, test, `StrategiesMap`, runner, strategilistor, konfig) efter en fördjupad analys. Metod: omspelning på de lagrade 15m-staplarna (2026-09-05 → 2026-10-05, BTC TRENDING_UP alla 30 dagar), där efter-entry-avkastningen jämfördes med medelavkastningen från alla staplar för samma produkter och period (dagsklustrad t). Ett test per strategi, inga justerade parametrar, inget LSTM-filter.
+
+**EMACross-Long** (1 541 entries): efter entry +0,203 % på 8 h mot +0,264 % för alla staplar (skillnad −0,061 %, t −0,6). Skillnaden mot slumpen är noll på 15 min, 1 h, 4 h och 8 h. Regim-grinden tog brutto från −0,45 % till ≈0 genom att välja uppåtmarknad (marknadsdrift), inte genom att välja bättre entries. Exits: nedåtkorsning 55 % (−0,61 %), ATR-stopp 26 % (−1,14 %), tidsexit 20 % (+3,21 %).
+
+**RangeBreakout** (1 144 entries): efter breakout +0,004 % på 4 h mot +0,130 % för alla staplar (skillnad −0,127 %, t −2,5; −0,074 %, t −1,5 på 2 h; −0,103 %, t −1,8 på 8 h). Med sex horisonter är en enskild t = −2,5 bara en antydan. 55 % av breakouterna stänger tillbaka under den brutna nivån inom en timme. Exits: trailing 68 % (−0,87 %), initialstopp 14 % (−1,33 %), profit-lock 18 % (+3,63 %). Brutto totalt −0,13 %. Uppdelning efter överskjutning och rangbredd visade inget konsekvent mönster.
+
+**Slutsats:** ingen av momentum-entryna har information utöver slump på 15m-altcoins; exit-justeringar kan inte skapa en edge ur en entry utan signalvärde. Rimlig forskningsriktning är mean reversion (VWAP-varianter, det pre-registrerade 21–23 UTC-fönstret). Liquidity Sweep, som köper efter ett falskt genombrott, är i linje med att de flesta breakouter fallerar, men utvärderas inte före sin datagate.
+
+**Kvarvarande effekter:** `forecast.lstm.enabled=false` (inga konsumenter kvar utom VWAP:s opt-in, som kräver båda switcharna). Gamla `featured_strategy`- och `intraday_signal`-rader ligger kvar i databasen.
+
 ## Rekommendationer
 
-1. Behåll EMACross-Long och RangeBreakout avstängda.
+1. ~~Behåll EMACross-Long och RangeBreakout avstängda.~~ Ersatt: båda borttagna 2026-10-05 (se uppföljningen ovan).
 2. Kör shortstrategierna på Kraken Futures (redan påslagna i den profilen); Coinbase spot saknar venue.
 3. Gör paper realistiskt före livebeslut: fyll köp på `best_ask` och sälj på `best_bid`.
 4. Lägg ett promotion-krav i `CoinbaseStrategyLifecycleService` på spread-justerad förväntan (utöver 30 trades / 30 dagar / drawdown <15 %). VWAP uppfyller redan de nuvarande kriterierna, som inte säger något om kostnadsjusterad edge.

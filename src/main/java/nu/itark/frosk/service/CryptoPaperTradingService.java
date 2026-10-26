@@ -3,6 +3,8 @@ package nu.itark.frosk.service;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.analysis.CryptoPaperAccountDTO;
+import nu.itark.frosk.analysis.CryptoPaperDailyPnl;
+import nu.itark.frosk.analysis.CryptoPaperDailyPnlDTO;
 import nu.itark.frosk.analysis.CryptoPaperPositionDTO;
 import nu.itark.frosk.model.CryptoPaperAccount;
 import nu.itark.frosk.model.CryptoPaperOrder;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +36,8 @@ import java.util.Optional;
  * independent of whether live trading is enabled — a continuously running paper track record.
  *
  * <p>Sizes positions the same way {@link nu.itark.frosk.crypto.livetrading.LiveTradingGate}
- * sizes real orders (equity * pct.of.equity * signal-strength multiplier, clamped to [min, max],
+ * sizes real orders (equity * pct.of.equity — or the strategy's fractional-Kelly fraction when
+ * {@code crypto.kelly.sizing.enabled} — * signal-strength multiplier, clamped to [min, max],
  * capped by a total-exposure fraction of equity), but against this account's own simulated
  * equity so the simulation stays a faithful preview of how live trading would behave.
  */
@@ -56,6 +60,22 @@ public class CryptoPaperTradingService {
 
     @Value("${crypto.live.trading.max.total.exposure.pct:0.5}")
     private BigDecimal maxTotalExposurePct;
+
+    /**
+     * Cap on open exposure in ONE ticker, summed across all strategies, as a fraction
+     * of equity. A new BUY is scaled down to the room left under the cap and skipped
+     * if that falls below {@code minPositionEur}. Sizing only — signals are untouched,
+     * so the liquidity sweep's pre-registered signal record is unaffected. Null or
+     * {@code <= 0} disables the cap. {@code LiveTradingGate} reads the same key and
+     * applies the same scale-down/skip rule to live orders — keep the two in sync.
+     *
+     * <p>2026-10-06: TRAC-USD was open in both LiquiditySweep and VWAPReversion at
+     * once, ~290 EUR = 14% of the account in a thinly traded product. Blocking the
+     * second entry instead was rejected on the data: VWAP entries while a sweep was
+     * open made +22 EUR over 80 trades — the issue is concentration, not edge.
+     */
+    @Value("${crypto.paper.trading.max.ticker.exposure.pct:0}")
+    private BigDecimal maxTickerExposurePct;
 
     /**
      * Multiplier applied to the base position size for {@link SignalStrength#ELEVATED}
@@ -94,6 +114,14 @@ public class CryptoPaperTradingService {
     @Autowired
     private SecurityPriceRepository securityPriceRepository;
 
+    /**
+     * Replaces {@code positionPctOfEquity} with a per-strategy fractional-Kelly
+     * fraction when {@code crypto.kelly.sizing.enabled=true}. {@code LiveTradingGate}
+     * reads the same service and key, so paper and live size identically.
+     */
+    @Autowired
+    private KellyPositionSizingService kellyPositionSizingService;
+
     /** Fallback price source — see {@link #latestPrice}. */
     @Autowired
     private IntradayBarRepository intradayBarRepository;
@@ -118,13 +146,23 @@ public class CryptoPaperTradingService {
     }
 
     public BigDecimal computePositionSizeEur() {
-        return sizePosition(computeEquity(), null);
+        return sizePosition(computeEquity(), null, null);
     }
 
-    /** @param strength null is treated the same as {@link SignalStrength#BASE} (multiplier 1). */
-    private BigDecimal sizePosition(BigDecimal equity, SignalStrength strength) {
-        BigDecimal base = equity.multiply(positionPctOfEquity).multiply(multiplierFor(strength));
+    /**
+     * @param strength     null is treated the same as {@link SignalStrength#BASE} (multiplier 1).
+     * @param strategyName selects the Kelly fraction when Kelly sizing is on; null uses the fixed fraction.
+     */
+    private BigDecimal sizePosition(BigDecimal equity, SignalStrength strength, String strategyName) {
+        BigDecimal base = equity.multiply(positionFraction(strategyName)).multiply(multiplierFor(strength));
         return base.max(minPositionEur).min(maxPositionEur);
+    }
+
+    private BigDecimal positionFraction(String strategyName) {
+        if (strategyName != null && kellyPositionSizingService != null && kellyPositionSizingService.isEnabled()) {
+            return kellyPositionSizingService.kellyFraction(strategyName);
+        }
+        return positionPctOfEquity;
     }
 
     private BigDecimal multiplierFor(SignalStrength strength) {
@@ -155,7 +193,22 @@ public class CryptoPaperTradingService {
         CryptoPaperAccount account = getAccount();
         BigDecimal openExposure = orderRepository.sumOpenExposureEur();
         BigDecimal equity = account.getCashEur().add(openExposure);
-        BigDecimal eurAmount = sizePosition(equity, strength);
+        BigDecimal eurAmount = sizePosition(equity, strength, strategyName);
+
+        if (maxTickerExposurePct != null && maxTickerExposurePct.signum() > 0) {
+            BigDecimal tickerExposure = orderRepository.sumOpenExposureEurByTicker(ticker);
+            BigDecimal tickerRoom = equity.multiply(maxTickerExposurePct).subtract(tickerExposure);
+            if (tickerRoom.compareTo(eurAmount) < 0) {
+                if (tickerRoom.compareTo(minPositionEur) < 0) {
+                    log.debug("CryptoPaperTradingService: skip BUY {} — ticker exposure {} leaves {} under the {} cap "
+                            + "(< min {})", ticker, tickerExposure, tickerRoom, maxTickerExposurePct, minPositionEur);
+                    return;
+                }
+                log.debug("CryptoPaperTradingService: BUY {} scaled {} -> {} by the per-ticker cap ({} already open)",
+                        ticker, eurAmount, tickerRoom, tickerExposure);
+                eurAmount = tickerRoom;
+            }
+        }
 
         BigDecimal maxTotalExposure = equity.multiply(maxTotalExposurePct);
         if (openExposure.add(eurAmount).compareTo(maxTotalExposure) > 0) {
@@ -237,6 +290,22 @@ public class CryptoPaperTradingService {
 
         log.info("PAPER ORDER: SELL {} {} @ {}EUR (pnl={}EUR net of {} fees, strategy={})",
                 ticker, buyOrder.getFilledQuantity(), closePrice, pnl, entryFee.add(exitFee), strategyName);
+    }
+
+    /**
+     * Realized paper P&L per calendar day over the last {@code days} days (clamped to 1..365),
+     * in EUR net of fees, plus the open positions' mark-to-market P&L and today's closed trades.
+     * Reflects what the paper account actually traded — position sizing, exposure caps and
+     * skipped signals included — unlike the signal-stream view in {@code /intraday/pnl}.
+     */
+    public CryptoPaperDailyPnlDTO getDailyPnl(int days) {
+        int window = Math.max(1, Math.min(days, 365));
+        LocalDate today = LocalDate.now();
+        List<CryptoPaperOrder> sells = orderRepository.findBySideAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(
+                "SELL", today.minusDays(window - 1L).atStartOfDay());
+        List<CryptoPaperOrder> openOrders = orderRepository.findBySideAndStatusOrderByCreatedAtDesc("BUY", "FILLED");
+        return CryptoPaperDailyPnl.build(sells, getAccount().getInitCapitalEur(),
+                computeUnrealizedPnlEur(openOrders), openOrders.size(), today);
     }
 
     public CryptoPaperAccountDTO getAccountSummary() {

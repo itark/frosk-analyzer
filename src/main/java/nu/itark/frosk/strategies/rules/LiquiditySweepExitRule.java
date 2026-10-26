@@ -22,6 +22,14 @@ import org.ta4j.core.rules.AbstractRule;
  * a position held across UTC midnight would silently retarget to a different level
  * if the indicator were read at the current index instead of the entry index.
  *
+ * <p><b>Signal bar vs. fill bar.</b> "Entry bar" above means the bar whose close
+ * confirmed the reclaim (the signal bar). Under {@code TradeOnNextOpenModel} the
+ * position's recorded entry index is the bar AFTER it, and that bar is in general no
+ * reclaim at all — {@link SweepWindow} then finds no excursion and the stop silently
+ * becomes null, leaving only target and time stop. Pass {@code entryOnNextOpen=true}
+ * whenever the strategy is run under next-open so the levels are read from
+ * {@code entryIndex - 1}. The time stop still counts from the actual fill.
+ *
  * <p><b>Known fidelity gap.</b> The runner polls every 15 minutes and emits a market
  * order at the bar close, so the realised fill is the CLOSE of the bar that breached
  * the level, not the level itself. Real resting stop/limit orders would fill at the
@@ -36,15 +44,17 @@ public class LiquiditySweepExitRule extends AbstractRule {
     private final PreviousDayExtremeIndicator pdl;
     private final int confirmBars;
     private final int maxBarsHeld;
+    private final boolean entryOnNextOpen;
 
     public LiquiditySweepExitRule(BarSeries series, PreviousDayExtremeIndicator pdh,
                                   PreviousDayExtremeIndicator pdl,
-                                  int confirmBars, int maxBarsHeld) {
+                                  int confirmBars, int maxBarsHeld, boolean entryOnNextOpen) {
         this.series = series;
         this.pdh = pdh;
         this.pdl = pdl;
         this.confirmBars = confirmBars;
         this.maxBarsHeld = maxBarsHeld;
+        this.entryOnNextOpen = entryOnNextOpen;
     }
 
     @Override
@@ -66,26 +76,34 @@ public class LiquiditySweepExitRule extends AbstractRule {
         if (index - entryIndex >= maxBarsHeld) {
             return true;                                   // time stop
         }
-        Num target = pdh.getValue(entryIndex);
+        int signalIndex = signalIndex(entryIndex);
+        Num target = pdh.getValue(signalIndex);
         if (!target.isZero() && series.getBar(index).getHighPrice().isGreaterThanOrEqual(target)) {
             return true;                                   // target
         }
-        Num stop = sweepLow(entryIndex);
+        Num stop = stopLevel(entryIndex);
         return stop != null && series.getBar(index).getLowPrice().isLessThanOrEqual(stop);
     }
 
+    /** The reclaim bar that produced the signal — see "Signal bar vs. fill bar". */
+    private int signalIndex(int entryIndex) {
+        return entryOnNextOpen ? Math.max(entryIndex - 1, series.getBeginIndex()) : entryIndex;
+    }
+
     /**
-     * Lowest low across the sweep excursion the entry bar terminated. Uses the same
-     * {@link SweepWindow} the entry rule used, so the stop can never be derived from
-     * a different set of bars than the ones that produced the signal.
+     * Stop level for a position entered at {@code entryIndex}: the lowest low across
+     * the sweep excursion the signal bar terminated, or null when none is found. Uses
+     * the same {@link SweepWindow} the entry rule used, so the stop can never be
+     * derived from a different set of bars than the ones that produced the signal.
      */
-    private Num sweepLow(int entryIndex) {
-        Num pdlV = pdl.getValue(entryIndex);
+    Num stopLevel(int entryIndex) {
+        int signalIndex = signalIndex(entryIndex);
+        Num pdlV = pdl.getValue(signalIndex);
         if (pdlV.isZero()) {
             return null;
         }
-        return SweepWindow.sweepLow(series, entryIndex, pdlV,
-                firstBarOfDay(entryIndex), confirmBars);
+        return SweepWindow.sweepLow(series, signalIndex, pdlV,
+                firstBarOfDay(signalIndex), confirmBars);
     }
 
     private int firstBarOfDay(int index) {

@@ -51,7 +51,7 @@ import java.util.List;
  * </ul>
  *
  * <p>Emits "SHRT"/"COVR" via the runner's short-aware signal path.
- * Long-side counterpart: {@link CryptoEMACrossLongIntradayStrategy}.
+ * Long-side counterpart (CryptoEMACrossLongIntradayStrategy) was removed 2026-10-05.
  */
 @Component
 @Slf4j
@@ -138,13 +138,13 @@ public class CryptoEMACrossShortIntradayStrategy extends AbstractStrategy
      * Neutralized — always BASE, so the position-size multiplier is a no-op.
      *
      * <p>Unlike {@link CryptoVWAPReversionIntradayStrategy} and
-     * {@link CryptoRangeBreakoutIntradayStrategy} (both backtested 2026-08-10 and
+     * the removed CryptoRangeBreakoutIntradayStrategy (both backtested 2026-08-10 and
      * found <b>inverted</b>), this one has not been backtested at all: the
      * regime gate ({@link CryptoMarketRegimeRule} requiring {@code TRENDING_DOWN})
      * means it only fires during a confirmed downtrend, and BTC was
      * in an uptrend for the entirety of the available 30-day window
      * ({@code CryptoSignalStrengthBacktestIT} — 0 closed trades). Was a mirror
-     * of {@link CryptoEMACrossLongIntradayStrategy}'s (validated, correctly
+     * of the removed CryptoEMACrossLongIntradayStrategy's (validated, correctly
      * ordered) scoring, on the unverified assumption the long-side logic
      * transfers to the short side. Re-enable and re-backtest once BTC has
      * actually traded below its SMA(50) for long enough to produce a sample —

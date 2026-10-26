@@ -35,6 +35,12 @@ public interface KrakenFuturesPaperOrderRepository extends JpaRepository<KrakenF
            nativeQuery = true)
     BigDecimal sumOpenExposureUsd();
 
+    /** As {@link #sumOpenExposureUsd()}, for one symbol across all strategies and both directions. */
+    @Query(value = "SELECT COALESCE(SUM(usd_amount), 0) FROM kraken_futures_paper_order " +
+                   "WHERE status = 'OPEN' AND symbol = ?1",
+           nativeQuery = true)
+    BigDecimal sumOpenExposureUsdBySymbol(String symbol);
+
     /**
      * Realized PnL (USD) of positions closed at or after {@code cutoff} — used by
      * RiskManagementService's daily-loss circuit breaker. {@code cutoff} is the

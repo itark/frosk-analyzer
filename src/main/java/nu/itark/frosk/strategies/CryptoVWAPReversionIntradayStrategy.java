@@ -4,9 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.model.StrategyIndicatorValue;
 import nu.itark.frosk.service.LstmSignalFilterService;
 import nu.itark.frosk.strategies.indicators.SessionVWAPIndicator;
+import nu.itark.frosk.strategies.rules.CooldownAfterLossRule;
 import nu.itark.frosk.strategies.rules.LstmSignalRule;
 import nu.itark.frosk.strategies.rules.MaxBarsHeldRule;
 import nu.itark.frosk.strategies.rules.StopLossRule;
+import nu.itark.frosk.strategies.rules.TimeWindowRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,7 +17,9 @@ import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.helpers.PreviousValueIndicator;
 import org.ta4j.core.indicators.helpers.TransformIndicator;
 import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.rules.BooleanRule;
@@ -44,22 +48,41 @@ import java.util.List;
  *   <li>RSI(14) &lt; {@code rsiEntry} — oversold confirmation</li>
  * </ul>
  *
- * <p>No regime gate: the older {@code CryptoRegimeRule} (BTC risk-on/off) was
- * removed as a directional macro gate (see the exit-rule comment below), and
- * the GARCH+ADX SIDEWAYS-only gate ({@code GarchRegimeRule}) was removed
- * 2026-09-17 so this strategy trades in every market structure — the stop-loss
- * (2.7%) and 12h time exit are the protection against a stretch that turns out
- * to be a genuine trend instead of a reversion.
+ * <p>Regime history: the older {@code CryptoRegimeRule} (BTC risk-on/off) was
+ * removed as a directional macro gate, and the GARCH+ADX SIDEWAYS-only gate
+ * ({@code GarchRegimeRule}) was removed 2026-09-17 so this strategy traded in
+ * every market structure, relying on the stop-loss and time exit alone.
+ *
+ * <p>Per-ticker trend filter (re-introduced 2026-10-07, {@code
+ * crypto.vwap.trend.filter.enabled}, default OFF): entry only while the ticker's
+ * own SMA({@code trendSmaBars}) is above its value {@code trendSlopeBars} ago,
+ * i.e. the 24h average is not falling. Without a gate the strategy bought dips in
+ * steady downtrends where VWAP follows price down and no reversion comes
+ * (2026-10-06: 33 of 37 products down, traded alts -3..-9%). Measured on 453
+ * trades 2026-09-08..10-06: entries with a falling 24h SMA lost -45.71 EUR (175
+ * trades), the rest made +39.74 EUR (278). It is the ticker's OWN trend on
+ * purpose — a BTC-trend proxy pointed the wrong way in the same data (VWAP lost
+ * -54 EUR while BTC's SMA was rising). In-sample over 27 days and not monotone
+ * across slope buckets: validate with {@code StrategyComparisonReportIT} before
+ * trusting the number.
+ *
+ * <p>UTC entry window (2026-10-16, {@code crypto.vwap.time.window.enabled}, default
+ * OFF): entry only while the signal bar's end time is in [{@code start.hour.utc},
+ * {@code end.hour.utc}), via {@link TimeWindowRule}. Motivated by external BTC
+ * seasonality research (21:00–23:00 UTC). In-house evidence is weak: H1 in
+ * {@code ~/itark/PREREG_vwap_signal_filters.md} (VWAP entries at 21–22 UTC, 400 days)
+ * was not recommended (+0.07 pp, CI spanning zero, halves of opposite sign), and
+ * with the window on, the paper track record no longer contains out-of-window
+ * entries — which {@code ~/itark/PREREG_vwap_seasonality_window.md} needs for its
+ * comparison.
  *
  * <p>Optional LSTM confirmation (2026-10-05, OFF by default): {@link
  * LstmSignalRule} gates entry only when BOTH {@code forecast.lstm.enabled=true}
- * (crypto-wide microservice switch, already true) AND {@code
+ * (crypto-wide microservice switch, currently false — its former consumers
+ * EMACrossLong and RangeBreakout were removed 2026-10-05) AND {@code
  * crypto.vwap.lstm.filter.enabled=true} (this strategy's own switch, default
- * false) are set. It is this strategy's own switch, not the shared one,
- * because {@code forecast.lstm.enabled} is already true for the crypto profile
- * to gate two already-disabled strategies (EMACrossLong, RangeBreakout) — this
- * is this project's only proven live edge, so the filter must not go live here
- * on an existing flag flip. Measure with {@code
+ * false) are set. This is this project's only proven live edge, so the filter
+ * must not go live here on a single shared-flag flip. Measure with {@code
  * StrategyComparisonReportIT#cryptoIntradayReport} (filter on vs off) before
  * enabling in application-crypto.properties.
  *
@@ -100,6 +123,34 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
     @Value("${crypto.vwap.max.bars.held:48}")
     private int maxBarsHeld;
 
+    /** Bars to wait after a losing exit before re-entering — see {@link CooldownAfterLossRule}. 0 disables. */
+    @Value("${crypto.vwap.cooldown.bars.after.loss:0}")
+    private int cooldownBarsAfterLoss;
+
+    /** Per-ticker trend filter — see class javadoc. Default OFF. */
+    @Value("${crypto.vwap.trend.filter.enabled:false}")
+    private boolean trendFilterEnabled;
+
+    /** SMA length for the trend filter (96 = 24h on 15m bars). */
+    @Value("${crypto.vwap.trend.sma.bars:96}")
+    private int trendSmaBars;
+
+    /** Lookback for the SMA slope (24 = 6h on 15m bars). */
+    @Value("${crypto.vwap.trend.slope.bars:24}")
+    private int trendSlopeBars;
+
+    /** UTC entry-window gate — see class javadoc. Default OFF. */
+    @Value("${crypto.vwap.time.window.enabled:false}")
+    private boolean timeWindowEnabled;
+
+    /** First UTC hour (inclusive) of the entry window, judged on the signal bar's end time. */
+    @Value("${crypto.vwap.time.window.start.hour.utc:21}")
+    private int timeWindowStartHourUtc;
+
+    /** UTC hour (exclusive) that closes the entry window. */
+    @Value("${crypto.vwap.time.window.end.hour.utc:23}")
+    private int timeWindowEndHourUtc;
+
     /** This strategy's own switch for the optional LSTM gate — see class javadoc. Default OFF. */
     @Value("${crypto.vwap.lstm.filter.enabled:false}")
     private boolean lstmFilterEnabled;
@@ -132,11 +183,16 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
         // ── Entry ─────────────────────────────────────────────────────────
         Rule stretched = new UnderIndicatorRule(close, vwapStretched);
         Rule oversold = new UnderIndicatorRule(rsi, DoubleNum.valueOf(rsiEntry));
-        // CryptoRegimeRule (BTC risk-on/off) removed: stop-loss (2.7%) + 12h time
-        // exit provide sufficient protection without blocking all risk-off entries.
-        // GARCH+ADX SIDEWAYS-only gate (GarchRegimeRule) removed 2026-09-17: this
-        // strategy now trades in every regime, relying on the same stop-loss/time
-        // exit for protection against a stretch that turns into a real trend.
+        // CryptoRegimeRule (BTC risk-on/off) and the GARCH+ADX SIDEWAYS-only gate
+        // (removed 2026-09-17) are gone; the per-ticker SMA-slope filter below
+        // (2026-10-07) replaces them — see class javadoc.
+        Rule trendOk;
+        if (trendFilterEnabled) {
+            SMAIndicator trendSma = new SMAIndicator(close, trendSmaBars);
+            trendOk = new OverIndicatorRule(trendSma, new PreviousValueIndicator(trendSma, trendSlopeBars));
+        } else {
+            trendOk = BooleanRule.TRUE;
+        }
 
         // Optional LSTM confirmation gate — see class javadoc. No-op (BooleanRule.TRUE)
         // unless this strategy's OWN flag is set, even though the shared
@@ -145,7 +201,13 @@ public class CryptoVWAPReversionIntradayStrategy extends AbstractStrategy
                 ? new LstmSignalRule(series, lstmSignalFilterService)
                 : BooleanRule.TRUE;
 
-        Rule entryRule = stretched.and(oversold).and(lstmGate);
+        Rule cooldown = new CooldownAfterLossRule(cooldownBarsAfterLoss);
+
+        Rule inTimeWindow = timeWindowEnabled
+                ? new TimeWindowRule(series, timeWindowStartHourUtc, timeWindowEndHourUtc)
+                : BooleanRule.TRUE;
+
+        Rule entryRule = stretched.and(oversold).and(trendOk).and(lstmGate).and(cooldown).and(inTimeWindow);
 
         // ── Exit ──────────────────────────────────────────────────────────
         Rule profitTarget = new OverIndicatorRule(close, vwap);

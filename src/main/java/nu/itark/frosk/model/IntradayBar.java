@@ -67,12 +67,17 @@ public class IntradayBar {
     @Column(nullable = false, precision = 14, scale = 6)
     private BigDecimal close;
 
-    @Column
-    private Long volume;
+    /**
+     * Base-asset volume at full precision. Was {@code Long} until 2026-10-08, which truncated
+     * fractional volumes (0.32 BTC stored as 0) and skewed volume-weighted indicators such as the
+     * session VWAP. Crypto DBs are migrated by {@code IntradayBarVolumeMigration}.
+     */
+    @Column(precision = 28, scale = 8)
+    private BigDecimal volume;
 
     public IntradayBar(Long securityId, long barTimestamp, String intervalCode,
                        BigDecimal open, BigDecimal high, BigDecimal low,
-                       BigDecimal close, Long volume) {
+                       BigDecimal close, BigDecimal volume) {
         this.securityId    = securityId;
         this.barTimestamp  = barTimestamp;
         this.intervalCode  = intervalCode;
@@ -81,6 +86,14 @@ public class IntradayBar {
         this.low           = low;
         this.close         = close;
         this.volume        = volume;
+    }
+
+    /** Whole-unit volume (Yahoo/Kraken providers report integers). */
+    public IntradayBar(Long securityId, long barTimestamp, String intervalCode,
+                       BigDecimal open, BigDecimal high, BigDecimal low,
+                       BigDecimal close, Long volume) {
+        this(securityId, barTimestamp, intervalCode, open, high, low, close,
+                volume != null ? BigDecimal.valueOf(volume) : null);
     }
 
     /** Convenience — bar start as {@link Instant}. */

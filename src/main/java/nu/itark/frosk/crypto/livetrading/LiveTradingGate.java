@@ -3,6 +3,7 @@ package nu.itark.frosk.crypto.livetrading;
 import lombok.extern.slf4j.Slf4j;
 import nu.itark.frosk.broker.BrokerOrderClient;
 import nu.itark.frosk.repo.LiveOrderRepository;
+import nu.itark.frosk.service.KellyPositionSizingService;
 import nu.itark.frosk.strategies.SignalStrength;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +23,8 @@ import java.time.ZoneOffset;
  * <ol>
  *   <li>Master kill switch ({@code crypto.live.trading.enabled})</li>
  *   <li>Total open exposure cap ({@code crypto.live.trading.max.total.exposure.pct} of equity)</li>
+ *   <li>Per-ticker open exposure cap ({@code crypto.paper.trading.max.ticker.exposure.pct}
+ *       of equity) — callers size into it first with {@link #capToTickerExposure}</li>
  *   <li>Per-order position size cap</li>
  *   <li>Daily realized-loss limit (auto-disables when breached)</li>
  *   <li>Available EUR balance (buy-only)</li>
@@ -51,6 +54,16 @@ public class LiveTradingGate {
 
     @Value("${crypto.live.trading.max.total.exposure.pct:0.5}")
     private BigDecimal maxTotalExposurePct;
+
+    /**
+     * Live mirror of {@code CryptoPaperTradingService}'s per-ticker cap: max open
+     * exposure in ONE ticker across all strategies, as a fraction of equity. Shares
+     * the exact property key paper reads so the two can never drift apart. Null or
+     * {@code <= 0} disables it (the default — kraken-futures does not set the key,
+     * and neither does its paper service implement the cap).
+     */
+    @Value("${crypto.paper.trading.max.ticker.exposure.pct:0}")
+    private BigDecimal maxTickerExposurePct;
 
     /**
      * Live-side mirror of {@code RiskManagementService.enabled} for paper — gates
@@ -84,6 +97,9 @@ public class LiveTradingGate {
 
     @Autowired
     private BrokerOrderClient brokerOrderClient;
+
+    @Autowired
+    private KellyPositionSizingService kellyPositionSizingService;
 
     public boolean isEnabled() {
         return enabled;
@@ -122,9 +138,52 @@ public class LiveTradingGate {
      * can reach the cap sooner but never exceed {@code maxPositionEur}.
      */
     public BigDecimal computePositionSizeEur(SignalStrength strength) {
+        return computePositionSizeEur(null, strength);
+    }
+
+    /**
+     * As above, with {@code positionPctOfEquity} replaced by the strategy's
+     * fractional-Kelly fraction when {@code crypto.kelly.sizing.enabled=true} —
+     * the same service and key {@code CryptoPaperTradingService} sizes paper with.
+     * A null {@code strategyName} keeps the fixed fraction.
+     */
+    public BigDecimal computePositionSizeEur(String strategyName, SignalStrength strength) {
         BigDecimal equity = computeEquity();
-        BigDecimal raw = equity.multiply(positionPctOfEquity).multiply(multiplierFor(strength));
+        BigDecimal fraction = strategyName != null && kellyPositionSizingService.isEnabled()
+                ? kellyPositionSizingService.kellyFraction(strategyName)
+                : positionPctOfEquity;
+        BigDecimal raw = equity.multiply(fraction).multiply(multiplierFor(strength));
         return raw.max(minPositionEur).min(maxPositionEur);
+    }
+
+    private boolean tickerCapEnabled() {
+        return maxTickerExposurePct != null && maxTickerExposurePct.signum() > 0;
+    }
+
+    /**
+     * Scales {@code eurAmount} down to the room left under the per-ticker cap, exactly
+     * as {@code CryptoPaperTradingService.dispatchBuy} does for paper. Returns
+     * {@code eurAmount} unchanged when it fits (or the cap is off), the remaining room
+     * when it does not, and {@code null} when that room is below {@code minPositionEur}
+     * — the caller must then skip the order.
+     */
+    public BigDecimal capToTickerExposure(String ticker, BigDecimal eurAmount) {
+        if (!tickerCapEnabled()) {
+            return eurAmount;
+        }
+        BigDecimal tickerExposure = liveOrderRepository.sumOpenExposureEurByTicker(ticker);
+        BigDecimal tickerRoom = computeEquity().multiply(maxTickerExposurePct).subtract(tickerExposure);
+        if (tickerRoom.compareTo(eurAmount) >= 0) {
+            return eurAmount;
+        }
+        if (tickerRoom.compareTo(minPositionEur) < 0) {
+            log.warn("LiveTradingGate: skip {} — ticker exposure {} leaves {} under the {} cap (< min {})",
+                    ticker, tickerExposure, tickerRoom, maxTickerExposurePct, minPositionEur);
+            return null;
+        }
+        log.info("LiveTradingGate: {} scaled {} -> {} by the per-ticker cap ({} already open)",
+                ticker, eurAmount, tickerRoom, tickerExposure);
+        return tickerRoom;
     }
 
     private BigDecimal multiplierFor(SignalStrength strength) {
@@ -154,6 +213,16 @@ public class LiveTradingGate {
             log.warn("LiveTradingGate: canTrade=false — open exposure {} + new order {} would exceed {} "
                     + "({}% of equity {})", openExposure, eurAmount, maxTotalExposure, maxTotalExposurePct, equity);
             return false;
+        }
+        if (tickerCapEnabled()) {
+            BigDecimal tickerExposure = liveOrderRepository.sumOpenExposureEurByTicker(ticker);
+            BigDecimal maxTickerExposure = equity.multiply(maxTickerExposurePct);
+            if (tickerExposure.add(eurAmount).compareTo(maxTickerExposure) > 0) {
+                log.warn("LiveTradingGate: canTrade=false — {} exposure {} + new order {} would exceed {} "
+                        + "({}% of equity {})", ticker, tickerExposure, eurAmount, maxTickerExposure,
+                        maxTickerExposurePct, equity);
+                return false;
+            }
         }
         if (eurAmount.compareTo(maxPositionEur) > 0) {
             log.warn("LiveTradingGate: canTrade=false — eurAmount {} exceeds max {}", eurAmount, maxPositionEur);
