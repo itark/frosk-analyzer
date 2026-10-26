@@ -125,6 +125,22 @@ public class StrategiesMap {
 	private CryptoEMACrossShortIntradayStrategy cryptoEMACrossShortIntradayStrategy;
 	@Autowired
 	private CryptoBTCTrendStrategy cryptoBTCTrendStrategy;
+	@Autowired
+	private CryptoTimeOfDayIntradayStrategy cryptoTimeOfDayIntradayStrategy;
+	@Autowired
+	private CryptoEmaAdxTrendIntradayStrategy cryptoEmaAdxTrendIntradayStrategy;
+	@Autowired
+	private CryptoBollingerSqueezeIntradayStrategy cryptoBollingerSqueezeIntradayStrategy;
+	@Autowired
+	private CryptoBtcEthStatArbIntradayStrategy cryptoBtcEthStatArbIntradayStrategy;
+	@Autowired
+	private CryptoVolRegimeMomentumIntradayStrategy cryptoVolRegimeMomentumIntradayStrategy;
+	@Autowired
+	private CryptoNightReversionIntradayStrategy cryptoNightReversionIntradayStrategy;
+	@Autowired
+	private CryptoMomentumSpilloverIntradayStrategy cryptoMomentumSpilloverIntradayStrategy;
+	@Autowired
+	private CryptoEnsembleIntradayStrategy cryptoEnsembleIntradayStrategy;
 
 	private List<Strategy> strategies = null;
 
@@ -340,6 +356,22 @@ public class StrategiesMap {
 		} else if (strategy.equals(CryptoBTCTrendStrategy.class.getSimpleName())
 				|| strategy.equals("BTCTrendFollower")) {
 			return cryptoBTCTrendStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoTimeOfDayIntradayStrategy.class.getSimpleName())) {
+			return cryptoTimeOfDayIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoEmaAdxTrendIntradayStrategy.class.getSimpleName())) {
+			return cryptoEmaAdxTrendIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoBollingerSqueezeIntradayStrategy.class.getSimpleName())) {
+			return cryptoBollingerSqueezeIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoBtcEthStatArbIntradayStrategy.class.getSimpleName())) {
+			return cryptoBtcEthStatArbIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoVolRegimeMomentumIntradayStrategy.class.getSimpleName())) {
+			return cryptoVolRegimeMomentumIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoNightReversionIntradayStrategy.class.getSimpleName())) {
+			return cryptoNightReversionIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoMomentumSpilloverIntradayStrategy.class.getSimpleName())) {
+			return cryptoMomentumSpilloverIntradayStrategy.buildStrategy(series);
+		} else if (strategy.equals(CryptoEnsembleIntradayStrategy.class.getSimpleName())) {
+			return cryptoEnsembleIntradayStrategy.buildStrategy(series);
 		} else {
 			throw new RuntimeException("Strategy not found!, strategy="+strategy);
 		}
@@ -445,6 +477,22 @@ public class StrategiesMap {
 		} else if (strategyName.equals(CryptoBTCTrendStrategy.class.getSimpleName())
 				|| strategyName.equals("BTCTrendFollower")) {
 			return cryptoBTCTrendStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoTimeOfDayIntradayStrategy.class.getSimpleName())) {
+			return cryptoTimeOfDayIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoEmaAdxTrendIntradayStrategy.class.getSimpleName())) {
+			return cryptoEmaAdxTrendIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoBollingerSqueezeIntradayStrategy.class.getSimpleName())) {
+			return cryptoBollingerSqueezeIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoBtcEthStatArbIntradayStrategy.class.getSimpleName())) {
+			return cryptoBtcEthStatArbIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoVolRegimeMomentumIntradayStrategy.class.getSimpleName())) {
+			return cryptoVolRegimeMomentumIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoNightReversionIntradayStrategy.class.getSimpleName())) {
+			return cryptoNightReversionIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoMomentumSpilloverIntradayStrategy.class.getSimpleName())) {
+			return cryptoMomentumSpilloverIntradayStrategy.getIndicatorValues();
+		} else if (strategyName.equals(CryptoEnsembleIntradayStrategy.class.getSimpleName())) {
+			return cryptoEnsembleIntradayStrategy.getIndicatorValues();
 		} else {
 			throw new RuntimeException("Strategy not found!, strategyName="+strategyName);
 		}

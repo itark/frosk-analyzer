@@ -146,6 +146,34 @@ public class CryptoIntradayStrategyRunner {
     @Value("${crypto.sweep.enabled:true}")
     private boolean sweepEnabled;
 
+    // Research strategies (Crypto 15m intraday research doc). All default ON to
+    // accumulate forward paper-trade data for their later pre-registered tests;
+    // none places a real order unless live trading is separately enabled. Flip
+    // off here to silence one without touching its code.
+    @Value("${crypto.timeofday.enabled:true}")
+    private boolean timeOfDayEnabled;
+
+    @Value("${crypto.emaadx.enabled:true}")
+    private boolean emaAdxEnabled;
+
+    @Value("${crypto.bbsqueeze.enabled:true}")
+    private boolean bbSqueezeEnabled;
+
+    @Value("${crypto.statarb.enabled:true}")
+    private boolean statArbEnabled;
+
+    @Value("${crypto.volregime.enabled:true}")
+    private boolean volRegimeEnabled;
+
+    @Value("${crypto.night.enabled:true}")
+    private boolean nightReversionEnabled;
+
+    @Value("${crypto.spillover.enabled:true}")
+    private boolean spilloverEnabled;
+
+    @Value("${crypto.ensemble.enabled:true}")
+    private boolean ensembleEnabled;
+
     /**
      * Bars before a position in an EXCLUDED/disabled (ticker, strategy) pair is
      * force-closed. Separate from {@link #MAX_BARS_FORCE_CLOSE}, which still governs
@@ -181,9 +209,11 @@ public class CryptoIntradayStrategyRunner {
         vwapExcludedProducts = parseExclusions(vwapExcludedProductsRaw);
         globalExcludedProducts = parseExclusions(globalExcludedProductsRaw);
         log.info("CryptoIntradayStrategyRunner: enabled — Short={}, EMACrossShort={}, "
-                        + "LiquiditySweep={}; VWAP exclusions={}, "
-                        + "global exclusions={}",
+                        + "LiquiditySweep={}, TimeOfDay={}, EmaAdx={}, BBSqueeze={}, StatArb={}, VolRegime={}, "
+                        + "NightReversion={}, Spillover={}, Ensemble={}; VWAP exclusions={}, global exclusions={}",
                 shortEnabled, emaCrossShortEnabled, sweepEnabled,
+                timeOfDayEnabled, emaAdxEnabled, bbSqueezeEnabled, statArbEnabled, volRegimeEnabled,
+                nightReversionEnabled, spilloverEnabled, ensembleEnabled,
                 vwapExcludedProducts, globalExcludedProducts);
     }
 
@@ -223,6 +253,30 @@ public class CryptoIntradayStrategyRunner {
         if ("CryptoVWAPReversionIntradayStrategy".equals(strategyName)) {
             return vwapExcludedProducts.contains(ticker);
         }
+        if ("CryptoTimeOfDayIntradayStrategy".equals(strategyName)) {
+            return !timeOfDayEnabled;
+        }
+        if ("CryptoEmaAdxTrendIntradayStrategy".equals(strategyName)) {
+            return !emaAdxEnabled;
+        }
+        if ("CryptoBollingerSqueezeIntradayStrategy".equals(strategyName)) {
+            return !bbSqueezeEnabled;
+        }
+        if ("CryptoBtcEthStatArbIntradayStrategy".equals(strategyName)) {
+            return !statArbEnabled;
+        }
+        if ("CryptoVolRegimeMomentumIntradayStrategy".equals(strategyName)) {
+            return !volRegimeEnabled;
+        }
+        if ("CryptoNightReversionIntradayStrategy".equals(strategyName)) {
+            return !nightReversionEnabled;
+        }
+        if ("CryptoMomentumSpilloverIntradayStrategy".equals(strategyName)) {
+            return !spilloverEnabled;
+        }
+        if ("CryptoEnsembleIntradayStrategy".equals(strategyName)) {
+            return !ensembleEnabled;
+        }
         return false;
     }
 
@@ -237,6 +291,14 @@ public class CryptoIntradayStrategyRunner {
             case "CryptoShortIntradayStrategy"          -> shortEnabled;
             case "CryptoEMACrossShortIntradayStrategy"  -> emaCrossShortEnabled;
             case "CryptoLiquiditySweepIntradayStrategy" -> sweepEnabled;
+            case "CryptoTimeOfDayIntradayStrategy"      -> timeOfDayEnabled;
+            case "CryptoEmaAdxTrendIntradayStrategy"    -> emaAdxEnabled;
+            case "CryptoBollingerSqueezeIntradayStrategy" -> bbSqueezeEnabled;
+            case "CryptoBtcEthStatArbIntradayStrategy"  -> statArbEnabled;
+            case "CryptoVolRegimeMomentumIntradayStrategy" -> volRegimeEnabled;
+            case "CryptoNightReversionIntradayStrategy"    -> nightReversionEnabled;
+            case "CryptoMomentumSpilloverIntradayStrategy" -> spilloverEnabled;
+            case "CryptoEnsembleIntradayStrategy"          -> ensembleEnabled;
             default -> true;
         };
     }
