@@ -38,9 +38,16 @@ public class SP500Strategy implements IIndicatorValue {
         BarSeries barSeries = barSeriesService.getDataSet("^GSPC", false, false);
         ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(barSeries);
         SMAIndicator longSma = new SMAIndicator(closePriceIndicator, 200);
-        Rule onRule = new CrossedDownIndicatorRule(closePriceIndicator,longSma );
-        Rule offRule = new CrossedUpIndicatorRule(closePriceIndicator,longSma );
-        return new BaseStrategy(this.getClass().getSimpleName(), onRule, offRule);
+        // Convention (see VIXStrategy/GoldStrategy): BaseStrategy(name, lowRiskRule, riskRule).
+        // Entry (BUY) = risk-ON/low-risk condition; exit (SELL) = risk-OFF condition —
+        // HedgeIndexService maps SELL -> risk=TRUE. "S&P below its 200-day MA" is the
+        // risk-OFF state, so recovering ABOVE the 200-day MA is low risk (BUY) and dropping
+        // BELOW it is risk (SELL). These were previously swapped, which recorded the S&P
+        // rallying above its 200-day MA as risk-off (risk=TRUE at all-time highs) — an
+        // inverted signal that stuck risk-off for most of the sample.
+        Rule lowRiskRule = new CrossedUpIndicatorRule(closePriceIndicator, longSma);
+        Rule riskRule = new CrossedDownIndicatorRule(closePriceIndicator, longSma);
+        return new BaseStrategy(this.getClass().getSimpleName(), lowRiskRule, riskRule);
     }
 
     @Override

@@ -9,6 +9,7 @@ import nu.itark.frosk.service.TradingAccountService;
 import nu.itark.frosk.strategies.indicators.MedianTurnoverIndicator;
 import nu.itark.frosk.strategies.rules.LiquidityRule;
 import nu.itark.frosk.strategies.rules.StopLossRule;
+import nu.itark.frosk.strategies.rules.TimeStopRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -37,6 +38,18 @@ public abstract  class AbstractStrategy {
     @Value("${frosk.strategy.catastrophic.stop.pct:15.0}")
     protected double catastrophicStopPct;
 
+    /** S10 time-stop overlay: master switch (applies to every equity strategy exit). */
+    @Value("${frosk.exit.timestop.enabled:true}")
+    private boolean timeStopEnabled;
+
+    /** Holding window in bars before the profit check applies. Generous (overfit-safe). */
+    @Value("${frosk.exit.timestop.bars:20}")
+    private int timeStopBars;
+
+    /** Minimum unrealized gain (percent) a position must reach within the window to be kept. */
+    @Value("${frosk.exit.timestop.min.profit.pct:5.0}")
+    private double timeStopMinProfitPct;
+
     /** Largest share of median daily turnover one position may take, in percent. 0 disables. */
     @Value("${frosk.liquidity.max.position.pct.of.turnover:1.0}")
     private double maxPositionPctOfTurnover;
@@ -61,6 +74,20 @@ public abstract  class AbstractStrategy {
     protected Rule catastrophicStopRule() {
         ClosePriceIndicator close = new ClosePriceIndicator(barSeries);
         return new StopLossRule(close, catastrophicStopPct);
+    }
+
+    /**
+     * S10 universal time-stop overlay (see {@code docs/research/omx-equity-strategies-research.md}):
+     * exit a position that has not reached {@code frosk.exit.timestop.min.profit.pct} within
+     * {@code frosk.exit.timestop.bars} bars. Meant to be {@code .or()}-ed into every equity
+     * strategy's exit rule. Returns a never-satisfied rule when disabled, so callers can wire it
+     * in unconditionally without changing behaviour when the feature is off.
+     */
+    protected Rule timeStopRule() {
+        if (!timeStopEnabled || timeStopBars <= 0) {
+            return new BooleanRule(false);
+        }
+        return new TimeStopRule(new ClosePriceIndicator(barSeries), timeStopBars, timeStopMinProfitPct);
     }
 
     /**

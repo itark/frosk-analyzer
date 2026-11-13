@@ -8,6 +8,7 @@ import nu.itark.frosk.service.HedgeIndexService;
 import nu.itark.frosk.service.IntradayDataService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Position;
 import org.ta4j.core.Strategy;
@@ -76,14 +77,22 @@ public class StrategyComparisonReportIT extends BaseIntegrationTest {
     @Autowired
     HedgeIndexService hedgeIndexService;
 
-    @Autowired
+    // Only the intraday/crypto report methods use these, and their impls are @Profile-gated
+    // (crypto / kraken-futures). required=false lets dailyReport run under the plain `test`
+    // profile without pulling in those beans (and their schedulers).
+    @Autowired(required = false)
     IntradayDataService intradayDataService;
 
-    @Autowired
+    @Autowired(required = false)
     nu.itark.frosk.service.CryptoIntradayDataService cryptoIntradayDataService;
 
     @Autowired
     nu.itark.frosk.repo.SecurityRepository securityRepository;
+
+    /** Seed/sync universe for the crypto report — the full configured list, so
+     *  cryptoIntradayReport can run the whole universe (not just BTC/ETH/SOL). */
+    @Value("${crypto.intraday.products:BTC-EUR,ETH-EUR,SOL-EUR}")
+    List<String> cryptoProducts;
 
     @Test
     public void dailyReport() {
@@ -124,13 +133,15 @@ public class StrategyComparisonReportIT extends BaseIntegrationTest {
     }
 
     private void seedCryptoSecuritiesIfMissing() {
-        for (String product : List.of("BTC-EUR", "ETH-EUR", "SOL-EUR")) {
-            if (securityRepository.findByName(product) == null) {
-                nu.itark.frosk.model.Security seed =
-                        new nu.itark.frosk.model.Security(product, product + " (report seed)", "COINBASE", "EUR");
-                seed.setActive(true);
-                securityRepository.save(seed);
+        for (String raw : cryptoProducts) {
+            String product = raw.trim();
+            if (product.isEmpty() || securityRepository.findByName(product) != null) {
+                continue;
             }
+            String currency = product.contains("-") ? product.substring(product.lastIndexOf('-') + 1) : "EUR";
+            Security seed = new Security(product, product + " (report seed)", "COINBASE", currency);
+            seed.setActive(true);
+            securityRepository.save(seed);
         }
     }
 

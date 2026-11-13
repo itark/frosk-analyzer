@@ -72,7 +72,7 @@ public class CCICorrectionStrategy extends AbstractStrategy implements IIndicato
         if (!inherentExitRule) {
             exitRule = new UnderIndicatorRule(longCci, minus100) // Bear trend
                     .and(new OverIndicatorRule(shortCci, plus100)) // Signal
-                    .or(catastrophicStopRule());
+                    .or(catastrophicStopRule()).or(timeStopRule());
         } else {
             exitRule = exitRule();
         }

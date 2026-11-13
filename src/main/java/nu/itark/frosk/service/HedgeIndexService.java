@@ -61,13 +61,19 @@ public class HedgeIndexService {
         updateHedgeIndex("VIXStrategy", "^VIX", this::convertToVixHedgeIndexes);
         updateHedgeIndex("VVIXStrategy", "^VVIX", this::convertToVVixHedgeIndexes);
         updateHedgeIndex("CrudeOilStrategy", "CL=F", this::convertToCrudeOilStrategyHedgeIndexes);
-        updateHedgeIndex("GoldStrategy", "GC=F", this::convertToGoldStrategyHedgeIndexes);
+        // GoldStrategy (GC=F) dropped: "gold vs 10-day high" was a hair-trigger (flipped every
+        // few days, ~77% risk-off) and the concept is broken for 2024-26, when gold rose
+        // alongside equities (debasement bid) rather than as a flight to safety. A correct
+        // gold hedge needs cross-series (gold-vs-equities) logic — reintroduce it there.
         updateHedgeIndex("SP500Strategy", "^GSPC", this::convertToSP500StrategyHedgeIndexes);
         updateHedgeIndex("EURUSDStrategy", "EURUSD=X", this::convertToEURUSDStrategyHedgeIndexes);
         updateHedgeIndex("USDJPYStrategy", "JPY=X", this::convertToUSDJPYStrategyHedgeIndexes);
         updateHedgeIndex("AUDUSDStrategy", "AUDUSD=X", this::convertToAUDUSDStrategyHedgeIndexes);
         updateHedgeIndex("DXYStrategy", "DX-Y.NYB", this::convertToDXYStrategyHedgeIndexes);
-        updateHedgeIndex("VSTOXXStrategy", "^V2TX", this::convertToVSTOXXStrategyHedgeIndexes);
+        // VSTOXXStrategy (^V2TX) dropped: Yahoo never served ^V2TX (0 price rows), so this
+        // signal could never fire and the VIX+VSTOXX volatility-cluster rule below it was
+        // dead code. Re-add here (and the cluster rule) once a working VSTOXX symbol/data
+        // source is wired up.
         updateHedgeIndex("OMXvsSTOXX50Strategy", "^STOXX50E", this::convertToOMXvsSTOXX50StrategyHedgeIndexes);
         updateHedgeIndex("TreasuryYieldStrategy", "^TNX", this::convertToTreasuryYieldStrategyHedgeIndexes);
         updateHedgeIndex("YieldCurveSpreadStrategy", "^TNX", this::convertToYieldCurveSpreadStrategyHedgeIndexes);
@@ -372,11 +378,8 @@ public class HedgeIndexService {
                 score++;
             }
         }
-        // Volatility cluster rule: VIX + VSTOXX both risk-off → +1 extra point
-        if (Boolean.TRUE.equals(stateByIndicator.get("^VIX"))
-                && Boolean.TRUE.equals(stateByIndicator.get("^V2TX"))) {
-            score++;
-        }
+        // (Removed) VIX + VSTOXX volatility-cluster +1: ^V2TX has no price data, so the
+        // cluster could never fire. Restore alongside VSTOXXStrategy if VSTOXX data is added.
         return score;
     }
 
@@ -416,6 +419,58 @@ public class HedgeIndexService {
     /** Alias for {@link #getScore(ZonedDateTime)} — the score in effect on that day. */
     public int getScoreForDay(ZonedDateTime day) {
         return getScore(day);
+    }
+
+    /** A single point on the regime timeline: the score in effect on {@code date}. */
+    public record ScorePoint(java.time.LocalDate date, int score) {}
+
+    /**
+     * Authoritative daily score history for the last {@code days} days, built
+     * from the same carried-forward state + volatility-cluster cache as
+     * {@link #getScore} — so the timeline never disagrees with the current-score
+     * endpoint. Returns one point per day the score changed within the window,
+     * anchored by the carried-forward score at the window start and (if needed)
+     * the current score at today, so a step/area chart renders the regime
+     * correctly across the gaps between change events.
+     */
+    public List<ScorePoint> getScoreHistory(int days) {
+        if (riskCache == null) {
+            synchronized (this) {
+                if (riskCache == null) {
+                    buildCache();
+                }
+            }
+        }
+        java.time.LocalDate today = java.time.LocalDate.now(STOCKHOLM);
+        java.time.LocalDate start = today.minusDays(Math.max(1, days));
+        long startKey = dayKey(start);
+        long todayKey = dayKey(today);
+
+        List<ScorePoint> out = new ArrayList<>();
+        // Anchor at the window start with the score carried forward to that day.
+        out.add(new ScorePoint(start, scoreAtKey(startKey)));
+        // Every change event strictly inside the window (startKey already covered).
+        for (Map.Entry<Long, Integer> e : riskCache.subMap(startKey, false, todayKey, true).entrySet()) {
+            out.add(new ScorePoint(dateOfKey(e.getKey()), e.getValue()));
+        }
+        // Extend the line to today if the last change predates it.
+        if (out.get(out.size() - 1).date().isBefore(today)) {
+            out.add(new ScorePoint(today, scoreAtKey(todayKey)));
+        }
+        return out;
+    }
+
+    private int scoreAtKey(long key) {
+        Map.Entry<Long, Integer> e = riskCache.floorEntry(key);
+        return e != null ? e.getValue() : 0;
+    }
+
+    private static long dayKey(java.time.LocalDate day) {
+        return day.atStartOfDay(STOCKHOLM).toInstant().toEpochMilli();
+    }
+
+    private static java.time.LocalDate dateOfKey(long epochMilli) {
+        return java.time.Instant.ofEpochMilli(epochMilli).atZone(STOCKHOLM).toLocalDate();
     }
 
     /** Human-readable regime label for a score, shared by the score/history endpoints and the portfolio view. */

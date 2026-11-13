@@ -78,7 +78,7 @@ public class RSI2Strategy extends AbstractStrategy implements IIndicatorValue {
             exitRule = new UnderIndicatorRule(shortEma, longEma) // Trend
                     .and(new CrossedUpIndicatorRule(rsi, 80)) // Signal 1
                     .and(new UnderIndicatorRule(shortEma, closePrice)) // Signal 2
-                    .or(catastrophicStopRule());
+                    .or(catastrophicStopRule()).or(timeStopRule());
         } else {
             exitRule = exitRule();
         }

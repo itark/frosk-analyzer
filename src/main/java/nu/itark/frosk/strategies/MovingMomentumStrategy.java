@@ -81,7 +81,7 @@ public class MovingMomentumStrategy extends AbstractStrategy implements IIndicat
 			exitRule = new UnderIndicatorRule(shortEma, longEma) // Trend
 					.and(new CrossedUpIndicatorRule(stochasticOscillK, 80)) // Signal 1
 					.and(new UnderIndicatorRule(macd, emaMacd)) // Signal 2
-					.or(catastrophicStopRule());
+					.or(catastrophicStopRule()).or(timeStopRule());
 		} else {
 			exitRule = exitRule();
 		}

@@ -30,7 +30,9 @@ public class VVIXStrategy implements IIndicatorValue {
     private final BarSeriesService barSeriesService;
 
     // configurable threshold / periods (tune as needed)
-    private final double vvixThreshold = 110.0;
+    // Risk-off when VVIX is above this and rising (see buildStrategy). 125 targets genuine
+    // vol-of-vol spikes rather than the elevated-but-normal 100-120 range. Tune via backtest.
+    private final double vvixThreshold = 125.0;
     private final int rocPeriod = 5;
 
     public VVIXStrategy(BarSeriesService barSeriesService) {
@@ -49,15 +51,18 @@ public class VVIXStrategy implements IIndicatorValue {
         Num threshold = vvixSeries.numOf(vvixThreshold);
         Num zero = vvixSeries.numOf(0);
 
-        // Entry: VVIX > threshold AND ROC > 0
+        // "VVIX > threshold AND rising" is the risk-OFF (elevated vol-of-vol) condition.
+        // Convention (see VIXStrategy/SP500Strategy): BaseStrategy(name, lowRiskRule, riskRule)
+        // where entry(BUY)=risk-on and exit(SELL)=risk-off (HedgeIndexService maps SELL->risk=TRUE).
+        // Previously this condition was placed in the ENTRY (BUY) slot, which recorded high &
+        // rising VVIX as risk-ON — inverted. It made VVIX risk-off ~90% of the time (whenever
+        // vol-of-vol was NOT spiking) and left it stuck risk-off after the last low-VVIX exit.
         Rule vvixHigh = new OverIndicatorRule(close, threshold);
         Rule rocPositive = new OverIndicatorRule(roc, zero);
-        Rule entryRule = new AndRule(vvixHigh, rocPositive);
+        Rule riskRule = new AndRule(vvixHigh, rocPositive);   // elevated & rising -> risk-off (SELL)
+        Rule lowRiskRule = riskRule.negation();               // otherwise -> risk-on (BUY)
 
-        // Exit: NOT(entry) -> either VVIX <= threshold OR ROC <= 0
-        Rule exitRule = entryRule.negation();
-
-        return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
+        return new BaseStrategy(this.getClass().getSimpleName(), lowRiskRule, riskRule);
     }
 
     @Override
