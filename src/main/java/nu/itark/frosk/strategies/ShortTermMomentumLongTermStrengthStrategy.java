@@ -126,7 +126,7 @@ public class ShortTermMomentumLongTermStrengthStrategy extends AbstractStrategy 
         Rule hedgeIndexExit = new HedgeIndexMaxScoreRule(series, hedgeIndexService, hedgeExitScore).negation();
         Rule stopLoss = new StopLossRule(closePrice, stopLossPercent);
 
-        Rule exitRule = trailingStop.or(trendBreak).or(hedgeIndexExit).or(stopLoss);
+        Rule exitRule = trailingStop.or(trendBreak).or(hedgeIndexExit).or(stopLoss).or(timeStopRule());
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

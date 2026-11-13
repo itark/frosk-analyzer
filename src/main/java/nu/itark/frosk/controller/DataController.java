@@ -112,6 +112,9 @@ public class DataController {
     HedgeIndexService hedgeIndexService;
 
     @Autowired
+    nu.itark.frosk.service.BundleScreeningService bundleScreeningService;
+
+    @Autowired
     nu.itark.frosk.service.IntradayStrategyRunner intradayStrategyRunner;
 
 
@@ -620,15 +623,28 @@ public class DataController {
     @GetMapping(value = "/hedgeindex/history")
     public List<HedgeIndexScoreDTO> getHedgeIndexHistory(@RequestParam(value = "days", defaultValue = "30") int days) {
         log.info("GET /hedgeindex/history?days={}", days);
-        LocalDate cutoff = LocalDate.now().minusDays(days);
-        return hedgeIndexRepository.summarizeCumulativeRiskPerDate().stream()
-                .filter(p -> p.getDayDate() != null && !p.getDayDate().isBefore(cutoff))
+        // Uses the authoritative carried-forward + volatility-cluster score model
+        // (same as /hedgeindex/score), so the regime timeline and the current-score
+        // badge never disagree.
+        return hedgeIndexService.getScoreHistory(days).stream()
                 .map(p -> HedgeIndexScoreDTO.builder()
-                        .date(p.getDayDate().format(DateTimeFormatter.ISO_LOCAL_DATE))
-                        .score(p.getRiskyCount().intValue())
-                        .regime(HedgeIndexService.regimeLabel(p.getRiskyCount().intValue()))
+                        .date(p.date().format(DateTimeFormatter.ISO_LOCAL_DATE))
+                        .score(p.score())
+                        .regime(HedgeIndexService.regimeLabel(p.score()))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * S7 bundle-screening ensemble: securities that >= frosk.bundle.min.votes of the
+     * independent bundle strategies (STLT / HighLander / Månadsportföljen) currently agree on,
+     * with the HedgeIndex veto state. Read-only; not a live portfolio.
+     * @Example GET http://localhost:8080/bundle/screening
+     */
+    @GetMapping(value = "/bundle/screening")
+    public nu.itark.frosk.analysis.BundleScreeningDTO getBundleScreening() {
+        log.info("GET /bundle/screening");
+        return bundleScreeningService.screen();
     }
 
     /**

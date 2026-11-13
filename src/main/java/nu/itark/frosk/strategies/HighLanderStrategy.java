@@ -112,7 +112,7 @@ public class HighLanderStrategy extends AbstractStrategy implements IIndicatorVa
         Rule trailingStop = new AtrTrailingStopRule(series, ATR_PERIOD, atrMultiplier);
 
         Rule entryRule = compositeStrategy.getEntryRule().and(priceTrigger);
-        Rule exitRule = compositeStrategy.getExitRule().or(trailingStop).or(stopLoss);
+        Rule exitRule = compositeStrategy.getExitRule().or(trailingStop).or(stopLoss).or(timeStopRule());
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }

@@ -59,7 +59,7 @@ public class EMATenTenStrategy extends AbstractStrategy implements IIndicatorVal
         Rule exitRule;
         if (!inherentExitRule) {
             exitRule = new UnderIndicatorRule(closeEma, openEma)
-                    .or(catastrophicStopRule());
+                    .or(catastrophicStopRule()).or(timeStopRule());
         } else {
             exitRule = exitRule();
         }

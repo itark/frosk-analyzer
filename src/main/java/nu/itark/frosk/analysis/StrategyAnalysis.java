@@ -205,14 +205,14 @@ public class StrategyAnalysis {
 		runVix();
 		runVVix();
 		runCrudeOil();
-		runGold();
+		// runGold() / runNasdaqVsSP() / runVSTOXX() intentionally not run — GC=F (noisy +
+		// broken concept) and ^IXIC (near coin-flip) were dropped from the index, and ^V2TX
+		// has no price data. See HedgeIndexService.update(). Their classes are kept for reuse.
 		runSP500();
-		runNasdaqVsSP();
 		runEURUSD();
 		runUSDJPY();
 		runAUDUSD();
 		runDXY();
-		runVSTOXX();
 		runOMXvsSTOXX50();
 		runTreasuryYield();
 		runYieldCurveSpread();

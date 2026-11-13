@@ -88,7 +88,7 @@ public class ADXStrategy extends AbstractStrategy implements IIndicatorValue {
         Rule exitRule;
         if (!inherentExitRule) {
             exitRule = adxOver20Rule.and(plusDICrossedDownMinusDI).and(closePriceUnderSma)
-                    .or(catastrophicStopRule());
+                    .or(catastrophicStopRule()).or(timeStopRule());
         } else {
             exitRule = exitRule();
         }

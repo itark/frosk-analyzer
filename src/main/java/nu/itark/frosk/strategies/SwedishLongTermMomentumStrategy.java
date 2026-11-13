@@ -199,7 +199,8 @@ public class SwedishLongTermMomentumStrategy extends AbstractStrategy implements
         Rule exitRule = new OrRule(hedgeExitRule,
                 new OrRule(deathCross,
                         new OrRule(momentum6mGone,
-                                new OrRule(trailingStop, catastrophicStopRule()))));
+                                new OrRule(trailingStop,
+                                        new OrRule(catastrophicStopRule(), timeStopRule())))));
 
         return new BaseStrategy(this.getClass().getSimpleName(), entryRule, exitRule);
     }
