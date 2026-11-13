@@ -216,7 +216,14 @@ public class YahooFinanceDirectClient {
             if (module == null) return null;
             JsonNode stats = module.path("defaultKeyStatistics");
             if (stats.isMissingNode()) return null;
-            return objectMapper.treeToValue(stats, StatisticsBody.class);
+            StatisticsBody body = objectMapper.treeToValue(stats, StatisticsBody.class);
+            // debtToEquity lives in the financialData module (fetched alongside above), not in
+            // defaultKeyStatistics — graft it onto the body so callers get it from one place.
+            JsonNode d2e = module.path("financialData").path("debtToEquity");
+            if (body != null && !d2e.isMissingNode() && !d2e.isNull()) {
+                body.setDebtToEquity(objectMapper.convertValue(d2e, Object.class));
+            }
+            return body;
         } catch (Exception e) {
             log.warn("YahooFinanceDirectClient: statistics parse failed for {}: {}", symbol, e.getMessage());
             return null;

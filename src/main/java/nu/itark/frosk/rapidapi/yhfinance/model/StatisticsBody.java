@@ -42,6 +42,9 @@ public class StatisticsBody {
     private Object beta;
     private Object bookValue;
     private Object priceToBook;
+    // Not part of defaultKeyStatistics — populated manually from the financialData module
+    // in YahooFinanceDirectClient.getModuleStatistics (both modules are fetched together).
+    private Object debtToEquity;
     private Object trailingEps;
     private Object forwardEps;
     private Object enterpriseToRevenue;

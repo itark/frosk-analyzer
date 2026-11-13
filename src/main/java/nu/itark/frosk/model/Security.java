@@ -59,6 +59,14 @@ public class Security {
 	@Column(name = "dividend_yield")
 	private Double dividendYield;
 
+	// S2 factor inputs (Yahoo defaultKeyStatistics / financialData). Nullable — the
+	// multi-factor screen falls back to earnings-yield / low-beta when these are absent.
+	@Column(name = "price_to_book")
+	private Double priceToBook;
+
+	@Column(name = "debt_to_equity")
+	private Double debtToEquity;
+
 	@Column(name = "sector")
 	private String sector;
 

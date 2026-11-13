@@ -8,8 +8,8 @@ Forskning från 2015–2026 pekar ut fem implementerbara strategier för OMX-mar
 
 | ID | Strategi | Implementerad |
 |---|---|---|
-| S1 | Nordisk Momentum-First Low-Vol Double Screening | [ ] |
-| S2 | Integrerad Multi-Faktor Composite Z-Score | [ ] |
+| S1 | Nordisk Momentum-First Low-Vol Double Screening | [x] 2026-11-13 — `EquityFactorScreeningService.screenMomentumLowVol()` + `GET /screening/momentum-lowvol` (ej i live-portföljen) |
+| S2 | Integrerad Multi-Faktor Composite Z-Score | [x] 2026-11-13 — `EquityFactorScreeningService.screenMultiFactorComposite()` + `GET /screening/multifactor` (hybrid-faktorer, ej i live-portföljen) |
 | S3 | Halloween Seasonal Overlay med Momentumbekräftelse | [ ] |
 | S4 | TSMOM + SMA-200 Tvålagrat Marknadsfilter | [ ] |
 | S5 | Turn-of-Month Taktisk Timing för Small/Mid-Cap | [ ] |
@@ -26,6 +26,15 @@ Forskning från 2015–2026 pekar ut fem implementerbara strategier för OMX-mar
 ## Arbetslogg (vad gjordes och när)
 
 Omvänd kronologisk ordning — nyast överst. Detaljer om själva designen finns i respektive S-avsnitt nedan och i `### Implementationsnotering` efter Prioriteringsmatrisen.
+
+### 2026-11-13 — S1 + S2 faktorscreeningar implementerade (read-only, ej live)
+
+Båda är tvärsnittsscreeningar (rankar hela aktiva YAHOO-universumet per rebalansdag), byggda som `EquityFactorScreeningService` + endpoints — inte per-serie ta4j-strategier och **ej** i `PORTFOLIO_STRATEGIES`.
+
+- **S1 — Momentum-first low-vol (klar).** `screenMomentumLowVol()` + `GET /screening/momentum-lowvol`. Momentum = `ROCIndicator(close, 252)`, volatilitet = stdev av dagliga log-avkastningar över 20 barer. Behåll top-tertial (33 %) på momentum, filtrera till volatilitet under universumets median, equal-weight, cap `frosk.s1.max.positions=25`. Verifierad mot prod-snapshot: universe=477 → 25 valda (BAT.ST, SSAB, SOBI, BOL.ST, Clas Ohlson …).
+- **S2 — Multi-faktor composite z-score (klar, hybrid-faktorer).** `screenMultiFactorComposite()` + `GET /screening/multifactor`. Momentum `ROC(252)`, value = 1/priceToBook (**fallback** trailing earnings yield = EPS/pris, eftersom Yahoo-synken inte fyller trailingPe för detta universum), quality = −debtToEquity (**fallback** −beta). Tvärsnittsvisa z-scores cappade ±3, composite = 0,4·zMom + 0,3·zValue + 0,3·zQuality, intersection-krav composite > 0, top-20. Verifierad: universe=271 (intersection) → 20 valda. **Blir fullt spec-trogen (P/B, skuldsättning) efter nästa metadata-synk** — nya kolumnerna `security.price_to_book` / `debt_to_equity` är null tills dess (fallbacks används).
+- **Datalager (S2 hybrid).** `Security` fick `priceToBook` + `debtToEquity`; `YahooFinanceDirectClient.getModuleStatistics` plockar nu även `financialData.debtToEquity` (defaultKeyStatistics har redan priceToBook); `YAHOODataManager` lagrar båda (null om Yahoo inte returnerar dem).
+- **Tester.** `TestJEquityFactorScreening` (z-score/median/momentum/realized-vol, 6 st) + `EquityFactorScreeningIT` (smoke/report mot seedad DB). Caveat: enstaka illikvida namn får 0 % realiserad vol (stale priser) och kan slinka in i S1:s low-vol-filter — en likviditetsgrind kan läggas på senare.
 
 ### 2026-11-13 — Rekommenderad prioritering (S10 + S7) implementerad och backtestad
 

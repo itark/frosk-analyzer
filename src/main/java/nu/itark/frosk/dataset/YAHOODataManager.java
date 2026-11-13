@@ -408,6 +408,13 @@ public class YAHOODataManager {
         security.setEnterpriseValue(enterpriseValueRaw);
         security.setDividendYield(dividendYield);
 
+        // S2 factor inputs — store only when Yahoo actually returned them (null otherwise,
+        // so the multi-factor screen knows to fall back rather than treat 0 as a real value).
+        double priceToBook = moduleStatistics != null ? extractRaw(moduleStatistics.getPriceToBook()) : 0.0;
+        double debtToEquity = moduleStatistics != null ? extractRaw(moduleStatistics.getDebtToEquity()) : 0.0;
+        security.setPriceToBook(priceToBook > 0 ? priceToBook : null);
+        security.setDebtToEquity(debtToEquity > 0 ? debtToEquity : null);
+
         // Activation is decided ONLY on data we actually received.
         //
         // This guard previously ran unconditionally, and enterpriseValueRaw defaults

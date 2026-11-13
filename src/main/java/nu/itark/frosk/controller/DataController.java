@@ -115,6 +115,9 @@ public class DataController {
     nu.itark.frosk.service.BundleScreeningService bundleScreeningService;
 
     @Autowired
+    nu.itark.frosk.service.EquityFactorScreeningService equityFactorScreeningService;
+
+    @Autowired
     nu.itark.frosk.service.IntradayStrategyRunner intradayStrategyRunner;
 
 
@@ -633,6 +636,28 @@ public class DataController {
                         .regime(HedgeIndexService.regimeLabel(p.score()))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * S1 momentum-first low-vol double screen: top momentum tertile of the active YAHOO
+     * universe filtered to below-median volatility. Read-only; not a live portfolio.
+     * @Example GET http://localhost:8080/screening/momentum-lowvol
+     */
+    @GetMapping(value = "/screening/momentum-lowvol")
+    public nu.itark.frosk.analysis.MomentumLowVolScreeningDTO getMomentumLowVolScreening() {
+        log.info("GET /screening/momentum-lowvol");
+        return equityFactorScreeningService.screenMomentumLowVol();
+    }
+
+    /**
+     * S2 integrated multi-factor composite z-score screen (momentum + value + quality).
+     * Read-only; not a live portfolio.
+     * @Example GET http://localhost:8080/screening/multifactor
+     */
+    @GetMapping(value = "/screening/multifactor")
+    public nu.itark.frosk.analysis.MultiFactorScreeningDTO getMultiFactorScreening() {
+        log.info("GET /screening/multifactor");
+        return equityFactorScreeningService.screenMultiFactorComposite();
     }
 
     /**
