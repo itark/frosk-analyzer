@@ -122,6 +122,8 @@ When working on a specific area, read the relevant doc first.
 | OMX30 Intraday Momentum | `docs/strategies/omx30-intraday.md` |
 | Exit rules audit (stop-loss, HedgeIndex, time exits) | `docs/strategies/exit-rules.md` |
 | Crypto 15m intraday research + brainstorm (strategies 1–5, brainstorm #1–#7) | `docs/research/crypto-15m-intraday-strategies.md` |
+| Validation / pre-registration for the 8 crypto intraday strategies (gate, run plan) | `docs/research/VALIDATION_crypto_intraday_strategies.md` |
+| OMX equity strategy research (5 ranked ideas: momentum+low-vol, composite z-score, Halloween overlay, TSMOM filter, turn-of-month) | `docs/research/omx-equity-strategies-research.md` |
 
 Project history and completed implementation steps: `CHANGELOG.md`.
 
