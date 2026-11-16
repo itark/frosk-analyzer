@@ -10,22 +10,33 @@ Forskning från 2015–2026 pekar ut fem implementerbara strategier för OMX-mar
 |---|---|---|
 | S1 | Nordisk Momentum-First Low-Vol Double Screening | [x] 2026-11-13 — `EquityFactorScreeningService.screenMomentumLowVol()` + `GET /screening/momentum-lowvol` (ej i live-portföljen) |
 | S2 | Integrerad Multi-Faktor Composite Z-Score | [x] 2026-11-13 — `EquityFactorScreeningService.screenMultiFactorComposite()` + `GET /screening/multifactor` (hybrid-faktorer, ej i live-portföljen) |
-| S3 | Halloween Seasonal Overlay med Momentumbekräftelse | [ ] |
-| S4 | TSMOM + SMA-200 Tvålagrat Marknadsfilter | [ ] |
-| S5 | Turn-of-Month Taktisk Timing för Small/Mid-Cap | [ ] |
-| S6 | BundleKöp: Ensemble-Screening Applicerad på Alla Strategier | [ ] |
+| S3 | Halloween Seasonal Overlay med Momentumbekräftelse | [x] 2026-11-16 — `MarketTimingService.seasonal()` + `GET /timing/seasonal` |
+| S4 | TSMOM + SMA-200 Tvålagrat Marknadsfilter | [x] 2026-11-16 — `MarketTimingService.marketRegime()` + `GET /timing/market-regime` |
+| S5 | Turn-of-Month Taktisk Timing för Small/Mid-Cap | [x] 2026-11-16 — `MarketTimingService.turnOfMonth()` + `GET /timing/turn-of-month` |
+| S6 | BundleKöp: Ensemble-Screening Applicerad på Alla Strategier | [x] 2026-11-16 — `EquityFactorScreeningService.screenBundleKop()` + `GET /screening/bundlekop` |
 | S7 | Bundle-screening via befintliga frosk-strategier | [x] 2026-11-13 — `BundleScreeningService` + `GET /bundle/screening` (ej i live-portföljen) |
-| S8 | Kalenderanomalier specifika för Norden | [ ] |
-| S9 | Sektorsrotation på OMX | [ ] |
+| S8 | Kalenderanomalier specifika för Norden | [x] 2026-11-16 — `MarketTimingService.nordicCalendar()` + `GET /timing/nordic-calendar` |
+| S9 | Sektorsrotation på OMX | [x] 2026-11-16 — `SectorRotationService` + `GET /rotation/sector` |
 | S10 | Alternativa exit-regler | [x] 2026-11-13 — Time stop (`TimeStopRule`), universellt overlay på equity-strategier |
-| S11 | Tail-risk hedging för OMX-portföljen | [ ] |
-| S12 | Finansinspektionens insynshandel som leading indicator | [ ] |
+| S11 | Tail-risk hedging för OMX-portföljen | [x] 2026-11-16 — `TailRiskHedgeService` + `GET /hedge/tailrisk` |
+| S12 | Finansinspektionens insynshandel som leading indicator | [x] 2026-11-16 — `InsiderConvictionService` + `InsiderTradeClient` + `GET /insider/conviction`, `POST /insider/sync` (FI-endpoint overifierad) |
 
 ---
 
 ## Arbetslogg (vad gjordes och när)
 
 Omvänd kronologisk ordning — nyast överst. Detaljer om själva designen finns i respektive S-avsnitt nedan och i `### Implementationsnotering` efter Prioriteringsmatrisen.
+
+### 2026-11-16 — Resterande ID:n (S3, S4, S5, S6, S8, S9, S11, S12) implementerade (read-only, ej live)
+
+Alla kvarvarande ID:n byggda som read-only tjänster + endpoints (inga ordrar, ej i `PORTFOLIO_STRATEGIES`). Verifierade mot prod-snapshot via `OmxStrategySignalsIT`.
+
+- **S3 Halloween-overlay / S4 TSMOM+SMA-200 / S5 Turn-of-Month / S8 Nordiska kalenderanomalier** → `MarketTimingService` + `TradingCalendar` (handelsdagar ≈ vardagar). Endpoints `GET /timing/{seasonal,market-regime,turn-of-month,nordic-calendar}`. S4 beräknas på `^OMX`: TSMOM = `ROC(252)`-tecken, SMA-200 med ±2 % buffer, vol-regim (20d stdev vs 252d median, >1,5× halverar exponering) → exponering 0/0.5/1.0. Verifierat: OMX mom +26 %, "Bull — full exposure".
+- **S6 BundleKöp** → `EquityFactorScreeningService.screenBundleKop()` + `GET /screening/bundlekop`. 4-faktors composite (0.3 mom + 0.2 value + 0.2 quality + 0.3 low-vol), z-scorad, intersection composite > 0, **grindad av S4** (inga nya köp om inte TSMOM och SMA-200 båda bull), top-15. Verifierat: universe 271, marketBull → 15 valda.
+- **S9 Sektorsrotation** → `SectorRotationService` + `GET /rotation/sector`. HedgeIndex-tier → cyklisk/defensiv/cash-vikt över två korgar (konfig `frosk.s9.cyclical/defensive`). Score ≤3 cyklisk, 4–7 50/50, 8–11 defensiv, 12+ cash.
+- **S11 Tail-risk hedge** → `TailRiskHedgeService` + `GET /hedge/tailrisk`. HedgeIndex-tier → graderad XACT Bear-kvot (0 % risk-on → max `frosk.s11.hedge.max.pct` djupt risk-off).
+- **S12 Insynshandel** → `InsiderTrade`-entitet + repo, `InsiderTradeClient` (FI:s insynsregister, CSV, header-mappad, fail-safe), `InsiderConvictionService` (clustered buying: ≥ `frosk.insider.min.buyers` distinkta insiders samma bolag inom `frosk.insider.window.days`). `GET /insider/conviction`, `POST /insider/sync`. **FI:s export-URL/format är overifierat mot livetjänsten** — klienten är tolerant och returnerar tomt vid fel; `conviction()` är tom tills en sync fyllt `insider_trade`.
+- **Tester:** `TestJTradingCalendar` (4), `TestJInsiderConviction` (2), `OmxStrategySignalsIT` (smoke). Alla gröna; `mvn compile` ren.
 
 ### 2026-11-13 — S1 + S2 faktorscreeningar implementerade (read-only, ej live)
 

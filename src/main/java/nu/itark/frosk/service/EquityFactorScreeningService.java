@@ -2,6 +2,9 @@ package nu.itark.frosk.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import nu.itark.frosk.analysis.BundleKopCandidateDTO;
+import nu.itark.frosk.analysis.BundleKopScreeningDTO;
+import nu.itark.frosk.analysis.MarketRegimeDTO;
 import nu.itark.frosk.analysis.MomentumLowVolCandidateDTO;
 import nu.itark.frosk.analysis.MomentumLowVolScreeningDTO;
 import nu.itark.frosk.analysis.MultiFactorCandidateDTO;
@@ -40,6 +43,7 @@ public class EquityFactorScreeningService {
 
     private final BarSeriesService barSeriesService;
     private final SecurityRepository securityRepository;
+    private final MarketTimingService marketTimingService;
 
     // ── S1: Momentum-first low-vol double screening ──────────────────────────
     @Value("${frosk.s1.momentum.lookback.bars:252}")
@@ -65,6 +69,24 @@ public class EquityFactorScreeningService {
     private double s2ZCap;
     @Value("${frosk.s2.max.positions:20}")
     private int s2MaxPositions;
+
+    // ── S6: BundleKöp 4-factor ensemble (momentum/value/quality/low-vol), market-gated ──
+    @Value("${frosk.s6.momentum.lookback.bars:252}")
+    private int s6MomentumLookback;
+    @Value("${frosk.s6.vol.lookback.bars:20}")
+    private int s6VolLookback;
+    @Value("${frosk.s6.weight.momentum:0.3}")
+    private double s6WeightMomentum;
+    @Value("${frosk.s6.weight.value:0.2}")
+    private double s6WeightValue;
+    @Value("${frosk.s6.weight.quality:0.2}")
+    private double s6WeightQuality;
+    @Value("${frosk.s6.weight.lowvol:0.3}")
+    private double s6WeightLowVol;
+    @Value("${frosk.s6.zscore.cap:3.0}")
+    private double s6ZCap;
+    @Value("${frosk.s6.max.positions:15}")
+    private int s6MaxPositions;
 
     /**
      * Active YAHOO universe keyed by security id (as string). {@code getDataSet(Database)} names
@@ -206,6 +228,96 @@ public class EquityFactorScreeningService {
                 .weightValue(s2WeightValue)
                 .weightQuality(s2WeightQuality)
                 .maxPositions(s2MaxPositions)
+                .selectedCount(selected.size())
+                .selected(selected)
+                .build();
+    }
+
+    // ───────────────────────────── S6 ───────────────────────────────────────
+
+    /**
+     * S6 BundleKöp: integrated 4-factor composite (momentum, value, quality, low-vol), gated by
+     * the S4 market regime. No new buys unless TSMOM and SMA-200 are both bullish.
+     */
+    public BundleKopScreeningDTO screenBundleKop() {
+        MarketRegimeDTO regime = marketTimingService.marketRegime();
+        boolean marketBull = regime.isTsmomBull() && regime.isSma200Bull();
+        Map<String, Security> byId = activeUniverseById();
+
+        List<BundleKopCandidateDTO> rows = new ArrayList<>();
+        List<Double> moms = new ArrayList<>();
+        List<Double> vals = new ArrayList<>();
+        List<Double> quals = new ArrayList<>();
+        List<Double> lowvols = new ArrayList<>();
+        for (BarSeries series : barSeriesService.getDataSet(Database.YAHOO)) {
+            if (series.getBarCount() <= s6MomentumLookback + 1) {
+                continue;
+            }
+            Security sec = byId.get(series.getName());
+            if (sec == null) {
+                continue;
+            }
+            double momentum = momentum(series, s6MomentumLookback);
+            double vol = realizedVol(series, s6VolLookback);
+            if (Double.isNaN(momentum) || Double.isNaN(vol)) {
+                continue;
+            }
+            double lastClose = series.getBar(series.getEndIndex()).getClosePrice().doubleValue();
+            double[] value = valueFactor(sec, lastClose);
+            double[] quality = qualityFactor(sec);
+            if (value == null || quality == null) {
+                continue;
+            }
+            rows.add(BundleKopCandidateDTO.builder()
+                    .securityName(sec.getName())
+                    .securityDesc(sec.getDescription())
+                    .momentum12mPct(round(momentum))
+                    .valueRaw(round(value[0]))
+                    .qualityRaw(round(quality[0]))
+                    .volatility(round(vol * 100.0))
+                    .build());
+            moms.add(momentum);
+            vals.add(value[0]);
+            quals.add(quality[0]);
+            lowvols.add(-vol); // low vol -> high score
+        }
+
+        int universeSize = rows.size();
+        double[] zMom = zscores(toArray(moms), s6ZCap);
+        double[] zVal = zscores(toArray(vals), s6ZCap);
+        double[] zQual = zscores(toArray(quals), s6ZCap);
+        double[] zLow = zscores(toArray(lowvols), s6ZCap);
+        for (int i = 0; i < rows.size(); i++) {
+            BundleKopCandidateDTO c = rows.get(i);
+            c.setZMomentum(round(zMom[i]));
+            c.setZValue(round(zVal[i]));
+            c.setZQuality(round(zQual[i]));
+            c.setZLowVol(round(zLow[i]));
+            c.setComposite(round(s6WeightMomentum * zMom[i] + s6WeightValue * zVal[i]
+                    + s6WeightQuality * zQual[i] + s6WeightLowVol * zLow[i]));
+        }
+
+        // Market-regime gate: no new buys unless both trend signals are bullish.
+        List<BundleKopCandidateDTO> selected = marketBull
+                ? rows.stream()
+                    .filter(c -> c.getComposite() > 0)
+                    .sorted(Comparator.comparingDouble(BundleKopCandidateDTO::getComposite).reversed())
+                    .limit(s6MaxPositions)
+                    .collect(Collectors.toList())
+                : new ArrayList<>();
+
+        log.info("S6 BundleKop: universe={}, marketBull={}, selected={}", universeSize, marketBull, selected.size());
+
+        return BundleKopScreeningDTO.builder()
+                .date(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
+                .universeSize(universeSize)
+                .marketBull(marketBull)
+                .marketRegime(regime.getRegime())
+                .weightMomentum(s6WeightMomentum)
+                .weightValue(s6WeightValue)
+                .weightQuality(s6WeightQuality)
+                .weightLowVol(s6WeightLowVol)
+                .maxPositions(s6MaxPositions)
                 .selectedCount(selected.size())
                 .selected(selected)
                 .build();
