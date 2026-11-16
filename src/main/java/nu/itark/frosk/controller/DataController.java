@@ -115,6 +115,21 @@ public class DataController {
     nu.itark.frosk.service.BundleScreeningService bundleScreeningService;
 
     @Autowired
+    nu.itark.frosk.service.EquityFactorScreeningService equityFactorScreeningService;
+
+    @Autowired
+    nu.itark.frosk.service.MarketTimingService marketTimingService;
+
+    @Autowired
+    nu.itark.frosk.service.SectorRotationService sectorRotationService;
+
+    @Autowired
+    nu.itark.frosk.service.TailRiskHedgeService tailRiskHedgeService;
+
+    @Autowired
+    nu.itark.frosk.service.InsiderConvictionService insiderConvictionService;
+
+    @Autowired
     nu.itark.frosk.service.IntradayStrategyRunner intradayStrategyRunner;
 
 
@@ -633,6 +648,110 @@ public class DataController {
                         .regime(HedgeIndexService.regimeLabel(p.score()))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * S12 clustered-insider-buying conviction (FI register). @Example GET /insider/conviction
+     */
+    @GetMapping(value = "/insider/conviction")
+    public java.util.List<nu.itark.frosk.analysis.InsiderConvictionDTO> getInsiderConviction() {
+        log.info("GET /insider/conviction");
+        return insiderConvictionService.conviction();
+    }
+
+    /**
+     * S12 pull Finansinspektionen's insider register and persist new rows. @Example POST /insider/sync
+     */
+    @PostMapping(value = "/insider/sync")
+    public String syncInsiderTrades() {
+        log.info("POST /insider/sync");
+        return "saved " + insiderConvictionService.sync() + " insider trades";
+    }
+
+    /**
+     * S9 sector rotation: HedgeIndex-driven cyclical/defensive/cash allocation. @Example GET /rotation/sector
+     */
+    @GetMapping(value = "/rotation/sector")
+    public nu.itark.frosk.analysis.SectorRotationDTO getSectorRotation() {
+        log.info("GET /rotation/sector");
+        return sectorRotationService.rotate();
+    }
+
+    /**
+     * S11 tail-risk hedge: HedgeIndex tier -> graded XACT Bear hedge ratio. @Example GET /hedge/tailrisk
+     */
+    @GetMapping(value = "/hedge/tailrisk")
+    public nu.itark.frosk.analysis.TailRiskHedgeDTO getTailRiskHedge() {
+        log.info("GET /hedge/tailrisk");
+        return tailRiskHedgeService.hedge();
+    }
+
+    /**
+     * S3 Halloween seasonal overlay + OMX momentum confirmation. @Example GET /timing/seasonal
+     */
+    @GetMapping(value = "/timing/seasonal")
+    public nu.itark.frosk.analysis.SeasonalTimingDTO getSeasonalTiming() {
+        log.info("GET /timing/seasonal");
+        return marketTimingService.seasonal();
+    }
+
+    /**
+     * S4 TSMOM + SMA-200 market regime filter on OMXS30. @Example GET /timing/market-regime
+     */
+    @GetMapping(value = "/timing/market-regime")
+    public nu.itark.frosk.analysis.MarketRegimeDTO getMarketRegime() {
+        log.info("GET /timing/market-regime");
+        return marketTimingService.marketRegime();
+    }
+
+    /**
+     * S5 turn-of-month timing window. @Example GET /timing/turn-of-month
+     */
+    @GetMapping(value = "/timing/turn-of-month")
+    public nu.itark.frosk.analysis.TurnOfMonthDTO getTurnOfMonth() {
+        log.info("GET /timing/turn-of-month");
+        return marketTimingService.turnOfMonth();
+    }
+
+    /**
+     * S8 Nordic calendar anomalies (payday-shifted ToM + reporting months). @Example GET /timing/nordic-calendar
+     */
+    @GetMapping(value = "/timing/nordic-calendar")
+    public nu.itark.frosk.analysis.NordicCalendarDTO getNordicCalendar() {
+        log.info("GET /timing/nordic-calendar");
+        return marketTimingService.nordicCalendar();
+    }
+
+    /**
+     * S1 momentum-first low-vol double screen: top momentum tertile of the active YAHOO
+     * universe filtered to below-median volatility. Read-only; not a live portfolio.
+     * @Example GET http://localhost:8080/screening/momentum-lowvol
+     */
+    @GetMapping(value = "/screening/momentum-lowvol")
+    public nu.itark.frosk.analysis.MomentumLowVolScreeningDTO getMomentumLowVolScreening() {
+        log.info("GET /screening/momentum-lowvol");
+        return equityFactorScreeningService.screenMomentumLowVol();
+    }
+
+    /**
+     * S2 integrated multi-factor composite z-score screen (momentum + value + quality).
+     * Read-only; not a live portfolio.
+     * @Example GET http://localhost:8080/screening/multifactor
+     */
+    @GetMapping(value = "/screening/multifactor")
+    public nu.itark.frosk.analysis.MultiFactorScreeningDTO getMultiFactorScreening() {
+        log.info("GET /screening/multifactor");
+        return equityFactorScreeningService.screenMultiFactorComposite();
+    }
+
+    /**
+     * S6 BundleKöp ensemble: 4-factor composite (momentum/value/quality/low-vol) gated by the
+     * S4 market regime. Read-only; not a live portfolio. @Example GET /screening/bundlekop
+     */
+    @GetMapping(value = "/screening/bundlekop")
+    public nu.itark.frosk.analysis.BundleKopScreeningDTO getBundleKopScreening() {
+        log.info("GET /screening/bundlekop");
+        return equityFactorScreeningService.screenBundleKop();
     }
 
     /**

@@ -8,24 +8,44 @@ Forskning från 2015–2026 pekar ut fem implementerbara strategier för OMX-mar
 
 | ID | Strategi | Implementerad |
 |---|---|---|
-| S1 | Nordisk Momentum-First Low-Vol Double Screening | [ ] |
-| S2 | Integrerad Multi-Faktor Composite Z-Score | [ ] |
-| S3 | Halloween Seasonal Overlay med Momentumbekräftelse | [ ] |
-| S4 | TSMOM + SMA-200 Tvålagrat Marknadsfilter | [ ] |
-| S5 | Turn-of-Month Taktisk Timing för Small/Mid-Cap | [ ] |
-| S6 | BundleKöp: Ensemble-Screening Applicerad på Alla Strategier | [ ] |
+| S1 | Nordisk Momentum-First Low-Vol Double Screening | [x] 2026-11-13 — `EquityFactorScreeningService.screenMomentumLowVol()` + `GET /screening/momentum-lowvol` (ej i live-portföljen) |
+| S2 | Integrerad Multi-Faktor Composite Z-Score | [x] 2026-11-13 — `EquityFactorScreeningService.screenMultiFactorComposite()` + `GET /screening/multifactor` (hybrid-faktorer, ej i live-portföljen) |
+| S3 | Halloween Seasonal Overlay med Momentumbekräftelse | [x] 2026-11-16 — `MarketTimingService.seasonal()` + `GET /timing/seasonal` |
+| S4 | TSMOM + SMA-200 Tvålagrat Marknadsfilter | [x] 2026-11-16 — `MarketTimingService.marketRegime()` + `GET /timing/market-regime` |
+| S5 | Turn-of-Month Taktisk Timing för Small/Mid-Cap | [x] 2026-11-16 — `MarketTimingService.turnOfMonth()` + `GET /timing/turn-of-month` |
+| S6 | BundleKöp: Ensemble-Screening Applicerad på Alla Strategier | [x] 2026-11-16 — `EquityFactorScreeningService.screenBundleKop()` + `GET /screening/bundlekop` |
 | S7 | Bundle-screening via befintliga frosk-strategier | [x] 2026-11-13 — `BundleScreeningService` + `GET /bundle/screening` (ej i live-portföljen) |
-| S8 | Kalenderanomalier specifika för Norden | [ ] |
-| S9 | Sektorsrotation på OMX | [ ] |
+| S8 | Kalenderanomalier specifika för Norden | [x] 2026-11-16 — `MarketTimingService.nordicCalendar()` + `GET /timing/nordic-calendar` |
+| S9 | Sektorsrotation på OMX | [x] 2026-11-16 — `SectorRotationService` + `GET /rotation/sector` |
 | S10 | Alternativa exit-regler | [x] 2026-11-13 — Time stop (`TimeStopRule`), universellt overlay på equity-strategier |
-| S11 | Tail-risk hedging för OMX-portföljen | [ ] |
-| S12 | Finansinspektionens insynshandel som leading indicator | [ ] |
+| S11 | Tail-risk hedging för OMX-portföljen | [x] 2026-11-16 — `TailRiskHedgeService` + `GET /hedge/tailrisk` |
+| S12 | Finansinspektionens insynshandel som leading indicator | [x] 2026-11-16 — `InsiderConvictionService` + `InsiderTradeClient` + `GET /insider/conviction`, `POST /insider/sync` (FI-endpoint overifierad) |
 
 ---
 
 ## Arbetslogg (vad gjordes och när)
 
 Omvänd kronologisk ordning — nyast överst. Detaljer om själva designen finns i respektive S-avsnitt nedan och i `### Implementationsnotering` efter Prioriteringsmatrisen.
+
+### 2026-11-16 — Resterande ID:n (S3, S4, S5, S6, S8, S9, S11, S12) implementerade (read-only, ej live)
+
+Alla kvarvarande ID:n byggda som read-only tjänster + endpoints (inga ordrar, ej i `PORTFOLIO_STRATEGIES`). Verifierade mot prod-snapshot via `OmxStrategySignalsIT`.
+
+- **S3 Halloween-overlay / S4 TSMOM+SMA-200 / S5 Turn-of-Month / S8 Nordiska kalenderanomalier** → `MarketTimingService` + `TradingCalendar` (handelsdagar ≈ vardagar). Endpoints `GET /timing/{seasonal,market-regime,turn-of-month,nordic-calendar}`. S4 beräknas på `^OMX`: TSMOM = `ROC(252)`-tecken, SMA-200 med ±2 % buffer, vol-regim (20d stdev vs 252d median, >1,5× halverar exponering) → exponering 0/0.5/1.0. Verifierat: OMX mom +26 %, "Bull — full exposure".
+- **S6 BundleKöp** → `EquityFactorScreeningService.screenBundleKop()` + `GET /screening/bundlekop`. 4-faktors composite (0.3 mom + 0.2 value + 0.2 quality + 0.3 low-vol), z-scorad, intersection composite > 0, **grindad av S4** (inga nya köp om inte TSMOM och SMA-200 båda bull), top-15. Verifierat: universe 271, marketBull → 15 valda.
+- **S9 Sektorsrotation** → `SectorRotationService` + `GET /rotation/sector`. HedgeIndex-tier → cyklisk/defensiv/cash-vikt över två korgar (konfig `frosk.s9.cyclical/defensive`). Score ≤3 cyklisk, 4–7 50/50, 8–11 defensiv, 12+ cash.
+- **S11 Tail-risk hedge** → `TailRiskHedgeService` + `GET /hedge/tailrisk`. HedgeIndex-tier → graderad XACT Bear-kvot (0 % risk-on → max `frosk.s11.hedge.max.pct` djupt risk-off).
+- **S12 Insynshandel** → `InsiderTrade`-entitet + repo, `InsiderTradeClient` (FI:s insynsregister, CSV, header-mappad, fail-safe), `InsiderConvictionService` (clustered buying: ≥ `frosk.insider.min.buyers` distinkta insiders samma bolag inom `frosk.insider.window.days`). `GET /insider/conviction`, `POST /insider/sync`. **FI:s export-URL/format är overifierat mot livetjänsten** — klienten är tolerant och returnerar tomt vid fel; `conviction()` är tom tills en sync fyllt `insider_trade`.
+- **Tester:** `TestJTradingCalendar` (4), `TestJInsiderConviction` (2), `OmxStrategySignalsIT` (smoke). Alla gröna; `mvn compile` ren.
+
+### 2026-11-13 — S1 + S2 faktorscreeningar implementerade (read-only, ej live)
+
+Båda är tvärsnittsscreeningar (rankar hela aktiva YAHOO-universumet per rebalansdag), byggda som `EquityFactorScreeningService` + endpoints — inte per-serie ta4j-strategier och **ej** i `PORTFOLIO_STRATEGIES`.
+
+- **S1 — Momentum-first low-vol (klar).** `screenMomentumLowVol()` + `GET /screening/momentum-lowvol`. Momentum = `ROCIndicator(close, 252)`, volatilitet = stdev av dagliga log-avkastningar över 20 barer. Behåll top-tertial (33 %) på momentum, filtrera till volatilitet under universumets median, equal-weight, cap `frosk.s1.max.positions=25`. Verifierad mot prod-snapshot: universe=477 → 25 valda (BAT.ST, SSAB, SOBI, BOL.ST, Clas Ohlson …).
+- **S2 — Multi-faktor composite z-score (klar, hybrid-faktorer).** `screenMultiFactorComposite()` + `GET /screening/multifactor`. Momentum `ROC(252)`, value = 1/priceToBook (**fallback** trailing earnings yield = EPS/pris, eftersom Yahoo-synken inte fyller trailingPe för detta universum), quality = −debtToEquity (**fallback** −beta). Tvärsnittsvisa z-scores cappade ±3, composite = 0,4·zMom + 0,3·zValue + 0,3·zQuality, intersection-krav composite > 0, top-20. Verifierad: universe=271 (intersection) → 20 valda. **Blir fullt spec-trogen (P/B, skuldsättning) efter nästa metadata-synk** — nya kolumnerna `security.price_to_book` / `debt_to_equity` är null tills dess (fallbacks används).
+- **Datalager (S2 hybrid).** `Security` fick `priceToBook` + `debtToEquity`; `YahooFinanceDirectClient.getModuleStatistics` plockar nu även `financialData.debtToEquity` (defaultKeyStatistics har redan priceToBook); `YAHOODataManager` lagrar båda (null om Yahoo inte returnerar dem).
+- **Tester.** `TestJEquityFactorScreening` (z-score/median/momentum/realized-vol, 6 st) + `EquityFactorScreeningIT` (smoke/report mot seedad DB). Caveat: enstaka illikvida namn får 0 % realiserad vol (stale priser) och kan slinka in i S1:s low-vol-filter — en likviditetsgrind kan läggas på senare.
 
 ### 2026-11-13 — Rekommenderad prioritering (S10 + S7) implementerad och backtestad
 
